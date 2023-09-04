@@ -11443,12 +11443,12 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	}
 	// Obsttorte: #5984) multilooting
 	// return, if not enough time has passed since the last pickup
-	if (multiloot && ( gameLocal.time - multiloot_lastfrob < cv_multiloot_min_interval.GetFloat() ) )
+	if (multiloot && ( gameLocal.time - multiloot_lastfrob <= cv_multiloot_min_interval.GetInteger() ) )
 	{
 		return;
 	}
 	// disable multiloot and return if too much time has passed since last pickup
-	if (multiloot && ( gameLocal.time - multiloot_lastfrob > cv_multiloot_max_interval.GetFloat() ) )
+	if (multiloot && ( gameLocal.time - multiloot_lastfrob > cv_multiloot_max_interval.GetInteger() ) )
 	{
 		multiloot = false;
 		return;
@@ -11474,7 +11474,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 	// Do we allow use on frob?
 	// stgatilov #5542: block use-on-frob when frob called from game script
-	if (allowUseCurrentInvItem && cv_tdm_inv_use_on_frob.GetBool())
+	if (!multiloot && allowUseCurrentInvItem && cv_tdm_inv_use_on_frob.GetBool())
 	{
 		// Check if we have a "use" relationship with the currently selected inventory item (key => door)
 		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
@@ -11504,22 +11504,31 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// These actions are only applicable for EPressed buttonstate
-	if (impulseState == EPressed || multiloot)
+	if (impulseState == EPressed || ((impulseState == ERepeat) && multiloot))
 	{
 		
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity.
 
-		// Obsttorte: don't do anything if we are multilooting and this is no inventory item
-		if (multiloot && target->spawnArgs.GetString("inv_name", nullptr) == nullptr)
+		if (multiloot &&
+			// Obsttorte: don't do anything if we are multilooting and this is no inventory item
+			(target->spawnArgs.GetString("inv_name", nullptr) == nullptr ||
+			// Daft Mugi: Do not multiloot immobile readables (indirectly identified by snd_acquire null)
+			target->spawnArgs.GetString("snd_acquire", nullptr) == nullptr))
 		{
 			return;
 		}
 
+		// Daft Mugi #6270: STIM_FROB response has not yet been fired when ERepeat,
+		// so do it now before trying to add item to inventory when multilooting.
+		if ((impulseState == ERepeat) && multiloot) {
+			target->TriggerResponse(this, ST_FROB);
+		}
+
 		// Trigger the frob action script on key down
 		target->FrobAction(true);
-		
+
 		CInventoryItemPtr addedItem = AddToInventory(target);
 
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
