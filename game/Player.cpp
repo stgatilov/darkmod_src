@@ -11443,7 +11443,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	}
 	// Obsttorte: #5984) multilooting
 	// return, if not enough time has passed since the last pickup
-	if (multiloot && ( gameLocal.time - multiloot_lastfrob <= cv_multiloot_min_interval.GetInteger() ) )
+	if (multiloot && ( gameLocal.time - multiloot_lastfrob < cv_multiloot_min_interval.GetInteger() ) )
 	{
 		return;
 	}
