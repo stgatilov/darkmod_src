@@ -59,7 +59,7 @@ public:
 	  * @author		STiFU */
 	inline const bool IsActive()
 	{
-		return cv_frobhelper_active.GetBool() || cv_frobhelper_alwaysVisible.GetBool(); 
+		return cv_frobhelper_active.GetBool();
 	}
 
 private:

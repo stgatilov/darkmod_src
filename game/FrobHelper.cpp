@@ -114,6 +114,15 @@ const float CFrobHelper::GetAlpha()
 	if (!IsActive())
 		return 0.0f;
 
+	// Daft Mugi #6318: Ensure frob helper is always visible when
+	// both tdm_frobhelper_active and tdm_frobhelper_alwaysVisible are true.
+	if (cv_frobhelper_alwaysVisible.GetBool())
+	{
+		m_fCurrentAlpha = cv_frobhelper_alpha.GetFloat();
+		m_bReachedTargetAlpha = true;
+		return m_fCurrentAlpha;
+	}
+
 	CheckCvars();
 
 	if (m_bReachedTargetAlpha)
