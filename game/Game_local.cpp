@@ -4566,12 +4566,15 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		{
 		case 0: // Off
 			cvarSystem->SetCVarBool("tdm_frobhelper_active", false);
+			cvarSystem->SetCVarBool("tdm_frobhelper_alwaysVisible", false);
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_delay", 500);     // default value
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_duration", 1500); // default value
 			break;
 		case 1: // Always
 			cvarSystem->SetCVarBool("tdm_frobhelper_active", true);
 			cvarSystem->SetCVarBool("tdm_frobhelper_alwaysVisible", true);
-			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_delay", 0);    // no delay after menu close
-			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_duration", 0); // no delay after menu close
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_delay", 500);     // default value
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_duration", 1500); // default value
 			break;
 		case 2: // Hover
 			cvarSystem->SetCVarBool("tdm_frobhelper_active", true);
@@ -4626,12 +4629,19 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateInt("defaultspeed", defaultSpeed);
 
 		int frobHelperPreset = 0; // Off
-		if (cvarSystem->GetCVarBool("tdm_frobhelper_active")) {
-			if (cvarSystem->GetCVarBool("tdm_frobhelper_alwaysVisible")) {
+		if (cvarSystem->GetCVarBool("tdm_frobhelper_active"))
+		{
+			if (cvarSystem->GetCVarBool("tdm_frobhelper_alwaysVisible"))
+			{
 				frobHelperPreset = 1; // Always
-			} else if (cvarSystem->GetCVarInteger("tdm_frobhelper_fadein_duration") == 0) {
+			}
+			else if (cvarSystem->GetCVarInteger("tdm_frobhelper_fadein_delay") == 0 &&
+			         cvarSystem->GetCVarInteger("tdm_frobhelper_fadein_duration") == 0)
+			{
 				frobHelperPreset = 2; // Hover
-			} else {
+			}
+			else
+			{
 				frobHelperPreset = 3; // Fade In
 			}
 		}
