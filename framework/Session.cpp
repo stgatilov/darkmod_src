@@ -3282,7 +3282,7 @@ void idSessionLocal::ExecuteFrameCommand(const char *command, bool delayed) {
 		if( gameLocal.m_TriggerFinalSave ) {
 			gameLocal.m_TriggerFinalSave = false;
 
-			idStr savegameName = va( "Mission %d Final Save", gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1 );
+			idStr savegameName = va( "Mission %d Final", gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1 );
 			cmdSystem->BufferCommandText( CMD_EXEC_INSERT, va( "savegame '%s'", savegameName.c_str() ) );
 		}
 	}
