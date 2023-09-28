@@ -2413,7 +2413,7 @@ void idPhysics_Player::CheckClimbable( void )
 					{
 						m_bClimbInitialPhase = true;
 						m_vClimbPoint = vStickPoint;
-						static_cast<idPlayer *>(self)->SetImmobilization( "ClimbMove", EIM_WEAPON_SELECT | EIM_ATTACK );
+						static_cast<idPlayer *>(self)->SetImmobilization( "ClimbMove", EIM_ATTACK );
 					}
 
 					m_bOnClimb = true;					
@@ -2854,7 +2854,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		m_bOnRope = true;
 
 		// lower weapon
-		static_cast<idPlayer*>(self)->SetImmobilization( "RopeMove", EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_DROP );
+		static_cast<idPlayer*>(self)->SetImmobilization( "RopeMove", EIM_ATTACK | EIM_ITEM_DROP );
 
 		RopeMove();
 	}
@@ -4300,7 +4300,7 @@ void idPhysics_Player::StartMantle
 	}
 
 	// Ishtvan 11/20/05 - Lower weapons when mantling
-	static_cast<idPlayer*>(self)->SetImmobilization( "MantleMove", EIM_WEAPON_SELECT | EIM_ATTACK );
+	static_cast<idPlayer*>(self)->SetImmobilization( "MantleMove", EIM_ATTACK );
 
 	// greebo: Disable the next mantle start here, this is set to TRUE again 
 	// when the jump key is released outside a mantle phase
