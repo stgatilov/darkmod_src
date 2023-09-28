@@ -5018,8 +5018,9 @@ void idPhysics_Player::PerformMantle()
 		return; // greebo: Mantling disabled by immobilization system
 	}
 
-	if (cv_pm_mantle_while_shouldering.GetInteger() == 0
-		&& p_player->IsShoulderingBody())
+	// Ishtvan: Do not attempt to mantle if holding an object
+	if (cv_pm_mantle_while_carrying.GetInteger() == 0
+	    && (p_player->IsShoulderingBody() || gameLocal.m_Grabber->GetSelected()))
 	{
 		return;
 	}
@@ -5056,10 +5057,6 @@ void idPhysics_Player::PerformMantle()
 	// Get start position of gaze trace, which is player's eye position
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Getting eye position\r");
 	idVec3 eyePos = p_player->GetEyePosition();
-
-	// Ishtvan: Do not attempt to mantle if holding an object
-	if( gameLocal.m_Grabber->GetSelected() )
-		return;
 
 	// Run mantle trace
 	trace_t trace;
@@ -5129,11 +5126,21 @@ void idPhysics_Player::PerformMantle()
 				cv_pm_mantle_fallingFast_speedthreshold.GetFloat();
 
 			// Daft Mugi #5892: While shouldering a body, allow mantling at approximately waist height.
-			if (cv_pm_mantle_while_shouldering.GetInteger() == 1
-				&& p_player->IsShoulderingBody()
+			// Also, allow mantling while holding small objects at approximately waist height.
+			if (cv_pm_mantle_while_carrying.GetInteger() == 1
+				&& (p_player->IsShoulderingBody() || gameLocal.m_Grabber->GetSelected())
 				&& (bPullOrHang // no pull or hang allowed
 					|| obstacleHeight > cv_pm_mantle_maxShoulderingObstacleHeight.GetFloat() // restrict max height
 					|| bFallingFast)) // must not be falling fast
+			{
+				return;
+			}
+
+			// If holding a small object and in midair, reduce allowed obstacle height.
+			if (cv_pm_mantle_while_carrying.GetInteger() == 1
+				&& gameLocal.m_Grabber->GetSelected()
+				&& !groundPlane
+				&& obstacleHeight > cv_pm_mantle_maxHoldingMidairObstacleHeight.GetFloat())
 			{
 				return;
 			}
@@ -5143,7 +5150,7 @@ void idPhysics_Player::PerformMantle()
 				if (   IsMantleable == EMantleable_YesUpstraight	// Upstraight mantle possible
 					&& !bFallingFast
 					&& (mantleEndHeight < floorHeight + cv_pm_mantle_maxLowObstacleHeight.GetFloat() // Only allow the full obstacle height when near the floor
-					|| mantleEndHeight < feetHeight + cv_pm_mantle_maxLowObstacleHeight.GetFloat()*0.66f)) // Reduce allowed obstacle height mid-air
+					|| mantleEndHeight < feetHeight + cv_pm_mantle_maxLowObstacleHeight.GetFloat()*0.66f)) // Reduce allowed obstacle height midair
 				{
 					// Do a fast mantle over low obstacle
 					StartMantle(pushNonCrouched_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);

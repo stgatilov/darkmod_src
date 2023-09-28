@@ -176,8 +176,9 @@ extern idCVar cv_pm_mantle_fastLowObstaces;
 extern idCVar cv_pm_mantle_maxLowObstacleHeight;
 
 // Daft Mugi #5892: Mantle while carrying a body
+extern idCVar cv_pm_mantle_maxHoldingMidairObstacleHeight;
 extern idCVar cv_pm_mantle_maxShoulderingObstacleHeight;
-extern idCVar cv_pm_mantle_while_shouldering;
+extern idCVar cv_pm_mantle_while_carrying;
 
 extern idCVar cv_pm_mantle_fastMediumObstaclesCrouched;
 extern idCVar cv_pm_mantle_pullFast_msecs;

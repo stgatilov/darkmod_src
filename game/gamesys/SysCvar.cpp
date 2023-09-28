@@ -225,18 +225,24 @@ idCVar cv_pm_mantle_fastLowObstaces("pm_mantle_fastLowObstacles", "1", CVAR_GAME
 idCVar cv_pm_mantle_maxLowObstacleHeight("pm_mantle_maxLowObstacleHeight", "36.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "The maximum height of obstacles over which a fast mantle can be performed", 0.0f, 60.0f);
 
 // Daft Mugi #5892: Mantle while carrying a body
+idCVar cv_pm_mantle_while_carrying(
+	"pm_mantle_while_carrying", "1", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,
+	"Which restriction for mantle while carrying?\n"
+	"  0 --- no mantling while carrying a body or object (TDM original)\n"
+	"  1 --- restricted mantling while carrying a body or object\n"
+	"  2 --- unrestricted mantling while carrying a body or object (Cheat Mode)"
+);
 idCVar cv_pm_mantle_maxShoulderingObstacleHeight(
 	"pm_mantle_maxShoulderingObstacleHeight", "41", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
-	"The maximum height of obstacles allowed for a shouldering body mantle\n"
-	"Note that mantling above eye level is disabled regardless of this value",
+	"The maximum height of obstacles allowed for a mantle while shouldering a body.\n"
+	"Note that mantling above eye level is disabled regardless of this value.",
 	0.0f, 100.0f
 );
-idCVar cv_pm_mantle_while_shouldering(
-	"pm_mantle_while_shouldering", "1", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,
-	"Which restriction for mantle while shouldering?\n"
-	"  0 --- no mantling while shouldering a body (TDM original)\n"
-	"  1 --- restricted mantling while shouldering a body\n"
-	"  2 --- unrestricted mantling while shouldering a body (Cheat Mode)"
+idCVar cv_pm_mantle_maxHoldingMidairObstacleHeight(
+	"pm_mantle_maxHoldingMidairObstacleHeight", "14", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"The maximum height of obstacles allowed during a jump mantle while holding an object.\n"
+	"Note that mantling above eye level is disabled regardless of this value.",
+	0.0f, 100.0f
 );
 
 idCVar cv_pm_mantle_fastMediumObstaclesCrouched("pm_mantle_fastMediumObstaclesCrouched", "1", CVAR_GAME | CVAR_BOOL, "If true, a faster mantle will be performed for medium-high obstacles in crouched state", 0, 1);
