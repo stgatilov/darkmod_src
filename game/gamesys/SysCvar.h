@@ -257,6 +257,14 @@ extern idCVar cv_pm_lean_door_max;
 extern idCVar cv_pm_lean_door_bounds_exp;
 extern idCVar cv_pm_lean_toggle;
 
+// Daft Mugi #6320: Add New Lean
+extern idCVar cv_pm_lean2_mode;
+extern idCVar cv_pm_lean2_time_to_lean;
+extern idCVar cv_pm_lean2_time_to_unlean;
+extern idCVar cv_pm_lean2_slide;
+extern idCVar cv_pm_lean2_angle;
+extern idCVar cv_pm_lean2_angle_mod;
+
 extern idCVar cv_frob_distance_default;
 extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;

@@ -6076,23 +6076,23 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 
 		case IMPULSE_LEAN_FORWARD:
-			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
+			if ( !cv_pm_lean_toggle.GetBool() )
 			{
-				physicsObj.ToggleLean(90.0);
+				physicsObj.UnLean(90.0);
 			}
 		break;
 
 		case IMPULSE_LEAN_LEFT:
-			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
+			if ( !cv_pm_lean_toggle.GetBool() )
 			{
-				physicsObj.ToggleLean(180.0);
+				physicsObj.UnLean(180.0);
 			}
 		break;
 
 		case IMPULSE_LEAN_RIGHT:
-			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
+			if ( !cv_pm_lean_toggle.GetBool() )
 			{
-				physicsObj.ToggleLean(0.0);
+				physicsObj.UnLean(0.0);
 			}
 		break;
 

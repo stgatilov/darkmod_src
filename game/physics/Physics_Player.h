@@ -827,6 +827,7 @@ protected:
 	* lean movement.
 	**/
 	void LeanMove();
+	void Lean2Move(); // Daft Mugi #6320: Add New Lean
 
 	/**
 	* Test clipping for the current eye position, plus delta in the lean direction
@@ -837,6 +838,7 @@ protected:
 	* Convert a lean angle and stretch into a point in space, in world coordinates
 	**/
 	idVec3 LeanParmsToPoint( float AngTilt, float Stretch );
+	idVec3 Lean2ParmsToPoint( float AngTilt ); // Daft Mugi #6320: Add New Lean
 
 	/**
 	* Start and maintain a peeking state until exited
@@ -897,6 +899,8 @@ public:
 	*
 	*/
 	void ToggleLean(float leanYawAngleDegrees);
+	void ToggleLean2(float leanYawAngleDegrees); // Daft Mugi #6320: Add New Lean
+	void UnLean(float leanYawAngleDegrees);      // Daft Mugi #6320: Add New Lean
 
 	/*!
 	* This method tests if the player is in the middle of a leaning

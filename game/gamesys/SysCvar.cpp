@@ -316,6 +316,15 @@ idCVar cv_pm_lean_door_max(			"pm_lean_door_max",		"40",			CVAR_GAME | CVAR_ARCH
 idCVar cv_pm_lean_door_bounds_exp(	"pm_lean_door_bounds_exp", "8.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Amount to expand the camera view bounds by when testing if the player is still pressed against a door for listening purposes (default 8.0)."); 
 idCVar cv_pm_lean_toggle(			"pm_lean_toggle",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to make leaning toggleable." );
 
+// Daft Mugi #6320: Add New Lean
+idCVar cv_pm_lean2_mode("pm_lean2_mode", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to enable lean2 mode.");
+idCVar cv_pm_lean2_time_to_lean("pm_lean2_time_to_lean", "400", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds.", 0.0f, 2000.0f);
+idCVar cv_pm_lean2_time_to_unlean("pm_lean2_time_to_unlean", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to unlean, in milliseconds.", 0.0f, 2000.0f);
+idCVar cv_pm_lean2_slide("pm_lean2_slide", "200", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The slide distance that the player moves during a lean.", 0.0f, 1000.0f);
+idCVar cv_pm_lean2_angle("pm_lean2_angle", "8", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees.", 0.0f, 180.0f);
+idCVar cv_pm_lean2_angle_mod("pm_lean2_angle_mod", "0.5", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "The multiplier applied to the roll view angle during a left/right lean", 0.0f, 1.0f);
+
+
 /**
 * Dark Mod Frobbing
 * Frob expansion radius for easier frobbing, time it takes for frob highlight to fade in and out
