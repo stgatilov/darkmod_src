@@ -1364,6 +1364,9 @@ void idImageReader::LoadExtension(const char *extension) {
 		LoadPNG();
 	} else {
 		common->Warning( "Cannot load image with extension %s", extension );
+		if (dstData) *dstData = nullptr;
+		if (dstWidth) *dstWidth = 0;
+		if (dstHeight) *dstHeight = 0;
 	}
 }
 
