@@ -2040,6 +2040,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	//
 	float	spatialize = 1;
 	idVec3 spatializedOriginInMeters;
+	float totalSoundDistance = 0.0f;
 	if ( !global )
 	{
 		float dlen;
@@ -2076,6 +2077,8 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			// we tweak the spatialization bias when you are inside the minDistance
 			spatialize = dlen / mind;
 		}
+
+		totalSoundDistance = dlen;	// stgatilov: need this for subtitles location
 	}
 
 	//
@@ -2125,7 +2128,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			destSubtitles[i].channel = chan;
 			destSubtitles[i].spatializedDirection.Zero();
 			if ( !(global || omni) )
-				destSubtitles[i].spatializedDirection = ( listenerAxis.Transpose() * ( spatializedOriginInMeters - listenerPos ) ).Normalized();
+				destSubtitles[i].spatializedDirection = ( listenerAxis.Transpose() * ( spatializedOriginInMeters - listenerPos ) ).Normalized() * totalSoundDistance;
 			// TODO: formula, lower limit, dependency on sample amplitude?
 			destSubtitles[i].volume = idMath::ClampFloat( 0.1f, 1.0f, volume / 0.1f );
 		}

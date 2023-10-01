@@ -732,56 +732,14 @@ bool idUserInterfaceLocal::ResetWindowTime(const char *windowName, int startTime
 	return true;
 }
 
+idCVar tdm_subtitles_ringRadius(
+	"tdm_subtitles_ringRadius", "5", CVAR_FLOAT | CVAR_SOUND | CVAR_ARCHIVE,
+	"Distance to speaker which corresponds to a point on the location ring boundary (in meters)."
+);
 idCVar tdm_subtitles_debug(
 	"tdm_subtitles_debug", "0", CVAR_BOOL | CVAR_SOUND | CVAR_ARCHIVE,
 	"If set to 1, then internal debug information is displayed for subtitles."
 );
-
-static const char SubtitleOrientationProbeVars[5][30] = {
-	"subtitleN_oriFrontLeft",
-	"subtitleN_oriFront",
-	"subtitleN_oriFrontRight",
-	"subtitleN_oriBackRight",
-	"subtitleN_oriBackLeft",
-};
-static void ComputeSubtitleProbeValues(idVec2 dir, float values[5]) {
-	// probing directions, sorted by polar angle
-	static const idVec2 PROBES[5] = {
-		idVec2(1, 2).Normalized(),		// front-left
-		idVec2(1, 0).Normalized(),		// front
-		idVec2(1, -2).Normalized(),		// front-right
-		idVec2(-1, -1).Normalized(),	// back-right
-		idVec2(-1, 1).Normalized()		// back-left
-	};
-
-	// find closest probe direction
-	int baseIdx = 0;
-	for ( int i = 0; i < 5; i++ )
-		if ( PROBES[i] * dir > PROBES[baseIdx] * dir )
-			baseIdx = i;
-
-	// select between the next and the previous probes to get a sector
-	int nextIdx = ( baseIdx + 1 ) % 5;
-	if ( PROBES[baseIdx].Cross( dir ) * PROBES[nextIdx].Cross( dir ) > 0.0f )
-		nextIdx = ( baseIdx + 4 ) % 5;
-	// input direction is within sector between the two probes
-	assert( PROBES[baseIdx].Cross( dir ) * PROBES[nextIdx].Cross( dir ) <= 1e-5f );
-
-	// decompose input direction into linear combination of two probes
-	idMat2 matrix( PROBES[baseIdx].x, PROBES[nextIdx].x, PROBES[baseIdx].y, PROBES[nextIdx].y );
-	idVec2 coeffs = matrix.Inverse() * dir;
-	// normalize coefficients (sum of squares should be kept constant)
-	coeffs.Normalize();
-
-	// fill values
-	for ( int i = 0; i < 5; i++ ) {
-		values[i] = 0.0f;
-		if ( i == baseIdx )
-			values[i] += coeffs.x;
-		if ( i == nextIdx )
-			values[i] += coeffs.y;
-	}
-}
 
 /*
 ==============
@@ -850,8 +808,13 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 	char enabledVar[] = "subtitleN_nonempty";
 	char debugVar[] = "subtitleN_debug";
 	char alphaVar[] = "subtitleN_alpha";
+	char spatialVar[] = "subtitleN_spatialized";
+	char locationXVar[] = "subtitleN_locationXclamped";
+	char locationYVar[] = "subtitleN_locationYclamped";
 	for ( int j = 0; j < SUBTITLE_SLOTS; j++ ) {
 		textVar[8] = enabledVar[8] = debugVar[8] = alphaVar[8] = char('0' + j);
+		spatialVar[8] = locationXVar[8] = locationYVar[8] = char('0' + j);
+
 		const SubtitleMatch &m = subtitleSlots[j];
 		const Subtitle *sub = m.subtitle;
 
@@ -870,14 +833,12 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 		SetStateFloat( alphaVar, m.volume );
 
 		// update direction cue
-		float probeValues[5];
-		ComputeSubtitleProbeValues( idVec2( m.spatializedDirection.x, m.spatializedDirection.y ), probeValues );
-		for ( int i = 0; i < 5; i++ ) {
-			char varname[30];
-			strcpy( varname, SubtitleOrientationProbeVars[i] );
-			varname[8] = char('0' + j);
-			SetStateFloat( varname, probeValues[i] );
-		}
+		idVec2 normalizedLocation = idVec2( m.spatializedDirection.x, m.spatializedDirection.y ) / tdm_subtitles_ringRadius.GetFloat();
+		if ( normalizedLocation.Length() > 1.0f )
+			normalizedLocation.Normalize();
+		SetStateString( spatialVar, ( m.spatializedDirection.Length() == 0.0f ? "0" : "1" ) );
+		SetStateFloat( locationXVar, normalizedLocation.x );
+		SetStateFloat( locationYVar, normalizedLocation.y );
 
 		// update debug text
 		idStr debugMessage;
