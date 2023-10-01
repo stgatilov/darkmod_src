@@ -2127,7 +2127,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			if ( !(global || omni) )
 				destSubtitles[i].spatializedDirection = ( listenerAxis.Transpose() * ( spatializedOriginInMeters - listenerPos ) ).Normalized();
 			// TODO: formula, lower limit, dependency on sample amplitude?
-			destSubtitles[i].volume = idMath::Fmin( volume / 0.2f, 1.0f );
+			destSubtitles[i].volume = idMath::ClampFloat( 0.1f, 1.0f, volume / 0.1f );
 		}
 
 		if ( !alIsSource( chan->openalSource ) ) {
