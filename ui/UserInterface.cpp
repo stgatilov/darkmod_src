@@ -807,13 +807,14 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 	char textVar[] = "subtitleN";
 	char enabledVar[] = "subtitleN_nonempty";
 	char debugVar[] = "subtitleN_debug";
+	char verbosityVar[] = "subtitleN_verbosity";
 	char alphaVar[] = "subtitleN_alpha";
 	char spatialVar[] = "subtitleN_spatialized";
 	char locationXVar[] = "subtitleN_locationXclamped";
 	char locationYVar[] = "subtitleN_locationYclamped";
 	for ( int j = 0; j < SUBTITLE_SLOTS; j++ ) {
 		textVar[8] = enabledVar[8] = debugVar[8] = alphaVar[8] = char('0' + j);
-		spatialVar[8] = locationXVar[8] = locationYVar[8] = char('0' + j);
+		verbosityVar[8] = spatialVar[8] = locationXVar[8] = locationYVar[8] = char('0' + j);
 
 		const SubtitleMatch &m = subtitleSlots[j];
 		const Subtitle *sub = m.subtitle;
@@ -828,6 +829,8 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 		// update text
 		if ( idStr::Cmp( GetStateString( textVar ), sub->text.c_str() ) )
 			SetStateString( textVar, sub->text.c_str() );
+
+		SetStateInt( verbosityVar, int( m.verbosity ) );
 
 		// update alpha according to volume
 		SetStateFloat( alphaVar, m.volume );
