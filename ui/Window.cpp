@@ -2490,68 +2490,12 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			ev->pending = true;
 			timeLineEvents.Append(ev);
 		}
-		else if ( token == "definefloat" ) {
+		else if ( token == "float" || token == "definefloat" ) {
 			src->ReadToken(&token);
 			work = token;
 			work.ToLower();
-			idWinFloat *varf = new idWinFloat();
-			varf->SetName(work);
-			definedVars.Append(varf);
-
-			// add the float to the editors wrapper dict
-			// Set the marker after the float name
-			src->SetMarker ( );
-
-			// Read in the float 
-			regList.ParseAndAddReg(work, idRegister::FLOAT, src, this, varf);
-
-			// If we are in the gui editor then add the float to the defines
-#ifdef ID_ALLOW_TOOLS
-			if ( com_editors & EDITOR_GUI ) {
-				idStr str;
-				
-				// Grab the string from the last marker and save it in the wrapper
-				src->GetStringFromMarker ( str, true );							
-				rvGEWindowWrapper::GetWrapper ( this )->GetVariableDict().Set ( va("definefloat\t\"%s\"",token.c_str()), str );
-			}
-#endif
-		}
-		else if ( token == "definevec4" ) {
-			src->ReadToken(&token);
-			work = token;
-			work.ToLower();
-			idWinVec4 *var = new idWinVec4();
+			idWinFloat *var = new idWinFloat();
 			var->SetName(work);
-
-			// set the marker so we can determine what was parsed
-			// set the marker after the vec4 name
-			src->SetMarker ( );
-
-			// FIXME: how about we add the var to the desktop instead of this window so it won't get deleted
-			//        when this window is destoyed which even happens during parsing with simple windows ?
-			//definedVars.Append(var);
-			gui->GetDesktop()->definedVars.Append( var );
-			gui->GetDesktop()->regList.ParseAndAddReg( work, idRegister::VEC4, src, gui->GetDesktop(), var );
-
-			// store the original vec4 for the editor
-			// If we are in the gui editor then add the float to the defines
-#ifdef ID_ALLOW_TOOLS
-			if ( com_editors & EDITOR_GUI ) {
-				idStr str;
-				
-				// Grab the string from the last marker and save it in the wrapper
-				src->GetStringFromMarker ( str, true );							
-				rvGEWindowWrapper::GetWrapper ( this )->GetVariableDict().Set ( va("definevec4\t\"%s\"",token.c_str()), str );
-			}
-#endif
-		}
-		else if ( token == "float" ) {
-			src->ReadToken(&token);
-			work = token;
-			work.ToLower();
-			idWinFloat *varf = new idWinFloat();
-			varf->SetName(work);
-			definedVars.Append(varf);
 
 			// add the float to the editors wrapper dict
 			// set the marker to after the float name
@@ -2570,16 +2514,43 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			src->UnreadToken(&token);
 
 			// Parse the float
-			regList.ParseAndAddReg(work, idRegister::FLOAT, src, this, varf);
+			definedVars.Append(var);
+			regList.ParseAndAddReg(work, idRegister::FLOAT, src, this, var);
 
 			// If we are in the gui editor then add the float to the defines
+#ifdef ID_ALLOW_TOOLS
+			if ( com_editors & EDITOR_GUI ) {
+				idStr str;
+
+				// Grab the string from the last marker and save it in the wrapper
+				src->GetStringFromMarker ( str, true );							
+				rvGEWindowWrapper::GetWrapper ( this )->GetVariableDict().Set ( va("float\t\"%s\"", token.c_str()), str );
+			}
+#endif
+		}
+		else if ( token == "vec4" || token == "definevec4" ) {
+			src->ReadToken(&token);
+			work = token;
+			work.ToLower();
+			idWinVec4 *var = new idWinVec4();
+			var->SetName(work);
+
+			// set the marker so we can determine what was parsed
+			// set the marker after the vec4 name
+			src->SetMarker ( );
+
+			// Parse the vec4
+			definedVars.Append(var);
+			regList.ParseAndAddReg(work, idRegister::VEC4, src, this, var);
+
+			// If we are in the gui editor then add the vec4 to the defines
 #ifdef ID_ALLOW_TOOLS
 			if ( com_editors & EDITOR_GUI ) {
 				idStr str;
 				
 				// Grab the string from the last marker and save it in the wrapper
 				src->GetStringFromMarker ( str, true );							
-				rvGEWindowWrapper::GetWrapper ( this )->GetVariableDict().Set ( va("float\t\"%s\"",token.c_str()), str );
+				rvGEWindowWrapper::GetWrapper ( this )->GetVariableDict().Set ( va("definevec4\t\"%s\"", token.c_str()), str );
 			}
 #endif
 		}
