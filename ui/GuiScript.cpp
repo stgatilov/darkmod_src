@@ -109,10 +109,9 @@ Script_RunScript
 void Script_RunScript(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
 	if (parm) {
-		idStr str = window->cmd;
-		str += " ; runScript ";
+		idStr str = "runScript ";
 		str += parm->c_str();
-		window->cmd = str;
+		window->AddCommand(str);
 	}
 }
 

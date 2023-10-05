@@ -6377,7 +6377,7 @@ bool idEntity::HandleGuiCommands( idEntity *entityGui, const char *cmds ) {
 					}
 					const function_t *func = gameLocal.program.FindFunction( token2 );
 					if ( !func ) {
-						gameLocal.Error( "Can't find function '%s' for gui in entity '%s'", token2.c_str(), entityGui->name.c_str() );
+						gameLocal.Warning( "Can't find function '%s' for gui in entity '%s'", token2.c_str(), entityGui->name.c_str() );
 					} else {
 						idThread *thread = new idThread( func );
 						thread->DelayedStart( 0 );
