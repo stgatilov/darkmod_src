@@ -1275,7 +1275,7 @@ If pic is NULL, the image won't actually be loaded, it will just find the
 timestamp.
 =================
 */
-void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
+void R_LoadImage( const char *originalFilename, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
 	//clear output variables
 	if ( pic )
 		*pic = nullptr;
@@ -1286,21 +1286,31 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 	if ( height )
 		*height = 0;
 
-	//get path and extension
-	idStr name = cname;
-	name.DefaultFileExtension( ".tga" );
-	name.ToLower();
-	idStr ext;
-	name.ExtractFileExtension( ext );
+	//see what extension the name has originally
+	idStr name = originalFilename;
+	idStr ext, originalExtension;
+	name.ExtractFileExtension( originalExtension );
 
-	//open file, handle format fallbacks
-	idFile *file = fileSystem->OpenFileRead( name.c_str() );
-	if (!file && ext == "tga") {
-		//no TGA file, fallback to JPG
-		ext = "jpg";
-		name.StripFileExtension();
-		name.DefaultFileExtension( ".jpg" );
+	//we try all these extensions in this order, and load the first file which exists
+	//note: if specified filename already has extension, then we try this extension first
+	static const char *ExtensionsOrder[] = { "tga", "jpg", "png", "bmp", 0 };
+
+	idFile *file = nullptr;
+	for ( int i = -1; ; i++ ) {
+		const char* tryExtension = ( i < 0 ? originalExtension.c_str() : ExtensionsOrder[i] );
+		if ( !tryExtension )
+			break;		//no more extensions in list
+		if ( !tryExtension[0] )
+			continue;	//original filename has no extension
+
+		name.SetFileExtension( tryExtension );
+		name.ToLower();
+
 		file = fileSystem->OpenFileRead( name.c_str() );
+		if ( file ) {
+			ext = tryExtension;
+			break;	//opened file successfully
+		}
 	}
 
 	//handle special cases and read timestamp
