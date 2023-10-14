@@ -30,8 +30,6 @@ struct StencilShadowStage::Uniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec4, localLightOrigin )
 };
 
-StencilShadowStage::StencilShadowStage() {}
-
 void StencilShadowStage::Init() {
 	stencilShadowShader = programManager->LoadFromFiles(
 		"stencil_shadow",
@@ -84,11 +82,11 @@ void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, const vie
 	// draw depth-fail stencil shadows
 	qglStencilOpSeparate( viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_DECR_WRAP, GL_KEEP );
 	qglStencilOpSeparate( viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_INCR_WRAP, GL_KEEP );
-	DrawSurfs( vLight, depthFailSurfs.Ptr(), depthFailSurfs.Num() );
+	DrawSurfs( viewDef, vLight, depthFailSurfs.Ptr(), depthFailSurfs.Num() );
 	// draw traditional depth-pass stencil shadows
 	qglStencilOpSeparate( viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, GL_INCR_WRAP );
 	qglStencilOpSeparate( viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, GL_DECR_WRAP );
-	DrawSurfs( vLight, depthPassSurfs.Ptr(), depthPassSurfs.Num() );
+	DrawSurfs( viewDef, vLight, depthPassSurfs.Ptr(), depthPassSurfs.Num() );
 
 	// reset state
 	GL_Cull( CT_FRONT_SIDED );
@@ -102,14 +100,15 @@ void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, const vie
 	
 }
 
-void StencilShadowStage::DrawSurfs( const viewLight_t *vLight, const drawSurf_t **surfs, size_t count ) {
+void StencilShadowStage::DrawSurfs( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t **surfs, size_t count ) {
 	if (count == 0) {
 		return;
 	}
 
-	backEnd.currentScissor = vLight->scissorRect;
+	idScreenRect lightScissor = ExpandScissorRectForSoftShadows( viewDef, vLight->scissorRect );
+	backEnd.currentScissor = lightScissor;
 	FB_ApplyScissor();
-	DepthBoundsTest depthBoundsTest( vLight->scissorRect );
+	DepthBoundsTest depthBoundsTest( lightScissor );
 
 	for (size_t i = 0; i < count; ++i) {
 		const drawSurf_t *surf = surfs[i];
@@ -117,11 +116,12 @@ void StencilShadowStage::DrawSurfs( const viewLight_t *vLight, const drawSurf_t 
 		// note: already checked for validity in parent scope
 		vertexCache.VertexPosition( surf->shadowCache, ATTRIB_SHADOW );
 
-		if (r_useScissor.GetBool() && !backEnd.currentScissor.Equals(surf->scissorRect)) {
-			backEnd.currentScissor = surf->scissorRect;
+		idScreenRect surfScissor = ExpandScissorRectForSoftShadows( viewDef, surf->scissorRect );
+		if (r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surfScissor )) {
+			backEnd.currentScissor = surfScissor;
 			FB_ApplyScissor();
 		}
-		depthBoundsTest.Update( surf->scissorRect );
+		depthBoundsTest.Update( surfScissor );
 
 		uniforms->modelViewMatrix.Set( surf->space->modelViewMatrix );
 		idVec3 localLightOrigin;
@@ -132,16 +132,36 @@ void StencilShadowStage::DrawSurfs( const viewLight_t *vLight, const drawSurf_t 
 	}
 }
 
+#define max(x, y) idMath::Fmax(x, y)
+#include "glprogs/tdm_shadowstencilsoft_shared.glsl"
+#undef max
+
+idScreenRect StencilShadowStage::ExpandScissorRectForSoftShadows( const viewDef_t *viewDef, const idScreenRect &scissor ) const {
+	int stencilBufferHeight = frameBuffers->shadowStencilFbo->Height();
+	if ( stencilBufferHeight <= 0 )
+		return scissor;
+
+	// compute maximum blur radius, measured in texels of stencil texture
+	float maxBlurAxisLength = computeMaxBlurAxisLength( stencilBufferHeight, r_softShadowsQuality.GetInteger() );
+
+	// support RenderScale < 1: stencil texture is at render resolution, but scissors are in VidSize
+	maxBlurAxisLength += 1.0f;
+	maxBlurAxisLength *= ( glConfig.vidHeight / stencilBufferHeight );
+	int addedWidth = int(ceil(maxBlurAxisLength));
+	assert( addedWidth >= 0 );
+
+	idScreenRect res = scissor;
+	res.Expand( addedWidth );
+	res.Intersect( viewDef->scissor );	// clamp to viewport
+	return res;
+}
+
 //=======================================================================================
 
 idCVar r_softShadowsMipmaps(
 	"r_softShadowsMipmaps", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
 	"Use mipmap tiles to avoid sampling far away from penumbra"
 );
-
-#define max(x, y) idMath::Fmax(x, y)
-#include "glprogs/tdm_shadowstencilsoft_shared.glsl"
-#undef max
 
 // if any of these properties change, then we need to recreate mipmaps
 struct MipmapsInitProps {

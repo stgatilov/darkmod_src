@@ -256,11 +256,12 @@ void RenderBackend::DrawInteractionsWithShadowMapping( const viewDef_t *viewDef,
 void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef, const viewLight_t *vLight ) {
 	TRACE_GL_SCOPE( "DrawLight_Stencil" );
 
-	bool useShadowFbo = r_softShadowsQuality.GetBool() && !viewDef->IsLightGem();// && (r_shadows.GetInteger() != 2);
+	bool useShadowFbo = r_softShadowsQuality.GetBool() && !viewDef->IsLightGem();
+	idScreenRect lightScissor = stencilShadowStage.ExpandScissorRectForSoftShadows( viewDef, vLight->scissorRect );
 
 	// clear the stencil buffer if needed
 	if ( vLight->globalShadows || vLight->localShadows ) {
-		backEnd.currentScissor = vLight->scissorRect;
+		backEnd.currentScissor = lightScissor;
 		FB_ApplyScissor();
 
 		if ( useShadowFbo ) {
@@ -275,7 +276,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	if ( vLight->globalShadows ) {
 		stencilShadowStage.DrawStencilShadows( viewDef, vLight, vLight->globalShadows );
 		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 ) {
-			backEnd.currentScissor = vLight->scissorRect;
+			backEnd.currentScissor = lightScissor;
 			FB_ApplyScissor();
 			frameBuffers->ResolveShadowStencilAA();
 		}
@@ -293,13 +294,13 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	if ( vLight->localShadows ) {
 		stencilShadowStage.DrawStencilShadows( viewDef, vLight, vLight->localShadows );
 		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 ) {
-			backEnd.currentScissor = vLight->scissorRect;
+			backEnd.currentScissor = lightScissor;
 			FB_ApplyScissor();
 			frameBuffers->ResolveShadowStencilAA();
 		}
 	}
 	if ( vLight->globalShadows || vLight->localShadows ) {
-		stencilShadowStage.FillStencilShadowMipmaps( viewDef, vLight->scissorRect );
+		stencilShadowStage.FillStencilShadowMipmaps( viewDef, lightScissor );
 	}
 
 	if ( useShadowFbo ) {

@@ -45,7 +45,7 @@ public:
 	void		Clear();								// clear to backwards values
 	void		ClearWithZ();
 	void		AddPoint( float x, float y );			// adds a point
-	void		Expand();								// expand by one pixel each way to fix roundoffs
+	void		Expand( int pixels = 1 );				// expand by X pixels each way to fix roundoffs
 	void		Intersect( const idScreenRect &rect );
 	void		IntersectWithZ( const idScreenRect &rect );
 	void		Union( const idScreenRect &rect );

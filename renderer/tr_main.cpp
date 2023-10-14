@@ -81,11 +81,11 @@ void idScreenRect::AddPoint( float x, float y ) {
 idScreenRect::Expand
 ======================
 */
-void idScreenRect::Expand() {
-	x1--;
-	y1--;
-	x2++;
-	y2++;
+void idScreenRect::Expand( int pixels ) {
+	x1 -= pixels;
+	y1 -= pixels;
+	x2 += pixels;
+	y2 += pixels;
 }
 
 /*

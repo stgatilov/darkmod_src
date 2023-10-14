@@ -19,8 +19,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class StencilShadowStage {
 public:
-	StencilShadowStage();
-
 	void Init();
 	void Shutdown();
 
@@ -28,10 +26,14 @@ public:
 
 	void FillStencilShadowMipmaps( const viewDef_t *viewDef, const idScreenRect &lightScissor );
 
+	// soft shadows use blurred stencil buffer, which might tap slightly outside scissor rect
+	// call this function for every light / shadow scissor before applying it
+	idScreenRect ExpandScissorRectForSoftShadows( const viewDef_t *viewDef, const idScreenRect &scissor ) const;
+
 private:
 	struct Uniforms;
 
-	void DrawSurfs( const viewLight_t *vLight, const drawSurf_t **surfs, size_t count );
+	void DrawSurfs( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t **surfs, size_t count );
 	void ShutdownMipmaps();
 
 	Uniforms *uniforms = nullptr;
