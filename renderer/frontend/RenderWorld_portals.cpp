@@ -158,6 +158,11 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 		portalAreas[areaNum].areaScreenRect.Union( ps->rect );
 	}
 
+	// For r_showPortals. Keep track whether the player's view flows through
+	// individual portals, not just whole visleafs.  -- SteveL #4162
+	if ( r_showPortals && ps->p )
+		ps->p->doublePortal->portalViewCount = tr.viewCount;
+
 	// go through all the portals
 	for ( auto p : area.areaPortals ) {
 		// an enclosing door may have sealed the portal off
@@ -185,17 +190,12 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 		// if we are very close to the portal surface, don't bother clipping
 		// it, which tends to give epsilon problems that make the area vanish
 		if ( d < 1.0f ) {
-			// SteveL #3815: check the view origin is really in front of the portal
-			idBounds pBounds; // uninitialized
-			p->w.GetBounds( pBounds );
-			pBounds.ExpandSelf( 1.0f );
-			if ( pBounds.ContainsPoint( origin ) ) {
+			// SteveL #3815: check the view origin is really near portal surface
+			if ( p->w.PointInsideDst( p->plane.Normal(), origin, 1.0f ) ) {
 				// go through this portal
 				newStack = *ps;
 				newStack.p = p;
 				newStack.next = ps;
-				p->doublePortal->portalViewCount = tr.viewCount;	// For r_showPortals. Keep track whether the player's view flows through
-				// individual portals, not just whole visleafs.  -- SteveL #4162
 				FloodViewThroughArea_r( origin, p->intoArea, &newStack );
 				continue;
 			}
@@ -220,9 +220,6 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 		// go through this portal
 		newStack.p = p;
 		newStack.next = ps;
-		if ( r_showPortals ) // For r_showPortals. Keep track whether the player's view flows through
-			p->doublePortal->portalViewCount = tr.viewCount;
-		// individual portals, not just whole visleafs.  -- SteveL #4162
 
 		// find the screen pixel bounding box of the remaining portal
 		// so we can scissor things outside it
@@ -340,8 +337,9 @@ void idRenderWorldLocal::FloodLightThroughArea_r( FlowLightThroughPortalsContext
 	area = &portalAreas[ areaNum ];
 
 	// add area reference to result
-	if ( context.resultAreaIds && !context.resultAreaIds->Find(areaNum) )
+	if ( context.resultAreaIds && !context.resultAreaIds->Find(areaNum) ) {
 		context.resultAreaIds->AddGrow(areaNum);
+	}
 	if ( context.resultPortalFlow ) {
 		lightPortalFlow_t &flow = *context.resultPortalFlow;
 		lightPortalFlow_t::areaRef_t ref;
@@ -377,12 +375,15 @@ void idRenderWorldLocal::FloodLightThroughArea_r( FlowLightThroughPortalsContext
 		// if we are very close to the portal surface, don't bother clipping
 		// it, which tends to give epsilon problems that make the area vanish
 		if ( d < 1.0f ) {
-			// go through this portal
-			newStack = *ps;
-			newStack.p = p;
-			newStack.next = ps;
-			FloodLightThroughArea_r( context, p->intoArea, &newStack );
-			continue;
+			// stgatilov #3815: check the view origin is really near portal surface
+			if ( p->w.PointInsideDst( p->plane.Normal(), context.light->globalLightOrigin, 1.0f ) ) {
+				// go through this portal
+				newStack = *ps;
+				newStack.p = p;
+				newStack.next = ps;
+				FloodLightThroughArea_r( context, p->intoArea, &newStack );
+				continue;
+			}
 		}
 
 		// clip the portal winding to all of the planes
