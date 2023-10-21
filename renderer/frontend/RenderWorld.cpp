@@ -1372,17 +1372,6 @@ bool idRenderWorldLocal::TraceAll( modelTrace_t &trace, const idVec3 &start, con
 			if ( !model )
 				continue;
 
-			// note: the very first reference must be for "_areaN" model, i.e. world geometry of the area
-			if ( entityIdx == area.entityRefs[0] )
-				assert( model->IsStaticWorldModel() );
-			if ( model->IsStaticWorldModel() ) {
-				idBounds areaBounds = model->Bounds();
-				if ( !areaBounds.LineIntersection( start, trace.point ) ) {
-					// does not intersect area => does not intersect any entities inside it
-					break;
-				}
-			}
-
 			// filter 1: by entity
 			if ( filterCallback && !filterCallback(context, &def->parms, nullptr, nullptr) )
 				continue;
