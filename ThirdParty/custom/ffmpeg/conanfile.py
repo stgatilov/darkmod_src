@@ -7,6 +7,10 @@ import glob
 import shutil
 import re
 
+# darkmod: es20490446e: patch
+from conan.tools.files import apply_conandata_patches
+
+
 required_conan_version = ">=1.36.0"
 
 
@@ -19,6 +23,9 @@ class FFMpegConan(ConanFile):
     homepage = "https://ffmpeg.org"
     topics = ("ffmpeg", "multimedia", "audio", "video", "encoder", "decoder", "encoding", "decoding",
              "transcoding", "multiplexer", "demultiplexer", "streaming")
+
+    # darkmod: es20490446e: patch
+    exports_sources = ["patches/*"]
 
     settings = "os", "arch", "compiler", "build_type"
     options = {
@@ -102,7 +109,7 @@ class FFMpegConan(ConanFile):
         "with_programs": True,
     }
 
-    # stgatilov: remove all third-party dependencies
+    # darkmod: stgatilov: remove all third-party dependencies
     # explained in detail here: http://wiki.thedarkmod.com/index.php?title=Compiling_FFmpeg_for_TDM
     for key in default_options.keys():
         default_options[key] = key in ["avcodec", "avformat", "swresample", "swscale"]
@@ -249,7 +256,7 @@ class FFMpegConan(ConanFile):
 
     @property
     def _target_arch(self):
-        # stgatilov: in case of Elbrus, arch is 'e2k-v4', so triplet has more than 3 tokens
+        # darkmod: stgatilov: in case of Elbrus, arch is 'e2k-v4', so triplet has more than 3 tokens
         triplet = tools.get_gnu_triplet(
             "Macos" if tools.is_apple_os(self.settings.os) else str(self.settings.os),
             str(self.settings.arch),
@@ -299,7 +306,7 @@ class FFMpegConan(ConanFile):
         self._autotools.libs = []
         opt_enable_disable = lambda what, v: "--{}-{}".format("enable" if v else "disable", what)
         args = [
-            # stgatilov: disable everything
+            # darkmod: stgatilov: disable everything
             '--disable-all',
             '--disable-autodetect',
 
@@ -355,7 +362,7 @@ class FFMpegConan(ConanFile):
             opt_enable_disable("nonfree", self.options.with_libfdk_aac),
             opt_enable_disable("gpl", self.options.with_libx264 or self.options.with_libx265 or self.options.postproc),
 
-            # stgatilov: enable a tiny subset that is used by TDM
+            # darkmod: stgatilov: enable a tiny subset that is used by TDM
             '--enable-demuxer=roq,mov',
             '--enable-parser=h264,aac',
             '--enable-decoder=roq,h264,aac',
@@ -371,8 +378,10 @@ class FFMpegConan(ConanFile):
                 "--disable-stripping",
                 "--enable-debug",
             ])
+        # darkmod: stgatilov: remove debug info in pure-release build
         if self.settings.build_type == 'Release':
-            args.extend(['--disable-debug'])        # stgatilov: remove debug info in pure-release build
+            args.extend(['--disable-debug'])
+
         if not self.options.with_programs:
             args.append("--disable-programs")
         # since ffmpeg"s build system ignores CC and CXX
@@ -408,6 +417,9 @@ class FFMpegConan(ConanFile):
         return self._autotools
 
     def build(self):
+        # darkmod: es20490446e: patch
+        apply_conandata_patches(self)
+
         self._patch_sources()
         tools.replace_in_file(os.path.join(self._source_subfolder, "configure"),
                               "echo libx264.lib", "echo x264.lib")
