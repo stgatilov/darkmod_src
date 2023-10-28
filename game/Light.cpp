@@ -562,7 +562,7 @@ void idLight::Spawn( void )
 	}
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s] MaxLightRadius: %f\r", this, name.c_str(), m_MaxLightRadius);
 
-	idImage *pImage;
+	idImageAsset *pImage;
 	if ( ( renderLight.shader != NULL ) && ( (pImage = renderLight.shader->LightFalloffImage()) != NULL ) )
 	{
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has a falloff image: %08lX\r", pImage);

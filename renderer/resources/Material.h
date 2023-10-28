@@ -488,11 +488,11 @@ public:
 	bool				LightEffectsBackSides() const { return fogLight || ambientLight /*|| ambientCubicLight*/ || blendLight; }
 
 						// NULL unless an image is explicitly specified in the shader with "lightFalloffShader <image>"
-	idImage	*			LightFalloffImage() const { return lightFalloffImage; }
+	idImageAsset *		LightFalloffImage() const { return lightFalloffImage; }
 
 						// stgatilov #6090: for ambient light which depends on incoming direction
-	idImage	*			LightAmbientDiffuse() const { return lightAmbientDiffuse; }
-	idImage	*			LightAmbientSpecular() const { return lightAmbientSpecular; }
+	idImageAsset *		LightAmbientDiffuse() const { return lightAmbientDiffuse; }
+	idImageAsset *		LightAmbientSpecular() const { return lightAmbientSpecular; }
 
 	//------------------------------------------------------------------
 
@@ -646,9 +646,9 @@ private:
 	idStr				desc;				// description
 	idStr				renderBump;			// renderbump command options, without the "renderbump" at the start
 
-	idImage	*			lightFalloffImage;
-	idImage *			lightAmbientDiffuse;
-	idImage *			lightAmbientSpecular;
+	idImageAsset *		lightFalloffImage;
+	idImageAsset *		lightAmbientDiffuse;
+	idImageAsset *		lightAmbientSpecular;
 
 	int					entityGui;			// draw a gui with the idUserInterface from the renderEntity_t
 											// non zero will draw gui, gui2, or gui3 from renderEnitty_t

@@ -269,7 +269,7 @@ public:
 	idRenderMatrix			inverseBaseLightProject;// transforms the zero-to-one cube to exactly cover the light in world space
 
 	const idMaterial 		*lightShader;			// guaranteed to be valid, even if parms.shader isn't
-	idImage 				*falloffImage;
+	idImageAsset 			*falloffImage;
 
 	idVec3					globalLightOrigin;		// accounting for lightCenter and parallel
 	idBounds				globalLightBounds;
