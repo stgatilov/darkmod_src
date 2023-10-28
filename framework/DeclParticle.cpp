@@ -876,7 +876,7 @@ idStr idParticleStage::GetCollisionStaticImagePath(const idPartSysEmitterSignatu
 	);
 	return imageName;
 }
-idImage *idParticleStage::LoadCutoffTimeMap(const char *imagePath) {
-	idImage *image = globalImages->ImageFromFile( imagePath, TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU );
+idImageAsset *idParticleStage::LoadCutoffTimeMap(const char *imagePath) {
+	idImageAsset *image = globalImages->ImageFromFile( imagePath, TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU );
 	return image;
 }

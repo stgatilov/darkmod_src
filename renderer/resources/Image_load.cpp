@@ -57,7 +57,7 @@ SelectInternalFormat
 This may need to scan six cube map images
 ===============
 */
-GLenum idImage::SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask ) {
+GLenum idImageAsset::SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask ) {
 	int			i, c;
 	const byte	*scan;
 	int			rgbOr, aOr, aAnd;
@@ -255,7 +255,7 @@ idImage::Downsize
 helper function that takes the current width/height and might make them smaller
 ================
 */
-void idImage::GetDownsize( int &scaled_width, int &scaled_height ) const {
+void idImageAsset::GetDownsize( int &scaled_width, int &scaled_height ) const {
 	int size = 0;
 
 	// perform optional picmip operation to save texture memory
@@ -359,7 +359,13 @@ void idImageAsset::GenerateImage( const byte *pic, int width, int height,
 	byte		*shrunk;
 
 	bool loadingFromItself = (pic == cpuData.pic[0]);
-	PurgeImage( !loadingFromItself );
+	if (loadingFromItself) {
+		// HACK: purge GPU texture, but retain cpu image data
+		idImage::PurgeImage();
+		assert(pic == cpuData.pic[0]);
+	} else {
+		PurgeImage();
+	}
 
 	filter = filterParm;
 	allowDownSize = allowDownSizeParm;
@@ -588,7 +594,13 @@ void idImageAsset::GenerateCubeImage( const byte *pic[6], int size,
 	int			i;
 
 	bool loadingFromItself = (pic[0] == cpuData.pic[0]);
-	PurgeImage( !loadingFromItself );
+	if (loadingFromItself) {
+		// HACK: purge GPU texture, but retain cpu image data
+		idImage::PurgeImage();
+		assert(pic[0] == cpuData.pic[0]);
+	} else {
+		PurgeImage();
+	}
 
 	filter = filterParm;
 	allowDownSize = allowDownSizeParm;
@@ -695,7 +707,7 @@ ImageProgramStringToFileCompressedFileName
 /*
 Serpentine : This should be adapted to better allow dds files and normal textures into a single tree.
 */
-void idImage::ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const {
+void idImageAsset::ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const {
 	const char	*s;
 	char	*f;
 
@@ -750,7 +762,7 @@ versions of everything to speed future load times.
 /*
 Serpentine : This should either be refactored to be useful (comp location configurable) or removed. If preserved, it should also be simplified.
 */
-void idImage::WritePrecompressedImage() {
+void idImageAsset::WritePrecompressedImage() {
 
 	// Always write the precompressed image if we're making a build
 	if ( !com_makingBuild.GetBool() ) {
@@ -965,7 +977,7 @@ CheckPrecompressedImage
 If fullLoad is false, only the small mip levels of the image will be loaded
 ================
 */
-bool idImage::CheckPrecompressedImage( bool fullLoad ) {
+bool idImageAsset::CheckPrecompressedImage( bool fullLoad ) {
 	if ( !glConfig.isInitialized ) {
 		return false;
 	}
@@ -1021,7 +1033,7 @@ or by the backend after a background read of the file
 has completed
 ===================
 */
-void idImage::UploadPrecompressedImage() {
+void idImageAsset::UploadPrecompressedImage() {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
@@ -1146,7 +1158,7 @@ void idImage::UploadPrecompressedImage() {
 	SetImageFilterAndRepeat();
 }
 
-void R_HandleImageCompression( idImage& image ) {
+void R_HandleImageCompression( idImageAsset& image ) {
 	if ( !(image.residency & IR_GRAPHICS) )
 		return;		// not needed on GPU, so no point in compressing
 	if ( image.compressedData )
@@ -1154,7 +1166,7 @@ void R_HandleImageCompression( idImage& image ) {
 	if ( !image.cpuData.IsValid() )
 		return;		// have no input data?
 
-	GLenum internalFormat = idImage::SelectInternalFormat( image.cpuData.pic, image.cpuData.sides, image.cpuData.width, image.cpuData.height, image.depth );
+	GLenum internalFormat = idImageAsset::SelectInternalFormat( image.cpuData.pic, image.cpuData.sides, image.cpuData.width, image.cpuData.height, image.depth );
 	if ( !IsImageFormatCompressed(internalFormat) )
 		return;		// don't want to compress it
 
@@ -1389,7 +1401,7 @@ void idImageAsset::ActuallyLoadImage( void ) {
 PurgeImage
 ===============
 */
-void idImage::PurgeImage( bool purgeCpuData ) {
+void idImage::PurgeImage() {
 	if ( texnum != TEXTURE_NOT_LOADED ) {
 		// sometimes is NULL when exiting with an error
 		if ( qglDeleteTextures ) {
@@ -1398,17 +1410,21 @@ void idImage::PurgeImage( bool purgeCpuData ) {
 		texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
 	}
 
-	if ( purgeCpuData && cpuData.IsValid() )
-		cpuData.Purge();
-	if ( compressedData ) {
-		R_StaticFree( compressedData );
-		compressedData = nullptr;
-	}
-
 	// clear all the current binding caches, so the next bind will do a real one
 	for ( int i = 0 ; i < MAX_MULTITEXTURE_UNITS ; i++ ) {
 		backEnd.glState.tmu[i].current2DMap = -1;
 		backEnd.glState.tmu[i].currentCubeMap = -1;
+	}
+}
+
+void idImageAsset::PurgeImage() {
+	idImage::PurgeImage();
+
+	if ( cpuData.IsValid() )
+		cpuData.Purge();
+	if ( compressedData ) {
+		R_StaticFree( compressedData );
+		compressedData = nullptr;
 	}
 
 	delete loadStack;
@@ -1601,13 +1617,6 @@ Print
 ==================
 */
 void idImage::Print() const {
-	if ( precompressedFile ) {
-		common->Printf( "P" );
-	} else if ( generatorFunction ) {
-		common->Printf( "F" );
-	} else {
-		common->Printf( " " );
-	}
 
 	switch ( type ) {
 		case TT_2D:
@@ -1621,37 +1630,7 @@ void idImage::Print() const {
 			break;
 	}
 
-	switch ( residency ) {
-		case IR_GRAPHICS:
-			common->Printf( " " );
-			break;
-		case IR_CPU:
-			common->Printf( "C" );
-			break;
-		case IR_BOTH:
-			common->Printf( "B" );
-			break;
-		default:
-			common->Printf( "<BAD RES:%i>", residency );
-			break;
-	}
-
 	common->Printf( "%4i %4i ",	uploadWidth, uploadHeight );
-
-	switch ( filter ) {
-		case TF_DEFAULT:
-			common->Printf( "dflt " );
-			break;
-		case TF_LINEAR:
-			common->Printf( "linr " );
-			break;
-		case TF_NEAREST:
-			common->Printf( "nrst " );
-			break;
-		default:
-			common->Printf( "<BAD FILTER:%i>", filter );
-			break;
-	}
 
 	switch ( internalFormat ) {
 	// --- color uncompressed ---
@@ -1714,6 +1693,21 @@ void idImage::Print() const {
 			break;
 	}
 
+	switch ( filter ) {
+		case TF_DEFAULT:
+			common->Printf( "dflt " );
+			break;
+		case TF_LINEAR:
+			common->Printf( "linr " );
+			break;
+		case TF_NEAREST:
+			common->Printf( "nrst " );
+			break;
+		default:
+			common->Printf( "<BAD FILTER:%i>", filter );
+			break;
+	}
+
 	switch ( repeat ) {
 		case TR_REPEAT:
 			common->Printf( "rept " );
@@ -1731,6 +1725,7 @@ void idImage::Print() const {
 			common->Printf( "<BAD REPEAT:%i>", repeat );
 			break;
 	}
+
 	int storSize = StorageSize();
 	for ( int i = 0; i < 3; i++ ) {
 		if ( storSize < 1024 ) {
@@ -1739,9 +1734,44 @@ void idImage::Print() const {
 		}
 		storSize /= 1024;
 	}
+
 	common->Printf( " %s\n", imgName.c_str() );
 }
 
+void idImageAsset::Print() const {
+	if ( precompressedFile ) {
+		common->Printf( "P" );
+	} else if ( generatorFunction ) {
+		common->Printf( "F" );
+	} else {
+		common->Printf( " " );
+	}
+
+	switch ( residency ) {
+		case IR_GRAPHICS:
+			common->Printf( " " );
+			break;
+		case IR_CPU:
+			common->Printf( "C" );
+			break;
+		case IR_BOTH:
+			common->Printf( "B" );
+			break;
+		default:
+			common->Printf( "<BAD RES:%i>", residency );
+			break;
+	}
+
+	// print basic stats and finish the line
+	idImage::Print();
+}
+
+void idImageScratch::Print() const {
+	common->Printf( "==" );
+
+	// print basic stats and finish the line
+	idImage::Print();
+}
 
 /*
 ================

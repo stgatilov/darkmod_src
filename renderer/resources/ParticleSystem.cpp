@@ -340,7 +340,7 @@ bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srf
 
 void idParticle_PrepareCutoffMap(
 	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysEmitterSignature &sign, int totalParticles,
-	idImage *&image, idPartSysCutoffTextureInfo *texinfo
+	idImageAsset *&image, idPartSysCutoffTextureInfo *texinfo
 ) {
 	image = nullptr;
 	if (!stage->useCutoffTimeMap)
@@ -398,7 +398,7 @@ void idParticle_PrepareCutoffMap(
 	}
 }
 
-float idParticle_FetchCutoffTimeTexture(const idImage *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord) {
+float idParticle_FetchCutoffTimeTexture(const idImageAsset *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord) {
 	assert(image);
 	//take the image
 	const byte *pic = image->cpuData.GetPic(0);
@@ -421,7 +421,7 @@ float idParticle_FetchCutoffTimeTexture(const idImage *image, const idPartSysCut
 	return ratio;
 }
 
-float idParticle_FetchCutoffTimeLinear(const idImage *image, int totalParticles, int index, int cycIdx) {
+float idParticle_FetchCutoffTimeLinear(const idImageAsset *image, int totalParticles, int index, int cycIdx) {
 	assert(image);
 	const byte *pic = image->cpuData.GetPic(0);
 

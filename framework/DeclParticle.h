@@ -47,7 +47,7 @@ public:
 	//stgatilov #4957: single place which finds and loads collisionStatic images
 	static const char *		GetCollisionStaticDirectory();
 	static idStr			GetCollisionStaticImagePath(const idPartSysEmitterSignature &signature);
-	static idImage *		LoadCutoffTimeMap(const char *imagePath);
+	static idImageAsset *	LoadCutoffTimeMap(const char *imagePath);
 
 	//------------------------------
 
@@ -74,7 +74,7 @@ public:
 	// stgatilov: Particle "time" is multiplied by the number from this map (in range [0..1])
 	// If this is less than "1" at tex coords where particle emits, then its death moment happens earlier
 	// Note: fade-out time moment is not changed, since this is collision (TODO: do we need to support both cases?)
-	idImage *				cutoffTimeMap;
+	idImageAsset *			cutoffTimeMap;
 };
 
 

@@ -35,6 +35,7 @@ typedef struct srfTriangles_s srfTriangles_t;
 typedef struct drawSurf_s drawSurf_t;
 typedef struct renderEntity_s renderEntity_t;
 class idParticleStage;
+class idImageAsset;
 
 //---------------------------------------------------------------------------
 
@@ -115,10 +116,10 @@ bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srf
 //"totalParticles" must be the number of particles the whole system has, i.e. return value of idParticle_GetParticleCountOnSurface
 void idParticle_PrepareCutoffMap(
 	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysEmitterSignature &signature, int totalParticles,
-	idImage *&image, idPartSysCutoffTextureInfo *texinfo
+	idImageAsset *&image, idPartSysCutoffTextureInfo *texinfo
 );
 
 //fetches cutoffTime from the image (with "mapLayout texture") using texcoords of emit location
-float idParticle_FetchCutoffTimeTexture(const idImage *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord);
+float idParticle_FetchCutoffTimeTexture(const idImageAsset *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord);
 //fetches cutoffTime from the image (with "mapLayout linear") using index of particle and its current cycle
-float idParticle_FetchCutoffTimeLinear(const idImage *image, int totalParticles, int index, int cycIdx);
+float idParticle_FetchCutoffTimeLinear(const idImageAsset *image, int totalParticles, int index, int cycIdx);

@@ -1346,7 +1346,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		if (!mapName.IsEmpty())
 		{
 			idStr imageName = "textures/seed/" + mapName + ".png";
-			idImage *img = globalImages->ImageFromFile(imageName.c_str(), TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU);
+			idImageAsset *img = globalImages->ImageFromFile(imageName.c_str(), TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU);
 			if (img == NULL)
 			{
 				gameLocal.Warning ("SEED %s: Could not load image map %s", GetName(), mapName.c_str() );

@@ -924,7 +924,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 		psEmit.viewTimeMs = renderView->time;
 
 		idPartSysCutoffTextureInfo cutoffInfo;
-		idImage *cutoffImage;
+		idImageAsset *cutoffImage;
 		idParticle_PrepareCutoffMap(stage, srcTri, sign, totalParticles, cutoffImage, &cutoffInfo);
 
 		// allocate a srfTriangles in temp memory that can hold all the particles

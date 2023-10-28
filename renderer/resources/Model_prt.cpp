@@ -145,7 +145,7 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 					owner = nullptr;
 			}
 		}
-		idImage *cutoffImage = nullptr;
+		idImageAsset *cutoffImage = nullptr;
 		if (stage->collisionStatic && owner)
 			idParticle_PrepareCutoffMap(stage, nullptr, sign, psys.totalParticles, cutoffImage, nullptr);
 

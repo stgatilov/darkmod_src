@@ -347,7 +347,7 @@ idVec4 imageBlock_s::SampleCube(const idVec3 &dir, textureFilter_t filter) const
 idImage::Sample
 ===============
 */
-idVec4 idImage::Sample(float s, float t) const {
+idVec4 idImageAsset::Sample(float s, float t) const {
 	assert(residency & IR_CPU);
 	assert(!cpuData.IsCubemap());
 	return cpuData.Sample(s, t, filter, repeat, 0);
@@ -376,11 +376,15 @@ idImage::idImage() {
 	hashNext = NULL;
 	refCount = 0;
 	swizzleMask = NULL;
+}
+
+idImageAsset::idImageAsset() {
 	memset( &cpuData, 0, sizeof( cpuData ) );
 	compressedData = nullptr;
 	residency = IR_GRAPHICS;
 	loadStack = nullptr;
 }
+
 
 /*
 ==================
@@ -1088,7 +1092,7 @@ void R_ListImages_f( const idCmdArgs &args ) {
 		common->Printf( "usage: listImages [ sorted | partial | unloaded | cached | uncached | tagged | duplicated | touched | classify | showOverSized ]\n" );
 		return;
 	}
-	const char *header = "        -w-- -h-- filt -fmt-- wrap  size  --name-------\n";
+	const char *header = "        -w-- -h-- -fmt-- filt wrap  size  --name-------\n";
 
 	common->Printf( "\n%s", header );
 
@@ -1296,7 +1300,6 @@ idImageScratch *idImageManager::AllocImageScratch( const char *name ) {
 	idImageScratch *image = new idImageScratch;
 
 	images.Append( image );
-	image->loadStack = new LoadStack(declManager->GetLoadStack());
 
 	const int hash = idStr( name ).FileNameHash();
 	image->hashNext = imageHashTable[hash];
@@ -2020,13 +2023,15 @@ void idImageManager::PrintMemInfo( MemInfo_t *mi ) {
 
 		f->Printf( "%s %3i %s\n", idStr::FormatNumber( size ).c_str(), im->refCount, im->imgName.c_str() );
 
-		int cpuSize = 0;
-		if (im->cpuData.IsValid())
-			cpuSize += im->cpuData.GetTotalSizeInBytes();
-		if (im->compressedData)
-			cpuSize += im->compressedData->GetTotalSize();
-		if (cpuSize)
-			f->Printf( "%s %3i %s~CPU\n", idStr::FormatNumber( cpuSize ).c_str(), im->refCount, im->imgName.c_str() );
+		if ( idImageAsset *asset = im->AsAsset() ) {
+			int cpuSize = 0;
+			if (asset->cpuData.IsValid())
+				cpuSize += asset->cpuData.GetTotalSizeInBytes();
+			if (asset->compressedData)
+				cpuSize += asset->compressedData->GetTotalSize();
+			if (cpuSize)
+				f->Printf( "%s %3i %s~CPU\n", idStr::FormatNumber( cpuSize ).c_str(), asset->refCount, asset->imgName.c_str() );
+		}
 	}
 	delete[] sortIndex;
 	mi->imageAssetsTotal = total;

@@ -218,7 +218,7 @@ public:
 	bool		IsBound( int textureUnit ) const;
 
 	// deletes the texture object, but leaves the structure so it can be reloaded
-	void		PurgeImage( bool purgeCpuData = true );
+	virtual void PurgeImage();
 
 	// just for resource tracking
 	void		SetClassification( int tag );
@@ -227,24 +227,14 @@ public:
 	int			StorageSize() const;
 
 	// print a one line summary of the image
-	void		Print() const;
+	virtual void Print() const;
 
 	void		AddReference()				{ refCount++; };
 
-	void		MakeCpuResident();
-
-	idVec4		Sample(float s, float t) const;
-
 	//==========================================================
 
-	void		GetDownsize( int &scaled_width, int &scaled_height ) const;
 	void		SetImageFilterAndRepeat() const;
-	void		WritePrecompressedImage();
-	bool		CheckPrecompressedImage( bool fullLoad );
-	void		UploadPrecompressedImage( void );
 	static int	BitsForInternalFormat( int internalFormat, bool gpu = false );
-	static GLenum SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask = nullptr );
-	void		ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
 	static int	NumLevelsForImageSize( int width, int height );
 
 	// data commonly accessed is grouped here
@@ -281,19 +271,13 @@ public:
 	idImage *			hashNext;				// for hash chains to speed lookup
 
 	int					refCount;				// overall ref count
-
-	// stgatilov: storing image data on CPU side
-	imageBlock_t		cpuData;				// CPU-side usable image data (usually absent)
-	imageResidency_t	residency;				// determines whether cpuData and/or texnum should be valid
-	imageCompressedData_t *compressedData;		// CPU-side compressed texture contents (aka DDS file)
-
-	//stgatilov: information about why and how this image was loaded (may be missing)
-	LoadStack *			loadStack;
 };
 
 // read-only texture loaded from some source (file or generator)
 class idImageAsset : public idImage {
 public:
+	idImageAsset();
+
 	static const ImageType Type = IT_ASSET;
 	virtual ImageType GetType() const override { return Type; }
 	virtual idImageAsset *AsAsset() { return this; }
@@ -313,9 +297,31 @@ public:
 	// check for changed timestamp on disk and reload if necessary
 	void Reload( bool checkPrecompressed, bool force );
 
+	virtual void PurgeImage() override;
+
 	void ActuallyLoadImage( void );
 
 	void MakeDefault();	// fill with a grid pattern
+
+	virtual void Print() const override;
+
+	idVec4 Sample(float s, float t) const;
+
+	void GetDownsize( int &scaled_width, int &scaled_height ) const;
+	void WritePrecompressedImage();
+	bool CheckPrecompressedImage( bool fullLoad );
+	void UploadPrecompressedImage( void );
+	static GLenum SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask = nullptr );
+	void ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
+
+public:
+	// stgatilov: storing image data on CPU side
+	imageBlock_t		cpuData;				// CPU-side usable image data (usually absent)
+	imageResidency_t	residency;				// determines whether cpuData and/or texnum should be valid
+	imageCompressedData_t *compressedData;		// CPU-side compressed texture contents (aka DDS file)
+
+	//stgatilov: information about why and how this image was loaded (may be missing)
+	LoadStack *			loadStack;
 };
 
 // texture with volatile contents
@@ -326,6 +332,8 @@ public:
 	static const ImageType Type = IT_SCRATCH;
 	virtual ImageType GetType() const override { return Type; }
 	virtual idImageScratch *AsScratch() { return this; }
+
+	virtual void Print() const override;
 
 	void GenerateAttachment( int width, int height, GLenum format,
 		GLenum filter = GL_LINEAR, GLenum wrapMode = GL_CLAMP_TO_EDGE,
