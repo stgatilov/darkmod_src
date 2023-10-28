@@ -1649,6 +1649,9 @@ void idImage::Print() const {
 		case GL_RGBA16F:
 			common->Printf( "RGBA16F" );
 			break;
+		case GL_R32F:
+			common->Printf( "R32F   " );
+			break;
 		case GL_RGB5:
 			common->Printf( "RGB5   " );
 			break;
@@ -1796,6 +1799,8 @@ int idImage::BitsForInternalFormat( int internalFormat, bool gpu ) {
 			return 32;
 		case GL_RGBA16F:
 			return 64;
+		case GL_R32F:
+			return 32;
 		case GL_RGB5:
 		case GL_RGB565:
 		case GL_RGBA4:
