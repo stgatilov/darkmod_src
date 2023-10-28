@@ -580,7 +580,7 @@ static void TestVideoClean() {
 		tr.testVideo->Close();
 		tr.testVideo = NULL;
 	}
-	tr.testImage = NULL;
+	tr.testVideoFrame = NULL;
 }
 
 /*
@@ -611,6 +611,10 @@ void R_TestImage_f( const idCmdArgs &args ) {
 			common->Printf("Image index out of range: %d not in [0..%d)\n", imageNum, globalImages->images.Num() );
 			return;
 		}
+		if ( globalImages->images[imageNum]->GetType() != IT_ASSET ) {
+			common->Printf("Image %d is not asset\n", imageNum );
+			return;
+		}
 	}
 	else if ( args.Argc() == 2 ) {
 		filename = args.Argv( 1 );
@@ -628,7 +632,7 @@ void R_TestImage_f( const idCmdArgs &args ) {
 	if ( filename ) {
 		tr.testImage = globalImages->ImageFromFile( filename, TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT, cubemap ? CF_NATIVE : CF_2D );
 	} else {
-		tr.testImage = globalImages->images[imageNum];
+		tr.testImage = globalImages->images[imageNum]->AsAsset();
 	}
 }
 
@@ -647,7 +651,7 @@ void R_TestVideo_f( const idCmdArgs &args ) {
 	//stgatilov #4847: support testing FFmpeg videos with audio stream
 	bool withAudio = args.Argc() >= 3 && strcmp( args.Argv( 2 ), "withAudio" ) == 0;
 
-	tr.testImage = globalImages->GetImage( "_scratch" );
+	tr.testVideoFrame = globalImages->GetImage( "_scratch" )->AsScratch();
 	tr.testVideo = idCinematic::Alloc( args.Argv( 1 ) );
 	tr.testVideo->InitFromFile( args.Argv( 1 ), false, withAudio );
 	tr.testVideoStartTime = tr.primaryRenderView.time * 0.001;

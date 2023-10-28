@@ -331,7 +331,8 @@ void idMarkerWindow::Activate(bool activate, idStr &act) {
 			}
 			const shaderStage_t *stage = background->GetStage(0);
 			if (stage) {
-				stage->texture.image->UploadScratch((byte*)imageBuff, 512, 64);			
+				common->Warning("idMarkerWindow: dead code for texture upload");
+				//stage->texture.image->UploadScratch((byte*)imageBuff, 512, 64);			
 			}
 			Mem_Free(imageBuff);
 		}

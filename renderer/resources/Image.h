@@ -205,6 +205,8 @@ public:
 
 	static const ImageType Type = IT_UNKNOWN;
 	virtual ImageType GetType() const { return Type; }
+	virtual idImageAsset *AsAsset() { return nullptr; }
+	virtual idImageScratch *AsScratch() { return nullptr; }
 
 	// Makes this image active on the current GL texture unit.
 	// automatically enables or disables cube mapping or texture3D
@@ -217,8 +219,6 @@ public:
 
 	// deletes the texture object, but leaves the structure so it can be reloaded
 	void		PurgeImage( bool purgeCpuData = true );
-
-	void		UploadScratch( const byte *pic, int width, int height );
 
 	// just for resource tracking
 	void		SetClassification( int tag );
@@ -245,7 +245,7 @@ public:
 	static int	BitsForInternalFormat( int internalFormat, bool gpu = false );
 	static GLenum SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask = nullptr );
 	void		ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
-	int			NumLevelsForImageSize( int width, int height ) const;
+	static int	NumLevelsForImageSize( int width, int height );
 
 	// data commonly accessed is grouped here
 	static const int TEXTURE_NOT_LOADED = -1;
@@ -296,6 +296,7 @@ class idImageAsset : public idImage {
 public:
 	static const ImageType Type = IT_ASSET;
 	virtual ImageType GetType() const override { return Type; }
+	virtual idImageAsset *AsAsset() { return this; }
 
 	// used by callback functions to specify the actual data
 	// data goes from the bottom to the top line of the image, as OpenGL expects it
@@ -324,10 +325,13 @@ class idImageScratch : public idImage {
 public:
 	static const ImageType Type = IT_SCRATCH;
 	virtual ImageType GetType() const override { return Type; }
+	virtual idImageScratch *AsScratch() { return this; }
 
 	void GenerateAttachment( int width, int height, GLenum format,
 		GLenum filter = GL_LINEAR, GLenum wrapMode = GL_CLAMP_TO_EDGE,
 		int lodLevel = 0 );
+
+	void UploadScratch( const byte *pic, int width, int height );
 };
 
 class idImageManager {

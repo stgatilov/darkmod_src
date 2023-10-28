@@ -728,7 +728,7 @@ void idImage::ImageProgramStringToCompressedFileName( const char *imageProg, cha
 NumLevelsForImageSize
 ==================
 */
-int	idImage::NumLevelsForImageSize( int width, int height ) const {
+int	idImage::NumLevelsForImageSize( int width, int height ) {
 	int	numLevels = 1;
 
 	while ( width > 1 || height > 1 ) {
@@ -1370,8 +1370,8 @@ void idImageAsset::ActuallyLoadImage( void ) {
 
 	// this is the ONLY place generatorFunction will ever be called
 	// Note from SteveL: Not true. generatorFunction is called during image reloading too.
-	if ( generatorFunction && GetType() == IT_ASSET ) {
-		generatorFunction( (idImageAsset*)this );
+	if ( generatorFunction ) {
+		generatorFunction( this );
 		return;
 	}
 
@@ -1426,7 +1426,7 @@ void idImage::Bind() {
 	// load the image if necessary
 	if ( texnum == TEXTURE_NOT_LOADED && GetType() == IT_ASSET ) {
 		auto start = Sys_Milliseconds();
-		((idImageAsset*)this)->ActuallyLoadImage();	// check for precompressed, load is from back end
+		AsAsset()->ActuallyLoadImage();	// check for precompressed, load is from back end
 		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
 		backEnd.pc.textureLoads++;
 	}
@@ -1481,7 +1481,7 @@ RB_UploadScratchImage
 if rows = cols * 6, assume it is a cube map animation
 =============
 */
-void idImage::UploadScratch( const byte *data, int cols, int rows ) {
+void idImageScratch::UploadScratch( const byte *data, int cols, int rows ) {
 	int			i;
 
 	// if rows = cols * 6, assume it is a cube map animation

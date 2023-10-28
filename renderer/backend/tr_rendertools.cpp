@@ -2335,33 +2335,31 @@ Display a single image over most of the screen
 ================
 */
 void RB_TestImage( void ) {
-	idImage	*image;
-	int		max;
-
-	image = tr.testImage;
-	if ( !image ) {
-		return;
-	}
-
+	idImage *image = nullptr;
 	float w = 0.25;
 	float h = 0.25;
-	if ( tr.testVideo ) {
-		cinData_t	cin;
 
-		cin = tr.testVideo->ImageForTime( (int)(1000 * ( backEnd.viewDef->floatTime - tr.testVideoStartTime ) ) );
+	if ( tr.testVideo && tr.testVideoFrame ) {
+		cinData_t cin = tr.testVideo->ImageForTime( (int)(1000 * ( backEnd.viewDef->floatTime - tr.testVideoStartTime ) ) );
 		if ( cin.image ) {
-			image->UploadScratch( cin.image, cin.imageWidth, cin.imageHeight );
+			tr.testVideoFrame->UploadScratch( cin.image, cin.imageWidth, cin.imageHeight );
+			image = tr.testVideoFrame;
 		} else {
-			tr.testImage = NULL;
+			tr.testVideoFrame = NULL;
 			return;
 		}
-	} else if ( image->cubeFiles == CF_2D ) {
-		max = image->uploadWidth > image->uploadHeight ? image->uploadWidth : image->uploadHeight;
+	} else if ( tr.testImage && tr.testImage->cubeFiles == CF_2D ) {
+		int max = idMath::Imax(tr.testImage->uploadWidth, tr.testImage->uploadHeight);
 
-		w = 0.25 * image->uploadWidth / max;
-		h = 0.25 * image->uploadHeight / max;
-
+		w = 0.25 * tr.testImage->uploadWidth / max;
+		h = 0.25 * tr.testImage->uploadHeight / max;
 		w *= (float)glConfig.vidHeight / glConfig.vidWidth;
+
+		image = tr.testImage;
+	}
+
+	if (!image) {
+		return;
 	}
 
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );

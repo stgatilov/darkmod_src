@@ -925,12 +925,9 @@ idImage::Reload
 ===============
 */
 void idImageAsset::Reload( bool checkPrecompressed, bool force ) {
-	if ( GetType() != IT_ASSET )
-		return;	// only assets can be reloaded
-
 	// always regenerate functional images
 	if ( generatorFunction ) {
-		generatorFunction( (idImageAsset*)this );
+		generatorFunction( this );
 		common->DPrintf( "regenerating %s.\n", imgName.c_str() );
 		return;
 	} else if ( !force ) { // check file times
@@ -997,13 +994,12 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 	}
 
 	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
-		if ( globalImages->images[i]->GetType() != IT_ASSET ) 
-			continue;
-		idImageAsset *image = (idImageAsset*)globalImages->images[i];
-		if ( image->depth != TD_BUMP && normalsOnly ) {
-			continue;
+		if ( idImageAsset *image = globalImages->images[i]->AsAsset() ) {
+			if ( image->depth != TD_BUMP && normalsOnly ) {
+				continue;
+			}
+			image->Reload( checkPrecompressed, force );
 		}
-		image->Reload( checkPrecompressed, force );
 	}
 
 	if ( game ) {
@@ -1334,10 +1330,10 @@ idImageAsset *idImageManager::ImageFromFunction( const char *_name, void ( *gene
 	int	hash = name.FileNameHash();
 	for ( idImage *baseimg = imageHashTable[hash] ; baseimg; baseimg = baseimg->hashNext ) {
 		if ( name.Icmp( baseimg->imgName ) == 0 ) {
-			if ( baseimg->GetType() != IT_ASSET ) {
+			idImageAsset *image = baseimg->AsAsset();
+			if ( !image ) {
 				common->Error( "Image name %s used both for scratch and asset", name.c_str() );
 			}
-			idImageAsset *image = (idImageAsset *)baseimg;
 			if ( image->generatorFunction != generatorFunction ) {
 				common->Warning( "Reused image %s with mixed generators", name.c_str() );
 			}
@@ -1372,10 +1368,10 @@ idImageScratch *idImageManager::ImageScratch( const char *_name ) {
 	int	hash = name.FileNameHash();
 	for ( idImage *baseimg = imageHashTable[hash] ; baseimg; baseimg = baseimg->hashNext ) {
 		if ( name.Icmp( baseimg->imgName ) == 0 ) {
-			if ( baseimg->GetType() != IT_SCRATCH ) {
+			idImageScratch *image = baseimg->AsScratch();
+			if ( !image ) {
 				common->Error( "Image name %s used both for scratch and asset", name.c_str() );
 			}
-			idImageScratch *image = (idImageScratch *)baseimg;
 			return image;
 		}
 	}
@@ -1413,10 +1409,10 @@ idImageAsset *idImageManager::ImageFromFile( const char *_name, textureFilter_t 
 
 	for ( idImage *baseimg = imageHashTable[hash]; baseimg; baseimg = baseimg->hashNext ) {
 		if ( name.Icmp( baseimg->imgName ) == 0 ) {
-			if ( baseimg->GetType() != IT_ASSET ) {
+			idImageAsset *image = baseimg->AsAsset();
+			if ( !image ) {
 				continue;
 			}
-			idImageAsset *image = (idImageAsset *)baseimg;
 			// the built in's, like _white and _flat always match the other options
 			if ( name[0] == '_' ) {
 				return image;
@@ -1828,18 +1824,17 @@ void idImageManager::EndLevelLoad() {
 
 	// purge the ones we don't need
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
-		idImage	*image = images[ i ];
-		if ( image->GetType() != IT_ASSET )
-			continue;
-		if ( image->generatorFunction ) {
-			continue;
-		} else if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad ) {
-			//common->Printf( "Purging %s\n", image->imgName.c_str() );
-			purgeCount++;
-			image->PurgeImage();
-		} else if ( image->texnum != idImage::TEXTURE_NOT_LOADED ) {
-			//common->Printf( "Keeping %s\n", image->imgName.c_str() );
-			keepCount++;
+		if ( idImage *image = images[i]->AsAsset() ) {
+			if ( image->generatorFunction ) {
+				continue;
+			} else if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad ) {
+				//common->Printf( "Purging %s\n", image->imgName.c_str() );
+				purgeCount++;
+				image->PurgeImage();
+			} else if ( image->texnum != idImage::TEXTURE_NOT_LOADED ) {
+				//common->Printf( "Keeping %s\n", image->imgName.c_str() );
+				keepCount++;
+			}
 		}
 	}
 	common->PacifierUpdate( LOAD_KEY_IMAGES_START, images.Num() / LOAD_KEY_IMAGE_GRANULARITY ); // grayman #3763
@@ -1847,17 +1842,14 @@ void idImageManager::EndLevelLoad() {
 	// load the ones we do need, if we are preloading
 	idList<idImageAsset*> imagesToLoad;
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
-		if ( images[i]->GetType() != IT_ASSET ) {
-			continue;
-		}
-		idImageAsset *image = (idImageAsset*)images[i];
-		if ( image->generatorFunction ) {
-			continue;
-		}
-
-		if ( image->levelLoadReferenced && ( image->texnum == idImage::TEXTURE_NOT_LOADED ) && image_preload.GetBool() ) {
-			loadCount++;
-			imagesToLoad.AddGrow( image );
+		if ( idImageAsset *image = images[i]->AsAsset() ) {
+			if ( image->generatorFunction ) {
+				continue;
+			}
+			if ( image->levelLoadReferenced && ( image->texnum == idImage::TEXTURE_NOT_LOADED ) && image_preload.GetBool() ) {
+				loadCount++;
+				imagesToLoad.AddGrow( image );
+			}
 		}
 	}
 

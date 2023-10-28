@@ -851,7 +851,6 @@ public:
 	virtual void			CaptureRenderToBuffer( unsigned char *buffer, bool usePbo = false );
 	virtual void			PostProcess();
 	virtual void			UnCrop();
-	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
 
 public:
 	// internal functions
@@ -891,8 +890,9 @@ public:
 	const idMaterial 		*defaultShaderPoint;
 	const idMaterial 		*defaultShaderProj;
 
-	idImage 				*testImage;
+	idImageAsset 			*testImage;
 	idCinematic 			*testVideo;
+	idImageScratch			*testVideoFrame;
 	float					testVideoStartTime;
 
 	viewDef_t 				*viewDef;

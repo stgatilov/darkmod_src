@@ -2944,13 +2944,15 @@ void idMaterial::ReloadImages( bool force ) const {
 		if ( stages[i].newStage ) {
 			for ( int j = 0 ; j < stages[i].newStage->numFragmentProgramImages ; j++ ) {
 				if ( idImage *img = stages[i].newStage->fragmentProgramImages[j] ) {
-					if ( img->GetType() == IT_ASSET ) {
-						((idImageAsset*)img)->Reload( false, force );
+					if ( idImageAsset *asset = img->AsAsset() ) {
+						asset->Reload( false, force );
 					}
 				}
 			}
 		} else if ( idImage *img = stages[i].texture.image ) {
-			((idImageAsset*)img)->Reload( false, force );
+			if ( idImageAsset *asset = img->AsAsset() ) {
+				asset->Reload( false, force );
+			}
 		}
 	}
 }
