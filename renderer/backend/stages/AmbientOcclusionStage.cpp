@@ -89,27 +89,12 @@ namespace {
 		fbo->AddColorRenderTexture( 0, color );
 	}
 
-	void CreateViewspaceDepthFBO(FrameBuffer *fbo, idImage *image, int mipLevel) {
-		// create texture, if necessary
-		if (image->texnum == idImage::TEXTURE_NOT_LOADED || image->uploadWidth != frameBuffers->renderWidth || image->uploadHeight != frameBuffers->renderHeight ) {
-			image->PurgeImage();
-			qglGenTextures(1, &image->texnum);
-			image->uploadWidth = frameBuffers->renderWidth;
-			image->uploadHeight = frameBuffers->renderHeight;
-			qglBindTexture(GL_TEXTURE_2D, image->texnum);
-			for (int i = 0; i <= AmbientOcclusionStage::MAX_DEPTH_MIPS; ++i) {
-				qglTexImage2D(GL_TEXTURE_2D, i, GL_R32F, image->uploadWidth >> i, image->uploadHeight >> i, 0, GL_RED, GL_FLOAT, nullptr);
-			}
-			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, AmbientOcclusionStage::MAX_DEPTH_MIPS);
-			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-			GL_SetDebugLabel( GL_TEXTURE, image->texnum, image->imgName );
-		}
-
-		fbo->Init( frameBuffers->renderWidth >> mipLevel, frameBuffers->renderHeight >> mipLevel );
+	void CreateViewspaceDepthFBO(FrameBuffer *fbo, idImageScratch *image, int mipLevel) {
+		int w = frameBuffers->renderWidth >> mipLevel;
+		int h = frameBuffers->renderHeight >> mipLevel;
+		image->GenerateAttachment( w, h, GL_R32F, GL_NEAREST, GL_MIRRORED_REPEAT, mipLevel );
+		qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		fbo->Init( w, h );
 		fbo->AddColorRenderTexture( 0, image, mipLevel );
 	}
 }

@@ -83,7 +83,7 @@ void TiledCustomMipmapStage::Init(MipmapMode mode, GLenum imageFormat, int width
 				mipmapImage->GenerateAttachment( levelWidth, levelHeight, imageFormat, GL_LINEAR, GL_CLAMP_TO_EDGE, textureLevel );
 				qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 				fbo->Init( levelWidth, levelHeight );
-				fbo->AddColorRenderTexture( 0, this->mipmapImage, textureLevel );
+				fbo->AddColorRenderTexture( 0, mipmapImage, textureLevel );
 			}
 		);
 	}
