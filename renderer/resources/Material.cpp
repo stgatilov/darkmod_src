@@ -2866,7 +2866,9 @@ void idMaterial::SetImageClassifications( int tag ) const {
 	for ( int i = 0 ; i < numStages ; i++ ) {
 		idImage	*image = stages[i].texture.image;
 		if ( image ) {
-			image->SetClassification( tag );
+			if ( idImageAsset *asset = image->AsAsset() ) {
+				asset->SetClassification( tag );
+			}
 		}
 	}
 }

@@ -62,7 +62,6 @@ idCVar idImageManager::image_downSizeSpecularLimit( "image_downSizeSpecularLimit
 idCVar idImageManager::image_downSizeBumpLimit( "image_downSizeBumpLimit", "128", CVAR_RENDERER | CVAR_ARCHIVE, "controls normal map downsample limit" );
 idCVar idImageManager::image_ignoreHighQuality( "image_ignoreHighQuality", "0", CVAR_RENDERER | CVAR_ARCHIVE, "ignore high quality setting on materials" );
 idCVar idImageManager::image_downSizeLimit( "image_downSizeLimit", "256", CVAR_RENDERER | CVAR_ARCHIVE, "controls diffuse map downsample limit" );
-idCVar idImageManager::image_blockChecksum( "image_blockChecksum", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Perform MD4 block checksum calculation for later duplicates check" );
 
 // do this with a pointer, in case we want to make the actual manager
 // a private virtual subclass
@@ -357,19 +356,11 @@ idImage::idImage() {
 	texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
 	type = TT_DISABLED;
 	frameUsed = 0;
-	classification = 0;
 	imgName[0] = '\0';
-	generatorFunction = NULL;
-	allowDownSize = false;
 	filter = TF_DEFAULT;
 	repeat = TR_REPEAT;
 	depth = TD_DEFAULT;
 	cubeFiles = CF_2D;
-	referencedOutsideLevelLoad = false;
-	levelLoadReferenced = false;
-	precompressedFile = false;
-	defaulted = false;
-	timestamp = 0;
 	bindCount = 0;
 	uploadWidth = uploadHeight = 0;
 	internalFormat = 0;
@@ -379,6 +370,14 @@ idImage::idImage() {
 }
 
 idImageAsset::idImageAsset() {
+	classification = 0;
+	referencedOutsideLevelLoad = false;
+	levelLoadReferenced = false;
+	precompressedFile = false;
+	defaulted = false;
+	timestamp = 0;
+	generatorFunction = NULL;
+	allowDownSize = false;
 	memset( &cpuData, 0, sizeof( cpuData ) );
 	compressedData = nullptr;
 	residency = IR_GRAPHICS;
@@ -1103,13 +1102,11 @@ void R_ListImages_f( const idCmdArgs &args ) {
 	for ( i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		image = globalImages->images[ i ];
 
-		if ( uncompressedOnly ) {
-			if ( image->internalFormat >= GL_COMPRESSED_RGB_S3TC_DXT1_EXT && image->internalFormat <= GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ) {
-				continue;
-			}
+		if ( uncompressedOnly && IsImageFormatCompressed( image->internalFormat ) ) {
+			continue;
 		}
 
-		if ( matchTag && image->classification != matchTag ) {
+		if ( matchTag && image->AsAsset() && image->AsAsset()->classification != matchTag ) {
 			continue;
 		}
 
@@ -1350,7 +1347,7 @@ idImageAsset *idImageManager::ImageFromFunction( const char *_name, void ( *gene
 	image->generatorFunction = generatorFunction;
 
 	// check for precompressed, load is from the front end
-	if (	image_preload.GetBool() ) {
+	if ( image_preload.GetBool() ) {
 		image->referencedOutsideLevelLoad = true;
 		image->ActuallyLoadImage();
 	}
@@ -1777,10 +1774,11 @@ loading the actual data.
 */
 void idImageManager::BeginLevelLoad() {
 	insideLevelLoad = true;
-	idImage	*image;
 
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
-		image = images[ i ];
+		idImageAsset *image = images[ i ]->AsAsset();
+		if ( !image )
+			continue;	
 		// generator function images are always kept around
 		if ( image->generatorFunction ) {
 			continue;
@@ -1827,17 +1825,18 @@ void idImageManager::EndLevelLoad() {
 
 	// purge the ones we don't need
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
-		if ( idImage *image = images[i]->AsAsset() ) {
-			if ( image->generatorFunction ) {
-				continue;
-			} else if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad ) {
-				//common->Printf( "Purging %s\n", image->imgName.c_str() );
-				purgeCount++;
-				image->PurgeImage();
-			} else if ( image->texnum != idImage::TEXTURE_NOT_LOADED ) {
-				//common->Printf( "Keeping %s\n", image->imgName.c_str() );
-				keepCount++;
-			}
+		idImageAsset *image = images[i]->AsAsset();
+		if ( !image )
+			continue;
+		if ( image->generatorFunction ) {
+			continue;
+		} else if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad ) {
+			//common->Printf( "Purging %s\n", image->imgName.c_str() );
+			purgeCount++;
+			image->PurgeImage();
+		} else if ( image->texnum != idImage::TEXTURE_NOT_LOADED ) {
+			//common->Printf( "Keeping %s\n", image->imgName.c_str() );
+			keepCount++;
 		}
 	}
 	common->PacifierUpdate( LOAD_KEY_IMAGES_START, images.Num() / LOAD_KEY_IMAGE_GRANULARITY ); // grayman #3763

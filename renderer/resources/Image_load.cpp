@@ -1338,8 +1338,6 @@ void R_UploadImageData( idImageAsset& image ) {
 				// build a hash for checking duplicate image files
 				// NOTE: takes about 10% of image load times (SD)
 				// may not be strictly necessary, but some code uses it, so let's leave it in
-				if ( globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
-					image.imageHash = MD4_BlockChecksum( cpuData.pic, cpuData.width * cpuData.height * 4 );
 				image.GenerateImage( cpuData.pic[0], cpuData.width, cpuData.height, image.filter, image.allowDownSize, image.repeat, image.depth, image.residency );
 				loadedMask |= IR_GRAPHICS;
 				image.precompressedFile = false;
@@ -1572,7 +1570,7 @@ void idImageScratch::UploadScratch( const byte *data, int cols, int rows ) {
 SetClassification
 ==================
 */
-void idImage::SetClassification( int tag ) {
+void idImageAsset::SetClassification( int tag ) {
 	classification = tag;
 }
 

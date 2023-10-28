@@ -754,79 +754,6 @@ void R_ReportSurfaceAreas_f( const idCmdArgs &args ) {
 }
 
 /*
-===================
-R_ReportImageDuplication_f
-
-Checks for images with the same hash value and does a better comparison
-===================
-*/
-void R_ReportImageDuplication_f( const idCmdArgs &args ) {
-	int	count = 0;
-
-	common->Printf( "Images with duplicated contents:\n" );
-	if ( !globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
-	{ common->Printf( "Warning: image_blockChecksum set to 0, results invalid.\n" ); }
-
-	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
-		idImage	*image1 = globalImages->images[i];
-
-		if ( image1->generatorFunction  || // ignore procedural images
-		     image1->type != TT_2D		|| // ignore cube maps
-		     image1->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
-		     image1->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
-		     image1->defaulted ) {
-			continue;
-		}
-		byte *data1;
-		int	h1 = 0;
-		int w1 = 0;
-
-		R_LoadImageProgram( image1->imgName, &data1, &w1, &h1, NULL );
-
-		if ( !data1 ) { // duzenko #4400
-			continue;
-		}
-
-		for ( int j = 0 ; j < i ; j++ ) {
-			idImage	*image2 = globalImages->images[j];
-			if ( image2->generatorFunction  || // ignore procedural images
-			     image2->type != TT_2D		|| // ignore cube maps
-			     image2->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
-			     image2->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
-			     image2->defaulted ) {
-				continue;
-			} else if ( image1->imageHash    != image2->imageHash    ||
-			            image1->uploadWidth  != image2->uploadWidth  ||
-			            image1->uploadHeight != image2->uploadHeight ||
-			            !idStr::Icmp( image1->imgName, image2->imgName ) ) { // ignore same image-with-different-parms
-				continue;
-			} else {
-				byte *data2;
-				int	h2 = 0;
-				int w2 = 0;
-
-				R_LoadImageProgram( image2->imgName, &data2, &w2, &h2, NULL );
-
-				if ( !data2 || w1 != w2 || h1 != h2 || memcmp( data1, data2, w1 * h1 * 4 ) ) { // duzenko #4400
-					R_StaticFree( data2 );
-					continue;
-				}
-				R_StaticFree( data2 ); // duzenko #4400
-
-				common->Printf( "%s == %s\n", image1->imgName.c_str(), image2->imgName.c_str() );
-				session->UpdateScreen( true );
-				count++;
-				break;
-			}
-		}
-		R_StaticFree( data1 );
-	}
-	const idStr repcol = ( count < 20 ) ? S_COLOR_GREEN : S_COLOR_RED;
-
-	common->Printf( repcol + "Result : %i collisions out of %i images\n", count, globalImages->images.Num() );
-}
-
-/*
 ==============================================================================
 
 						THROUGHPUT BENCHMARKING
@@ -1716,7 +1643,6 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "testImage", R_TestImage_f, CMD_FL_RENDERER | CMD_FL_CHEAT, "displays the given image centered on screen", idCmdSystem::ArgCompletion_ImageName );
 	cmdSystem->AddCommand( "testVideo", R_TestVideo_f, CMD_FL_RENDERER | CMD_FL_CHEAT, "displays the given cinematic", idCmdSystem::ArgCompletion_VideoName );
 	cmdSystem->AddCommand( "reportSurfaceAreas", R_ReportSurfaceAreas_f, CMD_FL_RENDERER, "lists all used materials sorted by surface area" );
-	cmdSystem->AddCommand( "reportImageDuplication", R_ReportImageDuplication_f, CMD_FL_RENDERER, "checks all referenced images for duplications" );
 	cmdSystem->AddCommand( "regenerateWorld", R_RegenerateWorld_f, CMD_FL_RENDERER, "regenerates all interactions" );
 	cmdSystem->AddCommand( "showInteractionMemory", R_ShowInteractionMemory_f, CMD_FL_RENDERER, "shows memory used by interactions" );
 	cmdSystem->AddCommand( "showTriSurfMemory", R_ShowTriSurfMemory_f, CMD_FL_RENDERER, "shows memory used by triangle surfaces" );
