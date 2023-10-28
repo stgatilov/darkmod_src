@@ -303,7 +303,7 @@ void FrameBufferManager::EnsureScratchImagesCreated() {
 	// normally, scratch images are generated as FBO attachments when FBO is generated
 	// however, some images (_scratch) is never attached to FBO, it is filled with texture copy command instead
 	// so we need to generate these images when we first fill them --- and CopyRender method is the only method which fills them
-	for ( idImage *scratchImage : { globalImages->scratchImage, globalImages->scratchImage2 } ) {
+	for ( idImageScratch *scratchImage : { globalImages->scratchImage, globalImages->scratchImage2 } ) {
 		if ( scratchImage->texnum == idImage::TEXTURE_NOT_LOADED )
 			scratchImage->GenerateAttachment( renderWidth, renderHeight, colorFormat, GL_LINEAR );
 	}

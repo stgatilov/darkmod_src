@@ -110,7 +110,7 @@ namespace {
 		return std::min(numSteps + 1, BloomStage::MAX_DOWNSAMPLING_STEPS);
 	}
 
-	void CreateBloomFBO(FrameBuffer *fbo, idImage *image, int step) {
+	void CreateBloomFBO(FrameBuffer *fbo, idImageScratch *image, int step) {
 		int curWidth = frameBuffers->renderWidth >> (step+1);
 		int curHeight = frameBuffers->renderHeight >> (step+1);
 		fbo->Init( curWidth, curHeight );

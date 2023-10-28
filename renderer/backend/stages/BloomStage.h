@@ -34,8 +34,8 @@ public:
 private:
 	FrameBuffer *downsampleFBOs[MAX_DOWNSAMPLING_STEPS] = { nullptr };
 	FrameBuffer *upsampleFBOs[MAX_DOWNSAMPLING_STEPS] = { nullptr };
-	idImage *bloomDownSamplers[MAX_DOWNSAMPLING_STEPS] = { nullptr };
-	idImage *bloomUpSamplers[MAX_DOWNSAMPLING_STEPS] = { nullptr };
+	idImageScratch *bloomDownSamplers[MAX_DOWNSAMPLING_STEPS] = { nullptr };
+	idImageScratch *bloomUpSamplers[MAX_DOWNSAMPLING_STEPS] = { nullptr };
 	GLSLProgram *downsampleShader = nullptr;
 	GLSLProgram *downsampleWithBrightPassShader = nullptr;
 	GLSLProgram *upsampleShader = nullptr;

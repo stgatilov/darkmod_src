@@ -40,7 +40,7 @@ private:
 	void SetScissor();
 	void RenderFrustum(GLSLProgram *shader);
 
-	idImage *workImage[2] = {nullptr, nullptr};
+	idImageScratch *workImage[2] = {nullptr, nullptr};
 	FrameBuffer *workFBO[2] = {nullptr, nullptr};
 	GLSLProgram *raymarchingShader = nullptr;
 	GLSLProgram *blurShader = nullptr;

@@ -38,9 +38,9 @@ private:
 	FrameBuffer *ssaoFBO = nullptr;
 	FrameBuffer *ssaoBlurFBO = nullptr;
 	FrameBuffer *depthMipFBOs[MAX_DEPTH_MIPS + 1] = { nullptr };
-	idImage *viewspaceDepth = nullptr;
-	idImage *ssaoResult = nullptr;
-	idImage *ssaoBlurred = nullptr;
+	idImageScratch *viewspaceDepth = nullptr;
+	idImageScratch *ssaoResult = nullptr;
+	idImageScratch *ssaoBlurred = nullptr;
 	GLSLProgram *ssaoShader = nullptr;
 	GLSLProgram *ssaoBlurShader = nullptr;
 	GLSLProgram *depthShader = nullptr;

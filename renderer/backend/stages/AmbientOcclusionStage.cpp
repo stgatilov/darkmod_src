@@ -83,7 +83,7 @@ namespace {
 		uniforms->source.Set(0);
 	}
 
-	void CreateSSAOColorFBO(FrameBuffer *fbo, idImage *color) {
+	void CreateSSAOColorFBO(FrameBuffer *fbo, idImageScratch *color) {
 		fbo->Init( frameBuffers->renderWidth, frameBuffers->renderHeight );
 		color->GenerateAttachment( frameBuffers->renderWidth, frameBuffers->renderHeight, GL_RGBA8, GL_LINEAR, GL_CLAMP_TO_EDGE );
 		fbo->AddColorRenderTexture( 0, color );

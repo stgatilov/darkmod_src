@@ -505,7 +505,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 }
 
 // FBO attachments need specific setup, rarely changed
-void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum filter, GLenum wrapMode, int lodLevel ) {
+void idImageScratch::GenerateAttachment( int width, int height, GLenum format, GLenum filter, GLenum wrapMode, int lodLevel ) {
 	GLenum dataFormat = GL_RGBA;
 	GLenum dataType = GL_FLOAT;
 	switch ( format ) {

@@ -29,8 +29,8 @@ private:
 	GLSLProgram *extrudeShader = nullptr;
 	GLSLProgram *applyShader = nullptr;
 
-	idImage *colorTex[2] = { nullptr };
-	idImage *depthTex = nullptr;
+	idImageScratch *colorTex[2] = { nullptr };
+	idImageScratch *depthTex = nullptr;
 	FrameBuffer *fbo[2] = { nullptr };
 	FrameBuffer *drawFbo = nullptr;
 

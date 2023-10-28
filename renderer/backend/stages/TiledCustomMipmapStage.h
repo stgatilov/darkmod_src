@@ -71,7 +71,7 @@ private:
 	idScreenRect scissor;
 
 	// GL objects
-	idImage *mipmapImage = nullptr;
+	idImageScratch *mipmapImage = nullptr;
 	FrameBuffer *mipmapFBO[MAX_LEVEL + 1] = { nullptr };
 	GLSLProgram *firstShader = nullptr;
 	GLSLProgram *subsequentShader = nullptr;

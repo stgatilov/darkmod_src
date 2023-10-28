@@ -235,9 +235,6 @@ public:
 	void		GenerateCubeImage( const byte *pic[6], int size,
 	                               textureFilter_t filter, bool allowDownSize,
 	                               textureDepth_t depth );
-	void		GenerateAttachment( int width, int height, GLenum format,
-									GLenum filter = GL_LINEAR, GLenum wrapMode = GL_CLAMP_TO_EDGE,
-									int lodLevel = 0 );
 
 	void		UploadScratch( const byte *pic, int width, int height );
 
@@ -332,6 +329,10 @@ class idImageScratch : public idImage {
 public:
 	static const ImageType Type = IT_SCRATCH;
 	virtual ImageType GetType() const override { return Type; }
+
+	void GenerateAttachment( int width, int height, GLenum format,
+		GLenum filter = GL_LINEAR, GLenum wrapMode = GL_CLAMP_TO_EDGE,
+		int lodLevel = 0 );
 };
 
 class idImageManager {

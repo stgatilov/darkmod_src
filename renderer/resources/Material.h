@@ -25,6 +25,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 */
 
 class idImage;
+class idImageScratch;
+class idImageAsset;
 class idCinematic;
 class idUserInterface;
 
