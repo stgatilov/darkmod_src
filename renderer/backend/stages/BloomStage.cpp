@@ -121,8 +121,8 @@ namespace {
 
 void BloomStage::Init() {
 	for (int i = 0; i < MAX_DOWNSAMPLING_STEPS; ++i) {
-		bloomDownSamplers[i] = globalImages->ImageFromFunction( idStr("Bloom Downsampling ") + i, FB_RenderTexture );		
-		bloomUpSamplers[i] = globalImages->ImageFromFunction( idStr("Bloom Upsampling ") + i, FB_RenderTexture );		
+		bloomDownSamplers[i] = globalImages->ImageScratch( idStr("Bloom Downsampling ") + i );		
+		bloomUpSamplers[i] = globalImages->ImageScratch( idStr("Bloom Upsampling ") + i );		
 		downsampleFBOs[i] = frameBuffers->CreateFromGenerator( idStr("bloom_downsample") + i, [this, i](FrameBuffer *fbo) { CreateBloomFBO( fbo, bloomDownSamplers[i], i ); } );
 		upsampleFBOs[i] = frameBuffers->CreateFromGenerator( idStr("bloom_upsample") + i, [this, i](FrameBuffer *fbo) { CreateBloomFBO( fbo, bloomUpSamplers[i], i ); } );
 	}

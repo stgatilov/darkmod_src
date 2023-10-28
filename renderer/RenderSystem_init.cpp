@@ -647,7 +647,7 @@ void R_TestVideo_f( const idCmdArgs &args ) {
 	//stgatilov #4847: support testing FFmpeg videos with audio stream
 	bool withAudio = args.Argc() >= 3 && strcmp( args.Argv( 2 ), "withAudio" ) == 0;
 
-	tr.testImage = globalImages->ImageFromFile( "_scratch", TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
+	tr.testImage = globalImages->GetImage( "_scratch" );
 	tr.testVideo = idCinematic::Alloc( args.Argv( 1 ) );
 	tr.testVideo->InitFromFile( args.Argv( 1 ), false, withAudio );
 	tr.testVideoStartTime = tr.primaryRenderView.time * 0.001;

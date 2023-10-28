@@ -243,10 +243,6 @@ void FrameBuffer::AddRenderTexture( idImage *texture, GLenum attachment, int mip
 
 idCVar r_fboResolution( "r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor" );
 
-void FB_RenderTexture(idImage *texture) {
-	texture->type = TT_2D;	
-}
-
 void FB_ApplyScissor() {
 	if ( r_useScissor.GetBool() ) {
 		GL_ScissorVidSize(

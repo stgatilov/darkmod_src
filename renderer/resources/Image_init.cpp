@@ -443,12 +443,12 @@ void idImage::MakeDefault() {
 	defaulted = true;
 }
 
-static void R_DefaultImage( idImage *image ) {
+static void R_DefaultImage( idImageAsset *image ) {
 	image->residency = IR_BOTH;
 	image->MakeDefault();
 }
 
-static void R_XRayImage( idImage* image ) {
+static void R_XRayImage( idImageAsset* image ) {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	// solid white texture
@@ -457,7 +457,7 @@ static void R_XRayImage( idImage* image ) {
 		TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
 }
 
-static void R_WhiteImage( idImage *image ) {
+static void R_WhiteImage( idImageAsset *image ) {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	// solid white texture
@@ -466,7 +466,7 @@ static void R_WhiteImage( idImage *image ) {
 	                      TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
 }
 
-static void R_BlackImage( idImage *image ) {
+static void R_BlackImage( idImageAsset *image ) {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	// solid black texture
@@ -475,24 +475,7 @@ static void R_BlackImage( idImage *image ) {
 	                      TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
 }
 
-void R_RGBA8Image( idImage *image ) {
-	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
-	memset( data, 0, sizeof( data ) );
-	data[0][0][0] = 16;
-	data[0][0][1] = 32;
-	data[0][0][2] = 48;
-	data[0][0][3] = 96;
-
-	image->GenerateImage( ( byte * )data, DEFAULT_SIZE, DEFAULT_SIZE,
-	                      TF_DEFAULT, false, TR_REPEAT, TD_HIGH_QUALITY );
-}
-
-static void R_DepthTexture( idImage *image ) {
-	image->type = TT_2D;
-}
-
-static void R_AlphaNotchImage( idImage *image ) {
+static void R_AlphaNotchImage( idImageAsset *image ) {
 	byte	data[2][4];
 
 	// this is used for alpha test clip planes
@@ -505,15 +488,15 @@ static void R_AlphaNotchImage( idImage *image ) {
 	                      TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY );
 }
 
-static void R_FlatNormalImage( idImage *image ) {
+static void R_FlatNormalImage( idImageAsset *image ) {
 	int	data[DEFAULT_SIZE][DEFAULT_SIZE];
-	// flat normal map for default bunp mapping
+	// flat normal map for default bump mapping
 	for ( int i = 0 ; i < 4 ; i++ )
 		data[0][i] = 0xffff8080;
 	image->GenerateImage( ( byte * )data, 2, 2, TF_DEFAULT, true, TR_REPEAT, TD_BUMP );
 }
 
-static void R_AmbientNormalImage( idImage *image ) {
+static void R_AmbientNormalImage( idImageAsset *image ) {
 	byte data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	// flat normal map for default bunp mapping
@@ -579,16 +562,16 @@ static void R_MakeConstCubeMap( idImage *image, const byte value[4] ) {
 
 	Mem_Free( pixels[0] );
 }
-static void R_MakeWhiteCubeMap( idImage *image ) {
+static void R_MakeWhiteCubeMap( idImageAsset *image ) {
 	static const byte WHITE[4] = {255, 255, 255, 255};
 	return R_MakeConstCubeMap( image, WHITE );
 }
-static void R_MakeBlackCubeMap( idImage *image ) {
+static void R_MakeBlackCubeMap( idImageAsset *image ) {
 	static const byte BLACK[4] = {0, 0, 0, 0};
 	return R_MakeConstCubeMap( image, BLACK );
 }
 
-static void R_CosPowerCubeMap( idImage *image, idVec3 axis, int power, float scale, idVec3 add ) {
+static void R_CosPowerCubeMap( idImageAsset *image, idVec3 axis, int power, float scale, idVec3 add ) {
 	static const int size = 32;
 
 	byte *pixels[6];
@@ -628,11 +611,11 @@ static void R_CosPowerCubeMap( idImage *image, idVec3 axis, int power, float sca
 	Mem_Free( pixels[0] );
 }
 
-static void R_AmbientWorldDiffuseCubeMap( idImage *image ) {
+static void R_AmbientWorldDiffuseCubeMap( idImageAsset *image ) {
 	// mix diffuse and ambient in 1:1 proportion
 	R_CosPowerCubeMap( image, idVec3(0, 0, 1), 1, 0.5f, idVec3(0.5f) );
 }
-static void R_AmbientWorldSpecularCubeMap( idImage *image ) {
+static void R_AmbientWorldSpecularCubeMap( idImageAsset *image ) {
 	// take 50% of pure specular
 	R_CosPowerCubeMap( image, idVec3(0, 0, 1), 4, 0.5f, idVec3(0.0f) );
 }
@@ -645,7 +628,7 @@ R_CreateNoFalloffImage
 This is a solid white texture that is zero clamped.
 ================
 */
-static void R_CreateNoFalloffImage( idImage *image ) {
+static void R_CreateNoFalloffImage( idImageAsset *image ) {
 	byte	data[16][FALLOFF_TEXTURE_SIZE][4];
 
 	memset( data, 0, sizeof( data ) );
@@ -670,7 +653,7 @@ We calculate distance correctly in two planes, but the
 third will still be projection based
 ================
 */
-void R_FogImage( idImage *image ) {
+void R_FogImage( idImageAsset *image ) {
 	byte	data[FOG_SIZE][FOG_SIZE][4];
 	int		b;
 	float	d;
@@ -778,7 +761,7 @@ Modulate the fog alpha density based on the distance of the
 start and end points to the terminator plane
 ================
 */
-void R_FogEnterImage( idImage *image ) {
+void R_FogEnterImage( idImageAsset *image ) {
 	byte	data[FOG_ENTER_SIZE][FOG_ENTER_SIZE][4];
 	int		b;
 	float	d;
@@ -812,7 +795,7 @@ R_QuadraticImage
 
 ================
 */
-void R_QuadraticImage( idImage *image ) {
+void R_QuadraticImage( idImageAsset *image ) {
 	byte	data[QUADRATIC_HEIGHT][QUADRATIC_WIDTH][4];
 	int		b;
 	float	d;
@@ -943,9 +926,12 @@ idImage::Reload
 ===============
 */
 void idImage::Reload( bool checkPrecompressed, bool force ) {
+	if ( GetType() != IT_ASSET )
+		return;	// only assets can be reloaded
+
 	// always regenerate functional images
 	if ( generatorFunction ) {
-		generatorFunction( this );
+		generatorFunction( (idImageAsset*)this );
 		common->DPrintf( "regenerating %s.\n", imgName.c_str() );
 		return;
 	} else if ( !force ) { // check file times
@@ -1288,21 +1274,36 @@ Allocates an idImage, adds it to the list,
 copies the name, and adds it to the hash chain.
 ==============
 */
-idImage *idImageManager::AllocImage( const char *name ) {
-
+idImageAsset *idImageManager::AllocImageAsset( const char *name ) {
 	if ( strlen( name ) >= MAX_IMAGE_NAME || strlen( name ) < MIN_IMAGE_NAME ) {
 		const char *warnp  = ( strlen( name ) >= MAX_IMAGE_NAME ) ? "long" : "short";
 		common->Warning( "Image name \"%s\" is too %s", name, warnp );
 	}
-	idImage *image = new idImage;
+	idImageAsset *image = new idImageAsset;
 
 	images.Append( image );
 	image->loadStack = new LoadStack(declManager->GetLoadStack());
 
-	//common->Printf("AllocImage added image '%s'\n",name);
+	const int hash = idStr( name ).FileNameHash();
+	image->hashNext = imageHashTable[hash];
+	imageHashTable[hash] = image;
+
+	image->imgName = name;
+
+	return image;
+}
+// TODO: remove copy/paste!
+idImageScratch *idImageManager::AllocImageScratch( const char *name ) {
+	if ( strlen( name ) >= MAX_IMAGE_NAME || strlen( name ) < MIN_IMAGE_NAME ) {
+		const char *warnp  = ( strlen( name ) >= MAX_IMAGE_NAME ) ? "long" : "short";
+		common->Warning( "Image name \"%s\" is too %s", name, warnp );
+	}
+	idImageScratch *image = new idImageScratch;
+
+	images.Append( image );
+	image->loadStack = new LoadStack(declManager->GetLoadStack());
 
 	const int hash = idStr( name ).FileNameHash();
-
 	image->hashNext = imageHashTable[hash];
 	imageHashTable[hash] = image;
 
@@ -1320,12 +1321,10 @@ with a callback which must work at any time, allowing the OpenGL
 system to be completely regenerated if needed.
 ==================
 */
-idImage *idImageManager::ImageFromFunction( const char *_name, void ( *generatorFunction )( idImage *image ) ) {
-
+idImageAsset *idImageManager::ImageFromFunction( const char *_name, void ( *generatorFunction )( idImageAsset *image ) ) {
 	if ( !_name ) {
 		common->FatalError( "idImageManager::ImageFromFunction: NULL name" );
 	}
-	idImage	*image;
 
 	// strip any .tga file extensions from anywhere in the _name
 	idStr name = _name;
@@ -1334,8 +1333,12 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void ( *generator
 
 	// see if the image already exists
 	int	hash = name.FileNameHash();
-	for ( image = imageHashTable[hash] ; image; image = image->hashNext ) {
-		if ( name.Icmp( image->imgName ) == 0 ) {
+	for ( idImage *baseimg = imageHashTable[hash] ; baseimg; baseimg = baseimg->hashNext ) {
+		if ( name.Icmp( baseimg->imgName ) == 0 ) {
+			if ( baseimg->GetType() != IT_ASSET ) {
+				common->Error( "Image name %s used both for scratch and asset", name.c_str() );
+			}
+			idImageAsset *image = (idImageAsset *)baseimg;
 			if ( image->generatorFunction != generatorFunction ) {
 				common->Warning( "Reused image %s with mixed generators", name.c_str() );
 			}
@@ -1344,7 +1347,7 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void ( *generator
 	}
 
 	// create the image and issue the callback
-	image = AllocImage( name );
+	idImageAsset *image = AllocImageAsset( name );
 
 	image->generatorFunction = generatorFunction;
 
@@ -1353,6 +1356,35 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void ( *generator
 		image->referencedOutsideLevelLoad = true;
 		image->ActuallyLoadImage();
 	}
+	return image;
+}
+// TODO: remove copy/paste
+idImageScratch *idImageManager::ImageScratch( const char *_name ) {
+	if ( !_name ) {
+		common->FatalError( "idImageManager::ImageScratch: NULL name" );
+	}
+
+	// strip any .tga file extensions from anywhere in the _name
+	idStr name = _name;
+	name.Remove( ".tga" );
+	name.BackSlashesToSlashes();
+
+	// see if the image already exists
+	int	hash = name.FileNameHash();
+	for ( idImage *baseimg = imageHashTable[hash] ; baseimg; baseimg = baseimg->hashNext ) {
+		if ( name.Icmp( baseimg->imgName ) == 0 ) {
+			if ( baseimg->GetType() != IT_SCRATCH ) {
+				common->Error( "Image name %s used both for scratch and asset", name.c_str() );
+			}
+			idImageScratch *image = (idImageScratch *)baseimg;
+			return image;
+		}
+	}
+
+	// create the image
+	idImageScratch *image = AllocImageScratch( name );
+	image->type = TT_2D;
+
 	return image;
 }
 
@@ -1364,14 +1396,13 @@ Finds or loads the given image, always returning a valid image pointer.
 Loading of the image may be deferred for dynamic loading.
 ==============
 */
-idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filter, bool allowDownSize,
+idImageAsset *idImageManager::ImageFromFile( const char *_name, textureFilter_t filter, bool allowDownSize,
                                         textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap, imageResidency_t residency
 ) {
 	if ( !_name || !_name[0] || idStr::Icmp( _name, "default" ) == 0 || idStr::Icmp( _name, "_default" ) == 0 ) {
 		declManager->MediaPrint( "DEFAULTED\n" );
 		return globalImages->defaultImage;
 	}
-	idImage	*image;
 
 	// strip any .tga file extensions from anywhere in the _name, including image program parameters
 	idStr name = _name;
@@ -1381,8 +1412,12 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 	// see if the image is already loaded, unless we are in a reloadImages call
 	int hash = name.FileNameHash();
 
-	for ( image = imageHashTable[hash]; image; image = image->hashNext ) {
-		if ( name.Icmp( image->imgName ) == 0 ) {
+	for ( idImage *baseimg = imageHashTable[hash]; baseimg; baseimg = baseimg->hashNext ) {
+		if ( name.Icmp( baseimg->imgName ) == 0 ) {
+			if ( baseimg->GetType() != IT_ASSET ) {
+				continue;
+			}
+			idImageAsset *image = (idImageAsset *)baseimg;
 			// the built in's, like _white and _flat always match the other options
 			if ( name[0] == '_' ) {
 				return image;
@@ -1443,7 +1478,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 	//
 	// create a new image
 	//
-	image = AllocImage( name );
+	idImageAsset *image = AllocImageAsset( name );
 
 	// HACK: to allow keep fonts from being mip'd, as new ones will be introduced with localization
 	// this keeps us from having to make a material for each font tga
@@ -1701,20 +1736,20 @@ void idImageManager::Init() {
 
 	// cinematicImage is used for cinematic drawing
 	// scratchImage is used for screen wipes/doublevision etc..
-	cinematicImage = ImageFromFunction( "_cinematic", R_RGBA8Image );
-	scratchImage = ImageFromFunction( "_scratch", R_RGBA8Image );
-	scratchImage2 = ImageFromFunction( "_scratch2", R_RGBA8Image );
+	cinematicImage = ImageScratch( "_cinematic" );
+	scratchImage = ImageScratch( "_scratch" );
+	scratchImage2 = ImageScratch( "_scratch2" );
 	// cameraN is used in security camera (see materials/tdm_camera.mtr)
 	memset(cameraImages, 0, sizeof(cameraImages));
 	for (int k = 1; k <= 9; k++)
-		cameraImages[k] = ImageFromFunction( ("_camera" + idStr(k)).c_str(), R_RGBA8Image );
-	xrayImage = ImageFromFunction( "_xray", R_RGBA8Image );
-	currentRenderImage = ImageFromFunction( "_currentRender", R_RGBA8Image );
-	guiRenderImage = ImageFromFunction( "_guiRender", R_RGBA8Image );
-	currentDepthImage = ImageFromFunction( "_currentDepth", R_DepthTexture ); // #3877. Allow shaders to access scene depth
-	shadowDepthFbo = ImageFromFunction( "_shadowDepthFbo", R_DepthTexture );
-	shadowAtlas = ImageFromFunction( "_shadowAtlas", R_DepthTexture );
-	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );
+		cameraImages[k] = ImageScratch( ("_camera" + idStr(k)).c_str() );
+	xrayImage = ImageScratch( "_xray" );
+	currentRenderImage = ImageScratch( "_currentRender" );
+	guiRenderImage = ImageScratch( "_guiRender" );
+	currentDepthImage = ImageScratch( "_currentDepth" ); // #3877. Allow shaders to access scene depth
+	shadowDepthFbo = ImageScratch( "_shadowDepthFbo" );
+	shadowAtlas = ImageScratch( "_shadowAtlas" );
+	currentStencilFbo = ImageScratch( "_currentStencilFbo" );
 
 	cmdSystem->AddCommand( "reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images" );
 	cmdSystem->AddCommand( "listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images" );
@@ -1796,6 +1831,8 @@ void idImageManager::EndLevelLoad() {
 	// purge the ones we don't need
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
 		idImage	*image = images[ i ];
+		if ( image->GetType() != IT_ASSET )
+			continue;
 		if ( image->generatorFunction ) {
 			continue;
 		} else if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad ) {

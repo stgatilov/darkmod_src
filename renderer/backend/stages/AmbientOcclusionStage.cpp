@@ -71,10 +71,6 @@ namespace {
 		DEFINE_UNIFORM(int, previousMipLevel)
 	};
 
-	void RenderTexture(idImage *image) {
-		image->type = TT_2D;
-	}
-
 	void LoadSSAOShader(GLSLProgram *ssaoShader) {
 		ssaoShader->LoadFromFiles( "ssao.vert.glsl", "ssao.frag.glsl" );
 		AOUniforms *uniforms = ssaoShader->GetUniformGroup<AOUniforms>();
@@ -95,7 +91,6 @@ namespace {
 
 	void CreateViewspaceDepthFBO(FrameBuffer *fbo, idImage *image, int mipLevel) {
 		// create texture, if necessary
-		image->type = TT_2D;
 		if (image->texnum == idImage::TEXTURE_NOT_LOADED || image->uploadWidth != frameBuffers->renderWidth || image->uploadHeight != frameBuffers->renderHeight ) {
 			image->PurgeImage();
 			qglGenTextures(1, &image->texnum);
@@ -120,9 +115,9 @@ namespace {
 }
 
 void AmbientOcclusionStage::Init() {
-	ssaoResult = globalImages->ImageFromFunction("SSAO ColorBuffer", RenderTexture);
-	ssaoBlurred = globalImages->ImageFromFunction("SSAO Blurred", RenderTexture);
-	viewspaceDepth = globalImages->ImageFromFunction("SSAO Depth", RenderTexture);
+	ssaoResult = globalImages->ImageScratch("SSAO ColorBuffer");
+	ssaoBlurred = globalImages->ImageScratch("SSAO Blurred");
+	viewspaceDepth = globalImages->ImageScratch("SSAO Depth");
 
 	ssaoFBO = frameBuffers->CreateFromGenerator( "ssao_color", [this](FrameBuffer *fbo) { CreateSSAOColorFBO( fbo, ssaoResult ); } );
 	ssaoBlurFBO = frameBuffers->CreateFromGenerator( "ssao_blurred", [this](FrameBuffer *fbo) { CreateSSAOColorFBO( fbo, ssaoBlurred ); } );

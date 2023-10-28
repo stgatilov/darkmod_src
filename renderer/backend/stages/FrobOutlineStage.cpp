@@ -145,9 +145,9 @@ void FrobOutlineStage::Init() {
 	highlightShader = programManager->LoadFromFiles( "frob_highlight", "stages/frob/frob.vert.glsl", "stages/frob/frob_highlight.frag.glsl" );
 	extrudeShader = programManager->LoadFromFiles( "frob_extrude", "stages/frob/frob.vert.glsl", "stages/frob/frob_modalpha.frag.glsl", "stages/frob/frob_extrude.geom.glsl" );
 	applyShader = programManager->LoadFromFiles( "frob_apply", "fullscreen_tri.vert.glsl", "stages/frob/frob_apply.frag.glsl" );
-	colorTex[0] = globalImages->ImageFromFunction( "frob_color_0", FB_RenderTexture );
-	colorTex[1] = globalImages->ImageFromFunction( "frob_color_1", FB_RenderTexture );
-	depthTex = globalImages->ImageFromFunction( "frob_depth", FB_RenderTexture );
+	colorTex[0] = globalImages->ImageScratch( "frob_color_0" );
+	colorTex[1] = globalImages->ImageScratch( "frob_color_1" );
+	depthTex = globalImages->ImageScratch( "frob_depth" );
 	fbo[0] = frameBuffers->CreateFromGenerator( "frob_0", [this](FrameBuffer *) { this->CreateFbo( 0 ); } );
 	fbo[1] = frameBuffers->CreateFromGenerator( "frob_1", [this](FrameBuffer *) { this->CreateFbo( 1 ); } );
 	drawFbo = frameBuffers->CreateFromGenerator( "frob_draw", [this](FrameBuffer *) { this->CreateDrawFbo(); } );

@@ -195,11 +195,22 @@ typedef struct imageCompressedData_s {
 } imageCompressedData_t;
 static_assert(offsetof(imageCompressedData_s, contents) - offsetof(imageCompressedData_s, magic) == 128, "Wrong imageCompressedData_t layout");
 
+enum ImageType {
+	IT_UNKNOWN = 0,
+	IT_ASSET,
+	IT_SCRATCH,
+};
+class idImageAsset;
+class idImageScratch;
+
 class LoadStack;
 
 class idImage {
 public:
 	idImage();
+
+	static const ImageType Type = IT_UNKNOWN;
+	virtual ImageType GetType() const { return Type; }
 
 	// Makes this image active on the current GL texture unit.
 	// automatically enables or disables cube mapping or texture3D
@@ -271,7 +282,7 @@ public:
 
 	// parameters that define this image
 	idStr				imgName;				// game path, including extension (except for cube maps), may be an image program
-	void	( *generatorFunction )( idImage *image );	// NULL for files
+	void	( *generatorFunction )( idImageAsset *image );	// NULL for files
 	bool				allowDownSize;			// this also doubles as a don't-partially-load flag
 	textureFilter_t		filter;
 	textureRepeat_t		repeat;
@@ -307,6 +318,21 @@ public:
 	LoadStack *			loadStack;
 };
 
+// read-only texture loaded from some source (file or generator)
+class idImageAsset : public idImage {
+public:
+	static const ImageType Type = IT_ASSET;
+	virtual ImageType GetType() const override { return Type; }
+};
+
+// texture with volatile contents
+// it usually generated as attachment in framebuffer object
+// some color textures are created manually without FBO
+class idImageScratch : public idImage {
+public:
+	static const ImageType Type = IT_SCRATCH;
+	virtual ImageType GetType() const override { return Type; }
+};
 
 class idImageManager {
 public:
@@ -320,7 +346,7 @@ public:
 	// If the load fails for any reason, the image will be filled in with the default
 	// grid pattern.
 	// Will automatically resample non-power-of-two images and execute image programs if needed.
-	idImage *			ImageFromFile( const char *name,
+	idImageAsset *		ImageFromFile( const char *name,
 	                                   textureFilter_t filter, bool allowDownSize,
 	                                   textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D,
 	                                   imageResidency_t residency = IR_GRAPHICS );
@@ -330,7 +356,8 @@ public:
 
 	// The callback will be issued immediately, and later if images are reloaded or vid_restart
 	// The callback function should call one of the idImage::Generate* functions to fill in the data
-	idImage *			ImageFromFunction( const char *name, void ( *generatorFunction )( idImage *image ) );
+	idImageAsset *		ImageFromFunction( const char *name, void ( *generatorFunction )( idImageAsset *image ) );
+	idImageScratch *	ImageScratch( const char *name );
 
 	// returns the number of bytes of image data bound in the previous frame
 	int					SumOfUsedImages( int *numberOfUsed = nullptr );
@@ -389,35 +416,36 @@ public:
 	static idCVar		image_blockChecksum;		// duplicate check
 
 	// built-in readable images
-	idImage *			defaultImage;
-	idImage *			flatNormalMap;				// 128 128 255 in all pixels
-	idImage *			ambientNormalMap;			// tr.ambientLightVector encoded in all pixels
-	idImage *			alphaNotchImage;			// 2x1 texture with just 1110 and 1111 with point sampling
-	idImage *			whiteImage;					// full of 0xff
-	idImage *			blackImage;					// full of 0x00
-	idImage *			whiteCubeMapImage;			// full of 0xff
-	idImage *			blackCubeMapImage;			// full of 0x00
-	idImage *			normalCubeMapImage;			// cube map to normalize STR into RGB
-	idImage *			noFalloffImage;				// all 255, but zero clamped
-	idImage *			fogImage;					// increasing alpha is denser fog
-	idImage *			fogEnterImage;				// adjust fogImage alpha based on terminator plane
+	idImageAsset *		defaultImage;
+	idImageAsset *		flatNormalMap;				// 128 128 255 in all pixels
+	idImageAsset *		ambientNormalMap;			// tr.ambientLightVector encoded in all pixels
+	idImageAsset *		alphaNotchImage;			// 2x1 texture with just 1110 and 1111 with point sampling
+	idImageAsset *		whiteImage;					// full of 0xff
+	idImageAsset *		blackImage;					// full of 0x00
+	idImageAsset *		whiteCubeMapImage;			// full of 0xff
+	idImageAsset *		blackCubeMapImage;			// full of 0x00
+	idImageAsset *		normalCubeMapImage;			// cube map to normalize STR into RGB
+	idImageAsset *		noFalloffImage;				// all 255, but zero clamped
+	idImageAsset *		fogImage;					// increasing alpha is denser fog
+	idImageAsset *		fogEnterImage;				// adjust fogImage alpha based on terminator plane
 	idImage *			blueNoise1024rgbaImage;		// blue noise precomputed image for dithering
 	// built-in stream-written textures
-	idImage *			cinematicImage;
-	idImage *			scratchImage;
-	idImage *			scratchImage2;
-	idImage *			cameraImages[10];
-	idImage *			xrayImage;
-	idImage *			currentRenderImage;			// for SS_POST_PROCESS shaders
-	idImage *			guiRenderImage;
-	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
-	idImage *			shadowDepthFbo;
-	idImage *			shadowAtlas;
-	idImage *			currentStencilFbo; // these two are only used on Intel since no one else support separate stencil
+	idImageScratch *	cinematicImage;
+	idImageScratch *	scratchImage;
+	idImageScratch *	scratchImage2;
+	idImageScratch *	cameraImages[10];
+	idImageScratch *	xrayImage;
+	idImageScratch *	currentRenderImage;			// for SS_POST_PROCESS shaders
+	idImageScratch *	guiRenderImage;
+	idImageScratch *	currentDepthImage;			// #3877. Allow shaders to access scene depth
+	idImageScratch *	shadowDepthFbo;
+	idImageScratch *	shadowAtlas;
+	idImageScratch *	currentStencilFbo; // these two are only used on Intel since no one else support separate stencil
 
 	//--------------------------------------------------------
 
-	idImage *			AllocImage( const char *name );
+	idImageAsset *		AllocImageAsset( const char *name );
+	idImageScratch *	AllocImageScratch( const char *name );
 	void				SetNormalPalette();
 	void				ChangeTextureFilter();
 
@@ -480,7 +508,6 @@ void R_LoadCompressedImage( const char *name, imageCompressedData_t **pic, ID_TI
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
 void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular, const char *name );
 void R_LoadImageData( idImage &image );
-void R_RGBA8Image( idImage* image );
 
 /*
 ====================================================================

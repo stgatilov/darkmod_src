@@ -56,6 +56,7 @@ private:
 
 	void CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeight );
 	void CopyRender( unsigned char *buffer, int x, int y, int imageWidth, int imageHeight, bool usePBO );
+	void EnsureScratchImagesCreated();
 	GLuint pbo = 0;
 
 

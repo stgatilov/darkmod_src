@@ -1341,7 +1341,7 @@ void R_UploadImageData( idImage& image ) {
 		common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
 		if (image.loadStack)
 			image.loadStack->PrintStack(2, LoadStack::LevelOf(&image));
-		image.generatorFunction = R_RGBA8Image; // otherwise texstorage (when enabled) makes the texture immutable
+		//image.generatorFunction = R_RGBA8Image; // otherwise texstorage (when enabled) makes the texture immutable
 		image.MakeDefault();
 		return;
 	}
@@ -1388,7 +1388,9 @@ On exit, the idImage will have a valid OpenGL texture number that can be bound
 ===============
 */
 void idImage::ActuallyLoadImage( bool allowBackground ) {
-	//Routine test( &loading );
+	if (GetType() == IT_SCRATCH)
+		return;
+
 	if ( allowBackground )
 		allowBackground = !globalImages->image_preload.GetBool() && backEnd.viewDef->viewEntitys;
 
@@ -1399,8 +1401,8 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 
 	// this is the ONLY place generatorFunction will ever be called
 	// Note from SteveL: Not true. generatorFunction is called during image reloading too.
-	if ( generatorFunction ) {
-		generatorFunction( this );
+	if ( generatorFunction && GetType() == IT_ASSET ) {
+		generatorFunction( (idImageAsset*)this );
 		return;
 	}
 

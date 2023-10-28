@@ -1052,10 +1052,19 @@ void idMaterial::ParseFragmentMap( idLexer &src, newShaderStage_t *newStage ) {
 
 	str = R_ParsePastImageProgram( src );
 
-	newStage->fragmentProgramImages[unit] = 
-		globalImages->ImageFromFile( str, tf, allowPicmip, trp, td, cubeMap );
-	if ( !newStage->fragmentProgramImages[unit] ) {
-		newStage->fragmentProgramImages[unit] = globalImages->defaultImage;
+	idImage* &image = newStage->fragmentProgramImages[unit];
+	assert(!image);
+	if ( idImage *existingImg = globalImages->GetImage( str ) ) {
+		// allow using scartch textures (e.g. _currentRender)
+		if ( existingImg->GetType() == IT_SCRATCH )
+			image = existingImg;
+	}
+	if ( !image ) {
+		// asset image may be created or reused
+		image = globalImages->ImageFromFile( str, tf, allowPicmip, trp, td, cubeMap );
+	}
+	if ( !image ) {
+		image = globalImages->defaultImage;
 	}
 }
 
@@ -1635,8 +1644,17 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 	}
 
 	// now load the image with all the parms we parsed
+	assert( !ts->image );
 	if ( imageName[0] ) {
-		ts->image = globalImages->ImageFromFile( imageName, tf, allowPicmip, trp, td, cubeMap );
+		if ( idImage *existingImg = globalImages->GetImage( imageName ) ) {
+			// allow using scartch textures (e.g. _currentRender)
+			if ( existingImg->GetType() == IT_SCRATCH )
+				ts->image = existingImg;
+		}
+		if ( !ts->image ) {
+			// asset image may be created or reused
+			ts->image = globalImages->ImageFromFile( imageName, tf, allowPicmip, trp, td, cubeMap );
+		}
 		if ( !ts->image ) {
 			ts->image = globalImages->defaultImage;
 		}

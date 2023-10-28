@@ -60,7 +60,7 @@ void VolumetricStage::Init() {
 	static const char *NAMES[2] = {"volumetric_work0", "volumetric_work1"};
 
 	for (int p = 0; p < 2; p++) {
-		workImage[p] = globalImages->ImageFromFunction( NAMES[p], FB_RenderTexture );
+		workImage[p] = globalImages->ImageScratch( NAMES[p] );
 
 		workFBO[p] = frameBuffers->CreateFromGenerator( NAMES[p], [this, p](FrameBuffer *fbo) {
 			int scaleLevel = r_volumetricLowres.GetInteger();

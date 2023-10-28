@@ -69,7 +69,7 @@ void TiledCustomMipmapStage::Init(MipmapMode mode, GLenum imageFormat, int width
 	this->width = width;
 	this->height = height;
 
-	mipmapImage = globalImages->ImageFromFunction( idStr("Custom Tiled Mipmap ") + name, FB_RenderTexture );
+	mipmapImage = globalImages->ImageScratch( idStr("Custom Tiled Mipmap ") + name );
 	for (int level = 0; level <= maxLevel; level++) {
 		if (level < skipLevels)
 			continue;
