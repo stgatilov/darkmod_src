@@ -1351,7 +1351,6 @@ void R_UploadImageData( idImageAsset& image ) {
 		common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
 		if (image.loadStack)
 			image.loadStack->PrintStack(2, LoadStack::LevelOf(&image));
-		//image.generatorFunction = R_RGBA8Image; // otherwise texstorage (when enabled) makes the texture immutable
 		image.MakeDefault();
 		return;
 	}
@@ -1378,17 +1377,16 @@ void idImageAsset::ActuallyLoadImage( void ) {
 		return;
 	}
 
-	// this is the ONLY place generatorFunction will ever be called
-	// Note from SteveL: Not true. generatorFunction is called during image reloading too.
 	if ( generatorFunction ) {
-		generatorFunction( this );
-		return;
+		// this is the ONLY place generatorFunction will ever be called
+		// Note from SteveL: Not true. generatorFunction is called during image reloading too.
+		cpuData.Purge();
+		cpuData = generatorFunction();
+	} else {
+		// load the image from disk
+		R_LoadImageData( *this );
 	}
 
-	//
-	// load the image from disk
-	//
-	R_LoadImageData( *this );
 	R_UploadImageData( *this );
 }
 

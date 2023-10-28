@@ -210,6 +210,28 @@ void imageBlock_s::Purge() {
 	memset(this, 0, sizeof(imageBlock_s));
 }
 
+imageBlock_t imageBlock_s::Alloc2D(int w, int h) {
+	imageBlock_t res;
+	memset(&res, 0, sizeof(res));
+	res.sides = 1;
+	res.width = w;
+	res.height = h;
+	for (int s = 0; s < res.sides; s++)
+		res.pic[s] = (byte*)R_StaticAlloc(res.GetSizeInBytes());
+	return res;
+}
+
+imageBlock_t imageBlock_s::AllocCube(int size) {
+	imageBlock_t res;
+	memset(&res, 0, sizeof(res));
+	res.sides = 6;
+	res.width = size;
+	res.height = size;
+	for (int s = 0; s < res.sides; s++)
+		res.pic[s] = (byte*)R_StaticAlloc(res.GetSizeInBytes());
+	return res;
+}
+
 idVec4 imageBlock_s::Sample(float s, float t, textureFilter_t filter, textureRepeat_t repeat, int side) const {
 	assert(dword(side) < dword(sides));
 
@@ -393,41 +415,30 @@ the default image will be grey with a white box outline
 to allow you to see the mapping coordinates on a surface
 ==================
 */
-void idImageAsset::MakeDefault() {
+static imageBlock_t R_DefaultImage() {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
+	static const int CELL_SIZE = 2;
 
 	if ( com_developer.GetBool() ) {
 		// grey center
-		for ( int y = 0 ; y < DEFAULT_SIZE ; y++ ) {
-			for ( int x = 0 ; x < DEFAULT_SIZE ; x++ ) {
-				data[y][x][0] = 32;
-				data[y][x][1] = 32;
-				data[y][x][2] = 32;
+		for ( int y = 1 ; y < DEFAULT_SIZE - 1 ; y++ ) {
+			for ( int x = 1 ; x < DEFAULT_SIZE - 1 ; x++ ) {
+				int cell = (((x - 1) / CELL_SIZE) + ((y - 1) / CELL_SIZE)) % 2;
+				int value = (cell ? 32 : 160);	// checkerboard!
+				data[y][x][0] = value;
+				data[y][x][1] = value;
+				data[y][x][2] = value;
 				data[y][x][3] = 255;
 			}
 		}
-
 		// white border
 		for ( int x = 0 ; x < DEFAULT_SIZE ; x++ ) {
-			data[0][x][0] =
-			data[0][x][1] =
-			data[0][x][2] =
-			data[0][x][3] = 255;
-
-			data[x][0][0] =
-			data[x][0][1] =
-			data[x][0][2] =
-			data[x][0][3] = 255;
-
-			data[DEFAULT_SIZE - 1][x][0] =
-			data[DEFAULT_SIZE - 1][x][1] =
-			data[DEFAULT_SIZE - 1][x][2] =
-			data[DEFAULT_SIZE - 1][x][3] = 255;
-
-			data[x][DEFAULT_SIZE - 1][0] =
-			data[x][DEFAULT_SIZE - 1][1] =
-			data[x][DEFAULT_SIZE - 1][2] =
-			data[x][DEFAULT_SIZE - 1][3] = 255;
+			for ( int c = 0; c < 4; c++ ) {
+				data[0][x][c] = 255;
+				data[x][0][c] = 255;
+				data[DEFAULT_SIZE - 1][x][c] = 255;
+				data[x][DEFAULT_SIZE - 1][c] = 255;
+			}
 		}
 	} else {
 		for ( int y = 0 ; y < DEFAULT_SIZE ; y++ ) {
@@ -439,68 +450,61 @@ void idImageAsset::MakeDefault() {
 			}
 		}
 	}
-	GenerateImage( ( byte * )data, DEFAULT_SIZE, DEFAULT_SIZE,
-	               TF_DEFAULT, true, TR_REPEAT, TD_HIGH_QUALITY, residency );
 
+	imageBlock_t res = imageBlock_t::Alloc2D( DEFAULT_SIZE, DEFAULT_SIZE );
+	memcpy( res.pic[0], data, sizeof(data) );
+	return res;
+}
+
+void idImageAsset::MakeDefault() {
+	PurgeImage();
 	defaulted = true;
+	cpuData = R_DefaultImage();
+	GenerateImage( cpuData.pic[0], cpuData.width, cpuData.height, filter, allowDownSize, repeat, depth, residency );
 }
 
-static void R_DefaultImage( idImageAsset *image ) {
-	image->residency = IR_BOTH;
-	image->MakeDefault();
-}
-
-static void R_XRayImage( idImageAsset* image ) {
-	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
+static imageBlock_t R_WhiteImage() {
+	imageBlock_t res = imageBlock_t::Alloc2D( DEFAULT_SIZE, DEFAULT_SIZE );
 	// solid white texture
-	memset( data, 1, sizeof( data ) );
-	image->GenerateImage( (byte*) data, DEFAULT_SIZE, DEFAULT_SIZE,
-		TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
+	memset( res.pic[0], 255, res.GetSizeInBytes() );
+	return res;
 }
 
-static void R_WhiteImage( idImageAsset *image ) {
-	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
+static imageBlock_t R_BlackImage() {
+	imageBlock_t res = imageBlock_t::Alloc2D( DEFAULT_SIZE, DEFAULT_SIZE );
 	// solid white texture
-	memset( data, 255, sizeof( data ) );
-	image->GenerateImage( ( byte * )data, DEFAULT_SIZE, DEFAULT_SIZE,
-	                      TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
+	memset( res.pic[0], 0, res.GetSizeInBytes() );
+	return res;
 }
 
-static void R_BlackImage( idImageAsset *image ) {
-	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
-	// solid black texture
-	memset( data, 0, sizeof( data ) );
-	image->GenerateImage( ( byte * )data, DEFAULT_SIZE, DEFAULT_SIZE,
-	                      TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
-}
-
-static void R_AlphaNotchImage( idImageAsset *image ) {
-	byte	data[2][4];
-
+static imageBlock_t R_AlphaNotchImage() {
+	byte data[2][4];
 	// this is used for alpha test clip planes
 	data[0][0] = data[0][1] = data[0][2] = 255;
 	data[0][3] = 0;
 	data[1][0] = data[1][1] = data[1][2] = 255;
 	data[1][3] = 255;
 
-	image->GenerateImage( ( byte * )data, 2, 1,
-	                      TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY );
+	imageBlock_t res = imageBlock_t::Alloc2D( 2, 1 );
+	memcpy( res.pic[0], data, sizeof(data) );
+	return res;
 }
 
-static void R_FlatNormalImage( idImageAsset *image ) {
-	int	data[DEFAULT_SIZE][DEFAULT_SIZE];
+static imageBlock_t R_FlatNormalImage() {
+	imageBlock_t res = imageBlock_t::Alloc2D( DEFAULT_SIZE, DEFAULT_SIZE );
+	byte *data = res.GetPic();
 	// flat normal map for default bump mapping
-	for ( int i = 0 ; i < 4 ; i++ )
-		data[0][i] = 0xffff8080;
-	image->GenerateImage( ( byte * )data, 2, 2, TF_DEFAULT, true, TR_REPEAT, TD_BUMP );
+	for ( int i = 0; i < DEFAULT_SIZE * DEFAULT_SIZE; i++) {
+		data[4 * i + 0] = 128;
+		data[4 * i + 1] = 128;
+		data[4 * i + 2] = 255;
+		data[4 * i + 3] = 255;
+	}
+	return res;
 }
 
-static void R_AmbientNormalImage( idImageAsset *image ) {
+static imageBlock_t R_AmbientNormalImage() {
 	byte data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
 	// flat normal map for default bunp mapping
 	for ( int i = 0 ; i < 4 ; i++ ) {
 		data[0][i][0] = ( byte )( 255 * tr.ambientLightVector[0] );
@@ -508,14 +512,13 @@ static void R_AmbientNormalImage( idImageAsset *image ) {
 		data[0][i][2] = ( byte )( 255 * tr.ambientLightVector[2] );
 		data[0][i][3] = 255;
 	}
-	const byte	*pics[6];
-
-	for ( int i = 0 ; i < 6 ; i++ ) {
-		pics[i] = data[0][0];
-	}
 
 	// this must be a cube map for fragment programs to simply substitute for the normalization cube map
-	image->GenerateCubeImage( pics, 2, TF_DEFAULT, true, TD_BUMP );
+	imageBlock_t res = imageBlock_t::AllocCube( DEFAULT_SIZE );
+	for ( int i = 0 ; i < 6 ; i++ ) {
+		memcpy( res.pic[i], data, sizeof(data) );
+	}
+	return res;
 }
 
 /*
@@ -523,7 +526,7 @@ static void R_AmbientNormalImage( idImageAsset *image ) {
 CreatePitFogImage
 ===============
 */
-void CreatePitFogImage( void ) {
+static void CreatePitFogImage( void ) {
 	byte	data[16][16][4];
 	int		a;
 
@@ -545,41 +548,34 @@ void CreatePitFogImage( void ) {
 	R_WriteTGA( "shapes/pitFalloff.tga", data[0][0], 16, 16 );
 }
 
-static void R_MakeConstCubeMap( idImageAsset *image, const byte value[4] ) {
+static imageBlock_t R_MakeConstCubeMap( const byte value[4] ) {
 	static const int size = 16;
+	imageBlock_t res = imageBlock_t::AllocCube( size );
 
-	byte *pixels[6];
-	pixels[0] = ( GLubyte * ) Mem_Alloc( size * size * 4 * 6 );
 	for ( int i = 0; i < 6; i++ ) {
-		pixels[i] = pixels[0] + i * size * size * 4;
 		for ( int p = 0; p < size * size; p++ ) {
-			pixels[i][4 * p + 0] = value[0];
-			pixels[i][4 * p + 1] = value[1];
-			pixels[i][4 * p + 2] = value[2];
-			pixels[i][4 * p + 3] = value[3];
+			res.pic[i][4 * p + 0] = value[0];
+			res.pic[i][4 * p + 1] = value[1];
+			res.pic[i][4 * p + 2] = value[2];
+			res.pic[i][4 * p + 3] = value[3];
 		}
 	}
-
-	image->GenerateCubeImage( ( const byte ** )pixels, size, TF_LINEAR, false, TD_HIGH_QUALITY );
-
-	Mem_Free( pixels[0] );
+	return res;
 }
-static void R_MakeWhiteCubeMap( idImageAsset *image ) {
+static imageBlock_t R_MakeWhiteCubeMap() {
 	static const byte WHITE[4] = {255, 255, 255, 255};
-	return R_MakeConstCubeMap( image, WHITE );
+	return R_MakeConstCubeMap( WHITE );
 }
-static void R_MakeBlackCubeMap( idImageAsset *image ) {
+static imageBlock_t R_MakeBlackCubeMap() {
 	static const byte BLACK[4] = {0, 0, 0, 0};
-	return R_MakeConstCubeMap( image, BLACK );
+	return R_MakeConstCubeMap( BLACK );
 }
 
-static void R_CosPowerCubeMap( idImageAsset *image, idVec3 axis, int power, float scale, idVec3 add ) {
+static imageBlock_t R_CosPowerCubeMap( idVec3 axis, int power, float scale, idVec3 add ) {
 	static const int size = 32;
+	imageBlock_t res = imageBlock_t::AllocCube( size );
 
-	byte *pixels[6];
-	pixels[0] = ( GLubyte * ) Mem_Alloc( size * size * 4 * 6 );
 	for ( int f = 0; f < 6; f++ ) {
-		pixels[f] = pixels[0] + f * size * size * 4;
 		for ( int y = 0; y < size; y++ ) {
 			for ( int x = 0; x < size; x++ ) {
 				float ratioX = ( x + 0.5f ) / size;
@@ -600,26 +596,24 @@ static void R_CosPowerCubeMap( idImageAsset *image, idVec3 axis, int power, floa
 				idVec3 light = idVec3(cosPwr) * scale + add;
 
 				int p = (y * size + x);
-				pixels[f][4 * p + 0] = int(idMath::ClampFloat(0.0f, 1.0f, light[0]) * 255.0f + 0.5f);
-				pixels[f][4 * p + 1] = int(idMath::ClampFloat(0.0f, 1.0f, light[1]) * 255.0f + 0.5f);
-				pixels[f][4 * p + 2] = int(idMath::ClampFloat(0.0f, 1.0f, light[2]) * 255.0f + 0.5f);
-				pixels[f][4 * p + 3] = 255;
+				res.pic[f][4 * p + 0] = int(idMath::ClampFloat(0.0f, 1.0f, light[0]) * 255.0f + 0.5f);
+				res.pic[f][4 * p + 1] = int(idMath::ClampFloat(0.0f, 1.0f, light[1]) * 255.0f + 0.5f);
+				res.pic[f][4 * p + 2] = int(idMath::ClampFloat(0.0f, 1.0f, light[2]) * 255.0f + 0.5f);
+				res.pic[f][4 * p + 3] = 255;
 			}
 		}
 	}
 
-	image->GenerateCubeImage( ( const byte ** )pixels, size, TF_LINEAR, false, TD_HIGH_QUALITY );
-
-	Mem_Free( pixels[0] );
+	return res;
 }
 
-static void R_AmbientWorldDiffuseCubeMap( idImageAsset *image ) {
+static imageBlock_t R_AmbientWorldDiffuseCubeMap() {
 	// mix diffuse and ambient in 1:1 proportion
-	R_CosPowerCubeMap( image, idVec3(0, 0, 1), 1, 0.5f, idVec3(0.5f) );
+	return R_CosPowerCubeMap( idVec3(0, 0, 1), 1, 0.5f, idVec3(0.5f) );
 }
-static void R_AmbientWorldSpecularCubeMap( idImageAsset *image ) {
+static imageBlock_t R_AmbientWorldSpecularCubeMap() {
 	// take 50% of pure specular
-	R_CosPowerCubeMap( image, idVec3(0, 0, 1), 4, 0.5f, idVec3(0.0f) );
+	return R_CosPowerCubeMap( idVec3(0, 0, 1), 4, 0.5f, idVec3(0.0f) );
 }
 
 
@@ -630,7 +624,7 @@ R_CreateNoFalloffImage
 This is a solid white texture that is zero clamped.
 ================
 */
-static void R_CreateNoFalloffImage( idImageAsset *image ) {
+static imageBlock_t R_CreateNoFalloffImage() {
 	byte	data[16][FALLOFF_TEXTURE_SIZE][4];
 
 	memset( data, 0, sizeof( data ) );
@@ -642,8 +636,10 @@ static void R_CreateNoFalloffImage( idImageAsset *image ) {
 			data[y][x][3] = 255;
 		}
 	}
-	image->GenerateImage( ( byte * )data, FALLOFF_TEXTURE_SIZE, 16,
-	                      TF_DEFAULT, false, TR_CLAMP_TO_ZERO, TD_HIGH_QUALITY );
+
+	imageBlock_t res = imageBlock_t::Alloc2D( FALLOFF_TEXTURE_SIZE, 16 );
+	memcpy( res.pic[0], data, sizeof(data) );
+	return res;
 }
 
 
@@ -655,7 +651,7 @@ We calculate distance correctly in two planes, but the
 third will still be projection based
 ================
 */
-void R_FogImage( idImageAsset *image ) {
+static imageBlock_t R_FogImage() {
 	byte	data[FOG_SIZE][FOG_SIZE][4];
 	int		b;
 	float	d;
@@ -688,8 +684,10 @@ void R_FogImage( idImageAsset *image ) {
 			data[y][x][3] = b;
 		}
 	}
-	image->GenerateImage( ( byte * )data, FOG_SIZE, FOG_SIZE,
-	                      TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
+
+	imageBlock_t res = imageBlock_t::Alloc2D( FOG_SIZE, FOG_SIZE );
+	memcpy( res.pic[0], data, sizeof(data) );
+	return res;
 }
 
 
@@ -763,7 +761,7 @@ Modulate the fog alpha density based on the distance of the
 start and end points to the terminator plane
 ================
 */
-void R_FogEnterImage( idImageAsset *image ) {
+static imageBlock_t R_FogEnterImage() {
 	byte	data[FOG_ENTER_SIZE][FOG_ENTER_SIZE][4];
 	int		b;
 	float	d;
@@ -786,8 +784,9 @@ void R_FogEnterImage( idImageAsset *image ) {
 	}
 
 	// if mipmapped, acutely viewed surfaces fade wrong
-	image->GenerateImage( ( byte * )data, FOG_ENTER_SIZE, FOG_ENTER_SIZE,
-	                      TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
+	imageBlock_t res = imageBlock_t::Alloc2D( FOG_ENTER_SIZE, FOG_ENTER_SIZE );
+	memcpy( res.pic[0], data, sizeof(data) );
+	return res;
 }
 
 
@@ -797,7 +796,7 @@ R_QuadraticImage
 
 ================
 */
-void R_QuadraticImage( idImageAsset *image ) {
+static imageBlock_t R_QuadraticImage() {
 	byte	data[QUADRATIC_HEIGHT][QUADRATIC_WIDTH][4];
 	int		b;
 	float	d;
@@ -825,8 +824,10 @@ void R_QuadraticImage( idImageAsset *image ) {
 			data[y][x][3] = 255;
 		}
 	}
-	image->GenerateImage( ( byte * )data, QUADRATIC_WIDTH, QUADRATIC_HEIGHT,
-	                      TF_DEFAULT, false, TR_CLAMP, TD_HIGH_QUALITY );
+
+	imageBlock_t res = imageBlock_t::Alloc2D( QUADRATIC_WIDTH, QUADRATIC_HEIGHT );
+	memcpy( res.pic[0], data, sizeof(data) );
+	return res;
 }
 
 //=====================================================================
@@ -929,11 +930,7 @@ idImage::Reload
 */
 void idImageAsset::Reload( bool checkPrecompressed, bool force ) {
 	// always regenerate functional images
-	if ( generatorFunction ) {
-		generatorFunction( this );
-		common->DPrintf( "regenerating %s.\n", imgName.c_str() );
-		return;
-	} else if ( !force ) { // check file times
+	if ( !generatorFunction && !force ) { // check file times
 		ID_TIME_T	current;
 
 		if ( cubeFiles != CF_2D ) {
@@ -950,10 +947,14 @@ void idImageAsset::Reload( bool checkPrecompressed, bool force ) {
 
 	PurgeImage();
 
-	// force no precompressed image check, which will cause it to be reloaded
-	// from source, and another precompressed file generated.
-	// Load is from the front end, so the back end must be synced
-	ActuallyLoadImage();
+	if ( generatorFunction && !defaulted ) {
+		cpuData = generatorFunction();
+	} else {
+		// force no precompressed image check, which will cause it to be reloaded
+		// from source, and another precompressed file generated.
+		// Load is from the front end, so the back end must be synced
+		ActuallyLoadImage();
+	}
 }
 
 /*
@@ -1316,7 +1317,11 @@ with a callback which must work at any time, allowing the OpenGL
 system to be completely regenerated if needed.
 ==================
 */
-idImageAsset *idImageManager::ImageFromFunction( const char *_name, void ( *generatorFunction )( idImageAsset *image ) ) {
+idImageAsset *idImageManager::ImageFromFunction( const char *_name, imageBlock_t ( *generatorFunction )(),
+	textureFilter_t filter, bool allowDownSize,
+	textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap,
+	imageResidency_t residency
+) {
 	if ( !_name ) {
 		common->FatalError( "idImageManager::ImageFromFunction: NULL name" );
 	}
@@ -1337,14 +1342,28 @@ idImageAsset *idImageManager::ImageFromFunction( const char *_name, void ( *gene
 			if ( image->generatorFunction != generatorFunction ) {
 				common->Warning( "Reused image %s with mixed generators", name.c_str() );
 			}
+			if (
+				image->filter != filter ||
+				image->allowDownSize != allowDownSize ||
+				image->repeat != repeat ||
+				image->depth != depth ||
+				image->residency != residency
+			) {
+				common->Warning( "Reused image %s with mixed settings", name.c_str() );
+			}
 			return image;
 		}
 	}
 
 	// create the image and issue the callback
 	idImageAsset *image = AllocImageAsset( name );
-
 	image->generatorFunction = generatorFunction;
+	image->filter = filter;
+	image->allowDownSize = allowDownSize;
+	image->repeat = repeat;
+	image->depth = depth;
+	image->cubeFiles = cubeMap;
+	image->residency = residency;
 
 	// check for precompressed, load is from the front end
 	if ( image_preload.GetBool() ) {
@@ -1353,17 +1372,20 @@ idImageAsset *idImageManager::ImageFromFunction( const char *_name, void ( *gene
 	}
 	return image;
 }
-// TODO: remove copy/paste
+
+/*
+==================
+ImageScratch
+
+Generate scratch image to be used as e.g. FBO attachment.
+==================
+*/
 idImageScratch *idImageManager::ImageScratch( const char *_name ) {
 	if ( !_name ) {
 		common->FatalError( "idImageManager::ImageScratch: NULL name" );
 	}
 
-	// strip any .tga file extensions from anywhere in the _name
 	idStr name = _name;
-	name.Remove( ".tga" );
-	name.BackSlashesToSlashes();
-
 	// see if the image already exists
 	int	hash = name.FileNameHash();
 	for ( idImage *baseimg = imageHashTable[hash] ; baseimg; baseimg = baseimg->hashNext ) {
@@ -1714,20 +1736,21 @@ void idImageManager::Init() {
 	);
 
 	// create built in images
-	defaultImage = ImageFromFunction( "_default", R_DefaultImage );
-	whiteImage = ImageFromFunction( "_white", R_WhiteImage );
-	blackImage = ImageFromFunction( "_black", R_BlackImage );
-	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage );
-	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage );
-	alphaNotchImage = ImageFromFunction( "_alphaNotch", R_AlphaNotchImage );
-	fogImage = ImageFromFunction( "_fog", R_FogImage );
-	fogEnterImage = ImageFromFunction( "_fogEnter", R_FogEnterImage );
-	noFalloffImage = ImageFromFunction( "_noFalloff", R_CreateNoFalloffImage );
-	ImageFromFunction( "_quadratic", R_QuadraticImage );
-	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", R_MakeWhiteCubeMap );
-	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", R_MakeBlackCubeMap );
-	ImageFromFunction( "_ambientWorldDiffuseCubeMap", R_AmbientWorldDiffuseCubeMap );
-	ImageFromFunction( "_ambientWorldSpecularCubeMap", R_AmbientWorldSpecularCubeMap );
+	defaultImage = ImageFromFunction( "_default", R_DefaultImage, TF_DEFAULT, true, TR_REPEAT, TD_HIGH_QUALITY, CF_2D, IR_BOTH );
+	defaultImage->defaulted = true;
+	whiteImage = ImageFromFunction( "_white", R_WhiteImage, TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
+	blackImage = ImageFromFunction( "_black", R_BlackImage, TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
+	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage, TF_DEFAULT, true, TR_REPEAT, TD_BUMP );
+	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage, TF_DEFAULT, true, TR_REPEAT, TD_BUMP, CF_NATIVE );
+	alphaNotchImage = ImageFromFunction( "_alphaNotch", R_AlphaNotchImage, TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY );
+	fogImage = ImageFromFunction( "_fog", R_FogImage, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
+	fogEnterImage = ImageFromFunction( "_fogEnter", R_FogEnterImage, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
+	noFalloffImage = ImageFromFunction( "_noFalloff", R_CreateNoFalloffImage, TF_DEFAULT, false, TR_CLAMP_TO_ZERO, TD_HIGH_QUALITY );
+	ImageFromFunction( "_quadratic", R_QuadraticImage, TF_DEFAULT, false, TR_CLAMP, TD_HIGH_QUALITY );
+	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", R_MakeWhiteCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY, CF_NATIVE );
+	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", R_MakeBlackCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY, CF_NATIVE );
+	ImageFromFunction( "_ambientWorldDiffuseCubeMap", R_AmbientWorldDiffuseCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY, CF_NATIVE );
+	ImageFromFunction( "_ambientWorldSpecularCubeMap", R_AmbientWorldSpecularCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY, CF_NATIVE );
 
 	// cinematicImage is used for cinematic drawing
 	// scratchImage is used for screen wipes/doublevision etc..

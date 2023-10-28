@@ -148,6 +148,8 @@ typedef struct imageBlock_s {
 	ID_FORCE_INLINE int GetSizeInBytes() const { return width * height * 4; }
 	int GetTotalSizeInBytes() const { return sides * GetSizeInBytes(); }
 	void Purge();
+	static imageBlock_s Alloc2D(int w, int h);
+	static imageBlock_s AllocCube(int size);
 
 	ID_FORCE_INLINE byte* FetchPtr(int s, int t, int side = 0) const {
 		assert(dword(side) < dword(sides) && dword(s) < dword(width) && dword(t) < dword(height));
@@ -312,7 +314,7 @@ public:
 	bool				defaulted;				// true if the default image was generated because a file couldn't be loaded
 	ID_TIME_T			timestamp;				// the most recent of all images used in creation, for reloadImages command
 
-	void				( *generatorFunction )( idImageAsset *image );	// NULL for files
+	imageBlock_t		( *generatorFunction )();	// NULL for files
 	bool				allowDownSize;			// this also doubles as a don't-partially-load flag
 
 	// stgatilov: storing image data on CPU side
@@ -363,8 +365,11 @@ public:
 	idImage *			GetImage( const char *name ) const;
 
 	// The callback will be issued immediately, and later if images are reloaded or vid_restart
-	// The callback function should call one of the idImage::Generate* functions to fill in the data
-	idImageAsset *		ImageFromFunction( const char *name, void ( *generatorFunction )( idImageAsset *image ) );
+	// The callback function returns CPU-side uncompressed data for the image, with ownership over memory passed to the caller
+	idImageAsset *		ImageFromFunction( const char *name, imageBlock_t ( *generatorFunction )(),
+		textureFilter_t filter, bool allowDownSize,
+		textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D,
+		imageResidency_t residency = IR_GRAPHICS );
 	idImageScratch *	ImageScratch( const char *name );
 
 	// returns the number of bytes of image data bound in the previous frame
