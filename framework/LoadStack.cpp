@@ -54,7 +54,7 @@ template<LoadStack::Type type, class T> static LoadStack::Level CreateLevel(T *p
 template<> LoadStack::Level LoadStack::LevelOf(idDecl *ptr) {
 	return CreateLevel<tDecl>(ptr);
 }
-template<> LoadStack::Level LoadStack::LevelOf(idImage *ptr) {
+template<> LoadStack::Level LoadStack::LevelOf(idImageAsset *ptr) {
 	return CreateLevel<tImage>(ptr);
 }
 template<> LoadStack::Level LoadStack::LevelOf(idSoundSample *ptr) {

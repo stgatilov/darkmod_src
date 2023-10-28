@@ -203,8 +203,9 @@ void idSliderWindow::Draw(int time, float x, float y) {
 	}
 
 	if ( !thumbWidth || !thumbHeight ) {
-		if ( thumbMat->GetStage( 0 )->texture.image->texnum == idImage::TEXTURE_NOT_LOADED )
-			thumbMat->GetStage( 0 )->texture.image->ActuallyLoadImage();
+		idImage *thumbImage = thumbMat->GetStage( 0 )->texture.image;
+		if ( thumbImage->texnum == idImage::TEXTURE_NOT_LOADED && thumbImage->GetType() == IT_ASSET )
+			((idImageAsset*)thumbImage)->ActuallyLoadImage();
 		thumbWidth = thumbMat->GetImageWidth();
 		thumbHeight = thumbMat->GetImageHeight();
 	}

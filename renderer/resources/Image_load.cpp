@@ -350,7 +350,7 @@ There is no way to specify explicit mip map levels
 idCVar image_useTexStorage( "image_useTexStorage", "1", CVAR_BOOL|CVAR_ARCHIVE, "Use glTexStorage to create image storage. Only disable if you run into issues." );
 idCVar image_mipmapMode( "image_mipmapMode", "0", CVAR_INTEGER|CVAR_ARCHIVE, "0 - generate mipmaps on CPU, 2 - use glGenerateMipmap." );
 
-void idImage::GenerateImage( const byte *pic, int width, int height,
+void idImageAsset::GenerateImage( const byte *pic, int width, int height,
                              textureFilter_t filterParm, bool allowDownSizeParm,
                              textureRepeat_t repeatParm, textureDepth_t depthParm, imageResidency_t residencyParm
 ) {
@@ -580,7 +580,7 @@ GenerateCubeImage
 Non-square cube sides are not allowed
 ====================
 */
-void idImage::GenerateCubeImage( const byte *pic[6], int size,
+void idImageAsset::GenerateCubeImage( const byte *pic[6], int size,
                                  textureFilter_t filterParm, bool allowDownSizeParm,
                                  textureDepth_t depthParm ) {
 	int			scaled_width, scaled_height;
@@ -1245,7 +1245,7 @@ void R_HandleImageCompression( idImage& image ) {
 	image.compressedData = compData;
 }
 
-void R_LoadImageData( idImage& image ) {
+void R_LoadImageData( idImageAsset& image ) {
 	TRACE_CPU_SCOPE_STR( "Load:Image", image.imgName )
 	imageBlock_t& cpuData = image.cpuData;
 
@@ -1289,7 +1289,7 @@ void R_LoadImageData( idImage& image ) {
 	R_HandleImageCompression( image );
 }
 
-void R_UploadImageData( idImage& image ) {
+void R_UploadImageData( idImageAsset& image ) {
 	TRACE_CPU_SCOPE_STR("Upload:Image", image.imgName)
 	auto& cpuData = image.cpuData;
 
@@ -1354,31 +1354,6 @@ void R_UploadImageData( idImage& image ) {
 	}
 }
 
-std::stack<idImage*> backgroundLoads;
-std::mutex signalMutex;
-std::condition_variable imageThreadSignal;
-
-void BackgroundLoading() {
-	while ( 1 ) {
-		idImage* img = nullptr;
-		{
-			std::unique_lock<std::mutex> lock( signalMutex );
-			imageThreadSignal.wait( lock, []() { return backgroundLoads.size() > 0; } );
-			img = backgroundLoads.top();
-			backgroundLoads.pop();
-		}
-		/*if ( loading && !uploading ) // debug state check
-			GetTickCount();*/
-		auto start = Sys_Milliseconds();
-		R_LoadImageData( *img );
-		backEnd.pc.textureLoadTime += ( Sys_Milliseconds() - start );
-		backEnd.pc.textureBackgroundLoads++;
-		img->backgroundLoadState = IS_LOADED;
-	}
-}
-
-uintptr_t backgroundImageLoader = Sys_CreateThread((xthread_t)BackgroundLoading, NULL, THREAD_NORMAL, "Image Loader" );
-
 /*
 ===============
 ActuallyLoadImage
@@ -1387,13 +1362,7 @@ Absolutely every image goes through this path
 On exit, the idImage will have a valid OpenGL texture number that can be bound
 ===============
 */
-void idImage::ActuallyLoadImage( bool allowBackground ) {
-	if (GetType() == IT_SCRATCH)
-		return;
-
-	if ( allowBackground )
-		allowBackground = !globalImages->image_preload.GetBool() && backEnd.viewDef->viewEntitys;
-
+void idImageAsset::ActuallyLoadImage( void ) {
 	if ( session->IsFrontend() && !(residency & IR_CPU) ) {
 		common->Printf( "Trying to load image %s from frontend, deferring...\n", imgName.c_str() );
 		return;
@@ -1409,28 +1378,8 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 	//
 	// load the image from disk
 	//
-	if ( allowBackground ) {
-		if ( backgroundLoadState == IS_NONE ) {
-			backgroundLoadState = IS_SCHEDULED;
-			std::unique_lock<std::mutex> lock( signalMutex );
-			backgroundLoads.push( this );
-			imageThreadSignal.notify_all();
-			return;
-		}
-		if ( backgroundLoadState == IS_SCHEDULED ) {
-			return;
-		}
-		if ( backgroundLoadState == IS_LOADED ) {
-			backgroundLoadState = IS_NONE; // hopefully allow reload to happen
-			R_UploadImageData( *this );
-		}
-	} else {
-		if ( backgroundLoadState != IS_LOADED ) {
-			R_LoadImageData( *this );
-		}
-		backgroundLoadState = IS_NONE;
-		R_UploadImageData( *this );
-	}
+	R_LoadImageData( *this );
+	R_UploadImageData( *this );
 }
 
 //=========================================================================================================
@@ -1475,9 +1424,9 @@ Automatically enables 2D mapping, cube mapping, or 3D texturing if needed
 */
 void idImage::Bind() {
 	// load the image if necessary
-	if ( texnum == TEXTURE_NOT_LOADED ) {
+	if ( texnum == TEXTURE_NOT_LOADED && GetType() == IT_ASSET ) {
 		auto start = Sys_Milliseconds();
-		ActuallyLoadImage( true );	// check for precompressed, load is from back end
+		((idImageAsset*)this)->ActuallyLoadImage();	// check for precompressed, load is from back end
 		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
 		backEnd.pc.textureLoads++;
 	}

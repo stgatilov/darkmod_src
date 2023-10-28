@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma once
 
 class idDecl;
-class idImage;
+class idImageAsset;
 class idSoundSample;
 class idRenderModel;
 class idEntity;
@@ -43,7 +43,7 @@ public:
 		union {
 			void *ptr;
 			idDecl *decl;
-			idImage *image;
+			idImageAsset *image;
 			idSoundSample *soundSample;
 			idRenderModel *model;
 			idEntity *entity;

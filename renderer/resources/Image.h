@@ -132,12 +132,6 @@ typedef enum {
 	IR_BOTH = IR_GRAPHICS | IR_CPU,
 } imageResidency_t;
 
-typedef enum {
-	IS_NONE,		// empty/foreground load
-	IS_SCHEDULED,	// waiting in queue
-	IS_LOADED		// data loaded, waiting for GL thread
-} imageLoadState_t;
-
 // stgatilov: represents uncompressed image data on CPU side in RGBA8 format
 typedef struct imageBlock_s {
 	byte *pic[6];
@@ -224,18 +218,6 @@ public:
 	// deletes the texture object, but leaves the structure so it can be reloaded
 	void		PurgeImage( bool purgeCpuData = true );
 
-	// used by callback functions to specify the actual data
-	// data goes from the bottom to the top line of the image, as OpenGL expects it
-	// These perform an implicit Bind() on the current texture unit
-	// FIXME: should we implement cinematics this way, instead of with explicit calls?
-	void		GenerateImage( const byte *pic, int width, int height,
-	                           textureFilter_t filter, bool allowDownSize,
-	                           textureRepeat_t repeat, textureDepth_t depth,
-	                           imageResidency_t residency = IR_GRAPHICS );
-	void		GenerateCubeImage( const byte *pic[6], int size,
-	                               textureFilter_t filter, bool allowDownSize,
-	                               textureDepth_t depth );
-
 	void		UploadScratch( const byte *pic, int width, int height );
 
 	// just for resource tracking
@@ -247,9 +229,6 @@ public:
 	// print a one line summary of the image
 	void		Print() const;
 
-	// check for changed timestamp on disk and reload if necessary
-	void		Reload( bool checkPrecompressed, bool force );
-
 	void		AddReference()				{ refCount++; };
 
 	void		MakeCpuResident();
@@ -259,12 +238,10 @@ public:
 	//==========================================================
 
 	void		GetDownsize( int &scaled_width, int &scaled_height ) const;
-	void		MakeDefault();	// fill with a grid pattern
 	void		SetImageFilterAndRepeat() const;
 	void		WritePrecompressedImage();
 	bool		CheckPrecompressedImage( bool fullLoad );
 	void		UploadPrecompressedImage( void );
-	void		ActuallyLoadImage( bool allowBackground = false );
 	static int	BitsForInternalFormat( int internalFormat, bool gpu = false );
 	static GLenum SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask = nullptr );
 	void		ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
@@ -309,7 +286,6 @@ public:
 	imageBlock_t		cpuData;				// CPU-side usable image data (usually absent)
 	imageResidency_t	residency;				// determines whether cpuData and/or texnum should be valid
 	imageCompressedData_t *compressedData;		// CPU-side compressed texture contents (aka DDS file)
-	imageLoadState_t	backgroundLoadState;	// state of background loading (usually disabled)
 
 	//stgatilov: information about why and how this image was loaded (may be missing)
 	LoadStack *			loadStack;
@@ -320,6 +296,25 @@ class idImageAsset : public idImage {
 public:
 	static const ImageType Type = IT_ASSET;
 	virtual ImageType GetType() const override { return Type; }
+
+	// used by callback functions to specify the actual data
+	// data goes from the bottom to the top line of the image, as OpenGL expects it
+	// These perform an implicit Bind() on the current texture unit
+	// FIXME: should we implement cinematics this way, instead of with explicit calls?
+	void GenerateImage( const byte *pic, int width, int height,
+		textureFilter_t filter, bool allowDownSize,
+		textureRepeat_t repeat, textureDepth_t depth,
+		imageResidency_t residency = IR_GRAPHICS );
+	void GenerateCubeImage( const byte *pic[6], int size,
+		textureFilter_t filter, bool allowDownSize,
+		textureDepth_t depth );
+
+	// check for changed timestamp on disk and reload if necessary
+	void Reload( bool checkPrecompressed, bool force );
+
+	void ActuallyLoadImage( void );
+
+	void MakeDefault();	// fill with a grid pattern
 };
 
 // texture with volatile contents
@@ -508,7 +503,7 @@ void R_LoadCompressedImage( const char *name, imageCompressedData_t **pic, ID_TI
 // pic is in top to bottom raster format
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
 void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular, const char *name );
-void R_LoadImageData( idImage &image );
+void R_LoadImageData( idImageAsset &image );
 
 /*
 ====================================================================

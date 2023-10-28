@@ -379,7 +379,6 @@ idImage::idImage() {
 	memset( &cpuData, 0, sizeof( cpuData ) );
 	compressedData = nullptr;
 	residency = IR_GRAPHICS;
-	backgroundLoadState = IS_NONE;
 	loadStack = nullptr;
 }
 
@@ -391,7 +390,7 @@ the default image will be grey with a white box outline
 to allow you to see the mapping coordinates on a surface
 ==================
 */
-void idImage::MakeDefault() {
+void idImageAsset::MakeDefault() {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	if ( com_developer.GetBool() ) {
@@ -543,7 +542,7 @@ void CreatePitFogImage( void ) {
 	R_WriteTGA( "shapes/pitFalloff.tga", data[0][0], 16, 16 );
 }
 
-static void R_MakeConstCubeMap( idImage *image, const byte value[4] ) {
+static void R_MakeConstCubeMap( idImageAsset *image, const byte value[4] ) {
 	static const int size = 16;
 
 	byte *pixels[6];
@@ -925,7 +924,7 @@ void idImageManager::ChangeTextureFilter( void ) {
 idImage::Reload
 ===============
 */
-void idImage::Reload( bool checkPrecompressed, bool force ) {
+void idImageAsset::Reload( bool checkPrecompressed, bool force ) {
 	if ( GetType() != IT_ASSET )
 		return;	// only assets can be reloaded
 
@@ -970,8 +969,6 @@ reloadImages <all>
 ===============
 */
 void R_ReloadImages_f( const idCmdArgs &args ) {
-	idImage	*image;
-
 	// FIXME - this probably isn't necessary... // Serp - this is a comment from the gpl release, check if it's really not needed
 	globalImages->ChangeTextureFilter();
 
@@ -1000,7 +997,9 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 	}
 
 	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
-		image = globalImages->images[ i ];
+		if ( globalImages->images[i]->GetType() != IT_ASSET ) 
+			continue;
+		idImageAsset *image = (idImageAsset*)globalImages->images[i];
 		if ( image->depth != TD_BUMP && normalsOnly ) {
 			continue;
 		}
@@ -1808,10 +1807,9 @@ preload low mip levels, background load remainder on demand
 ====================
 */
 
-void R_LoadSingleImage( idImage *image ) {
+static void R_LoadSingleImage( idImageAsset *image ) {
 	if ( !image->generatorFunction ) {
 		R_LoadImageData( *image );
-		image->backgroundLoadState = IS_LOADED;
 	}
 }
 REGISTER_PARALLEL_JOB( R_LoadSingleImage, "R_LoadSingleImage" );
@@ -1847,9 +1845,12 @@ void idImageManager::EndLevelLoad() {
 	common->PacifierUpdate( LOAD_KEY_IMAGES_START, images.Num() / LOAD_KEY_IMAGE_GRANULARITY ); // grayman #3763
 
 	// load the ones we do need, if we are preloading
-	idList<idImage*> imagesToLoad;
+	idList<idImageAsset*> imagesToLoad;
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
-		idImage	*image = images[ i ];
+		if ( images[i]->GetType() != IT_ASSET ) {
+			continue;
+		}
+		idImageAsset *image = (idImageAsset*)images[i];
 		if ( image->generatorFunction ) {
 			continue;
 		}
@@ -1875,14 +1876,14 @@ void idImageManager::EndLevelLoad() {
 	for ( int curBatch = 0; curBatch < imagesToLoad.Num(); curBatch += BATCH_SIZE ) {
 		if ( image_levelLoadParallel.GetBool() ) {
 			for ( int i = curBatch + BATCH_SIZE; i < imagesToLoad.Num() && i < curBatch + 2*BATCH_SIZE; ++i ) {
-				idImage *image = imagesToLoad[i];
+				idImageAsset *image = imagesToLoad[i];
 				imageLoadJobs->AddJob((jobRun_t)R_LoadSingleImage, image);
 			}
 			imageLoadJobs->Submit( nullptr, 2 );
 		}
 
 		for ( int i = curBatch; i < imagesToLoad.Num() && i < curBatch + BATCH_SIZE; ++i ) {
-			idImage *image = imagesToLoad[i];
+			idImageAsset *image = imagesToLoad[i];
 			image->ActuallyLoadImage();
 
 			// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images

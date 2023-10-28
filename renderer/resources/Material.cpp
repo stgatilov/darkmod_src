@@ -2943,12 +2943,14 @@ void idMaterial::ReloadImages( bool force ) const {
 	for ( int i = 0 ; i < numStages ; i++ ) {
 		if ( stages[i].newStage ) {
 			for ( int j = 0 ; j < stages[i].newStage->numFragmentProgramImages ; j++ ) {
-				if ( stages[i].newStage->fragmentProgramImages[j] ) {
-					stages[i].newStage->fragmentProgramImages[j]->Reload( false, force );
+				if ( idImage *img = stages[i].newStage->fragmentProgramImages[j] ) {
+					if ( img->GetType() == IT_ASSET ) {
+						((idImageAsset*)img)->Reload( false, force );
+					}
 				}
 			}
-		} else if ( stages[i].texture.image ) {
-			stages[i].texture.image->Reload( false, force );
+		} else if ( idImage *img = stages[i].texture.image ) {
+			((idImageAsset*)img)->Reload( false, force );
 		}
 	}
 }
