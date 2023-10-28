@@ -367,6 +367,8 @@ void idImageAsset::GenerateImage( const byte *pic, int width, int height,
 		PurgeImage();
 	}
 
+	precompressedFile = false;
+
 	filter = filterParm;
 	allowDownSize = allowDownSizeParm;
 	repeat = repeatParm;
@@ -438,7 +440,7 @@ void idImageAsset::GenerateImage( const byte *pic, int width, int height,
 	uploadWidth = scaled_width;
 	type = TT_2D;
 
-	if ( generatorFunction == NULL && ( ( depth == TD_BUMP && globalImages->image_writeNormalTGA.GetBool() ) || ( depth != TD_BUMP && globalImages->image_writeTGA.GetBool() ) ) ) {
+	if ( source.generatorFunction == NULL && ( ( depth == TD_BUMP && globalImages->image_writeNormalTGA.GetBool() ) || ( depth != TD_BUMP && globalImages->image_writeTGA.GetBool() ) ) ) {
 		// Optionally write out the texture to a .tga
 		char filename[MAX_IMAGE_NAME];
 		ImageProgramStringToCompressedFileName( imgName, filename );
@@ -462,7 +464,7 @@ void idImageAsset::GenerateImage( const byte *pic, int width, int height,
 	//stgatilov: OpenGL does not guarantee compressing glTexSubImage to work for sizes not divisible by 4, and AMD driver crashes on it
 	//https://forums.thedarkmod.com/index.php?/topic/21073-a-house-of-locked-secrets-crashes-tdm-on-startup/
 	bool crossesCompressionBlocks = IsImageFormatCompressed( internalFormat ) && ( scaled_width % 4 || scaled_height % 4 );
-	bool useTexStorage = GLAD_GL_ARB_texture_storage && !generatorFunction && !crossesCompressionBlocks && image_useTexStorage.GetBool();
+	bool useTexStorage = GLAD_GL_ARB_texture_storage && !crossesCompressionBlocks && image_useTexStorage.GetBool();
 
 	//Routine test( &uploading );
 	auto start = Sys_Milliseconds();
@@ -601,6 +603,8 @@ void idImageAsset::GenerateCubeImage( const byte *pic[6], int size,
 	} else {
 		PurgeImage();
 	}
+
+	precompressedFile = false;
 
 	filter = filterParm;
 	allowDownSize = allowDownSizeParm;
@@ -996,7 +1000,7 @@ bool idImageAsset::CheckPrecompressedImage( bool fullLoad ) {
 	if ( precompTimestamp == FILE_NOT_FOUND_TIMESTAMP ) {
 		return false;
 	}
-	if ( !generatorFunction && timestamp != FILE_NOT_FOUND_TIMESTAMP ) {
+	if ( !source.generatorFunction && timestamp != FILE_NOT_FOUND_TIMESTAMP ) {
 		if ( precompTimestamp < timestamp ) {
 			// The image has changed after being precompressed
 			return false;
@@ -1261,40 +1265,47 @@ void R_LoadImageData( idImageAsset& image ) {
 	TRACE_CPU_SCOPE_STR( "Load:Image", image.imgName )
 	imageBlock_t& cpuData = image.cpuData;
 
-	if ( image.cubeFiles != CF_2D ) {
+	if ( image.source.generatorFunction ) {
+		// this is the ONLY place generatorFunction will ever be called
+		// Note from SteveL: Not true. generatorFunction is called during image reloading too.
 		cpuData.Purge();
-		cpuData.sides = 6;
-
-		// we don't check for pre-compressed cube images currently
-		R_LoadImageProgramCubeMap( image.imgName, image.cubeFiles, cpuData.pic, &cpuData.width, &image.timestamp );
-		cpuData.height = cpuData.width;
-		TRACE_ATTACH_FORMAT( "cube %d x [%d x %d]", cpuData.sides, cpuData.width, cpuData.height );
-
-		if ( cpuData.pic[0] == NULL ) {
-			//note: warning will be printed in R_UploadImageData due to cpuData.pic[0] == NULL
-			return;
-		}
-		image.precompressedFile = false;
+		cpuData = image.source.generatorFunction();
 	}
 	else {
-		// see if we have a pre-generated image file that is
-		// already image processed and compressed
-		if ( globalImages->image_usePrecompressedTextures.GetBool() && !(image.residency & IR_CPU) ) {
-			if ( image.CheckPrecompressedImage( true ) ) {
-				if ( !image.compressedData && image.cpuData.IsValid() )	// image_forceRecompress --- debug only
-					goto normalImageLoaded;
-				// we got the precompressed image
-				const char *fourcc = image.compressedData->header.dwFlags & DDSF_FOURCC ? (char*)&image.compressedData->header.ddspf.dwFourCC : "    ";
-				TRACE_ATTACH_FORMAT( "DDS %d x %d (%c%c%c%c)", image.compressedData->header.dwWidth, image.compressedData->header.dwHeight, fourcc[0], fourcc[1], fourcc[2], fourcc[3] );
+		if ( image.source.cubeFiles != CF_2D ) {
+			cpuData.Purge();
+			cpuData.sides = 6;
+
+			// we don't check for pre-compressed cube images currently
+			R_LoadImageProgramCubeMap( image.imgName, image.source.cubeFiles, cpuData.pic, &cpuData.width, &image.timestamp );
+			cpuData.height = cpuData.width;
+			TRACE_ATTACH_FORMAT( "cube %d x [%d x %d]", cpuData.sides, cpuData.width, cpuData.height );
+	
+			if ( cpuData.pic[0] == NULL ) {
+				//note: warning will be printed in R_UploadImageData due to cpuData.pic[0] == NULL
 				return;
 			}
-			// fall through to load the normal image
 		}
-		cpuData.Purge();
-		R_LoadImageProgram( image.imgName, &cpuData.pic[0], &cpuData.width, &cpuData.height, &image.timestamp, &image.depth );
-		cpuData.sides = 1;
-	normalImageLoaded:
-		TRACE_ATTACH_FORMAT( "%d x %d", cpuData.width, cpuData.height );
+		else {
+			// see if we have a pre-generated image file that is
+			// already image processed and compressed
+			if ( globalImages->image_usePrecompressedTextures.GetBool() && !(image.residency & IR_CPU) ) {
+				if ( image.CheckPrecompressedImage( true ) ) {
+					if ( !image.compressedData && image.cpuData.IsValid() )	// image_forceRecompress --- debug only
+						goto normalImageLoaded;
+					// we got the precompressed image
+					const char *fourcc = image.compressedData->header.dwFlags & DDSF_FOURCC ? (char*)&image.compressedData->header.ddspf.dwFourCC : "    ";
+					TRACE_ATTACH_FORMAT( "DDS %d x %d (%c%c%c%c)", image.compressedData->header.dwWidth, image.compressedData->header.dwHeight, fourcc[0], fourcc[1], fourcc[2], fourcc[3] );
+					return;
+				}
+				// fall through to load the normal image
+			}
+			cpuData.Purge();
+			R_LoadImageProgram( image.imgName, &cpuData.pic[0], &cpuData.width, &cpuData.height, &image.timestamp, &image.depth );
+			cpuData.sides = 1;
+		normalImageLoaded:
+			TRACE_ATTACH_FORMAT( "%d x %d", cpuData.width, cpuData.height );
+		}
 	}
 
 	// stgatilov: software compression/decompression of texture if needed
@@ -1324,7 +1335,7 @@ void R_UploadImageData( idImageAsset& image ) {
 
 	// upload to GPU side
 	if (image.residency & IR_GRAPHICS) {
-		if (image.cubeFiles != CF_2D && cpuDataValid && cpuData.IsCubemap()) {
+		if (cpuDataValid && cpuData.IsCubemap()) {
 			image.GenerateCubeImage( ( const byte ** )cpuData.pic, cpuData.width, image.filter, image.allowDownSize, image.depth );
 			loadedMask |= IR_GRAPHICS;
 		}
@@ -1340,7 +1351,6 @@ void R_UploadImageData( idImageAsset& image ) {
 				// may not be strictly necessary, but some code uses it, so let's leave it in
 				image.GenerateImage( cpuData.pic[0], cpuData.width, cpuData.height, image.filter, image.allowDownSize, image.repeat, image.depth, image.residency );
 				loadedMask |= IR_GRAPHICS;
-				image.precompressedFile = false;
 				// write out the precompressed version of this file if needed
 				image.WritePrecompressedImage();
 			}
@@ -1377,16 +1387,8 @@ void idImageAsset::ActuallyLoadImage( void ) {
 		return;
 	}
 
-	if ( generatorFunction ) {
-		// this is the ONLY place generatorFunction will ever be called
-		// Note from SteveL: Not true. generatorFunction is called during image reloading too.
-		cpuData.Purge();
-		cpuData = generatorFunction();
-	} else {
-		// load the image from disk
-		R_LoadImageData( *this );
-	}
-
+	// load the image from disk
+	R_LoadImageData( *this );
 	R_UploadImageData( *this );
 }
 
@@ -1535,6 +1537,11 @@ void idImageScratch::UploadScratch( const byte *data, int cols, int rows ) {
 		if ( type != TT_2D ) {
 			type = TT_2D;
 			uploadWidth = -1;	// for a non-sub upload
+		}
+
+		if ( texnum == idImage::TEXTURE_NOT_LOADED ) {
+			// load for first data upload
+			GenerateAttachment( rows, cols, GL_RGBA8, GL_LINEAR, GL_CLAMP_TO_EDGE );
 		}
 		this->Bind();
 
@@ -1740,7 +1747,7 @@ void idImage::Print() const {
 void idImageAsset::Print() const {
 	if ( precompressedFile ) {
 		common->Printf( "P" );
-	} else if ( generatorFunction ) {
+	} else if ( source.generatorFunction ) {
 		common->Printf( "F" );
 	} else {
 		common->Printf( " " );

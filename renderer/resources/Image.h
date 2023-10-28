@@ -119,7 +119,8 @@ typedef enum {
 typedef enum {
 	CF_2D,			// not a cube map
 	CF_NATIVE,		// _px, _nx, _py, etc, directly sent to GL
-	CF_CAMERA		// _forward, _back, etc, rotated and flipped as needed before sending to GL
+	CF_CAMERA,		// _forward, _back, etc, rotated and flipped as needed before sending to GL
+	CF_NONE,		// this value is ignored
 } cubeFiles_t;
 
 #define	MAX_IMAGE_NAME	256
@@ -199,6 +200,15 @@ enum ImageType {
 class idImageAsset;
 class idImageScratch;
 
+// defines where to take image data from
+struct ImageAssetSource {
+	// case 1: load from file(s)
+	idStr filename;
+	cubeFiles_t cubeFiles = CF_NONE; // can only specify for files
+	// case 2: load from function
+	imageBlock_t (*generatorFunction)() = nullptr;
+};
+
 class LoadStack;
 
 class idImage {
@@ -248,7 +258,6 @@ public:
 	textureFilter_t		filter;
 	textureRepeat_t		repeat;
 	textureDepth_t		depth;
-	cubeFiles_t			cubeFiles;				// determines the naming and flipping conventions for the six images
 
 	// data for listImages
 	int					uploadWidth, uploadHeight;	// after power of two, downsample, and MAX_TEXTURE_SIZE
@@ -270,7 +279,7 @@ public:
 	virtual ImageType GetType() const override { return Type; }
 	virtual idImageAsset *AsAsset() { return this; }
 
-	// used by callback functions to specify the actual data
+	// used internally to specify the actual data
 	// data goes from the bottom to the top line of the image, as OpenGL expects it
 	// These perform an implicit Bind() on the current texture unit
 	// FIXME: should we implement cinematics this way, instead of with explicit calls?
@@ -314,8 +323,10 @@ public:
 	bool				defaulted;				// true if the default image was generated because a file couldn't be loaded
 	ID_TIME_T			timestamp;				// the most recent of all images used in creation, for reloadImages command
 
-	imageBlock_t		( *generatorFunction )();	// NULL for files
 	bool				allowDownSize;			// this also doubles as a don't-partially-load flag
+
+	// stgatilov: where asset data is loaded from
+	ImageAssetSource	source;
 
 	// stgatilov: storing image data on CPU side
 	imageBlock_t		cpuData;				// CPU-side usable image data (usually absent)
@@ -349,27 +360,44 @@ public:
 	void				Init();
 	void				Shutdown();
 
+	// Generic way to create idImageAsset from any source
+	idImageAsset *		ImageFromSource(
+		const idStr &name, ImageAssetSource source,
+		textureFilter_t filter, bool allowDownSize,
+		textureRepeat_t repeat, textureDepth_t depth,
+		imageResidency_t residency = IR_GRAPHICS
+	);
 	// If the exact combination of parameters has been asked for already, an existing
 	// image will be returned, otherwise a new image will be created.
 	// Be careful not to use the same image file with different filter / repeat / etc parameters
 	// if possible, because it will cause a second copy to be loaded.
-	// If the load fails for any reason, the image will be filled in with the default
-	// grid pattern.
+	// If the load fails for any reason, the image will be filled in with the default grid pattern.
 	// Will automatically resample non-power-of-two images and execute image programs if needed.
+	// Note: you can query an image that was previously created with ImageFromFunction by name.
 	idImageAsset *		ImageFromFile( const char *name,
-	                                   textureFilter_t filter, bool allowDownSize,
-	                                   textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D,
-	                                   imageResidency_t residency = IR_GRAPHICS );
+		textureFilter_t filter, bool allowDownSize,
+		textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D,
+		imageResidency_t residency = IR_GRAPHICS
+	) {
+		idStr strname = name;
+		// strip any .tga file extensions from anywhere in the _name, including image program parameters
+		strname.Remove( ".tga" );
+		strname.BackSlashesToSlashes();
+		return ImageFromSource( strname, ImageAssetSource{ strname, cubeMap, nullptr }, filter, allowDownSize, repeat, depth, residency );
+	}
+	// The callback will be issued when image is generated, and later if images are reloaded or vid_restart
+	// The callback function returns CPU-side uncompressed data for the image, with ownership over memory passed to the caller
+	idImageAsset *		ImageFromFunction( const char *name, imageBlock_t ( *generatorFunction )(),
+		textureFilter_t filter, bool allowDownSize,
+		textureRepeat_t repeat, textureDepth_t depth,
+		imageResidency_t residency = IR_GRAPHICS
+	) {
+		return ImageFromSource( name, ImageAssetSource{ "", CF_NONE, generatorFunction }, filter, allowDownSize, repeat, depth, residency );
+	}
 
 	// look for a loaded image, whatever the parameters
 	idImage *			GetImage( const char *name ) const;
 
-	// The callback will be issued immediately, and later if images are reloaded or vid_restart
-	// The callback function returns CPU-side uncompressed data for the image, with ownership over memory passed to the caller
-	idImageAsset *		ImageFromFunction( const char *name, imageBlock_t ( *generatorFunction )(),
-		textureFilter_t filter, bool allowDownSize,
-		textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D,
-		imageResidency_t residency = IR_GRAPHICS );
 	idImageScratch *	ImageScratch( const char *name );
 
 	// returns the number of bytes of image data bound in the previous frame
@@ -440,7 +468,7 @@ public:
 	idImageAsset *		noFalloffImage;				// all 255, but zero clamped
 	idImageAsset *		fogImage;					// increasing alpha is denser fog
 	idImageAsset *		fogEnterImage;				// adjust fogImage alpha based on terminator plane
-	idImage *			blueNoise1024rgbaImage;		// blue noise precomputed image for dithering
+	idImageAsset *		blueNoise1024rgbaImage;		// blue noise precomputed image for dithering
 	// built-in stream-written textures
 	idImageScratch *	cinematicImage;
 	idImageScratch *	scratchImage;

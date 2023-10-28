@@ -891,6 +891,7 @@ public:
 	const idMaterial 		*defaultShaderProj;
 
 	idImageAsset 			*testImage;
+	bool					testImageIsCubemap;
 	idCinematic 			*testVideo;
 	idImageScratch			*testVideoFrame;
 	float					testVideoStartTime;

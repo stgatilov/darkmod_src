@@ -1053,9 +1053,9 @@ void idMaterial::ParseFragmentMap( idLexer &src, newShaderStage_t *newStage ) {
 	str = R_ParsePastImageProgram( src );
 
 	idImage* &image = newStage->fragmentProgramImages[unit];
-	assert(!image);
+	image = nullptr;
 	if ( idImage *existingImg = globalImages->GetImage( str ) ) {
-		// allow using scartch textures (e.g. _currentRender)
+		// allow using scratch textures (e.g. _currentRender)
 		if ( existingImg->GetType() == IT_SCRATCH )
 			image = existingImg;
 	}

@@ -634,6 +634,7 @@ void R_TestImage_f( const idCmdArgs &args ) {
 	} else {
 		tr.testImage = globalImages->images[imageNum]->AsAsset();
 	}
+	tr.testImageIsCubemap = cubemap;
 }
 
 /*

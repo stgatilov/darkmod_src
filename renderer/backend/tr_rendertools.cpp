@@ -2348,7 +2348,7 @@ void RB_TestImage( void ) {
 			tr.testVideoFrame = NULL;
 			return;
 		}
-	} else if ( tr.testImage && tr.testImage->cubeFiles == CF_2D ) {
+	} else if ( tr.testImage && !tr.testImageIsCubemap ) {
 		int max = idMath::Imax(tr.testImage->uploadWidth, tr.testImage->uploadHeight);
 
 		w = 0.25 * tr.testImage->uploadWidth / max;
@@ -2365,7 +2365,7 @@ void RB_TestImage( void ) {
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 	image->Bind();
 
-	if ( image->cubeFiles != CF_2D ) {
+	if ( tr.testImageIsCubemap ) {
 		idMat3 axis = tr.primaryRenderView.viewaxis;
 		idRenderMatrix viewMatrix;
 		idRenderMatrix::CreateViewMatrix( idVec3( 0.0f ), axis * 100.0f, viewMatrix );

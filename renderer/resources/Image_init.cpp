@@ -382,7 +382,6 @@ idImage::idImage() {
 	filter = TF_DEFAULT;
 	repeat = TR_REPEAT;
 	depth = TD_DEFAULT;
-	cubeFiles = CF_2D;
 	bindCount = 0;
 	uploadWidth = uploadHeight = 0;
 	internalFormat = 0;
@@ -398,7 +397,6 @@ idImageAsset::idImageAsset() {
 	precompressedFile = false;
 	defaulted = false;
 	timestamp = 0;
-	generatorFunction = NULL;
 	allowDownSize = false;
 	memset( &cpuData, 0, sizeof( cpuData ) );
 	compressedData = nullptr;
@@ -929,32 +927,34 @@ idImage::Reload
 ===============
 */
 void idImageAsset::Reload( bool checkPrecompressed, bool force ) {
-	// always regenerate functional images
-	if ( !generatorFunction && !force ) { // check file times
-		ID_TIME_T	current;
+	if ( !force ) {
+		if ( !source.filename.IsEmpty() ) {
+			// check file times
+			ID_TIME_T	current;
 
-		if ( cubeFiles != CF_2D ) {
-			R_LoadImageProgramCubeMap( imgName, cubeFiles, nullptr, nullptr, &current );
-		} else { // get the current values
-			R_LoadImageProgram( imgName, nullptr, nullptr, nullptr, &current );
-		}
+			if ( source.cubeFiles != CF_2D ) {
+				R_LoadImageProgramCubeMap( imgName, source.cubeFiles, nullptr, nullptr, &current );
+			} else { // get the current values
+				R_LoadImageProgram( imgName, nullptr, nullptr, nullptr, &current );
+			}
 
-		if ( current <= timestamp ) {
-			return;
+			if ( current <= timestamp ) {
+				return;
+			}
+		} else if ( source.generatorFunction ) { 
+			// always regenerate functional images
+		} else {
+			assert( false );
 		}
 	}
 	common->DPrintf( "reloading %s.\n", imgName.c_str() );
 
 	PurgeImage();
 
-	if ( generatorFunction && !defaulted ) {
-		cpuData = generatorFunction();
-	} else {
-		// force no precompressed image check, which will cause it to be reloaded
-		// from source, and another precompressed file generated.
-		// Load is from the front end, so the back end must be synced
-		ActuallyLoadImage();
-	}
+	// force no precompressed image check, which will cause it to be reloaded
+	// from source, and another precompressed file generated.
+	// Load is from the front end, so the back end must be synced
+	ActuallyLoadImage();
 }
 
 /*
@@ -1310,71 +1310,6 @@ idImageScratch *idImageManager::AllocImageScratch( const char *name ) {
 
 /*
 ==================
-ImageFromFunction
-
-Images that are procedurally generated are always specified
-with a callback which must work at any time, allowing the OpenGL
-system to be completely regenerated if needed.
-==================
-*/
-idImageAsset *idImageManager::ImageFromFunction( const char *_name, imageBlock_t ( *generatorFunction )(),
-	textureFilter_t filter, bool allowDownSize,
-	textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap,
-	imageResidency_t residency
-) {
-	if ( !_name ) {
-		common->FatalError( "idImageManager::ImageFromFunction: NULL name" );
-	}
-
-	// strip any .tga file extensions from anywhere in the _name
-	idStr name = _name;
-	name.Remove( ".tga" );
-	name.BackSlashesToSlashes();
-
-	// see if the image already exists
-	int	hash = name.FileNameHash();
-	for ( idImage *baseimg = imageHashTable[hash] ; baseimg; baseimg = baseimg->hashNext ) {
-		if ( name.Icmp( baseimg->imgName ) == 0 ) {
-			idImageAsset *image = baseimg->AsAsset();
-			if ( !image ) {
-				common->Error( "Image name %s used both for scratch and asset", name.c_str() );
-			}
-			if ( image->generatorFunction != generatorFunction ) {
-				common->Warning( "Reused image %s with mixed generators", name.c_str() );
-			}
-			if (
-				image->filter != filter ||
-				image->allowDownSize != allowDownSize ||
-				image->repeat != repeat ||
-				image->depth != depth ||
-				image->residency != residency
-			) {
-				common->Warning( "Reused image %s with mixed settings", name.c_str() );
-			}
-			return image;
-		}
-	}
-
-	// create the image and issue the callback
-	idImageAsset *image = AllocImageAsset( name );
-	image->generatorFunction = generatorFunction;
-	image->filter = filter;
-	image->allowDownSize = allowDownSize;
-	image->repeat = repeat;
-	image->depth = depth;
-	image->cubeFiles = cubeMap;
-	image->residency = residency;
-
-	// check for precompressed, load is from the front end
-	if ( image_preload.GetBool() ) {
-		image->referencedOutsideLevelLoad = true;
-		image->ActuallyLoadImage();
-	}
-	return image;
-}
-
-/*
-==================
 ImageScratch
 
 Generate scratch image to be used as e.g. FBO attachment.
@@ -1392,7 +1327,7 @@ idImageScratch *idImageManager::ImageScratch( const char *_name ) {
 		if ( name.Icmp( baseimg->imgName ) == 0 ) {
 			idImageScratch *image = baseimg->AsScratch();
 			if ( !image ) {
-				common->Error( "Image name %s used both for scratch and asset", name.c_str() );
+				common->Error( "Image name '%s' used both for scratch and asset", name.c_str() );
 			}
 			return image;
 		}
@@ -1407,24 +1342,34 @@ idImageScratch *idImageManager::ImageScratch( const char *_name ) {
 
 /*
 ===============
-ImageFromFile
+ImageFromSource
 
 Finds or loads the given image, always returning a valid image pointer.
 Loading of the image may be deferred for dynamic loading.
 ==============
 */
-idImageAsset *idImageManager::ImageFromFile( const char *_name, textureFilter_t filter, bool allowDownSize,
-                                        textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap, imageResidency_t residency
+idImageAsset * idImageManager::ImageFromSource(
+	const idStr &name, ImageAssetSource source,
+	textureFilter_t filter, bool allowDownSize,
+	textureRepeat_t repeat, textureDepth_t depth,
+	imageResidency_t residency
 ) {
-	if ( !_name || !_name[0] || idStr::Icmp( _name, "default" ) == 0 || idStr::Icmp( _name, "_default" ) == 0 ) {
-		declManager->MediaPrint( "DEFAULTED\n" );
-		return globalImages->defaultImage;
+	int numSources = ( source.generatorFunction != nullptr ) + ( !source.filename.IsEmpty() );
+	if ( numSources != 1 ) {
+		common->Error( "Image '%s' has %d sources specified", name.c_str(), numSources );
 	}
 
-	// strip any .tga file extensions from anywhere in the _name, including image program parameters
-	idStr name = _name;
-	name.Remove( ".tga" );
-	name.BackSlashesToSlashes();
+	if ( source.generatorFunction && source.cubeFiles != CF_NONE ) {
+		// it is either CF_2D or CF_NATIVE, depending on whether generator returns 1 or 6 sides
+		source.cubeFiles = CF_NONE;
+	}
+	if ( !source.filename.IsEmpty() && source.cubeFiles == CF_NONE ) {
+		// perhaps some error? let's assume 2D texture by default
+		source.cubeFiles = CF_2D;
+	}
+
+	// this can be changed if we query generated image by name
+	ImageAssetSource overrideSource = source;
 
 	// see if the image is already loaded, unless we are in a reloadImages call
 	int hash = name.FileNameHash();
@@ -1433,51 +1378,51 @@ idImageAsset *idImageManager::ImageFromFile( const char *_name, textureFilter_t 
 		if ( name.Icmp( baseimg->imgName ) == 0 ) {
 			idImageAsset *image = baseimg->AsAsset();
 			if ( !image ) {
-				continue;
-			}
-			// the built in's, like _white and _flat always match the other options
-			if ( name[0] == '_' ) {
-				return image;
-			}
-			// stgatilov: this image was not found and replaced with _default
-			// hence, other parameters don't matter too
-			if ( image->defaulted ) {
-				return image;
+				common->Error( "Image name '%s' used both for scratch and asset", name.c_str() );
 			}
 
-			if ( image->cubeFiles != cubeMap ) {
-				common->Error( "Image '%s' has been referenced with conflicting cube map states", _name );
+			if ( !source.filename.IsEmpty() && image->source.filename.IsEmpty() ) {
+				// special case: it is allowed to call ImageFromFile get find existing builtin image by name
+				// in this case copy generator function from ANY found image
+				overrideSource = image->source;
+			}
+			else {
+				if ( image->source.filename != source.filename ) {
+					// this never happens actually, because imgName == source.filename =)
+					common->Error( "Image '%s' has different source files: '%s' and '%s'", name.c_str(), image->source.filename.c_str(), source.filename.c_str() );
+				}
+				if ( image->source.generatorFunction != source.generatorFunction ) {
+					common->Error( "Image '%s' has different generator function pointer: %p and %p", name.c_str(), image->source.generatorFunction, source.generatorFunction );
+				}
+				if ( image->source.cubeFiles != source.cubeFiles ) {
+					common->Error( "Image '%s' has been referenced with conflicting cube map states", name.c_str() );
+				}
 			}
 
 			if ( image->filter != filter || image->repeat != repeat ) {
-				// we might want to have the system reset these parameters on every bind and share the image data
+				// don't reuse this image, better create a new one instead
+				// note: we might want to have the system reset these parameters on every bind and share the image data?
 				continue;
-			}
-
-			if ( image->allowDownSize == allowDownSize && image->depth == depth && image->residency == residency ) {
-				// note that it is used this level load
-				image->levelLoadReferenced = true;
-				return image;
 			}
 
 			// the same image is being requested, but with a different allowDownSize or depth
 			// so pick the highest of the two and reload the old image with those parameters
-			if ( !image->allowDownSize ) {
+			if ( allowDownSize && !image->allowDownSize ) {
 				allowDownSize = false;
 			}
-
-			if ( image->depth > depth ) {
+			if ( depth < image->depth ) {
 				depth = image->depth;
 			}
-
-			if ( image->residency & (~residency) )
+			if ( image->residency & (~residency) ) {
 				residency = imageResidency_t( residency | image->residency );
+			}
 
 			if ( image->allowDownSize == allowDownSize && image->depth == depth && image->residency == residency ) {
 				// the already created one is already the highest quality
 				image->levelLoadReferenced = true;
 				return image;
 			}
+
 			image->allowDownSize = allowDownSize;
 			image->depth = depth;
 			image->residency = residency;
@@ -1496,6 +1441,8 @@ idImageAsset *idImageManager::ImageFromFile( const char *_name, textureFilter_t 
 	// create a new image
 	//
 	idImageAsset *image = AllocImageAsset( name );
+
+	image->source = overrideSource;
 
 	// HACK: to allow keep fonts from being mip'd, as new ones will be introduced with localization
 	// this keeps us from having to make a material for each font tga
@@ -1520,7 +1467,6 @@ idImageAsset *idImageManager::ImageFromFile( const char *_name, textureFilter_t 
 	image->repeat = repeat;
 	image->depth = depth;
 	image->type = TT_2D;
-	image->cubeFiles = cubeMap;
 	image->filter = filter;
 	image->residency = residency;
 
@@ -1736,21 +1682,21 @@ void idImageManager::Init() {
 	);
 
 	// create built in images
-	defaultImage = ImageFromFunction( "_default", R_DefaultImage, TF_DEFAULT, true, TR_REPEAT, TD_HIGH_QUALITY, CF_2D, IR_BOTH );
+	defaultImage = ImageFromFunction( "_default", R_DefaultImage, TF_DEFAULT, true, TR_REPEAT, TD_HIGH_QUALITY, IR_BOTH );
 	defaultImage->defaulted = true;
 	whiteImage = ImageFromFunction( "_white", R_WhiteImage, TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
 	blackImage = ImageFromFunction( "_black", R_BlackImage, TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
 	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage, TF_DEFAULT, true, TR_REPEAT, TD_BUMP );
-	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage, TF_DEFAULT, true, TR_REPEAT, TD_BUMP, CF_NATIVE );
+	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage, TF_DEFAULT, true, TR_REPEAT, TD_BUMP );
 	alphaNotchImage = ImageFromFunction( "_alphaNotch", R_AlphaNotchImage, TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY );
 	fogImage = ImageFromFunction( "_fog", R_FogImage, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
 	fogEnterImage = ImageFromFunction( "_fogEnter", R_FogEnterImage, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
 	noFalloffImage = ImageFromFunction( "_noFalloff", R_CreateNoFalloffImage, TF_DEFAULT, false, TR_CLAMP_TO_ZERO, TD_HIGH_QUALITY );
 	ImageFromFunction( "_quadratic", R_QuadraticImage, TF_DEFAULT, false, TR_CLAMP, TD_HIGH_QUALITY );
-	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", R_MakeWhiteCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY, CF_NATIVE );
-	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", R_MakeBlackCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY, CF_NATIVE );
-	ImageFromFunction( "_ambientWorldDiffuseCubeMap", R_AmbientWorldDiffuseCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY, CF_NATIVE );
-	ImageFromFunction( "_ambientWorldSpecularCubeMap", R_AmbientWorldSpecularCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY, CF_NATIVE );
+	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", R_MakeWhiteCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY );
+	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", R_MakeBlackCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY );
+	ImageFromFunction( "_ambientWorldDiffuseCubeMap", R_AmbientWorldDiffuseCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY );
+	ImageFromFunction( "_ambientWorldSpecularCubeMap", R_AmbientWorldSpecularCubeMap, TF_LINEAR, false, TR_REPEAT, TD_HIGH_QUALITY );
 
 	// cinematicImage is used for cinematic drawing
 	// scratchImage is used for screen wipes/doublevision etc..
@@ -1802,10 +1748,7 @@ void idImageManager::BeginLevelLoad() {
 		idImageAsset *image = images[ i ]->AsAsset();
 		if ( !image )
 			continue;	
-		// generator function images are always kept around
-		if ( image->generatorFunction ) {
-			continue;
-		} else if ( com_purgeAll.GetBool() ) {
+		if ( com_purgeAll.GetBool() ) {
 			image->PurgeImage();
 		}
 		image->levelLoadReferenced = false;
@@ -1828,9 +1771,7 @@ preload low mip levels, background load remainder on demand
 */
 
 static void R_LoadSingleImage( idImageAsset *image ) {
-	if ( !image->generatorFunction ) {
-		R_LoadImageData( *image );
-	}
+	R_LoadImageData( *image );
 }
 REGISTER_PARALLEL_JOB( R_LoadSingleImage, "R_LoadSingleImage" );
 
@@ -1851,9 +1792,7 @@ void idImageManager::EndLevelLoad() {
 		idImageAsset *image = images[i]->AsAsset();
 		if ( !image )
 			continue;
-		if ( image->generatorFunction ) {
-			continue;
-		} else if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad ) {
+		if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad ) {
 			//common->Printf( "Purging %s\n", image->imgName.c_str() );
 			purgeCount++;
 			image->PurgeImage();
@@ -1868,9 +1807,6 @@ void idImageManager::EndLevelLoad() {
 	idList<idImageAsset*> imagesToLoad;
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
 		if ( idImageAsset *image = images[i]->AsAsset() ) {
-			if ( image->generatorFunction ) {
-				continue;
-			}
 			if ( image->levelLoadReferenced && ( image->texnum == idImage::TEXTURE_NOT_LOADED ) && image_preload.GetBool() ) {
 				loadCount++;
 				imagesToLoad.AddGrow( image );
