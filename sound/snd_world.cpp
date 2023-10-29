@@ -2108,8 +2108,8 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	// fetch the sound from the cache as 44kHz, 16 bit samples
 	//
 	int offset = current44kHz - chan->trigger44kHzTime;
-	float inputSamples[MIXBUFFER_SAMPLES*2+16];
-	float *alignedInputSamples = (float *)((((intptr_t)inputSamples) + 15) & ~15);
+	ALIGNTYPE16 float inputSamplesFloat[MIXBUFFER_SAMPLES * 2 + 16];
+	ALIGNTYPE16 short inputSamplesShort[MIXBUFFER_SAMPLES * 2 + 16];
 
 	//
 	// allocate and initialize hardware source
@@ -2216,16 +2216,11 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 				}
 
 				for ( j = 0; j < finishedbuffers; j++ ) {
-					chan->GatherChannelSamples( chan->openalStreamingOffset * sample->objectInfo.nChannels, MIXBUFFER_SAMPLES * sample->objectInfo.nChannels, alignedInputSamples );
+					chan->GatherChannelSamples( chan->openalStreamingOffset * sample->objectInfo.nChannels, MIXBUFFER_SAMPLES * sample->objectInfo.nChannels, inputSamplesFloat );
 					for ( int i = 0; i < ( MIXBUFFER_SAMPLES * sample->objectInfo.nChannels ); i++ ) {
-						if ( alignedInputSamples[i] < -32768.0f )
-							((short *)alignedInputSamples)[i] = -32768;
-						else if ( alignedInputSamples[i] > 32767.0f )
-							((short *)alignedInputSamples)[i] = 32767;
-						else
-							((short *)alignedInputSamples)[i] = idMath::FtoiRound( alignedInputSamples[i] );
+						inputSamplesShort[i] = idMath::FtoiRound( idMath::ClampFloat( -32768.0f, 32767.0f, inputSamplesFloat[i] ) );
 					}
-					alBufferData( buffers[j], chan->leadinSample->objectInfo.nChannels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, alignedInputSamples, MIXBUFFER_SAMPLES * sample->objectInfo.nChannels * sizeof( short ), 44100 );
+					alBufferData( buffers[j], chan->leadinSample->objectInfo.nChannels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, inputSamplesShort, MIXBUFFER_SAMPLES * sample->objectInfo.nChannels * sizeof( short ), 44100 );
 					chan->openalStreamingOffset += MIXBUFFER_SAMPLES;
 				}
 
@@ -2267,9 +2262,9 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 
 				if ( sample->objectInfo.nChannels == 2 ) {
 					// need to add a stereo path, but very few samples go through this
-					memset( alignedInputSamples, 0, sizeof( alignedInputSamples[0] ) * MIXBUFFER_SAMPLES * 2 );
+					memset( inputSamplesFloat, 0, sizeof( inputSamplesFloat[0] ) * MIXBUFFER_SAMPLES * 2 );
 				} else {
-					slow.GatherChannelSamples( offset, MIXBUFFER_SAMPLES, alignedInputSamples );
+					slow.GatherChannelSamples( offset, MIXBUFFER_SAMPLES, inputSamplesFloat );
 				}
 
 			sound->SetSlowChannel( chan, slow );
@@ -2281,9 +2276,9 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			// if we are getting a stereo sample adjust accordingly
 			if ( sample->objectInfo.nChannels == 2 ) {
 				// we should probably check to make sure any looping is also to a stereo sample...
-				chan->GatherChannelSamples( offset*2, MIXBUFFER_SAMPLES*2, alignedInputSamples );
+				chan->GatherChannelSamples( offset*2, MIXBUFFER_SAMPLES*2, inputSamplesFloat );
 			} else {
-				chan->GatherChannelSamples( offset, MIXBUFFER_SAMPLES, alignedInputSamples );
+				chan->GatherChannelSamples( offset, MIXBUFFER_SAMPLES, inputSamplesFloat );
 			}
 		}
 
@@ -2347,15 +2342,15 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 
 		if ( numSpeakers == 6 ) {
 			if ( sample->objectInfo.nChannels == 1 ) {
-				SIMDProcessor->MixSoundSixSpeakerMono( finalMixBuffer, alignedInputSamples, MIXBUFFER_SAMPLES, chan->lastV, ears );
+				SIMDProcessor->MixSoundSixSpeakerMono( finalMixBuffer, inputSamplesFloat, MIXBUFFER_SAMPLES, chan->lastV, ears );
 			} else {
-				SIMDProcessor->MixSoundSixSpeakerStereo( finalMixBuffer, alignedInputSamples, MIXBUFFER_SAMPLES, chan->lastV, ears );
+				SIMDProcessor->MixSoundSixSpeakerStereo( finalMixBuffer, inputSamplesFloat, MIXBUFFER_SAMPLES, chan->lastV, ears );
 			}
 		} else {
 			if ( sample->objectInfo.nChannels == 1 ) {
-				SIMDProcessor->MixSoundTwoSpeakerMono( finalMixBuffer, alignedInputSamples, MIXBUFFER_SAMPLES, chan->lastV, ears );
+				SIMDProcessor->MixSoundTwoSpeakerMono( finalMixBuffer, inputSamplesFloat, MIXBUFFER_SAMPLES, chan->lastV, ears );
 			} else {
-				SIMDProcessor->MixSoundTwoSpeakerStereo( finalMixBuffer, alignedInputSamples, MIXBUFFER_SAMPLES, chan->lastV, ears );
+				SIMDProcessor->MixSoundTwoSpeakerStereo( finalMixBuffer, inputSamplesFloat, MIXBUFFER_SAMPLES, chan->lastV, ears );
 			}
 		}
 

@@ -744,66 +744,45 @@ void idSoundSample::Load( void ) {
 				hardwareBuffer = true;
 			}
 		}
+	}
 		
-		// OGG decompressed at load time (when smaller than s_decompressionLimit seconds, 6 seconds by default)
-		if ( objectInfo.wFormatTag == WAVE_FORMAT_TAG_OGG ) {
-			if ( ( objectSize < ( ( int ) objectInfo.nSamplesPerSec * idSoundSystemLocal::s_decompressionLimit.GetInteger() ) ) ) {
+	// OGG decompressed at load time (when smaller than s_decompressionLimit seconds, 6 seconds by default)
+	if ( objectInfo.wFormatTag == WAVE_FORMAT_TAG_OGG ) {
+		if ( ( objectSize < ( ( int ) objectInfo.nSamplesPerSec * idSoundSystemLocal::s_decompressionLimit.GetInteger() ) ) ) {
+			alGetError();
+			alGenBuffers( 1, &openalBuffer );
+			ALenum errorCode = alGetError();
+			if (errorCode != AL_NO_ERROR)
+			{
+					IssueSoundSampleFailure("idSoundCache: OGG error generating OpenAL hardware buffer", errorCode, name.c_str());
+			}
+			if ( alIsBuffer( openalBuffer ) ) {
+				idSampleDecoder *decoder = idSampleDecoder::Alloc();
+				float *floatData = (float *)soundCacheAllocator.Alloc( ( LengthIn44kHzSamples() + 1 ) * sizeof( float ) );
+				short *shortData = (short *)soundCacheAllocator.Alloc( ( objectSize + 1 ) * sizeof( short ) );
+
+				// Decoder *always* outputs 44 kHz data
+				decoder->Decode( this, 0, LengthIn44kHzSamples(), floatData );
+
+				// Downsample back to original frequency (save memory)
+				assert( 44100 % objectInfo.nSamplesPerSec == 0 );
+				int downsampleDivisor = 44100 / objectInfo.nSamplesPerSec;
+				for ( int i = 0; i < objectSize; i++ ) {
+					shortData[i] = idMath::FtoiRound( idMath::ClampFloat( -32768.0f, 32767.0f, floatData[i * downsampleDivisor] ) );
+				}
+	
 				alGetError();
-				alGenBuffers( 1, &openalBuffer );
-				errorCode = alGetError();
-				if (errorCode != AL_NO_ERROR)
-				{
-						IssueSoundSampleFailure("idSoundCache: OGG error generating OpenAL hardware buffer", errorCode, name.c_str());
+				alBufferData( openalBuffer, objectInfo.nChannels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, shortData, objectSize * sizeof( short ), objectInfo.nSamplesPerSec );
+				ALenum alError = alGetError();
+				if ( alError != AL_NO_ERROR )
+					IssueSoundSampleFailure("idSoundCache Load OGG: error loading data into OpenAL hardware buffer", alError, name.c_str());
+				else {
+					hardwareBuffer = true;
 				}
-				if ( alIsBuffer( openalBuffer ) ) {
-					idSampleDecoder *decoder = idSampleDecoder::Alloc();
-					float *destData = (float *)soundCacheAllocator.Alloc( ( LengthIn44kHzSamples() + 1 ) * sizeof( float ) );
-					
-					// Decoder *always* outputs 44 kHz data
-					decoder->Decode( this, 0, LengthIn44kHzSamples(), destData );
 
-					// Downsample back to original frequency (save memory)
-					if ( objectInfo.nSamplesPerSec == 11025 ) {
-						for ( int i = 0; i < objectSize; i++ ) {
-							if ( destData[i*4] < -32768.0f )
-								((short *)destData)[i] = -32768;
-							else if ( destData[i*4] > 32767.0f )
-								((short *)destData)[i] = 32767;
-							else
-								((short *)destData)[i] = idMath::FtoiRound( destData[i*4] );
-						}
-					} else if ( objectInfo.nSamplesPerSec == 22050 ) {
-						for ( int i = 0; i < objectSize; i++ ) {
-							if ( destData[i*2] < -32768.0f )
-								((short *)destData)[i] = -32768;
-							else if ( destData[i*2] > 32767.0f )
-								((short *)destData)[i] = 32767;
-							else
-								((short *)destData)[i] = idMath::FtoiRound( destData[i*2] );
-						}
-					} else {
-						for ( int i = 0; i < objectSize; i++ ) {
-							if ( destData[i] < -32768.0f )
-								((short *)destData)[i] = -32768;
-							else if ( destData[i] > 32767.0f )
-								((short *)destData)[i] = 32767;
-							else
-								((short *)destData)[i] = idMath::FtoiRound( destData[i] );
-						}
-					}
-
-					alGetError();
-					alBufferData( openalBuffer, objectInfo.nChannels==1?AL_FORMAT_MONO16:AL_FORMAT_STEREO16, destData, objectSize * sizeof( short ), objectInfo.nSamplesPerSec );
-					ALenum alError = alGetError();
-					if ( alError != AL_NO_ERROR )
-						IssueSoundSampleFailure("idSoundCache Load OGG: error loading data into OpenAL hardware buffer", alError, name.c_str());
-					else {
-						hardwareBuffer = true;
-					}
-
-					soundCacheAllocator.Free( (byte *)destData );
-					idSampleDecoder::Free( decoder );
-				}
+				soundCacheAllocator.Free( (byte *)floatData );
+				soundCacheAllocator.Free( (byte *)shortData );
+				idSampleDecoder::Free( decoder );
 			}
 		}
 	}
