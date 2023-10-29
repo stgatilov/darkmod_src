@@ -46,7 +46,13 @@ idCVar idSoundSystemLocal::s_singleEmitter( "s_singleEmitter", "0", CVAR_SOUND |
 idCVar idSoundSystemLocal::s_numberOfSpeakers( "s_numberOfSpeakers", "2", CVAR_SOUND | CVAR_ARCHIVE, "No longer works! (number of speakers)" );
 idCVar idSoundSystemLocal::s_force22kHz( "s_force22kHz", "0", CVAR_SOUND | CVAR_BOOL, ""  );
 idCVar idSoundSystemLocal::s_clipVolumes( "s_clipVolumes", "1", CVAR_SOUND | CVAR_BOOL, ""  );
-idCVar idSoundSystemLocal::s_realTimeDecoding( "s_realTimeDecoding", "1", CVAR_SOUND | CVAR_BOOL | CVAR_INIT, "" );
+idCVar idSoundSystemLocal::s_realTimeDecoding(
+	"s_realTimeDecoding", "2", CVAR_SOUND | CVAR_INTEGER | CVAR_INIT,
+	"When to preload sounds and when to stream them from source file?\n"
+	"  0 --- always preload, never stream\n"
+	"  1 --- preload all WAVs and OGGs shorter than s_decompressionLimit\n"
+	"  2 --- don't preload, stream everything"
+);
 
 idCVar idSoundSystemLocal::s_slowAttenuate( "s_slowAttenuate", "1", CVAR_SOUND | CVAR_BOOL, "slowmo sounds attenuate over shorted distance" );
 idCVar idSoundSystemLocal::s_enviroSuitCutoffFreq( "s_enviroSuitCutoffFreq", "2000", CVAR_SOUND | CVAR_FLOAT, "" );
