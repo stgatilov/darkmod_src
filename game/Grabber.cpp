@@ -1612,10 +1612,48 @@ bool CGrabber::ToggleEquip( void )
 	return rc;
 }
 
+bool CGrabber::EquipFrobEntity( idPlayer *player )
+{
+	idEntity* frobEnt = player->m_FrobEntity.GetEntity();
+
+	// If attachment, such as head, get its body.
+	idEntity* ent = (frobEnt && frobEnt->IsType(idAFAttachment::Type))
+		? static_cast<idAFAttachment*>(frobEnt)->GetBindMaster()
+		: frobEnt;
+
+	if (!(ent && ent->spawnArgs.GetBool("equippable")))
+		return false;
+
+	if (EquipEntity(ent))
+	{
+		if (ent->IsType(idAFEntity_Base::Type))
+		{
+			// If the body ent frob state is not set to 'false' after shouldering,
+			// the body will be stuck in a highlighted state after dropping it
+			// until the player highlights the body again. So, ensure 'false'.
+			ent->SetFrobbed(false);
+		}
+		else
+		{
+			// Unless shouldering a body, make sure nothing is equipped.
+			Forget(ent);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 bool CGrabber::Equip( void )
 {
-	idStr str;
 	idEntity *ent = m_dragEnt.GetEntity();
+	return EquipEntity(ent);
+}
+
+bool CGrabber::EquipEntity( idEntity *ent )
+{
+	idStr str;
 
 	if( !ent || !ent->spawnArgs.GetBool("equippable") )
 		return false;

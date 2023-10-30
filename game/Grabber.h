@@ -147,9 +147,16 @@ public:
 		**/
 		bool					ToggleEquip( void );
 		/**
+		* Daft Mugi #6316
+		* Try to Use/Equip frob-highlighted item without holding it.
+		* Examples: bodies, candles, lanterns, and food
+		**/
+		bool					EquipFrobEntity( idPlayer *player );
+		/**
 		* Actual functions for equipping and dequipping
 		**/
 		bool					Equip( void );
+		bool					EquipEntity( idEntity *ent );
 		bool					Dequip( void );
 
 		/**

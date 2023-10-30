@@ -344,9 +344,29 @@ idCVar cv_frobhelper_fadein_duration(	"tdm_frobhelper_fadein_duration",	"1500", 
 idCVar cv_frobhelper_fadeout_duration(	"tdm_frobhelper_fadeout_duration",	"500",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor is faded out for this duration specified in ms.", 0.0f, 5000.0f);
 idCVar cv_frobhelper_ignore_size(		"tdm_frobhelper_ignore_size",		"40.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,	"The FrobHelper is not activated for entites that are bigger than this ignore size along one dimension. Set to 0, to disable ignoring entities.", 0.0f, 10000.0f);
 
+// Daft Mugi #6316: Hold Frob for alternate interaction
+idCVar cv_holdfrob_delay(
+	"tdm_holdfrob_delay", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,
+	"The hold-frob delay (in ms) before drag body or use world item.\n"
+	"Set to 0 for original TDM behavior.",
+	0, 2000
+);
+idCVar cv_holdfrob_bounds(
+	"tdm_holdfrob_bounds", "7", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,
+	"The view position must stay within the bounds in order to perform an interaction.",
+	0.0f, 1000.0f
+);
+idCVar cv_holdfrob_drag_body_behavior(
+	"tdm_holdfrob_drag_body_behavior", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,
+	"Which drag body behavior?\n"
+	"  1 --- on first frob release (key up), let go of body.\n"
+	"  0 --- on second frob, let go of body. (original TDM behavior)"
+);
+
 // Obsttorte: #5984 (multilooting)
 idCVar cv_multiloot_min_interval("tdm_multiloot_min_interval", "300",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT, "The minimum interval between two consecutive frobs when multifrobbing.");
 idCVar cv_multiloot_max_interval("tdm_multiloot_max_interval", "2000",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT, "The amount of time after which multilooting gets disabled again.");
+
 // #4289
 idCVar cv_pm_blackjack_indicate("tdm_blackjack_indicate", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "Set to 1 to activate blackjack indicator.", 0, 1);
 

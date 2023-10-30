@@ -827,6 +827,12 @@ public:
 
 	bool					IsShoulderingBody( void ) { return m_bShoulderingBody; };
 
+	// Daft Mugi #6316: Hold Frob for alternate interaction
+	bool					IsHoldFrobEnabled( void );
+	bool					CanHoldFrobAction( void );
+	void					SetHoldFrobView( void );
+	float					HoldFrobViewDistance( void );
+
 	bool					OnLadder( void ) const;
 	// Virtal override of idActor::OnElevator()
 	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;
@@ -870,6 +876,12 @@ public:
 	// Obsttorte: #5984 (multilooting)
 	bool					multiloot;
 	int						multiloot_lastfrob;
+
+	// Daft Mugi #6316: Hold Frob for alternate interaction
+	idEntityPtr<idEntity>   holdFrobEntity;
+	idEntityPtr<idEntity>   holdFrobDraggedBodyEntity;
+	int                     holdFrobStartTime;
+	idMat3                  holdFrobStartViewAxis;
 
 	// angua: Set ideal crouch state
 	void					EvaluateCrouch();
@@ -945,6 +957,9 @@ public:
 	* When dropping other objects (e.g., equipped junk item), it need not be
 	**/
 	bool DropToHands( idEntity *ent, CInventoryItemPtr item = CInventoryItemPtr() );
+
+	// Performs the inventory action for onButtonRepeat
+	void InventoryUseKeyRepeat(int holdTime);
 
 	// Performs the inventory action for onButtonRelease
 	void InventoryUseKeyRelease(int holdTime);

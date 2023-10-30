@@ -706,6 +706,12 @@ idPlayer::idPlayer() :
 	multiloot = false;
 	multiloot_lastfrob = 0;
 
+	// Daft Mugi #6316
+	holdFrobEntity = NULL;
+	holdFrobDraggedBodyEntity = NULL;
+	holdFrobStartTime = 0;
+	holdFrobStartViewAxis.Zero();
+
 	// greebo: Initialise the frob trace contact material to avoid 
 	// crashing during map save when nothing has been frobbed yet
 	memset(&m_FrobTrace, 0, sizeof(trace_t));
@@ -2422,6 +2428,13 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	// those values don't get saved, but instead reset upon load
 	multiloot = false;
 	multiloot_lastfrob = 0;
+
+	// Daft Mugi #6316: Hold Frob for alternate interaction
+	// The hold frob values don't get saved, but reset on load.
+	holdFrobEntity = NULL;
+	holdFrobDraggedBodyEntity = NULL;
+	holdFrobStartTime = 0;
+	holdFrobStartViewAxis.Zero();
 
 	savefile->ReadInt( buttonMask );
 	savefile->ReadInt( oldButtons );
@@ -6021,13 +6034,7 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 
 		case IMPULSE_INVENTORY_USE:		// Inventory Use Item
 		{
-			const CInventoryCursorPtr& crsr = InventoryCursor();
-			CInventoryItemPtr it = crsr->GetCurrentItem();
-
-			if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-			{
-				UseInventoryItem(ERepeat, it, holdTime, false);
-			}
+			InventoryUseKeyRepeat(holdTime);
 		}
 		break;
 	}
@@ -8820,6 +8827,56 @@ void idPlayer::SetInfluenceFov( float fov ) {
 
 /*
 ================
+idPlayer::IsHoldFrobEnabled
+================
+*/
+bool idPlayer::IsHoldFrobEnabled( void )
+{
+	// Hold-frob delay of 0 matches TDM v2.11 (and prior) behavior
+	return cv_holdfrob_delay.GetInteger() > 0;
+}
+
+/*
+================
+idPlayer::CanHoldFrobAction
+================
+*/
+bool idPlayer::CanHoldFrobAction( void )
+{
+	int delay = cv_holdfrob_delay.GetInteger();
+	// Is hold frob enabled and has enough time elapsed?
+	return (delay > 0)
+		&& (gameLocal.time - holdFrobStartTime >= delay);
+}
+
+/*
+================
+idPlayer::SetHoldFrobView
+================
+*/
+void idPlayer::SetHoldFrobView( void )
+{
+	holdFrobStartViewAxis = renderView->viewaxis;
+}
+
+/*
+================
+idPlayer::HoldFrobViewDistance
+================
+*/
+float idPlayer::HoldFrobViewDistance( void )
+{
+	// Relative to the player's view axis (x,y,z = forward,left,up).
+	// Use a point in front of the player.
+	idVec3 frobStartView = idVec3(100, 0, 0) * holdFrobStartViewAxis;
+	idVec3 frobCurrentView = idVec3(100, 0, 0) * renderView->viewaxis;
+	float holdFrobDistance = (frobCurrentView - frobStartView).Length();
+
+	return holdFrobDistance;
+}
+
+/*
+================
 idPlayer::OnLadder
 ================
 */
@@ -9891,6 +9948,17 @@ float idPlayer::GetMovementVolMod( void )
 	//gameRenderWorld->DebugText(idStr(returnval), GetEyePosition() + viewAngles.ToForward()*20, 0.15f, colorWhite, viewAngles.ToMat3(), 1, 500);
 
 	return returnval;
+}
+
+void idPlayer::InventoryUseKeyRepeat(int holdTime)
+{
+	const CInventoryCursorPtr& crsr = InventoryCursor();
+	CInventoryItemPtr it = crsr->GetCurrentItem();
+
+	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+	{
+		UseInventoryItem(ERepeat, it, holdTime, false);
+	}
 }
 
 void idPlayer::InventoryUseKeyRelease(int holdTime)
@@ -11457,7 +11525,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	if ( (GetImmobilization() & EIM_FROB_COMPLEX) && !target->m_bFrobSimple )
 	{
 		// TODO: Rename this "uh-uh" sound to something more general?
-		StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );	
+		StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );
 		return;
 	}
 
@@ -11465,7 +11533,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	// Retrieve the entity before trying to add it to the inventory, the pointer
 	// might be cleared after calling AddToInventory().
 	idEntity* highlightedEntity = m_FrobEntity.GetEntity();
-	
+
 	if (impulseState == EPressed)
 	{
 		// Fire the STIM_FROB response on key down (if defined) on this entity
@@ -11503,10 +11571,9 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
-	// These actions are only applicable for EPressed buttonstate
+	// Try to add world item to inventory
 	if (impulseState == EPressed || ((impulseState == ERepeat) && multiloot))
 	{
-		
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity.
@@ -11548,63 +11615,163 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 			// grayman #3011 - is anything sitting on this inventory item?
 			target->ActivateContacts();
+
+			// Item added to inventory, so skip other frob code
+			return;
 		}
-		if (impulseState == EPressed)
+	}
+
+
+	// Item could not be added to inventory, so handle body and equip/use frob.
+
+	const bool grabableType = target->spawnArgs.GetBool("grabable", "1"); // allow override
+	const bool bodyType = grabableType
+		&& (target->IsType(idAFEntity_Base::Type) || target->IsType(idAFAttachment::Type));
+	const bool moveableType = grabableType
+		&& (target->IsType(idMoveable::Type) || target->IsType(idMoveableItem::Type));
+
+	// If an attachment, such as a head, get its body.
+	idEntity* bodyTarget = target->IsType(idAFAttachment::Type)
+		? static_cast<idAFAttachment*>(target)->GetBindMaster()
+		: target;
+
+	const bool holdFrobBodyType = bodyType
+		&& bodyTarget
+		&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
+		&& IsHoldFrobEnabled();
+	const bool holdFrobUsableType = moveableType
+		&& target->spawnArgs.GetBool("equippable", "0")
+		&& IsHoldFrobEnabled();
+
+	// Do not pick up live, conscious AI
+	if (target->IsType(idAI::Type))
+	{
+		idAI* AItarget = static_cast<idAI*>(target);
+		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
+			return;
+	}
+
+	// Daft Mugi #6257: Auto-Search Bodies
+	if (bodyType && cv_tdm_autosearch_bodies.GetBool())
+	{
+		// delay > 0 and shoulderable, hold-frob behavior (on EReleased)
+		bool isHoldFrob = holdFrobBodyType && impulseState == EReleased;
+		// delay > 0 and non-shoulderable, regular behavior  (on EPressed)
+		// delay == 0, TDM v2.11 (and prior) regular behavior (on EPressed)
+		bool isRegular = !holdFrobBodyType && impulseState == EPressed;
+
+		if (isHoldFrob || isRegular)
 		{
-			// Grab it if it's a grabable class
-			if (target->IsType(idMoveable::Type) || target->IsType(idAFEntity_Base::Type) ||
-				target->IsType(idMoveableItem::Type) || target->IsType(idAFAttachment::Type))
+			// If looted body this time, do not shoulder/pick up body.
+			// NOTE: The body being frobbed might not be an idAI.
+			if (bodyTarget
+			    && bodyTarget->IsType(idAFEntity_Base::Type)
+			    && bodyTarget->AddAttachmentsToInventory(this))
 			{
-				// allow override of default grabbing behavior
-				if (!target->spawnArgs.GetBool("grabable", "1"))
-				{
-					return;
-				}
-
-				// Do not pick up live, conscious AI
-				if (target->IsType(idAI::Type))
-				{
-					idAI* AItarget = static_cast<idAI*>(target);
-					if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
-					{
-						return;
-					}
-				}
-
-				if (cv_tdm_autosearch_bodies.GetBool())
-				{
-					// If attachment, such as head, get its body.
-					idEntity* body = target->IsType(idAFAttachment::Type) ?
-						static_cast<idAFAttachment*>(target)->GetBindMaster() :
-						target;
-
-					// NOTE: The body being looted might not be an idAI.
-					if (body && body->IsType(idAFEntity_Base::Type))
-					{
-						// Daft Mugi #6257
-						// If looted body this time, do not pick up.
-						if (body->AddAttachmentsToInventory(this))
-							return;
-					}
-				}
-
-				gameLocal.m_Grabber->Update(this, false, true); // preservePosition = true #4149
+				return;
 			}
 		}
+	}
+
+	if (impulseState == EPressed)
+	{
+		if (holdFrobBodyType || holdFrobUsableType)
+		{
+			// Store frobbed entity and start time tracking.
+			holdFrobEntity = highlightedEntity;
+			holdFrobDraggedBodyEntity = NULL;
+			holdFrobStartTime = gameLocal.time;
+			SetHoldFrobView();
+			return;
+		}
+	}
+
+	if (impulseState == ERepeat && holdFrobEntity.GetEntity() == highlightedEntity)
+	{
+		if (holdFrobBodyType)
+		{
+			// Drag body if enough time has passed or view has moved outside of bounds.
+			if (CanHoldFrobAction()
+			    || (HoldFrobViewDistance() > cv_holdfrob_bounds.GetFloat()))
+			{
+				gameLocal.m_Grabber->Update(this, false, true);
+				holdFrobEntity = NULL;
+				// Store grabber entity of dragged body, so the body can be released later.
+				holdFrobDraggedBodyEntity = gameLocal.m_Grabber->GetSelected();
+				return;
+			}
+		}
+
+		if (holdFrobUsableType)
+		{
+			// Equip/Use, if enough time has passed.
+			if (CanHoldFrobAction())
+			{
+				gameLocal.m_Grabber->EquipFrobEntity(this);
+				holdFrobEntity = NULL;
+				return;
+			}
+		}
+	}
+
+	if (impulseState == EReleased && holdFrobEntity.GetEntity() == highlightedEntity)
+	{
+		if (holdFrobBodyType)
+		{
+			// Shoulder/pick up body
+			gameLocal.m_Grabber->EquipFrobEntity(this);
+			holdFrobEntity = NULL;
+			return;
+		}
+
+		if (holdFrobUsableType)
+		{
+			// Pick up, since it was not equipped/used (or toggled on/off).
+			gameLocal.m_Grabber->Update(this, false, true);
+			holdFrobEntity = NULL;
+			return;
+		}
+	}
+
+
+	// Item could not be added to inventory, so try to pick it up.
+
+	if (impulseState == EPressed && (moveableType || bodyType))
+	{
+		// Grab it if it's a grabable class and not overridden
+		gameLocal.m_Grabber->Update(this, false, true); // preservePosition = true #4149
+		return;
 	}
 }
 
 void idPlayer::PerformFrob()
 {
+	// Initialize/reset hold frob
+	holdFrobEntity = NULL;
+	holdFrobDraggedBodyEntity = NULL;
+
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB )
 	{
 		return;
 	}
 
-	// if the grabber is currently holding something and frob is pressed,
+	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
+
+	// If holding an equippable item, begin tracking frob for later
+	// equip/use or drop.
+	if (IsHoldFrobEnabled()
+	    && grabberEnt
+	    && grabberEnt->spawnArgs.GetBool("equippable", "0"))
+	{
+		holdFrobEntity = grabberEnt;
+		holdFrobStartTime = gameLocal.time;
+		return;
+	}
+
+	// If the grabber is currently holding something and frob is pressed,
 	// release it.  Do not frob anything new since you're holding an item.
-	if ( gameLocal.m_Grabber->GetSelected() )
+	if (grabberEnt)
 	{
 		gameLocal.m_Grabber->Update( this );
 		return;
@@ -11612,6 +11779,16 @@ void idPlayer::PerformFrob()
 
 	// Get the currently frobbed entity
 	idEntity* frob = m_FrobEntity.GetEntity();
+
+	// If there is nothing highlighted and shouldering a body,
+	// drop the body.
+	if (IsHoldFrobEnabled()
+	    && !frob
+	    && IsShoulderingBody())
+	{
+		gameLocal.m_Grabber->Dequip();
+		return;
+	}
 
 	// Relay the function to the specialised method
 	PerformFrob(EPressed, frob, true);
@@ -11622,6 +11799,18 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB )
 	{
+		return;
+	}
+
+	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
+
+	// If holding an equippable item, use it if frob held long enough.
+	if (holdFrobEntity.GetEntity()
+	    && holdFrobEntity.GetEntity() == grabberEnt
+	    && CanHoldFrobAction())
+	{
+		gameLocal.m_Grabber->ToggleEquip();
+		holdFrobEntity = NULL;
 		return;
 	}
 
@@ -11643,10 +11832,37 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 {
 	// Obsttorte: multilooting
 	multiloot = false;
+
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB )
 	{
 		return;
+	}
+
+	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
+
+	if (IsHoldFrobEnabled())
+	{
+		idEntity* holdFrobEnt = holdFrobEntity.GetEntity();
+
+		// NOTE: When hold-frob drag body behavior is false, do not
+		// stop dragging. (Matches original TDM behavior)
+		if (holdFrobDraggedBodyEntity.GetEntity()
+		    && cv_holdfrob_drag_body_behavior.GetBool())
+		{
+			holdFrobEnt = holdFrobDraggedBodyEntity.GetEntity();
+		}
+
+		// If currently dragging a body, stop dragging.
+		// If currently holding an equippable item, drop it.
+		// When hold-frob delay is 0, behavior matches TDM v2.11 (and prior).
+		if (holdFrobEnt && holdFrobEnt == grabberEnt)
+		{
+			gameLocal.m_Grabber->Update(this);
+			holdFrobDraggedBodyEntity = NULL;
+			holdFrobEntity = NULL;
+			return;
+		}
 	}
 
 	// Get the currently frobbed entity
