@@ -5278,11 +5278,11 @@ void idPhysics_Player::ToggleLean2(float leanYawAngleDegrees)
 	const bool isSameDirection = m_leanYawAngleDegrees == leanYawAngleDegrees;
 	const bool isStopping = m_leanMoveEndTilt == 0;
 
-	const bool stopLeanOnKeyUp = !cv_pm_lean_toggle.GetBool()
+	const bool stopLeanOnKeyUp = !cv_tdm_toggle_lean.GetBool()
 		&& isLeaning                     // already leaning
 		&& isSameDirection               // only stop when same direction
 		&& !isStopping;                  // not already stopping
-	const bool stopLeanOnToggle = cv_pm_lean_toggle.GetBool()
+	const bool stopLeanOnToggle = cv_tdm_toggle_lean.GetBool()
 		&& isLeaning;                    // already leaning
 
 	if (stopLeanOnKeyUp || stopLeanOnToggle)

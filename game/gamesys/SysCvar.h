@@ -255,7 +255,7 @@ extern idCVar cv_pm_lean_to_valid_increments;
 extern idCVar cv_pm_lean_door_increments;
 extern idCVar cv_pm_lean_door_max;
 extern idCVar cv_pm_lean_door_bounds_exp;
-extern idCVar cv_pm_lean_toggle;
+extern idCVar cv_tdm_toggle_lean;
 
 // Daft Mugi #6320: Add New Lean
 extern idCVar cv_pm_lean2_mode;
