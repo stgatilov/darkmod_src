@@ -11534,9 +11534,18 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	// might be cleared after calling AddToInventory().
 	idEntity* highlightedEntity = m_FrobEntity.GetEntity();
 
-	if (impulseState == EPressed)
+	const bool repeatMultiloot = multiloot
+		&& impulseState == ERepeat
+		// Obsttorte: don't do anything if we are multilooting and this is no inventory item
+		&& target->spawnArgs.GetString("inv_name", nullptr) != nullptr
+		// Daft Mugi #6270: Do not multiloot immobile readables
+		&& !target->spawnArgs.GetBool("is_immobile_readable", "0");
+
+	if (impulseState == EPressed || repeatMultiloot)
 	{
 		// Fire the STIM_FROB response on key down (if defined) on this entity
+		// Daft Mugi #6270: STIM_FROB response needs to be triggered when
+		// multiloot is likely to succeed on ERepeat.
 		target->TriggerResponse(this, ST_FROB);
 	}
 
@@ -11572,26 +11581,11 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// Try to add world item to inventory
-	if (impulseState == EPressed || ((impulseState == ERepeat) && multiloot))
+	if (impulseState == EPressed || repeatMultiloot)
 	{
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity.
-
-		if (multiloot &&
-			// Obsttorte: don't do anything if we are multilooting and this is no inventory item
-			(target->spawnArgs.GetString("inv_name", nullptr) == nullptr ||
-			// Daft Mugi: Do not multiloot immobile readables (indirectly identified by snd_acquire null)
-			target->spawnArgs.GetString("snd_acquire", nullptr) == nullptr))
-		{
-			return;
-		}
-
-		// Daft Mugi #6270: STIM_FROB response has not yet been fired when ERepeat,
-		// so do it now before trying to add item to inventory when multilooting.
-		if ((impulseState == ERepeat) && multiloot) {
-			target->TriggerResponse(this, ST_FROB);
-		}
 
 		// Trigger the frob action script on key down
 		target->FrobAction(true);
