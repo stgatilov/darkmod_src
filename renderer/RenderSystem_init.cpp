@@ -1004,6 +1004,46 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 
 /*
 ==================
+screenshot_viewpos
+==================
+*/
+void R_ScreenShotWithViewpos_f( const idCmdArgs &args ) {
+	// Daft Mugi #6331: Show viewpos on player HUD during screenshot
+	// NOTE: The font color for viewpos is set to cyan for best legibility,
+	//       so devs and mappers have an easier time reading the viewpos
+	//       during beta testing and troubleshooting.
+	int cyanColor = 2;
+	int setColor = cv_show_viewpos.GetInteger();
+	idStr ambientGamma;
+	idStr setAmbientGamma = cvarSystem->GetCVarString("r_ambientGamma");
+	idStr cmdString;
+
+	switch (args.Argc()) {
+	case 1:
+		ambientGamma = setAmbientGamma;
+		break;
+	case 2:
+		ambientGamma = args.Argv(1);
+		break;
+	default:
+		common->Printf( "usage: screenshot_viewpos\n       screenshot_viewpos <gamma>\n" );
+		return;
+	}
+
+	sprintf(
+		cmdString,
+		"tdm_show_viewpos %i; r_ambientGamma %s;"
+		"wait; screenshot;"
+		"tdm_show_viewpos %i; r_ambientGamma %s;",
+		cyanColor, ambientGamma.c_str(),
+		setColor, setAmbientGamma.c_str()
+	);
+
+	cmdSystem->AppendCommandText(cmdString);
+}
+
+/*
+==================
 R_BlendedScreenShot
 
 screenshot
@@ -1635,6 +1675,7 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "listGuis", R_ListGuis_f, CMD_FL_RENDERER, "lists guis" );
 	cmdSystem->AddCommand( "touchGui", R_TouchGui_f, CMD_FL_RENDERER, "touches a gui" );
 	cmdSystem->AddCommand( "screenshot", R_ScreenShot_f, CMD_FL_RENDERER, "takes a screenshot" );
+	cmdSystem->AddCommand( "screenshot_viewpos", R_ScreenShotWithViewpos_f, CMD_FL_RENDERER, "takes a screenshot with viewpos on player HUD" );
 	cmdSystem->AddCommand( "envshot", R_EnvShot_f, CMD_FL_RENDERER, "takes an environment shot" );
 	cmdSystem->AddCommand( "envshotGL", R_EnvShotGL_f, CMD_FL_RENDERER, "takes an environment shot in opengl orientation" ); // nbohr1more #4041: add envshotGL for cubicLight
 	cmdSystem->AddCommand( "makeAmbientMap", R_MakeAmbientMap_f, CMD_FL_RENDERER | CMD_FL_CHEAT, "makes an ambient map" );

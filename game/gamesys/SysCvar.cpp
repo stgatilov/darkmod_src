@@ -548,6 +548,16 @@ idCVar 	cv_gui_lightgemSize("gui_lightgemSize", "1.0", CVAR_GAME | CVAR_ARCHIVE 
 idCVar 	cv_gui_barSize("gui_barSize", "1.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Specifies the size of the health and breath bar");
 idCVar	cv_gui_objectiveTextSize("gui_objectiveTextSize", "1.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Specifies the size of the objectives text");
 
+// Daft Mugi #6331: Show viewpos on player HUD
+idCVar cv_show_viewpos(
+	"tdm_show_viewpos", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,
+	"Set to non-zero to show viewpos on player HUD:\n"
+	"  0 --- hide\n"
+	"  1 --- gray font color\n"
+	"  2 --- cyan font color",
+	0, 2
+);
+
 idCVar cv_tdm_rope_pull_force_factor("tdm_rope_pull_force_factor", "140", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The factor by which the pulling force when jumping on a rope gets multiplied.");
 
 idCVar cv_tdm_underwater_blur("tdm_underwater_blur", "3", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The strength of the blur effect when the player is underwater.");

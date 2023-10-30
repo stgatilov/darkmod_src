@@ -362,6 +362,9 @@ extern idCVar cv_gui_lightgemSize;	//lightgem and crouch indicator
 extern idCVar cv_gui_barSize;			//breath and health bar
 extern idCVar cv_gui_objectiveTextSize; 
 
+// Daft Mugi #6331: Show viewpos on player HUD
+extern idCVar cv_show_viewpos;
+
 extern idCVar cv_tdm_inv_loot_item_def;
 extern idCVar cv_tdm_inv_gui_file;
 extern idCVar cv_tdm_inv_hud_pickupmessages;

@@ -3315,6 +3315,40 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	//_hud->Redraw( gameLocal.realClientTime );
 	m_overlays.drawOverlays();
 
+	// Daft Mugi #6331: Show viewpos on player HUD
+	// NOTE: Draw on top of overlays.
+	if (cv_show_viewpos.GetBool())
+	{
+		int color;
+		idStr viewposText;
+		idAngles viewAngles = renderView->viewaxis.ToAngles();
+
+		sprintf(
+			viewposText, "%.2f %.2f %.2f   %.1f %.1f %.1f",
+			renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z,
+			viewAngles.pitch, viewAngles.yaw, viewAngles.roll
+		);
+
+		switch (cv_show_viewpos.GetInteger())
+		{
+		case 1:
+			color = C_COLOR_GRAY;
+			break;
+		case 2:
+			color = C_COLOR_CYAN;
+			break;
+		default:
+			color = C_COLOR_GRAY;
+			break;
+		}
+
+		renderSystem->DrawSmallStringExt(
+			1, 1, viewposText.c_str(),
+			idStr::ColorForIndex(color), false,
+			declManager->FindMaterial("textures/consolefont_24")
+		);
+	}
+
 	// weapon targeting crosshair
 #if 0 // greebo: disabled cursor calls entirely
 	if ( !GuiActive() ) {
