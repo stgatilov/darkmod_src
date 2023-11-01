@@ -1354,6 +1354,12 @@ idImageAsset * idImageManager::ImageFromSource(
 	textureRepeat_t repeat, textureDepth_t depth,
 	imageResidency_t residency
 ) {
+	if ( name.IsEmpty() ) {
+		common->Warning( "Image with empty name requested" );
+		declManager->GetLoadStack().PrintStack(2);
+		return defaultImage;
+	}
+
 	int numSources = ( source.generatorFunction != nullptr ) + ( !source.filename.IsEmpty() );
 	if ( numSources != 1 ) {
 		common->Error( "Image '%s' has %d sources specified", name.c_str(), numSources );
