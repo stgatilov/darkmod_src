@@ -1387,7 +1387,7 @@ idImageAsset * idImageManager::ImageFromSource(
 				overrideSource = image->source;
 			}
 			else {
-				if ( image->source.filename != source.filename ) {
+				if ( image->source.filename.Icmp( source.filename ) != 0 ) {
 					// this never happens actually, because imgName == source.filename =)
 					common->Error( "Image '%s' has different source files: '%s' and '%s'", name.c_str(), image->source.filename.c_str(), source.filename.c_str() );
 				}
