@@ -625,7 +625,7 @@ struct drawLightgemCommand_t : drawSurfsCommand_t {
 
 struct copyRenderCommand_t : emptyCommand_t {
 	int		x, y, imageWidth, imageHeight;
-	idImage	*image;
+	idImageScratch	*image;
 	int		cubeFace;			// when copying to a cubeMap
 	unsigned char	*buffer;	// to memory instead of to texture
 	bool	usePBO;				// lightgem optimization
@@ -847,7 +847,7 @@ public:
 	virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref, bool envshot = false );
 	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false );
 	virtual void			GetCurrentRenderCropSize( int &width, int &height );
-	virtual void			CaptureRenderToImage( idImage &image );
+	virtual void			CaptureRenderToImage( idImageScratch &image ) override;
 	virtual void			CaptureRenderToBuffer( unsigned char *buffer, bool usePbo = false );
 	virtual void			PostProcess();
 	virtual void			UnCrop();

@@ -883,7 +883,7 @@ void idRenderSystemLocal::PostProcess() {
 CaptureRenderToImage
 ================
 */
-void idRenderSystemLocal::CaptureRenderToImage( idImage &image ) {
+void idRenderSystemLocal::CaptureRenderToImage( idImageScratch &image ) {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}

@@ -315,10 +315,10 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
-	if (!stage->image) 
+	if ( !stage->image )
 		stage->image = globalImages->scratchImage;
 
-	tr.CaptureRenderToImage( *stage->image );
+	tr.CaptureRenderToImage( *stage->image->AsScratch() );
 	tr.UnCrop();
 }
 
@@ -369,7 +369,7 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	if ( !stage->image )
 		stage->image = globalImages->scratchImage;
 
-	tr.CaptureRenderToImage( *stage->image );
+	tr.CaptureRenderToImage( *stage->image->AsScratch() );
 	//tr.UnCrop();
 }
 
@@ -458,12 +458,7 @@ void R_PortalRender( textureStage_t *stage, idScreenRect& scissor ) {
 		R_RenderView( *parms );
 
 	if ( g_enablePortalSky.GetInteger() == 1 ) {
-		idImage *image = NULL;
-		if ( stage )
-			image = stage->image;
-		if ( !image )
-			image = globalImages->currentRenderImage;
-		tr.CaptureRenderToImage( *image );
+		tr.CaptureRenderToImage( *globalImages->currentRenderImage );
 	}
 }
 
@@ -517,7 +512,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect &scisso
 	stage->dynamicFrameCount = tr.frameCount;
 	stage->image = globalImages->xrayImage;
 
-	tr.CaptureRenderToImage( *stage->image );
+	tr.CaptureRenderToImage( *globalImages->xrayImage );
 	tr.viewDef->hasXraySubview = true;
 }
 

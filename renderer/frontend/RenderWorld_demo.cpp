@@ -173,7 +173,7 @@ bool		idRenderWorldLocal::ProcessDemoCommand( idDemoFile *readDemo, renderView_t
 	case DC_CAPTURE_RENDER: {
 		if ( r_showDemo.GetBool() )
 			common->Printf( "DC_CAPTURE_RENDER\n" );
-		idImage	*image = globalImages->ImageFromFile( readDemo->ReadHashString(), TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT );
+		idImageScratch *image = globalImages->GetImage( readDemo->ReadHashString() )->AsScratch();
 		renderSystem->CaptureRenderToImage( *image );
 		break;
 	}

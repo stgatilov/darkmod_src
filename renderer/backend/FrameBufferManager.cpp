@@ -299,20 +299,18 @@ void FrameBufferManager::CreateGui( FrameBuffer *gui ) {
 	gui->AddColorRenderTexture( 0, globalImages->guiRenderImage );
 }
 
-void FrameBufferManager::EnsureScratchImagesCreated() {
+void FrameBufferManager::EnsureScratchImagesCreated( idImageScratch *image ) {
 	// normally, scratch images are generated as FBO attachments when FBO is generated
 	// however, some images (_scratch) is never attached to FBO, it is filled with texture copy command instead
 	// so we need to generate these images when we first fill them --- and CopyRender method is the only method which fills them
-	for ( idImageScratch *scratchImage : { globalImages->scratchImage, globalImages->scratchImage2 } ) {
-		if ( scratchImage->texnum == idImage::TEXTURE_NOT_LOADED )
-			scratchImage->GenerateAttachment( renderWidth, renderHeight, colorFormat, GL_LINEAR );
-	}
+	if ( image->texnum == idImage::TEXTURE_NOT_LOADED )
+		image->GenerateAttachment( renderWidth, renderHeight, colorFormat, GL_LINEAR );
 }
 
-void FrameBufferManager::CopyRender( idImage* image, int x, int y, int imageWidth, int imageHeight ) {
+void FrameBufferManager::CopyRender( idImageScratch* image, int x, int y, int imageWidth, int imageHeight ) {
 	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) {
-		// if copying into _scratch, then make sure it is generated
-		EnsureScratchImagesCreated();
+		// if copying into _scratch or _xray, then make sure it is generated
+		EnsureScratchImagesCreated( image );
 	}
 	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) {
 		assert(false);

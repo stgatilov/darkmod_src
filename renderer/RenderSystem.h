@@ -222,7 +222,7 @@ public:
 	 */
 	virtual void			GetCurrentRenderCropSize(int& width, int& height) = 0;
 
-	virtual void			CaptureRenderToImage( idImage &image ) = 0;
+	virtual void			CaptureRenderToImage( idImageScratch &image ) = 0;
 	
 	virtual void			PostProcess() = 0;
 
