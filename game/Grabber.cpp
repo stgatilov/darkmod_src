@@ -1658,7 +1658,7 @@ bool CGrabber::EquipEntity( idEntity *ent )
 	if( !ent || !ent->spawnArgs.GetBool("equippable") )
 		return false;
 
-	gameLocal.Printf("Equip called\n");
+	//gameLocal.Printf("Equip called\n");
 
 	// tels: Execute a potential equip script
     if(ent->spawnArgs.GetString("equip_action_script", "", str))
@@ -1761,7 +1761,7 @@ bool CGrabber::Dequip( void )
 		return false;
 	}
 
-	gameLocal.Printf("Dequip called\n");
+	//gameLocal.Printf("Dequip called\n");
 
 	idPlayer *player = m_player.GetEntity();
 
