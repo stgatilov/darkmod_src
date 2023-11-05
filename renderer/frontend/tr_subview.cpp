@@ -600,7 +600,8 @@ bool R_Lightgem_Render() {
 
 	// Let the game know about the changes
 	gameRenderWorld->UpdateEntityDef( pdef, prent );
-	gameRenderWorld->UpdateEntityDef( hdef, hrent );
+	if ( hdef >= 0 )
+		gameRenderWorld->UpdateEntityDef( hdef, hrent );
 
 	// Currently grabbed entities should not cast a shadow on the lightgem to avoid exploits
 	int heldDef = 0;
@@ -644,7 +645,8 @@ bool R_Lightgem_Render() {
 	hrent->suppressSurfaceInViewID = headid;
 	hrent->suppressShadowInViewID = hsid;
 	gameRenderWorld->UpdateEntityDef( pdef, prent );
-	gameRenderWorld->UpdateEntityDef( hdef, hrent );
+	if ( hdef >= 0 )
+		gameRenderWorld->UpdateEntityDef( hdef, hrent );
 
 	// switch back currently grabbed entity settings
 	if ( heldEnt ) {
