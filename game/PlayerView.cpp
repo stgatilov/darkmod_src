@@ -41,7 +41,7 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	memset( screenBlobs, 0, sizeof( screenBlobs ) );
 	memset( &view, 0, sizeof( view ) );
 	player = NULL;
-	dvMaterial = declManager->FindMaterial( "_scratch" );
+	dvMaterial = declManager->FindMaterial( "textures/postprocess/doublevision" );
 	tunnelMaterial = declManager->FindMaterial( "textures/darkmod/decals/tunnel" );	// damage overlay
 	bloodSprayMaterial = declManager->FindMaterial( "textures/decals/bloodspray" );
 	lagoMaterial = declManager->FindMaterial( LAGO_MATERIAL, false );
@@ -795,12 +795,20 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	renderSystem->CaptureRenderToImage( *globalImages->scratchImage );
 	renderSystem->UnCrop();
 
-	idVec4 color(1, 1, 1, 1);
-
+#if 0
+	// take dvMaterial = _scratch image and render it twice with small shift
+	// blend to renders in 50 : 50 proportion
+	idVec3 color(1, 1, 1);
 	renderSystem->SetColor4( color.x, color.y, color.z, 1.0f );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, shift, 1-shift, 1, 0, dvMaterial );
 	renderSystem->SetColor4( color.x, color.y, color.z, 0.5f );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1-shift, shift, dvMaterial );
+#else
+	// stgatilov: render whole-screen quad with custom post-processing shader
+	// shift is passed in parm0
+	renderSystem->SetColor4( shift, 0.0f, 0.0f, 0.0f );
+	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, dvMaterial );
+#endif
 
 	// Do not post-process the HUD - JC Denton
 	// Bloom related - added by Dram
