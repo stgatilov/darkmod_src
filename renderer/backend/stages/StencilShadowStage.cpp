@@ -194,7 +194,8 @@ void StencilShadowStage::FillStencilShadowMipmaps( const viewDef_t *viewDef, con
 		stencilShadowMipmap.Shutdown();
 
 		float maxBlurAxisLength = computeMaxBlurAxisLength( newProps.renderHeight, r_softShadowsQuality.GetInteger() );
-		int lodLevel = int(ceil(log2(maxBlurAxisLength * 2)));
+		float lodLevelFloat = log2( idMath::Fmax(maxBlurAxisLength * 2, 1.0f) );
+		int lodLevel = int( idMath::Ceil(lodLevelFloat) );
 		static const int BASE_LEVEL = 2;
 		lodLevel = idMath::Imax(lodLevel, BASE_LEVEL);
 
