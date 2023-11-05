@@ -234,11 +234,13 @@ void idBoxOctree::Update(Pointer ptr, const idBounds &box) {
 	ASSERT_VALIDITY
 }
 
+static const float WHOLE_SPACE_SIZE = 1e+10f;
+
 void idBoxOctree::QueryInBox(const idBounds &box, QueryResult &res) const {
 	res.Clear();
 	QueryContext ctx = {&res, box, false, idVec3(0), idVec3(0), idVec3(0)};
 	idBounds cellBox = worldBounds;
-	idBounds spaceBox(idVec3(-idMath::INFINITY), idVec3(idMath::INFINITY));
+	idBounds spaceBox(idVec3(-WHOLE_SPACE_SIZE), idVec3(WHOLE_SPACE_SIZE));
 	Query_r(ctx, 0, cellBox, spaceBox);
 	ASSERT_VALIDITY
 }
@@ -247,7 +249,7 @@ void idBoxOctree::QueryInMovingBox(const idBounds &box, const idVec3 &start, con
 	res.Clear();
 	QueryContext ctx = {&res, box, true, start, invDir, radius};
 	idBounds cellBox = worldBounds;
-	idBounds spaceBox(idVec3(-idMath::INFINITY), idVec3(idMath::INFINITY));
+	idBounds spaceBox(idVec3(-WHOLE_SPACE_SIZE), idVec3(WHOLE_SPACE_SIZE));
 	Query_r(ctx, 0, cellBox, spaceBox);
 	ASSERT_VALIDITY
 }
