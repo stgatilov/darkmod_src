@@ -70,6 +70,11 @@ MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 
 	_originHistory.SetNum(HISTORY_SIZE);
 	_frameHistory.SetNum(HISTORY_SIZE); // grayman #2345
+	// stgatilov: initialize contents, considering that AI was standing still
+	for (int i = 0; i < HISTORY_SIZE; i++) {
+		_originHistory[i] = owner->GetPhysics()->GetOrigin();
+		_frameHistory[i] = 0;
+	}
 }
 
 // Called regularly by the Mind to run the currently assigned routine.
