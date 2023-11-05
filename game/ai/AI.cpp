@@ -12314,7 +12314,10 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 	idMat3	HeadAxis;
 
 	// ugliness
-	const_cast<idAI *>(this)->GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
+	if ( !const_cast<idAI *>(this)->GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis ) )	{
+		// stgatilov: ai_arx_fish from Seeking Lady Leicester has no head joint...
+		return false;
+	}
 	idMat3 HeadAxisR = m_FOVRot * HeadAxis;
 
 	// Offset to get the center of the head
