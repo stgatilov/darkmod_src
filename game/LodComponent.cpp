@@ -218,13 +218,13 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 			// for i == LOD_LEVELS - 1, we use "hide_distance"
 			sprintf(temp, "lod_%i_distance", i);
 			m_LOD->DistLODSq[i] = dict->GetFloat( temp, "0.0" );
-		}
 
-		// Tels: Fix #2635: if the LOD distance here is < fHideDistance, use hide distance-1 so the
-		// entity gets really hidden.
-		if (fHideDistance > 1.0f && m_LOD->DistLODSq[i] > fHideDistance)
-		{
-			m_LOD->DistLODSq[i] = fHideDistance - 1.0f;
+			// Tels: Fix #2635: if the LOD distance here is < fHideDistance, use hide distance-1 so the
+			// entity gets really hidden.
+			if (fHideDistance > 1.0f && m_LOD->DistLODSq[i] > fHideDistance)
+			{
+				m_LOD->DistLODSq[i] = fHideDistance - 1.0f;
+			}
 		}
 
 		if (i == LOD_LEVELS - 1)
