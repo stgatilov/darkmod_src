@@ -661,7 +661,7 @@ void idPhysics_Player::Friction( const idVec3 &wishdir, const float forceFrictio
 
 	if ( walking ) {
 		// ignore slope movement, remove all velocity in gravity direction
-		vel += (vel * gravityNormal) * gravityNormal;
+		vel -= (vel * gravityNormal) * gravityNormal;
 	}
 
 	float speed = vel.Length();
@@ -727,10 +727,10 @@ void idPhysics_Player::Friction( const idVec3 &wishdir, const float forceFrictio
 	// bluepill: don't apply friction to the current acceleration direction as the acceleration calculation does that already.
 	// don't set drop as this friction calculation doesn't treat all velocity components equally
 	idVec3 frictionComponent = vel - ((vel * wishdir) * wishdir);
-	if (frictionComponent.LengthSqr() <= PM_MAXSTOPSPEEDSQR) { // fully stop movement for slow speeds
+	/*if (frictionComponent.LengthSqr() <= PM_MAXSTOPSPEEDSQR) { // fully stop movement for slow speeds
 		current.velocity -= frictionComponent;
 	}
-	else {
+	else */{
 		current.velocity += frictionComponent * (friction * frametime * (0.0f - 1.0f)); // -1.0 for 100% frictionComponent
 	}
 
