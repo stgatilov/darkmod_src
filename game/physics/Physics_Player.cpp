@@ -727,11 +727,14 @@ void idPhysics_Player::Friction( const idVec3 &wishdir, const float forceFrictio
 	// bluepill: don't apply friction to the current acceleration direction as the acceleration calculation does that already.
 	// don't set drop as this friction calculation doesn't treat all velocity components equally
 	idVec3 frictionComponent = vel - ((vel * wishdir) * wishdir);
-	/*if (frictionComponent.LengthSqr() <= PM_MAXSTOPSPEEDSQR) { // fully stop movement for slow speeds
+	/*if (frictionComponent.LengthSqr() <= PM_MAXSTOPSPEEDSQR) {
+		// fully stop movement for slow speeds
+		// stgatilov #6333: this causes player to hang on the top of jump with high FPS
+		// moreover, I'm not sure this is necessary... there is similar code in this function above
 		current.velocity -= frictionComponent;
 	}
-	else */{
-		current.velocity += frictionComponent * (friction * frametime * (0.0f - 1.0f)); // -1.0 for 100% frictionComponent
+	else*/ {
+		current.velocity -= frictionComponent * (friction * frametime); // -1.0 for 100% frictionComponent
 	}
 
 	// scale the velocity
