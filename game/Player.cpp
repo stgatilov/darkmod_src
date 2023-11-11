@@ -4984,22 +4984,23 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		
 		old = bobCycle;
 		
-		// bobCycle is effectively an 8-bit integer, which increases at a speed determined by bobmove
-		// and wraps around when it exceeds 8 bits.
+		// bobCycle is effectively an 16-bit integer, which increases at a speed determined by bobmove
+		// and wraps around when it exceeds 16 bits.
 		// duzenko #4409 - use variable frame time instead of const
-		bobCycle = (int)( old + bobmove * gameLocal.getMsec() ) & 255;
+		// stgatilov #4696: extended from 8-bit to 16-bit for high FPS case
+		bobCycle = (int)( old + bobmove * (gameLocal.getMsec() << 8) ) & 0xFFFF;
 		
 		// bobFoot = most significant bit of bobCycle, so it will be equal to 1 for half the time,
 		// and 0 for the other half. This represents which foot we're placing our weight on right now.
-		bobFoot = ( bobCycle & 128 ) >> 7;
+		bobFoot = ( bobCycle & 0x8000 ) != 0;
 		
-		// Take the other 7 bits of bobCycle, scale them to range from 0 to PI, and take the sine.
+		// Take the other 15 bits of bobCycle, scale them to range from 0 to PI, and take the sine.
 		// The result produces positive values only, from within the first "hump" of the function.
 		// (Look at the graph of sin(x) with x = 0...PI)
-		bobfracsin = idMath::Fabs( sin( ( bobCycle & 127 ) / 127.0 * idMath::PI ) );
+		bobfracsin = idMath::Fabs( sin( ( bobCycle & 0x7FFF ) / float( 0x8000 ) * idMath::PI ) );
 		
 		// Crispy: Play footstep sounds when we hit the bottom of the cycle (i.e. when bobFoot changes)
-		if ((old&128) != (bobCycle&128)) {
+		if ((old & 0x8000) != (bobCycle & 0x8000)) {
 			// We've changed feet, so play a footstep
 			PlayFootStepSound();
 		}
@@ -8415,7 +8416,7 @@ void idPlayer::CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis ) {
 	origin = viewOrigin + ( gunpos + gunOfs ) * viewAxis;
 
 	// on odd legs, invert some angles
-	if ( bobCycle & 128 ) {
+	if ( bobCycle & 0x8000 ) {
 		scale = -xyspeed;
 	} else {
 		scale = xyspeed;
@@ -9495,7 +9496,7 @@ idPlayer::WritePlayerStateToSnapshot
 ================
 */
 void idPlayer::WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const {
-	msg.WriteByte( bobCycle );
+	msg.WriteUShort( bobCycle );
 	msg.WriteLong( stepUpTime );
 	msg.WriteFloat( stepUpDelta );
 }
@@ -9506,7 +9507,7 @@ idPlayer::ReadPlayerStateFromSnapshot
 ================
 */
 void idPlayer::ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg ) {
-	bobCycle = msg.ReadByte();
+	bobCycle = msg.ReadUShort();
 	stepUpTime = msg.ReadLong();
 	stepUpDelta = msg.ReadFloat();
 }
