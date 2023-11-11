@@ -136,15 +136,16 @@ private:
 static idConsoleLocal localConsole;
 idConsole	*console = &localConsole;
 
+#ifdef NDEBUG
+static const char *con_noPrint_defaultValue = "0";
+#else
+static const char *con_noPrint_defaultValue = "1";
+#endif
+
 idCVar idConsoleLocal::con_speed( "con_speed", "3", CVAR_SYSTEM, "speed at which the console moves up and down" );
 idCVar idConsoleLocal::con_notifyTime( "con_notifyTime", "3", CVAR_SYSTEM, "time messages are displayed onscreen when console is pulled up" );
-#ifdef _DEBUG
-idCVar idConsoleLocal::con_noPrint( "con_noPrint", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
-#else
-idCVar idConsoleLocal::con_noPrint( "con_noPrint", "1", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
-#endif
+idCVar idConsoleLocal::con_noPrint( "con_noPrint", con_noPrint_defaultValue, CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up");
 idCVarBool con_noWrap( "con_noWrap", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "no wrap; long string to be truncated" );
-
 
 /*
 =============================================================================
