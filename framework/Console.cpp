@@ -137,9 +137,9 @@ static idConsoleLocal localConsole;
 idConsole	*console = &localConsole;
 
 #ifdef NDEBUG
-static const char *con_noPrint_defaultValue = "0";
-#else
 static const char *con_noPrint_defaultValue = "1";
+#else
+static const char *con_noPrint_defaultValue = "0";
 #endif
 
 idCVar idConsoleLocal::con_speed( "con_speed", "3", CVAR_SYSTEM, "speed at which the console moves up and down" );
