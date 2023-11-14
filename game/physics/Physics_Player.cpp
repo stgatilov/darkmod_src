@@ -5186,8 +5186,8 @@ void idPhysics_Player::PerformMantle()
 			}
 			if (bPullOrHang)
 			{
-				const bool bPull = cv_pm_mantle_onlyHangWhenFallingFast.GetBool() ? !bFallingFast : groundPlane;
-				if (bPull)
+				// Start with pull if on the ground, hang if not
+				if (groundPlane)
 				{
 					StartMantle(pull_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 				}

@@ -186,7 +186,6 @@ extern idCVar cv_pm_mantle_pushNonCrouched_playgrunt_speedthreshold;
 extern idCVar cv_pm_mantle_fallingFast_speedthreshold;
 extern idCVar cv_pm_mantle_cancel_speed;
 extern idCVar cv_pm_mantle_roll_mod;
-extern idCVar cv_pm_mantle_onlyHangWhenFallingFast;
 
 extern idCVar cv_pm_ladderSlide_speedLimit;
 
