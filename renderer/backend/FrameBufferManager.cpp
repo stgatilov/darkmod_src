@@ -303,15 +303,22 @@ void FrameBufferManager::EnsureScratchImagesCreated( idImageScratch *image ) {
 	// normally, scratch images are generated as FBO attachments when FBO is generated
 	// however, some images (_scratch) is never attached to FBO, it is filled with texture copy command instead
 	// so we need to generate these images when we first fill them --- and CopyRender method is the only method which fills them
-	if ( image->texnum == idImage::TEXTURE_NOT_LOADED )
+	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) {
 		image->GenerateAttachment( renderWidth, renderHeight, colorFormat, GL_LINEAR );
+		image->Bind();
+
+		// framebuffer has alpha channel (and some materials seemingly use it for interpass communication)
+		// however, alpha contents of the full image are pretty undefined, and they are copied to scratch images
+		// some postprocessing effects alpha-blend scratch image with specified "alpha" and standard blending mode (e.g. textures/water_source/water_reflective2)
+		// leftover alpha content affect these effects in undesirable way --- especially bad if alpha of scratch image can exceed 1.0
+		GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
+		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask );
+	}
 }
 
 void FrameBufferManager::CopyRender( idImageScratch* image, int x, int y, int imageWidth, int imageHeight ) {
-	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) {
-		// if copying into _scratch or _xray, then make sure it is generated
-		EnsureScratchImagesCreated( image );
-	}
+	// if copying into _scratch or _xray, then make sure it is generated
+	EnsureScratchImagesCreated( image );
 	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) {
 		assert(false);
 		return;	// should not happen
