@@ -325,6 +325,9 @@ void FrameBufferManager::CopyRender( idImageScratch* image, int x, int y, int im
 	}
 
 	if ( image->uploadWidth != imageWidth || image->uploadHeight != imageHeight ) {
+		// TODO #6300: I'd like to remove this case completely
+		// it redefines image dimensions pretty arbitrarily, and even more importantly, changes its image format
+		common->Warning( "FrameBufferManager::CopyRender resolution mismatch: %d %d %d %d != %d %d", x, y, imageWidth, imageHeight, image->uploadWidth, image->uploadHeight );
 		image->uploadWidth = imageWidth;
 		image->uploadHeight = imageHeight;
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
