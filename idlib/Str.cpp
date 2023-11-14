@@ -435,6 +435,15 @@ void idStr::StripMediaName( const char *name, idStr &mediaName ) {
 
 /*
 =============
+idStr::IstartsWith
+=============
+*/
+bool idStr::IstartsWith( const char *text, const char *prefix ) {
+	return IcmpPrefix( text, prefix ) == 0;
+}
+
+/*
+=============
 idStr::IendsWith
 =============
 */
@@ -453,6 +462,16 @@ bool idStr::IendsWith( const char *text, const char *suffix ) {
 	}
 
 	return true;
+}
+
+bool idStr::IstartsWith( const char *prefix ) const
+{
+	return IstartsWith( data, prefix );
+}
+
+bool idStr::IendsWith( const char *suffix ) const
+{
+	return IendsWith( data, suffix );
 }
 
 /*
@@ -1951,13 +1970,12 @@ int vsprintf( idStr &string, const char *fmt, va_list argptr ) {
 va
 
 does a varargs printf into a temp buffer
-NOTE: not thread safe
 ============
 */
 char *va( const char *fmt, ... ) {
 	va_list argptr;
-	static int index = 0;
-	static char string[4][16384];	// in case called by nested functions
+	static thread_local int index = 0;
+	static thread_local char string[4][16384];	// in case called by nested functions
 	char *buf;
 
 	buf = string[index];

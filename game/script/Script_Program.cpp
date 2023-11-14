@@ -1595,6 +1595,45 @@ function_t *idProgram::FindFunction( const char *name, const idTypeDef *type ) c
 
 /*
 ================
+idProgram::FindFunctions
+
+Searches for all functions in the currently loaded script which match given name wildcard.
+Only functions in global namespace are enumerated here.
+stgatilov #6336: added for initializing user addons.
+================
+*/
+idList<function_t *> idProgram::FindFunctions( const char *wildcardName ) const {
+	idList<function_t *> res;
+
+	for ( int i = 0; i < varDefNames.Num(); i++ ) {
+		// skip names which don't match wildcard
+		if ( !idStr::Filter( wildcardName, varDefNames[i]->Name(), false ) )
+			continue;
+
+		for ( idVarDef *def = varDefNames[i]->GetDefs(); def; def = def->Next() ) {
+			function_t *func = def->value.functionPtr;
+
+			// only consider callable stuff
+			if ( def->Type() != ev_function || !func )
+				continue;
+
+			// skip functions inside namespace (mainly object methods?)
+			if ( def->scope != &def_namespace )
+				continue;
+
+			// skip C++ events, only consider functions defined inside script
+			if ( func->eventdef )
+				continue;
+
+			res.Append( def->value.functionPtr );
+		}
+	}
+
+	return res;
+}
+
+/*
+================
 idProgram::AllocFunction
 ================
 */

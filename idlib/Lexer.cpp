@@ -1709,6 +1709,19 @@ int idLexer::LoadMemory( const char *ptr, int length, const char *name, int star
 
 /*
 ================
+idLexer::OwnLoadedMemory
+================
+*/
+void idLexer::OwnLoadedMemory() {
+	if ( !idLexer::loaded ) {
+		idLib::common->Error("idLexer::OwnLoadedMemory: no script loaded");
+		return;
+	}
+	idLexer::allocated = true;
+}
+
+/*
+================
 idLexer::FreeSource
 ================
 */

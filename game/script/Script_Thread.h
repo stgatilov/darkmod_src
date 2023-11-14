@@ -221,6 +221,8 @@ private:
 	void						Event_SetSecretsFound( float secrets);
 	void						Event_SetSecretsTotal( float secrets);
 
+	void						Event_CallFunctionsByWildcard( const char* functionNameWildcard );
+
 public:							
 								CLASS_PROTOTYPE( idThread );
 								

@@ -296,6 +296,12 @@ const idEventDef EV_PointIsInBounds( "pointIsInBounds", EventArgs(
 const idEventDef EV_GetLocationPoint("getLocationPoint", EventArgs('v', "point", "point whose location to check"), 'e',
 	"Returns the idLocation entity corresponding to the specified point's location.");
 
+const idEventDef EV_Thread_CallFunctionsByWildcard(
+	"callFunctionsByWildcard", EventArgs('s', "functionName", ""), EV_RETURNS_VOID,
+	"Calls global functions with names matching the specified wildcard in separate threads (in lexicographical order). "
+	"INTERNAL: don't use in mission scripting!"
+);
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -429,6 +435,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_SetSecretsFound,				idThread::Event_SetSecretsFound )
 	EVENT( EV_SetSecretsTotal,				idThread::Event_SetSecretsTotal )
 
+	EVENT( EV_Thread_CallFunctionsByWildcard, idThread::Event_CallFunctionsByWildcard )
 	END_CLASS
 
 idThread			*idThread::currentThread = NULL;
@@ -2790,4 +2797,23 @@ void idThread::Event_SetSecretsFound( float secrets )
 void idThread::Event_SetSecretsTotal( float secrets )
 {
 	gameLocal.m_MissionData->SetSecretsTotal( secrets );
+}
+
+// stgatilov #6336: initializing several independent user addons
+void idThread::Event_CallFunctionsByWildcard( const char* functionNameWildcard )
+{
+	idList<function_t*> functions = gameLocal.program.FindFunctions( functionNameWildcard );
+
+	for ( int i = 0; i < functions.Num(); i++ ) {
+		function_t *func = functions[i];
+		// only functions with no parameters and no return can be called
+		if ( func->type->NumParameters() != 0 || func->type->ReturnType() != &type_void )
+			continue;
+
+		// call in separate thread
+		// note: in order to call within same thread, we have to insert some thunk code =(
+		idThread *newThread = new idThread( func );
+		newThread->CallFunction( func, true );
+		newThread->DelayedStart( 0 );
+	}
 }

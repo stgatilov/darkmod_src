@@ -205,6 +205,9 @@ public:
 					// so source strings extracted from a file can still refer to proper line numbers in the file
 					// NOTE: the ptr is expected to point at a valid C string: ptr[length] == '\0'
 	int				LoadMemory( const char *ptr, int length, const char *name, int startLine = 1 );
+					// stgatilov: if called immediately after LoadMemory, then ownership over "ptr" is passed to this lexer
+					// (by default lexer does not delete memory passed to LoadMemory)
+	void			OwnLoadedMemory();
 					// free the script
 	void			FreeSource( void );
 					// returns true if a script is loaded

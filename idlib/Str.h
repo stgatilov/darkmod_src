@@ -226,6 +226,8 @@ public:
 	void				ExtractFileName( idStr &dest ) const;			// copy the filename to another string
 	void				ExtractFileBase( idStr &dest ) const;			// copy the filename minus the extension to another string
 	void				ExtractFileExtension( idStr &dest ) const;		// copy the file extension to another string
+	bool				IstartsWith( const char *prefix ) const;		// stgatilov: whether string starts with given prefix (case-insensitive)
+	bool				IendsWith( const char *suffix ) const;			// stgatilov: whether string ends with given suffix (case-insensitive)
 	bool				CheckExtension( const char *ext );
 
 	// char * methods to replace library functions
@@ -257,6 +259,7 @@ public:
 	static int			FindText( const char *str, const char *text, bool casesensitive = true, int start = 0, int end = -1 );
 	static bool			Filter( const char *filter, const char *name, bool casesensitive );
 	static void			StripMediaName( const char *name, idStr &mediaName );
+	static bool			IstartsWith( const char *text, const char *prefix );
 	static bool			IendsWith( const char *text, const char *suffix );
 	static bool			CheckExtension( const char *name, const char *ext );
 	static const char *	FloatArrayToString( const float *array, const int length, const int precision );

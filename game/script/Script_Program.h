@@ -506,6 +506,7 @@ public:
 
 	function_t									*FindFunction( const char *name ) const;						// returns NULL if function not found
 	function_t									*FindFunction( const char *name, const idTypeDef *type ) const;	// returns NULL if function not found
+	idList<function_t *>						FindFunctions( const char *wildcardName ) const;				// stgatilov #6336
 	function_t									&AllocFunction( idVarDef *def );
 	function_t									*GetFunction( int index );
 	int											GetFunctionIndex( const function_t *func );

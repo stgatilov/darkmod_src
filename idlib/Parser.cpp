@@ -972,20 +972,62 @@ int idParser::Directive_include( void ) {
 	}
 	if ( token.type == TT_STRING ) {
 		script = new idLexer;
-		// try absolute path
-		path = token;
-		if ( !script->LoadFile( path, OSPath ) ) {
-			// try from the include path
-			path = includepath + token;
+
+		if ( token.Find('*') >= 0 || token.Find('?') >= 0 || token.Find('[') >= 0 ) {
+			// stgatilov #6336: detect all files matching wildcard
+			// note: only absolute paths are handled (relative to root of D3 VFS of course)
+			if ( !token.IendsWith( ".script" ) ) {
+				idParser::Error( "Bad included file '%s', only extension 'script' allowed", token.c_str() );
+				return false;
+			}
+			int lastSlash = token.Last( '/' );
+			if ( lastSlash < 0 ) {
+				idParser::Error( "Wildcard include '%s' not supported: no directory", token.c_str() );
+				return false;
+			}
+			if ( token.Find('*', 0, lastSlash) >= 0 || token.Find('?', 0, lastSlash) >= 0 || token.Find('[', 0, lastSlash) >= 0 ) {
+				idParser::Error( "Bad included file '%s', control characters in directory not allowed", token.c_str() );
+				return false;
+			}
+			idStr searchDir = token.Left(lastSlash);
+
+			// collect list of files matching glob
+			idFileList *fileList = fileSystem->ListFilesTree( searchDir.c_str(), ".script", true );
+			idStr stubText = "// In-memory script file to implement #include by wildcard\n";
+			for ( int i = 0; i < fileList->GetNumFiles(); i++ ) {
+				idStr filepath = fileList->GetFile( i );
+				if ( filepath.Filter( token.c_str(), false ) ) {
+					stubText += idStr("#include \"") + filepath + "\"\n";
+				}
+			}
+			fileSystem->FreeFileList( fileList );
+
+			// now include the memory file with transitive #include-s
+			char *data = (char *)Mem_Alloc( stubText.Length() + 1 );
+			strcpy( data, stubText.c_str() );
+			if ( !script->LoadMemory( data, stubText.Length(), "include_wildcard_stub.script" ) ) {
+				Mem_Free( data );
+				delete script;
+				script = NULL;
+			}
+			script->OwnLoadedMemory();
+		}
+		else {
+			// try absolute path
+			path = token;
 			if ( !script->LoadFile( path, OSPath ) ) {
-				// try relative to the current file
-				path = scriptstack->GetFileName();
-				path.StripFilename();
-				path += "/";
-				path += token;
+				// try from the include path
+				path = includepath + token;
 				if ( !script->LoadFile( path, OSPath ) ) {
-					delete script;
-					script = NULL;
+					// try relative to the current file
+					path = scriptstack->GetFileName();
+					path.StripFilename();
+					path += "/";
+					path += token;
+					if ( !script->LoadFile( path, OSPath ) ) {
+						delete script;
+						script = NULL;
+					}
 				}
 			}
 		}
