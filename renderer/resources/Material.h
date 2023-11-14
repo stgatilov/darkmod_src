@@ -641,6 +641,7 @@ private:
 	void				CheckForConstantRegisters();
 	bool				IsFrobStage(int stageIdx, bool *isStandard = nullptr) const;
 	void				AddFrobStages(const idVec3 &rgbAdd, const char *imageName, const idVec3 &rgbMult, const textureRepeat_t trpDefault = TR_REPEAT);
+	void				CheckAlphaColorDependencies() const;
 
 private:
 	idStr				desc;				// description
