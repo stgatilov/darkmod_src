@@ -4561,7 +4561,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "set_frob_helper")
 	{
-		int frobHelperPreset = gui->GetStateInt("frob_helper_preset", "-1");
+		const int frobHelperPreset = gui->GetStateInt("frob_helper_preset", "-1");
 		switch (frobHelperPreset)
 		{
 		case 0: // Off
@@ -4587,6 +4587,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			cvarSystem->SetCVarBool("tdm_frobhelper_alwaysVisible", false);
 			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_delay", 500);     // default value
 			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_duration", 1500); // default value
+			break;
+		case 4: // Fade In Fast
+			cvarSystem->SetCVarBool("tdm_frobhelper_active", true);
+			cvarSystem->SetCVarBool("tdm_frobhelper_alwaysVisible", false);
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_delay", 250);
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_duration", 500);
 			break;
 		default:
 			gameLocal.Warning("Unknown value for frob_helper_preset encountered!");
