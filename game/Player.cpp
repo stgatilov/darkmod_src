@@ -11616,7 +11616,9 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// Try to add world item to inventory
-	if (impulseState == EPressed || repeatMultiloot)
+	if (impulseState == EPressed && target->spawnArgs.GetInt("inv_loot_value", "0") != 0
+		|| impulseState == EReleased
+		|| repeatMultiloot)
 	{
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
@@ -11664,10 +11666,55 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		? static_cast<idAFAttachment*>(target)->GetBindMaster()
 		: target;
 
+
+	
 	const bool holdFrobBodyType = bodyType
 		&& bodyTarget
 		&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
 		&& IsHoldFrobEnabled();
+	
+	bool holdFrobGrabableType = holdFrobBodyType;
+	if (IsHoldFrobEnabled() && !holdFrobGrabableType && cv_holdfrob_drag_all_entities.GetBool())
+	{
+		const bool bIsJunk = moveableType
+			&& !target->spawnArgs.GetBool("equippable", "0");
+
+		const bool bIsInventoryItem = moveableType
+			&& target->spawnArgs.GetString("inv_name", nullptr) != nullptr;
+
+		auto funcIsExtinguishedCandle = [](idEntity* pEntity) -> bool
+			{
+				if (pEntity->spawnArgs.GetBool("extinguished", "0"))
+					return true;
+				const idStr sSkinUnlit = pEntity->spawnArgs.GetString("skin_unlit", nullptr);
+				if (sSkinUnlit.IsEmpty())
+					return false;
+				const idStr sSkin = pEntity->spawnArgs.GetString("skin", nullptr);
+				return sSkin == sSkinUnlit;
+			};
+		auto funcHasExtinguishedCandle = [funcIsExtinguishedCandle](idEntity* pEntity) -> bool
+			{
+				idEntity* pCandle = pEntity->GetAttachmentByPosition("candle");
+				if (!pCandle)
+					return false;
+				return funcIsExtinguishedCandle(pCandle);
+			};
+		const bool bIsExtinguishedCandle = moveableType && funcIsExtinguishedCandle(target);
+		const bool bHasExtinguishedCandle = moveableType && funcHasExtinguishedCandle(target);
+
+		auto funcIsFoodRemains = [](idEntity* pEntity) -> bool
+			{
+				const idStr sModelEaten = pEntity->spawnArgs.GetString("model_eaten", nullptr);
+				if (sModelEaten.IsEmpty())
+					return false;
+				const idStr sModel = pEntity->spawnArgs.GetString("model", nullptr);
+				return sModel == sModelEaten;
+			};
+		const bool bIsFoodRemains = moveableType && funcIsFoodRemains(target);
+
+		holdFrobGrabableType = holdFrobBodyType || bIsJunk || bIsInventoryItem || bIsExtinguishedCandle || bHasExtinguishedCandle || bIsFoodRemains;
+	}
+
 	const bool holdFrobUsableType = moveableType
 		&& target->spawnArgs.GetBool("equippable", "0")
 		&& IsHoldFrobEnabled();
@@ -11704,7 +11751,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 	if (impulseState == EPressed)
 	{
-		if (holdFrobBodyType || holdFrobUsableType)
+		if (holdFrobGrabableType || holdFrobUsableType)
 		{
 			// Store frobbed entity and start time tracking.
 			holdFrobEntity = highlightedEntity;
@@ -11717,7 +11764,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 	if (impulseState == ERepeat && holdFrobEntity.GetEntity() == highlightedEntity)
 	{
-		if (holdFrobBodyType)
+		if (holdFrobGrabableType)
 		{
 			// Drag body if enough time has passed or view has moved outside of bounds.
 			if (CanHoldFrobAction()
@@ -11753,7 +11800,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 			return;
 		}
 
-		if (holdFrobUsableType)
+		if (holdFrobUsableType || holdFrobGrabableType)
 		{
 			// Pick up, since it was not equipped/used (or toggled on/off).
 			gameLocal.m_Grabber->Update(this, false, true);
