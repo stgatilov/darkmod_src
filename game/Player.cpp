@@ -11682,25 +11682,37 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		const bool bIsInventoryItem = moveableType
 			&& target->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 
-		auto funcIsExtinguishedCandle = [](idEntity* pEntity) -> bool
+		const bool bIsLantern = target->spawnArgs.GetString("is_lantern", nullptr) != nullptr;
+
+		auto funcIsExtinguishedCandle = [bIsLantern](idEntity* pEntity) -> bool
 			{
-				if (pEntity->spawnArgs.GetBool("extinguished", "0"))
-					return true;
+				if (bIsLantern)
+					return false;
+
 				const idStr sSkinUnlit = pEntity->spawnArgs.GetString("skin_unlit", nullptr);
 				if (sSkinUnlit.IsEmpty())
 					return false;
+
 				const idStr sSkin = pEntity->spawnArgs.GetString("skin", nullptr);
-				return sSkin == sSkinUnlit;
+				return sSkin == sSkinUnlit && !bIsLantern;
 			};
-		auto funcHasExtinguishedCandle = [funcIsExtinguishedCandle](idEntity* pEntity) -> bool
+		auto funcIsUnlitCandleholder = [funcIsExtinguishedCandle, bIsLantern] (idEntity* pEntity) -> bool
 			{
-				idEntity* pCandle = pEntity->GetAttachmentByPosition("candle");
+				if (bIsLantern)
+					return false;
+
+				if (pEntity->spawnArgs.GetBool("extinguished", "0"))
+					return true;
+
+				static const idStr sCandle("candle");
+				idEntity* pCandle = pEntity->GetAttachmentByPosition(sCandle);
 				if (!pCandle)
 					return false;
+
 				return funcIsExtinguishedCandle(pCandle);
 			};
 		const bool bIsExtinguishedCandle = moveableType && funcIsExtinguishedCandle(target);
-		const bool bHasExtinguishedCandle = moveableType && funcHasExtinguishedCandle(target);
+		const bool bHasExtinguishedCandle = moveableType && funcIsUnlitCandleholder(target);
 
 		auto funcIsFoodRemains = [](idEntity* pEntity) -> bool
 			{
