@@ -11616,9 +11616,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// Try to add world item to inventory
-	if (impulseState == EPressed && target->spawnArgs.GetInt("inv_loot_value", "0") != 0
-		|| impulseState == EReleased
-		|| repeatMultiloot)
+	if (impulseState == EPressed || repeatMultiloot)
 	{
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
