@@ -339,6 +339,10 @@ GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, con
 	idHashMapDict definesPlus( defines );
 	if ( shaderType == GL_VERTEX_SHADER )
 		definesPlus.Set("VERTEX_SHADER", "1");
+	if ( shaderType == GL_FRAGMENT_SHADER )
+		definesPlus.Set("FRAGMENT_SHADER", "1");
+	if ( shaderType == GL_GEOMETRY_SHADER )
+		definesPlus.Set("GEOMETRY_SHADER", "1");
 	ResolveDefines( source, definesPlus );
 	//ResolveDefines( source, defines);
 
