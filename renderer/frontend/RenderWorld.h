@@ -102,6 +102,11 @@ typedef struct renderEntity_s {
 	// will only show up in the specific view, ie: player weapons
 	int						allowSurfaceInViewID;
 
+	// stgatilov #5172: entities with this flag cast shadows
+	// regardless of whether light flow can reach them or not
+	// used as hacky workaround for issue happening due to caulk overuse on existing missions
+	bool					forceShadowBehindOpaque;
+
 	// positioning
 	// axis rotation vectors must be unit length for many
 	// R_LocalToGlobal functions to work, so don't scale models!

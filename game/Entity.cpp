@@ -883,6 +883,9 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	// check noselfshadows flag
 	renderEntity->noSelfShadow = args->GetBool( "noselfshadows" );
 	
+	// stgatilov #5172: hacky workaround for shadow-casting entities behind caulk
+	renderEntity->forceShadowBehindOpaque = args->GetBool( "forceShadowBehindOpaque" );
+
 	renderEntity->shadowMapOffset = args->GetFloat( "shadowmapOffset" );
 
 	const char* areaLock;
@@ -890,7 +893,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 		renderEntity->areaLock = ( renderEntity_s::areaLock_t ) ( areaLockOptions.FindIndex( areaLock ) + 1 );
 	
 	if ( (args->GetInt( "spectrum" )  < 1 ) && ( args->GetInt( "lightspectrum" ) > 0 ) ) {
-	renderEntity->spectrum = renderEntity->lightspectrum;
+		renderEntity->spectrum = renderEntity->lightspectrum;
 	}
 
 	// init any guis, including entity-specific states
@@ -1215,6 +1218,8 @@ void idEntity::Spawn( void )
 
 	// parse static models the same way the editor display does
 	gameEdit->ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
+	if (gameLocal.world && gameLocal.world->spawnArgs.GetBool("forceAllShadowsBehindOpaque"))
+		renderEntity.forceShadowBehindOpaque = true;
 
 	renderEntity.entityNum = entityNumber;
 	

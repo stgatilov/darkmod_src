@@ -928,6 +928,7 @@ void R_FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool
 		R_FreeEntityDefOverlay( def );
 	}
 
+	bool forceShadowsBehindOpaque = ( def->parms.hModel->IsStaticWorldModel() || def->parms.forceShadowBehindOpaque );
 
 	// free the entityRefs from the areas
 	for ( areaReference_t *ref = def->entityRefs; ref; ref = ref->next ) {
@@ -952,6 +953,17 @@ void R_FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool
 
 		// put it back on the free list for reuse
 		def->world->areaReferenceAllocator.Free( ref );
+
+		if ( forceShadowsBehindOpaque ) {
+			// remove from special list of "hacked" entities which cast shadows behind walls
+			for ( int i = 0; i < area->forceShadowsBehindOpaqueEntityRefs.Num(); i++ ) {
+				if ( area->forceShadowsBehindOpaqueEntityRefs[i] == def->index ) {
+					idSwap( area->forceShadowsBehindOpaqueEntityRefs[i], area->forceShadowsBehindOpaqueEntityRefs.Last() );
+					area->forceShadowsBehindOpaqueEntityRefs.Pop();
+					break;
+				}
+			}
+		}
 	}
 	def->entityRefs = NULL;
 }

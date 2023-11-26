@@ -1682,6 +1682,10 @@ void idRenderWorldLocal::AddEntityRefToArea( idRenderEntityLocal *def, portalAre
 	area->entityBackRefs.Append(ref);
 	assert(area->entityRefs.Num() == area->entityBackRefs.Num());
 
+	bool forceShadowsBehindOpaque = ( def->parms.hModel->IsStaticWorldModel() || def->parms.forceShadowBehindOpaque );
+	if ( forceShadowsBehindOpaque )
+		area->forceShadowsBehindOpaqueEntityRefs.Append( def->index );
+
 	ref->next = def->entityRefs;
 	def->entityRefs = ref;
 }

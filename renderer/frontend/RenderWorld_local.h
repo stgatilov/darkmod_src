@@ -74,6 +74,8 @@ typedef struct portalArea_s {
 	idList<areaReference_t*> entityBackRefs;
 	idList<areaReference_t*> lightBackRefs;
 
+	idList<int>		forceShadowsBehindOpaqueEntityRefs;
+
 	portalArea_s() { // zero fill
 		areaNum = 0;
 		memset(connectedAreaNum, 0, sizeof(connectedAreaNum));

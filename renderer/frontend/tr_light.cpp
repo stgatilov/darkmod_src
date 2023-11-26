@@ -520,24 +520,25 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 	// stgatilov #5172: add interactions with world geometry only in some areas
 	// this is necessary for areas were light flow does not reach but wall shadows should be present
 	for ( int areaIdx : ldef->areasForAdditionalWorldShadows ) {
-		// note: the very first reference must be for "_areaN" model, i.e. world geometry of the area
-		int entityIdx = portalAreas[areaIdx].entityRefs[0];
-		idRenderEntityLocal *edef = entityDefs[entityIdx];
-		assert( edef->parms.hModel->IsStaticWorldModel() );
+		portalArea_t *area = &portalAreas[areaIdx];
 
-		// if any of the edef's interaction match this light, we don't
-		// need to consider it. 
-		idInteraction *inter = interactionTable.Find(this, ldef->index, entityIdx);
-		if ( inter ) {
-			// if this entity wasn't in view already, the scissor rect will be empty,
-			// so it will only be used for shadow casting
-			if ( !inter->IsEmpty() ) {
-				R_SetEntityDefViewEntity( entityDefs[entityIdx] );
+		for ( int entityIdx : area->forceShadowsBehindOpaqueEntityRefs ) {
+			idRenderEntityLocal *edef = entityDefs[entityIdx];
+
+			// if any of the edef's interaction match this light, we don't
+			// need to consider it. 
+			idInteraction *inter = interactionTable.Find(this, ldef->index, entityIdx);
+			if ( inter ) {
+				// if this entity wasn't in view already, the scissor rect will be empty,
+				// so it will only be used for shadow casting
+				if ( !inter->IsEmpty() ) {
+					R_SetEntityDefViewEntity( entityDefs[entityIdx] );
+				}
+				continue;
 			}
-			continue;
-		}
 
-		CreateNewLightDefInteraction( ldef, edef );
+			CreateNewLightDefInteraction( ldef, edef );
+		}
 	}
 }
 
@@ -593,11 +594,14 @@ void idRenderWorldLocal::CreateNewLightDefInteraction( idRenderLightLocal *ldef,
 	}
 
 	extern idCVar r_useLightPortalFlowCulling;
-	if ( r_useLightPortalFlowCulling.GetBool() && !edef->parms.hModel->IsStaticWorldModel() ) {
-		// stgatilov #5172: check if entity bounds are visible through saved portal windings
-		if ( CullInteractionByLightFlow( ldef, edef) ) {
-			inter->MakeEmpty();
-			return;
+	if ( r_useLightPortalFlowCulling.GetBool() ) {
+		bool forceShadowsBehindOpaque = ( edef->parms.hModel->IsStaticWorldModel() || edef->parms.forceShadowBehindOpaque );
+		if ( !forceShadowsBehindOpaque ) {
+			// stgatilov #5172: check if entity bounds are visible through saved portal windings
+			if ( CullInteractionByLightFlow( ldef, edef) ) {
+				inter->MakeEmpty();
+				return;
+			}
 		}
 	}
 
