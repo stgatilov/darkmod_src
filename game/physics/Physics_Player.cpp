@@ -2748,6 +2748,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 			// greebo: Jump button is released and no mantle phase is active, 
 			// we can allow the next mantling process.
 			m_mantleStartPossible = true;
+			m_mantleEndsInForcedCrouch = false;
 		}
 	}
 
@@ -2984,6 +2985,19 @@ bool idPhysics_Player::IsCrouching( void ) const {
 
 /*
 ================
+idPhysics_Player::IsForceCrouchingRestrictedMantle
+================
+*/
+bool idPhysics_Player::IsForceCrouchingRestrictedMantle( void ) const {
+	return IsCrouching()
+		&& m_mantleEndsInForcedCrouch
+		&& (m_mantlePhase == hang_DarkModMantlePhase
+			|| m_mantlePhase == pull_DarkModMantlePhase
+			|| m_mantlePhase == shiftHands_DarkModMantlePhase);
+}
+
+/*
+================
 idPhysics_Player::GetLastJumpTime
 ================
 */
@@ -3112,6 +3126,7 @@ idPhysics_Player::idPhysics_Player( void )
 	m_mantledEntityID = 0;
 	m_jumpHeldDownTime = 0.0;
 	m_mantleStartPossible = true;
+	m_mantleEndsInForcedCrouch = false;
 
 	// Leaning Mod
 	m_leanYawAngleDegrees = 0.0;
@@ -3236,6 +3251,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	// Mantle mod
 	savefile->WriteInt(m_mantlePhase);
 	savefile->WriteBool(m_mantleStartPossible);
+	savefile->WriteBool(m_mantleEndsInForcedCrouch);
 	savefile->WriteVec3(m_mantlePullStartPos);
 	savefile->WriteVec3(m_mantlePullEndPos);
 	savefile->WriteVec3(m_mantlePushEndPos);
@@ -3360,6 +3376,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadBool(m_mantleStartPossible);
+	savefile->ReadBool(m_mantleEndsInForcedCrouch);
 	savefile->ReadVec3(m_mantlePullStartPos);
 	savefile->ReadVec3(m_mantlePullEndPos);
 	savefile->ReadVec3(m_mantlePushEndPos);
@@ -3952,11 +3969,11 @@ void idPhysics_Player::MantleMove()
 	if (m_mantlePhase == hang_DarkModMantlePhase)
 	{
 		// Starting at current position, hanging, rocking a bit.
-		float rockDistance = 2.0f;
+		float rockDistance = 0.5f * cv_pm_mantle_roll_mod.GetFloat();
 
 		newPosition = m_mantlePullStartPos;
 		float timeRadians = idMath::PI * timeRatio;
-		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance * cv_pm_mantle_roll_mod.GetFloat();
+		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance;
 		newPosition += (idMath::Sin(timeRadians) * rockDistance) * viewRight;
 		
 		if (self != NULL)
@@ -3968,17 +3985,25 @@ void idPhysics_Player::MantleMove()
 	{
 		// Player pulls themself up to shoulder even with the surface
 		totalMove = m_mantlePullEndPos - m_mantlePullStartPos;
-		newPosition = m_mantlePullStartPos + (totalMove * idMath::Sin(timeRatio * (idMath::PI/2)) );
+		float factor = 0.5f * ( 1.0f + idMath::Sin( (timeRatio * 2.0f - 1.0f) * idMath::PI/2 ) );
+		newPosition = m_mantlePullStartPos + (totalMove * factor);
 	}
 	else if (m_mantlePhase == shiftHands_DarkModMantlePhase)
 	{
 		// Rock back and forth a bit?
 		float rockDistance = 1.0f;
 
+		// Adjust rockDistance based on duration to reduce abrupt view change
+		if (cv_pm_mantle_shift_hands_msecs.GetFloat() < 500.0f)
+			rockDistance = cv_pm_mantle_shift_hands_msecs.GetFloat() / 500.0f;
+
+		// Apply mantle roll mod
+		rockDistance *= cv_pm_mantle_roll_mod.GetFloat();
+
 		newPosition = m_mantlePullEndPos;
 		float timeRadians = idMath::PI * timeRatio;
 		newPosition += (idMath::Sin(timeRadians) * rockDistance) * viewRight;
-		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance * cv_pm_mantle_roll_mod.GetFloat();
+		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance;
 
 		if (self != NULL)
 		{
@@ -3989,7 +4014,9 @@ void idPhysics_Player::MantleMove()
 	{
 		// Rocking back and forth to get legs up over edge
 		// STiFU #4930: Reduce rockdistance for pushNonCrouched
-		const float rockDistance = (m_mantlePhase == push_DarkModMantlePhase) ? 10.0f : 5.0f;
+		const float rockDistance =
+			((m_mantlePhase == push_DarkModMantlePhase) ? 10.0f : 5.0f)
+			* cv_pm_mantle_roll_mod.GetFloat();
 
 		// Player pushes themselves upward to get their legs onto the surface
 		totalMove = m_mantlePushEndPos - m_mantlePullEndPos;
@@ -4001,7 +4028,7 @@ void idPhysics_Player::MantleMove()
 
 		float timeRadians = idMath::PI * timeRatio;
 		newPosition += (idMath::Sin (timeRadians) * rockDistance) * viewRight;
-		viewAngles.roll = idMath::Sin (timeRadians) * rockDistance * cv_pm_mantle_roll_mod.GetFloat();
+		viewAngles.roll = idMath::Sin (timeRadians) * rockDistance;
 
 		// stgatilov: set precise values at the very end of animation
 		if (timeRatio == 1.0f)
@@ -4100,8 +4127,10 @@ const bool idPhysics_Player::IsMantleEndPosClipping(idPhysics* pPhysicsMantledEn
 			// We will clip standing up. Go to ducked state and retry
 			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("MantleMod: Clipping into world. Going to crouched state\r");
 			current.movementFlags |= PMF_DUCKED;
+			m_mantleEndsInForcedCrouch = true;
 			return IsMantleEndPosClipping(pPhysicsMantledEntity);
 		}
+
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("MantleMod: Clipping into world. Canceling mantle.\r");
 		return true;
 	}		
@@ -4425,7 +4454,7 @@ void idPhysics_Player::StartMantle
 		m_mantlePullStartPos = startPos;
 		m_mantlePullEndPos = eyePos;
 
-		m_mantlePullEndPos += GetGravityNormal() * pm_normalheight.GetFloat() / 3.0f;
+		m_mantlePullEndPos += GetGravityNormal() * pm_normalheight.GetFloat() / 4.5f;
 	}
 	else if (initialMantlePhase == pullFast_DarkModMantlePhase)
 	{

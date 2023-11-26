@@ -6885,6 +6885,11 @@ void idPlayer::Move( void )
 		newEyeOffset = 0.0f;
 	} else if ( health <= 0 ) {
 		newEyeOffset = pm_deadviewheight.GetFloat();
+	} else if ( physicsObj.IsForceCrouchingRestrictedMantle() ) {
+		// When forcing the player into the crouch position due to a low ceiling,
+		// do not show the crouch animation at the beginning of an overhead mantle.
+		// Instead, postpone the crouch animation until the last phase (push phase).
+		newEyeOffset = pm_normalviewheight.GetFloat();
 	} else if ( physicsObj.IsCrouching() ) {
 		newEyeOffset = pm_crouchviewheight.GetFloat();
 	} else if ( GetBindMaster() && GetBindMaster()->IsType( idAFEntity_Vehicle::Type ) ) {
