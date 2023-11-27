@@ -31,6 +31,13 @@ const idEventDef EV_TDM_FrobLock_ClearPlayerImmobilization("_EV_TDM_FrobLock_Cle
 	EventArgs('e', "", ""), EV_RETURNS_VOID, "internal"); // allows player to handle weapons again
 
 const idEventDef EV_TDM_FrobLock_Open("Open", EventArgs(), EV_RETURNS_VOID, ""); // attempts to open the lock
+const idEventDef EV_TDM_FrobLock_Lock("Lock", EventArgs(), EV_RETURNS_VOID, "Locks the froblock.");
+const idEventDef EV_TDM_FrobLock_Unlock("Unlock", EventArgs(), EV_RETURNS_VOID, "Unlocks the froblock.");
+const idEventDef EV_TDM_FrobLock_ToggleLock("ToggleLock", EventArgs(), EV_RETURNS_VOID,
+	"Toggles the lock state. Unlocked froblocks will be locked and vice versa.\n" \
+	"The notes above concerning Unlock() still apply if this call unlocks the froblock. ");
+const idEventDef EV_TDM_FrobLock_IsLocked("IsLocked", EventArgs(), 'f', "Returns true (nonzero) if the froblock is currently locked.");
+const idEventDef EV_TDM_FrobLock_IsPickable("IsPickable", EventArgs(), 'f', "Returns true (nonzero) if this froblock is pickable.");
 
 CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_PostSpawn,							CFrobLock::PostSpawn )
@@ -40,7 +47,12 @@ CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_TDM_FrobLock_TriggerTargets,			CFrobLock::Event_TriggerTargets )
 	EVENT( EV_TDM_FrobLock_TriggerLockTargets,		CFrobLock::Event_TriggerLockTargets )
 	EVENT( EV_TDM_FrobLock_TriggerUnlockTargets,	CFrobLock::Event_TriggerUnlockTargets )
-	EVENT( EV_TDM_FrobLock_Open,					CFrobLock::Event_Open)
+	EVENT( EV_TDM_FrobLock_Open,					CFrobLock::Event_Open )
+	EVENT( EV_TDM_FrobLock_Lock,					CFrobLock::Event_Lock )
+	EVENT( EV_TDM_FrobLock_Unlock,					CFrobLock::Event_Unlock )
+	EVENT( EV_TDM_FrobLock_ToggleLock,				CFrobLock::Event_ToggleLock )
+	EVENT( EV_TDM_FrobLock_IsLocked,				CFrobLock::Event_IsLocked )
+	EVENT( EV_TDM_FrobLock_IsPickable,				CFrobLock::Event_IsPickable )
 	EVENT( EV_TDM_FrobLock_ClearPlayerImmobilization,	CFrobLock::Event_ClearPlayerImmobilization )
 END_CLASS
 
@@ -593,6 +605,31 @@ void CFrobLock::Event_Lock_OnLockStatusChange(int locked)
 		int delay = spawnArgs.GetInt("trigger_delay", "0");
 		PostEventMS(&EV_TDM_FrobLock_TriggerTargets, delay);
 	}
+}
+
+void CFrobLock::Event_Lock()
+{
+	Lock();
+}
+
+void CFrobLock::Event_Unlock()
+{
+	Unlock();
+}
+
+void CFrobLock::Event_ToggleLock()
+{
+	ToggleLock();
+}
+
+void CFrobLock::Event_IsLocked()
+{
+	idThread::ReturnInt(IsLocked());
+}
+
+void CFrobLock::Event_IsPickable()
+{
+	idThread::ReturnInt(IsPickable());
 }
 
 void CFrobLock::Event_TriggerTargets()

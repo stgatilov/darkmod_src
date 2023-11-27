@@ -99,6 +99,15 @@ protected:
 	void			Event_Lock_OnLockPicked();
 	void			Event_Lock_OnLockStatusChange(int locked);
 
+	// Script event to return the locked status
+	void			Event_IsLocked();
+	void			Event_IsPickable();
+
+	// Script events for locking and unlocking
+	void			Event_Lock();
+	void			Event_Unlock();
+	void			Event_ToggleLock();
+
 	// Private events, used for deferred triggering of lock/unlock/general targets
 	void			Event_TriggerTargets();
 	void			Event_TriggerLockTargets();
