@@ -2109,7 +2109,8 @@ public:
 	void					Event_MoveToEnemy( void );
 	void					Event_MoveToEnemyHeight( void );
 	void					Event_MoveOutOfRange( idEntity *entity, float range );
-	void					Event_Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption);
+	void					Event_Flee(idEntity* entityToFleeFrom);
+	void					Event_FleeFromPoint( const idVec3 &pos );
 	void					Event_MoveToAttackPosition( idEntity *entity, const char *attack_anim );
 	void					Event_MoveToEntity( idEntity *ent );
 	void					Event_MoveToPosition( const idVec3 &pos );

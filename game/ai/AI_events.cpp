@@ -98,12 +98,8 @@ const idEventDef AI_MoveToEnemy( "moveToEnemy", EventArgs(), EV_RETURNS_VOID, "n
 const idEventDef AI_MoveToEnemyHeight( "moveToEnemyHeight", EventArgs(), EV_RETURNS_VOID, "no description" );
 const idEventDef AI_MoveOutOfRange( "moveOutOfRange", EventArgs('e', "ent", "", 'f', "range", ""), EV_RETURNS_VOID, "no description");
 // greebo: Flee from an entity
-const idEventDef AI_Flee( "flee", EventArgs('e', "entToFleeFrom", "", 'd', "algorithm", "", 'd', "distanceOption", ""), 'd', 
-	"Flee from the given entity. Pass the escape point lookup algorithm (e.g. EP_FIND_GUARDED)\n" \
-	"and the distanceOption (e.g. EP_DIST_NEAREST) to specify how the best escape point can be found.\n" \
-	"Refer to the tdm_defs.script file to see all the constants.\n\n" \
-	"When algorithm is set to EP_FIND_AAS_AREA_FAR_FROM_THREAT, the distanceOption is interpreted as minimum threat distance.\n" \
-	"Returns FALSE if no escape point could be found.");
+const idEventDef AI_Flee( "flee", EventArgs('e', "entToFleeFrom", ""), EV_RETURNS_VOID, "Flee from the given entity.");
+const idEventDef AI_FleeFromPoint("fleeFromPoint", EventArgs('v', "pos", ""), EV_RETURNS_VOID, "Flee from the given position.");
 const idEventDef AI_MoveToAttackPosition( "moveToAttackPosition", EventArgs('e', "ent", "", 's', "attack_anim", ""), EV_RETURNS_VOID, "");
 const idEventDef AI_Wander( "wander", EventArgs(), EV_RETURNS_VOID, "no description" );
 const idEventDef AI_MoveToEntity( "moveToEntity", EventArgs('e', "destination", ""), EV_RETURNS_VOID, "");
@@ -437,6 +433,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_MoveToEnemyHeight,				idAI::Event_MoveToEnemyHeight )
 	EVENT( AI_MoveOutOfRange,					idAI::Event_MoveOutOfRange )
 	EVENT( AI_Flee,								idAI::Event_Flee )
+	EVENT( AI_FleeFromPoint,					idAI::Event_FleeFromPoint )
 	EVENT( AI_MoveToAttackPosition,				idAI::Event_MoveToAttackPosition )
 	EVENT( AI_Wander,							idAI::Event_Wander )
 	EVENT( AI_MoveToEntity,						idAI::Event_MoveToEntity )
@@ -1376,27 +1373,47 @@ void idAI::Event_MoveOutOfRange( idEntity *entity, float range ) {
 idAI::Event_Flee
 =====================
 */
-void idAI::Event_Flee(idEntity *entityToFleeFrom, int algorithm, int distanceOption)
+void idAI::Event_Flee(idEntity *entityToFleeFrom)
 {
-	// grayman #4250
-	bool success = false;
+	if( entityToFleeFrom == NULL )	return;
 
-	if ( (entityToFleeFrom != NULL ) && entityToFleeFrom->IsType(idActor::Type))
+	//if the entity to flee from is an actor, flee from this actor
+	if( entityToFleeFrom->IsType(idActor::Type) )
 	{
-		fleeingEvent = false; // grayman #3356
-		fleeingFrom = entityToFleeFrom->GetPhysics()->GetOrigin(); // grayman #3848
 		fleeingFromPerson = static_cast<idActor*>(entityToFleeFrom); // grayman #3847
-		emitFleeBarks = true;
-		if ( !GetMemory().fleeing ) // grayman #3847 - only flee if not already fleeing
-		{
-			GetMind()->SwitchState(STATE_FLEE);
-			success = true;
-		}
+		fleeingEvent = false; // grayman #3356
 	}
 
-	//StopMove(MOVE_STATUS_DEST_NOT_FOUND); // grayman #4250
-	//idThread::ReturnInt(Flee(entityToFleeFrom, false, algorithm, distanceOption)); // grayman #3317 // grayman #4250
-	idThread::ReturnInt(success);
+	//otherwise treat this as fleeing from an event
+	else
+	{
+		fleeingEvent = true;
+	}
+
+	fleeingFrom = entityToFleeFrom->GetPhysics()->GetOrigin(); // grayman #3848
+	emitFleeBarks = true;
+
+	if ( !GetMemory().fleeing ) // grayman #3847 - only flee if not already fleeing
+	{
+		GetMind()->SwitchState(STATE_FLEE);
+	}
+}
+
+/*
+=====================
+idAI::Event_FleeFromPoint
+=====================
+*/
+void idAI::Event_FleeFromPoint( const idVec3& pos )
+{
+	fleeingEvent = true;
+	fleeingFrom = pos;
+	emitFleeBarks = true;
+
+	if (!GetMemory().fleeing) // grayman #3847 - only flee if not already fleeing
+	{
+		GetMind()->SwitchState(STATE_FLEE);
+	}
 }
 
 /*
