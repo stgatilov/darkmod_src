@@ -104,7 +104,6 @@ void idMaterial::CommonInit() {
 	editorAlpha = 1.0f;
 	spectrum = 0;
 	polygonOffset = 0.0f;
-	shadowmapOffset = 0;
 	fogAlpha = 0;
 	suppressInSubview = false;
 	refCount = 0;
@@ -2000,15 +1999,6 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			}
 			// explict larger (or negative) offset
 			polygonOffset = token.GetFloatValue();
-			continue;
-		}
-		// shadowmapOffset
-		else if ( !token.Icmp( "shadowmapOffset" ) ) {
-			if ( !src.ReadTokenOnLine( &token ) ) {
-				shadowmapOffset = 0;
-				continue;
-			}
-			shadowmapOffset = token.GetFloatValue();
 			continue;
 		}
 		// fogAlpha

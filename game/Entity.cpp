@@ -886,8 +886,6 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	// stgatilov #5172: hacky workaround for shadow-casting entities behind caulk
 	renderEntity->forceShadowBehindOpaque = args->GetBool( "forceShadowBehindOpaque" );
 
-	renderEntity->shadowMapOffset = args->GetFloat( "shadowmapOffset" );
-
 	const char* areaLock;
 	if ( args->GetString( "areaLock", "", &areaLock ) )
 		renderEntity->areaLock = ( renderEntity_s::areaLock_t ) ( areaLockOptions.FindIndex( areaLock ) + 1 );

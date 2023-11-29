@@ -561,7 +561,6 @@ public:
 	float				FogAlpha() const { return fogAlpha; }
 
 	float				GetPolygonOffset( void ) const { return polygonOffset; }
-	float				GetShadowMapOffset( void ) const { return shadowmapOffset; }
 
 	float				GetSurfaceArea( void ) const { return surfaceArea; }
 	void				AddToSurfaceArea( float area ) { surfaceArea += area; }
@@ -661,7 +660,6 @@ private:
 	int					spectrum;			// for invisible writing, used for both lights and surfaces
 
 	float				polygonOffset;
-	float				shadowmapOffset;
 
 	int					contentFlags;		// content flags
 	int					surfaceFlags;		// surface flags	
