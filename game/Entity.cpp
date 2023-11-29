@@ -2489,16 +2489,32 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs, idEntity *activator )
 			TumbleVec[1] += (gameLocal.random.RandomFloat() * 20) - 10;
 			TumbleVec[2] += (gameLocal.random.RandomFloat() * 20) - 10;
 
-			physics->SetLinearVelocity(
-				GetPhysics()->GetLinearVelocity() 
-				+ activator->GetPhysics()->GetLinearVelocity()
-				+ TumbleVec
-				);
-			physics->SetAngularVelocity(
-				GetPhysics()->GetAngularVelocity() 
-				+ activator->GetPhysics()->GetAngularVelocity()
-				+ TumbleVec
-				);
+			// Dragofer: optional activator
+			if( activator != NULL )
+			{
+				physics->SetLinearVelocity(
+					GetPhysics()->GetLinearVelocity() 
+					+ activator->GetPhysics()->GetLinearVelocity()
+					+ TumbleVec
+					);
+				physics->SetAngularVelocity(
+					GetPhysics()->GetAngularVelocity() 
+					+ activator->GetPhysics()->GetAngularVelocity()
+					+ TumbleVec
+					);
+			}
+
+			else
+			{
+				physics->SetLinearVelocity(
+					GetPhysics()->GetLinearVelocity() 
+					+ TumbleVec
+					);
+				physics->SetAngularVelocity(
+					GetPhysics()->GetAngularVelocity() 
+					+ TumbleVec
+					);
+			}
 
 			/*
 			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Activator is: %s\r", activator->GetName() );
@@ -2512,7 +2528,7 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs, idEntity *activator )
 				physics->GetAngularVelocity().z ); 
 			*/
 
-			if ( activator->IsType(idActor::Type) )
+			if ( activator != NULL && activator->IsType(idActor::Type) )
 			{
 				idActor *actor = static_cast<idActor *>(activator);
 				flinder->m_SetInMotionByActor = actor;
