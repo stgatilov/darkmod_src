@@ -161,6 +161,10 @@ typedef struct renderEntity_s {
 	int						timeGroup;
 	int						xrayIndex;				// 1 - regular entity, no substitute, 2 - xray view substitute, 4 - has substitute
 	int						sortOffset;				// 2.08: mappers finetune translucent draw order
+
+#ifndef NDEBUG
+	int						_check;
+#endif
 } renderEntity_t;
 
 
@@ -182,9 +186,6 @@ typedef struct renderLight_s {
 	// this is different to *InViewID because a subview can still be VID_PLAYER_VIEW
 	int						suppressInSubview; // bitmask: 0 - suppress in subviews, 1 - supress in player views
 
-	// I am sticking the four bools together so there are no unused gaps in
-	// the padded structure, which could confuse the memcmp that checks for redundant
-	// updates
 	bool					noShadows;			// (should we replace this with material parameters on the shader?)
 	bool					noSpecular;			// (should we replace this with material parameters on the shader?)
 
@@ -225,6 +226,9 @@ typedef struct renderLight_s {
 	float					volumetricDust;		//stgatilov #5816: strength of volumetric light (in color per meter)
 	int						volumetricNoshadows;//stgatilov #5816: use shadows or disable volumetric light?
 
+#ifndef NDEBUG
+	int						_check;
+#endif
 } renderLight_t;
 
 typedef enum {							// #define RENDERTOOLS_SKIP_ID			-1 // DARKMOD_LG_VIEWID

@@ -191,6 +191,10 @@ void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEn
 		return;
 	}
 
+	// stgatilov: user must memset renderEntity_t with zeros
+	// because it usually has padding, and we memcmp its contents
+	assert( re->_check == 0 );
+
 	tr.pc.c_entityUpdates++;
 
 	if ( !re->hModel && !re->callback ) {
@@ -198,12 +202,8 @@ void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEn
 	}
 
 	// create new slots if needed
-	if ( entityHandle < 0 || entityHandle > LUDICROUS_INDEX ) {
+	if ( entityHandle < 0 || entityHandle >= entityDefs.Num() ) {
 		common->Error( "idRenderWorld::UpdateEntityDef: index = %i", entityHandle );
-	}
-	while ( entityHandle >= entityDefs.Num() ) {
-		common->Error("TODO: can this really happen?");
-		entityDefs.Append( NULL );
 	}
 
 	idRenderEntityLocal	*def = entityDefs[entityHandle];
@@ -366,14 +366,15 @@ void idRenderWorldLocal::UpdateLightDef( qhandle_t lightHandle, const renderLigh
 		return;
 	}
 
+	// stgatilov: user must memset renderLight_t with zeros
+	// because it usually has padding, and we memcmp its contents
+	assert( rlight->_check == 0 );
+
 	tr.pc.c_lightUpdates++;
 
 	// create new slots if needed
-	if ( lightHandle < 0 || lightHandle > LUDICROUS_INDEX ) {
+	if ( lightHandle < 0 || lightHandle >= lightDefs.Num() ) {
 		common->Error( "idRenderWorld::UpdateLightDef: index = %i", lightHandle );
-	}
-	while ( lightHandle >= lightDefs.Num() ) {
-		lightDefs.Append( NULL );
 	}
 
 	bool justUpdate = false;
