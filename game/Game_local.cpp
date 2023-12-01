@@ -6329,7 +6329,10 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 	}
 
 	// grayman #3857 - douse nearby lights
-	RadiusDouse( origin, radius, true );
+	if( damageDef->GetInt("douse", "1") == 1 )
+	{
+		RadiusDouse( origin, radius, true );
+	}
 }
 
 /*
