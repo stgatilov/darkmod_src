@@ -10783,7 +10783,7 @@ CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 
 // Tels: Get the entity attached at the position given by the attachment position
 // grayman #2603 - resurrected and spruced up for relight work
-idEntity* idEntity::GetAttachmentByPosition( const idStr PosName )
+idEntity* idEntity::GetAttachmentByPosition( const idStr& PosName )
 {
 	const int num = m_Attachments.Num();
 

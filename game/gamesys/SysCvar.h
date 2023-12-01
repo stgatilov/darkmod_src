@@ -284,6 +284,8 @@ extern idCVar cv_holdfrob_delay;
 extern idCVar cv_holdfrob_bounds;
 extern idCVar cv_holdfrob_drag_body_behavior;
 
+extern idCVar cv_holdfrob_drag_all_entities;
+
 //Obsttorte: #5984 (multilooting)
 extern idCVar cv_multiloot_min_interval;
 extern idCVar cv_multiloot_max_interval;

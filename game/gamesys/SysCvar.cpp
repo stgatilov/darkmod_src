@@ -362,6 +362,11 @@ idCVar cv_holdfrob_drag_body_behavior(
 	"  0 --- on second frob, let go of body. (original TDM behavior)"
 );
 
+idCVar cv_holdfrob_drag_all_entities(
+	"tdm_holdfrob_drag_all_entities", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,
+	"If enabled, all possible entities will be grabbed on long-press frob."
+);
+
 // Obsttorte: #5984 (multilooting)
 idCVar cv_multiloot_min_interval("tdm_multiloot_min_interval", "300",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT, "The minimum interval between two consecutive frobs when multifrobbing.");
 idCVar cv_multiloot_max_interval("tdm_multiloot_max_interval", "2000",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT, "The amount of time after which multilooting gets disabled again.");

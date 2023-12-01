@@ -743,7 +743,7 @@ public:
 	void					SetHideUntilTime(const int time);	// grayman #597
 	int						GetHideUntilTime(void) const;		// grayman #597
 	
-	idEntity*				GetAttachmentByPosition(const idStr AttPos); // grayman #2603
+	idEntity*				GetAttachmentByPosition(const idStr& AttPos); // grayman #2603
 
 	enum {
 		EVENT_STARTSOUNDSHADER,

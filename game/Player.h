@@ -832,6 +832,7 @@ public:
 	bool					CanHoldFrobAction( void );
 	void					SetHoldFrobView( void );
 	float					HoldFrobViewDistance( void );
+	bool					IsAdditionalHoldFrobGrabbableType(idEntity* target);
 
 	bool					OnLadder( void ) const;
 	// Virtal override of idActor::OnElevator()
@@ -879,7 +880,7 @@ public:
 
 	// Daft Mugi #6316: Hold Frob for alternate interaction
 	idEntityPtr<idEntity>   holdFrobEntity;
-	idEntityPtr<idEntity>   holdFrobDraggedBodyEntity;
+	idEntityPtr<idEntity>   holdFrobDraggedEntity;
 	int                     holdFrobStartTime;
 	idMat3                  holdFrobStartViewAxis;
 

@@ -708,7 +708,7 @@ idPlayer::idPlayer() :
 
 	// Daft Mugi #6316
 	holdFrobEntity = NULL;
-	holdFrobDraggedBodyEntity = NULL;
+	holdFrobDraggedEntity = NULL;
 	holdFrobStartTime = 0;
 	holdFrobStartViewAxis.Zero();
 
@@ -2432,7 +2432,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	// Daft Mugi #6316: Hold Frob for alternate interaction
 	// The hold frob values don't get saved, but reset on load.
 	holdFrobEntity = NULL;
-	holdFrobDraggedBodyEntity = NULL;
+	holdFrobDraggedEntity = NULL;
 	holdFrobStartTime = 0;
 	holdFrobStartViewAxis.Zero();
 
@@ -8917,6 +8917,71 @@ float idPlayer::HoldFrobViewDistance( void )
 
 /*
 ================
+idPlayer::IsAdditionalHoldFrobGrabbableType
+================
+*/
+bool idPlayer::IsAdditionalHoldFrobGrabbableType(idEntity* target)
+{
+	// Precondition: target must be moveable type
+
+	if (target == nullptr || !cv_holdfrob_drag_all_entities.GetBool() || !IsHoldFrobEnabled())
+		return false;
+
+	{
+		const bool isLantern = target->spawnArgs.GetString("is_lantern", nullptr) != nullptr;
+		if (isLantern)
+			return false;
+	}
+
+	{
+		const bool isJunk = !target->spawnArgs.GetBool("equippable", "0");
+		if (isJunk)
+			return true;
+	}	
+
+	{
+		auto IsExtinguishedCandle = [](idEntity* target) -> bool
+		{
+			const idStr skinUnlit = target->spawnArgs.GetString("skin_unlit", nullptr);
+			if (skinUnlit.IsEmpty())
+				return false;
+
+			const idStr skin = target->spawnArgs.GetString("skin", nullptr);
+			return skin == skinUnlit; // Works only if target is not lantern
+		};
+		if (IsExtinguishedCandle(target))
+			return true;
+
+		{
+			const bool isCandleHolderWithoutCandle = target->spawnArgs.GetBool("extinguished", "0"); // Works only if target is not lantern
+			if (isCandleHolderWithoutCandle)
+				return true; 
+		}
+
+		{
+			static const idStr sCandle("candle");
+			idEntity* candle = target->GetAttachmentByPosition(sCandle);
+			if (candle != nullptr && IsExtinguishedCandle(candle))
+				return true;
+		}
+	}
+
+	{
+		const idStr modelName_Eaten = target->spawnArgs.GetString("model_eaten", nullptr);
+		if (!modelName_Eaten.IsEmpty())
+		{
+			const idStr modelName = target->spawnArgs.GetString("model", nullptr);
+			const bool isFoodRemains = modelName == modelName_Eaten;
+			if (isFoodRemains)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+/*
+================
 idPlayer::OnLadder
 ================
 */
@@ -11669,10 +11734,17 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		? static_cast<idAFAttachment*>(target)->GetBindMaster()
 		: target;
 
+
+	
 	const bool holdFrobBodyType = bodyType
 		&& bodyTarget
 		&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
 		&& IsHoldFrobEnabled();
+
+	bool holdFrobGrabableType = holdFrobBodyType;
+	if (!holdFrobGrabableType && moveableType)
+		holdFrobGrabableType = IsAdditionalHoldFrobGrabbableType(target);
+
 	const bool holdFrobUsableType = moveableType
 		&& target->spawnArgs.GetBool("equippable", "0")
 		&& IsHoldFrobEnabled();
@@ -11709,11 +11781,11 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 	if (impulseState == EPressed)
 	{
-		if (holdFrobBodyType || holdFrobUsableType)
+		if (holdFrobGrabableType || holdFrobUsableType)
 		{
 			// Store frobbed entity and start time tracking.
 			holdFrobEntity = highlightedEntity;
-			holdFrobDraggedBodyEntity = NULL;
+			holdFrobDraggedEntity = NULL;
 			holdFrobStartTime = gameLocal.time;
 			SetHoldFrobView();
 			return;
@@ -11722,7 +11794,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 	if (impulseState == ERepeat && holdFrobEntity.GetEntity() == highlightedEntity)
 	{
-		if (holdFrobBodyType)
+		if (holdFrobGrabableType)
 		{
 			// Drag body if enough time has passed or view has moved outside of bounds.
 			if (CanHoldFrobAction()
@@ -11731,7 +11803,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 				gameLocal.m_Grabber->Update(this, false, true);
 				holdFrobEntity = NULL;
 				// Store grabber entity of dragged body, so the body can be released later.
-				holdFrobDraggedBodyEntity = gameLocal.m_Grabber->GetSelected();
+				holdFrobDraggedEntity = gameLocal.m_Grabber->GetSelected();
 				return;
 			}
 		}
@@ -11758,7 +11830,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 			return;
 		}
 
-		if (holdFrobUsableType)
+		if (holdFrobUsableType || holdFrobGrabableType)
 		{
 			// Pick up, since it was not equipped/used (or toggled on/off).
 			gameLocal.m_Grabber->Update(this, false, true);
@@ -11782,7 +11854,7 @@ void idPlayer::PerformFrob()
 {
 	// Initialize/reset hold frob
 	holdFrobEntity = NULL;
-	holdFrobDraggedBodyEntity = NULL;
+	holdFrobDraggedEntity = NULL;
 
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB )
@@ -11881,10 +11953,10 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 
 		// NOTE: When hold-frob drag body behavior is false, do not
 		// stop dragging. (Matches original TDM behavior)
-		if (holdFrobDraggedBodyEntity.GetEntity()
+		if (holdFrobDraggedEntity.GetEntity()
 		    && cv_holdfrob_drag_body_behavior.GetBool())
 		{
-			holdFrobEnt = holdFrobDraggedBodyEntity.GetEntity();
+			holdFrobEnt = holdFrobDraggedEntity.GetEntity();
 		}
 
 		// If currently dragging a body, stop dragging.
@@ -11893,7 +11965,7 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 		if (holdFrobEnt && holdFrobEnt == grabberEnt)
 		{
 			gameLocal.m_Grabber->Update(this);
-			holdFrobDraggedBodyEntity = NULL;
+			holdFrobDraggedEntity = NULL;
 			holdFrobEntity = NULL;
 			return;
 		}
