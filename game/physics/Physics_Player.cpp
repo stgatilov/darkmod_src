@@ -3043,7 +3043,9 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_bMidAir(false)
 	, m_fPrevShoulderingPitchOffset(0.0f)
 	, m_PrevShoulderingPosOffset(vec3_zero)
-	, m_ShoulderingStartPos(vec3_zero)
+	, m_ShoulderingStartPosRelative(vec3_zero)
+	, m_ShoulderingCurrentPosRelative(vec3_zero)
+	, m_pShoulderingGroundEntity(NULL)
 	, m_fSwimTimeStart_s(0.0f)
 	, m_fSwimLeadInDuration_s(-1.0f)
 	, m_fSwimLeadOutStart_s(-1.0f)
@@ -3291,7 +3293,9 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_eShoulderAnimState);
 	savefile->WriteFloat(m_fShoulderingTime);
 	savefile->WriteVec3(m_PrevShoulderingPosOffset);
-	savefile->WriteVec3(m_ShoulderingStartPos);
+	savefile->WriteVec3(m_ShoulderingStartPosRelative);
+	savefile->WriteVec3(m_ShoulderingCurrentPosRelative);
+	savefile->WriteObject(m_pShoulderingGroundEntity);
 	savefile->WriteBool(m_bShouldering_SkipDucking);
 	savefile->WriteFloat(m_fShouldering_TimeToNextSound);
 	savefile->WriteFloat(m_fPrevShoulderingPitchOffset);
@@ -3434,7 +3438,9 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	}
 	savefile->ReadFloat(m_fShoulderingTime);
 	savefile->ReadVec3(m_PrevShoulderingPosOffset);
-	savefile->ReadVec3(m_ShoulderingStartPos);
+	savefile->ReadVec3(m_ShoulderingStartPosRelative);
+	savefile->ReadVec3(m_ShoulderingCurrentPosRelative);
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_pShoulderingGroundEntity));
 	savefile->ReadBool(m_bShouldering_SkipDucking);
 	savefile->ReadFloat(m_fShouldering_TimeToNextSound);
 	savefile->ReadFloat(m_fPrevShoulderingPitchOffset);
@@ -6400,7 +6406,21 @@ void idPhysics_Player::StartShoulderingAnim()
 			m_fShoulderingTime = cv_pm_shoulderAnim_msecs.GetFloat();
 			m_fPrevShoulderingPitchOffset = 0.0f;
 			m_PrevShoulderingPosOffset = vec3_zero;
-			m_ShoulderingStartPos = GetOrigin();
+			m_ShoulderingStartPosRelative = GetOrigin();
+			
+			// #6259: Make shouldering start pos relative to potentially moving ground entity
+			idEntity* groundEnt = groundEntityPtr.GetEntity();
+			if (groundEnt != NULL)
+			{
+				m_pShoulderingGroundEntity = groundEnt;
+				idPhysics* p_physics = groundEnt->GetPhysics();
+				if (p_physics != NULL)
+				{
+					m_ShoulderingStartPosRelative = 
+						(m_ShoulderingStartPosRelative - p_physics->GetOrigin()) * p_physics->GetAxis().Transpose();
+				}
+			}
+			m_ShoulderingCurrentPosRelative = m_ShoulderingStartPosRelative;
 			
 			m_eShoulderAnimState = eShoulderingAnimation_Active;
 			if (!m_bShouldering_SkipDucking && !IsCrouching())
@@ -6467,8 +6487,20 @@ void idPhysics_Player::ShoulderingMove()
 		}
 
 		// Apply animation to player position and view angle
-		const idVec3 newPosition = current.origin + (newPositionOffset - m_PrevShoulderingPosOffset);
+		idVec3 newPosition = m_ShoulderingCurrentPosRelative + (newPositionOffset - m_PrevShoulderingPosOffset);
+		m_ShoulderingCurrentPosRelative = newPosition;
 		m_PrevShoulderingPosOffset = newPositionOffset;
+
+		if (m_pShoulderingGroundEntity != NULL)
+		{
+			// #6259: Shouldering animation must be relative to potentially moving ground entity
+			idPhysics* p_physics = m_pShoulderingGroundEntity->GetPhysics();
+			if (p_physics != NULL)
+			{
+				newPosition = p_physics->GetOrigin() + p_physics->GetAxis() * newPosition;
+			}
+		}
+
 		SetOrigin(newPosition);
 
 		viewAngles.pitch += (fPitchOffset - m_fPrevShoulderingPitchOffset);
@@ -6483,7 +6515,18 @@ void idPhysics_Player::ShoulderingMove()
 		m_eShoulderAnimState = eShoulderingAnimation_NotStarted;
 
 		// Explicitly return to start position to avoid clipping due to quantization errors
-		SetOrigin(m_ShoulderingStartPos);
+		idVec3 endPos = m_ShoulderingStartPosRelative;
+		if (m_pShoulderingGroundEntity != NULL)
+		{
+			// #6259: Shouldering animation must be relative to potentially moving ground entity
+			idPhysics* p_physics = m_pShoulderingGroundEntity->GetPhysics();
+			if (p_physics != NULL)
+			{
+				endPos = p_physics->GetOrigin() + p_physics->GetAxis() * endPos;
+			}
+			m_pShoulderingGroundEntity = NULL;
+		}
+		SetOrigin(endPos);
 
 		return;
 	}
