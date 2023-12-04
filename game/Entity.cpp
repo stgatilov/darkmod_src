@@ -9675,7 +9675,7 @@ void idEntity::Event_StimClearIgnoreList(int stimType)
 void idEntity::Event_StimEmit(int stimType, float radius, idVec3& stimOrigin)
 {
 	CStimResponseCollection* srColl = GetStimResponseCollection();
-		assert(srColl != NULL);
+	assert(srColl != NULL);
 	const CStimPtr& stim = srColl->GetStimByType( static_cast<StimType>(stimType) );
 	if( stim == NULL )
 	{
@@ -11782,7 +11782,6 @@ void idEntity::Event_SetFrobMaster(idEntity* master)
 	{
 		m_MasterFrob = master->name;
 	}
-
 	else
 	{
 		m_MasterFrob = "";

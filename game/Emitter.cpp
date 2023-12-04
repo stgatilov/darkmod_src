@@ -346,7 +346,8 @@ idFuncEmitter::On
 */
 void idFuncEmitter::On( void ) {
 	//if this is a looping emitter that's already on, dont call On() to avoid refreshing it
-	if ( !hidden && !spawnArgs.GetBool("cycleTrigger") )	return;
+	if ( !hidden && !spawnArgs.GetBool("cycleTrigger") )
+		return;
 
 	renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = 0;
 	renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
@@ -361,7 +362,8 @@ idFuncEmitter::Off
 */
 void idFuncEmitter::Off( void ) {
 	//if this emitter is already off, don't call Off() to avoid refreshing it
-	if ( hidden )	return;
+	if ( hidden )
+		return;
 
 	renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC(gameLocal.time);
 	hidden = true;
@@ -378,8 +380,11 @@ idFuncEmitter::Event_Activate
 ================
 */
 void idFuncEmitter::Event_Activate( idEntity *activator ) {
-	if ( hidden || spawnArgs.GetBool( "cycleTrigger" ) )	On();
-	else													Off();
+	if ( hidden || spawnArgs.GetBool( "cycleTrigger" ) ) {
+		On();
+	} else {
+		Off();
+	}
 
 	UpdateVisuals();
 }
