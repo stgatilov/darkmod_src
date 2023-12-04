@@ -54,7 +54,10 @@ const idEventDef EV_SecurityCam_SeeBodiesState( "state_see_bodies", EventArgs('f
 const idEventDef EV_SecurityCam_SeeAnimalsToggle( "toggle_see_animals", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see bodies. Checked after seeAI or seeBodies." );
 const idEventDef EV_SecurityCam_SeeAnimalsState( "state_see_animals", EventArgs('f', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see animals. Checked after seeAI or seeBodies." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
-const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that's currently the focus of the security camera." );
+const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the enemy that's currently the focus of the security camera." );
+const idEventDef EV_SecurityCam_GetNextEnemy("getNextEnemy", EventArgs(
+	'E', "Last match: search will start after this entity. Use $null_entity or pass an uninitialized entity variable to start a new search. The first result in a new search will be the enemy the camera is focusing on.", ""),
+	'e', "Returns the next enemy that the security camera can see.");
 const idEventDef EV_SecurityCam_CanSee( "canSee", EventArgs('E', "entity", ""), 'd', "Returns true if the security camera can see the specified entity." );
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
 const idEventDef EV_SecurityCam_GetHealth("getHealth", EventArgs(), 'f', "Returns the health of the security camera.");
@@ -81,6 +84,7 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_SeeAnimalsState,			idSecurityCamera::Event_SeeAnimals_State )
 	EVENT( EV_SecurityCam_GetSpotLight,				idSecurityCamera::Event_GetSpotLight )	
 	EVENT( EV_SecurityCam_GetEnemy,					idSecurityCamera::Event_GetEnemy )	
+	EVENT( EV_SecurityCam_GetNextEnemy,				idSecurityCamera::Event_GetNextEnemy )	
 	EVENT( EV_SecurityCam_CanSee,					idSecurityCamera::Event_CanSee )	
 	EVENT( EV_SecurityCam_GetSecurityCameraState,	idSecurityCamera::Event_GetSecurityCameraState )	
 	EVENT( EV_SecurityCam_GetHealth,				idSecurityCamera::Event_GetHealth )
@@ -159,6 +163,11 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	sparks.Save(savefile);
 	cameraDisplay.Save(savefile);
 	enemy.Save(savefile);
+
+	savefile->WriteInt(enemies.Num());
+	for (idEntity* ent = enemies.Next(); ent != NULL; ent = ent->spawnNode.Next()) {
+		savefile->WriteObject(ent);
+	}
 
 	savefile->WriteInt(state);
 	savefile->WriteInt(alertMode);
@@ -258,6 +267,17 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	cameraDisplay.Restore(savefile);
 	enemy.Restore(savefile);
 
+	int num, i;
+	idEntity* ent;
+	savefile->ReadInt( num );
+	for( i = 0; i < num; i++ ) {
+		savefile->ReadObject( reinterpret_cast<idClass *&>( ent ) );
+		assert( ent );
+		if ( ent ) {
+			ent->spawnNode.AddToEnd( enemies );
+		}
+	}
+
 	savefile->ReadInt(state);
 	savefile->ReadInt(alertMode);
 	savefile->ReadBool(powerOn);
@@ -343,6 +363,7 @@ void idSecurityCamera::Spawn( void )
 	sparks = NULL;
 	cameraDisplay = NULL;
 	enemy = NULL;
+	enemies.Clear();
 
 	//check if this is an old version of the entity
 	if ( spawnArgs.GetBool("legacy", "0") ) {
@@ -721,6 +742,61 @@ void idSecurityCamera::Event_GetEnemy()
 
 /*
 ================
+idSecurityCamera::Event_GetNextEnemy
+================
+*/
+void idSecurityCamera::Event_GetNextEnemy( const idEntity* lastMatch )
+{
+	int i = 0;
+	idEntity* ent;
+
+	//Return NULL if the list is empty
+	if( enemies.Num() == 0 )
+	{
+		idThread::ReturnEntity(NULL);
+		return;
+	}
+
+	//Iterate through the list of enemies
+	for( ent = enemies.Next(); ent != NULL; ent = ent->spawnNode.Next() )
+	{
+		i++;
+
+		//if this is a new search, return the first result we get
+		if ( lastMatch == NULL )
+		{
+			idThread::ReturnEntity(ent);
+			return;
+		}
+
+		//if we found our match...
+		else if( lastMatch == ent )
+		{
+			//...and the list is not yet finished, return the next enemy
+			if( i < enemies.Num() )
+			{
+				idThread::ReturnEntity( ent->spawnNode.Next() );
+				return;
+			}
+
+			//otherwise there is no next enemy anymore
+			else
+			{
+				idThread::ReturnEntity(NULL);
+				return;
+			}
+		}
+
+		//if we reached the end without finding any match, return NULL
+		else if( i == enemies.Num() )
+		{
+			idThread::ReturnEntity( NULL );
+		}
+	}
+}
+
+/*
+================
 idSecurityCamera::Event_CanSee
 ================
 */
@@ -919,10 +995,10 @@ bool idSecurityCamera::IsEntityHiddenByDarkness(idEntity* actor, const float sig
 
 /*
 ================
-idSecurityCamera::FindEnemy
+idSecurityCamera::FindEnemies
 ================
 */
-bool idSecurityCamera::FindEnemy()
+bool idSecurityCamera::FindEnemies()
 {
 	pvsHandle_t handle = gameLocal.pvs.SetupCurrentPVS(pvsArea);
 	idVec3 origin = GetPhysics()->GetOrigin();
@@ -930,6 +1006,7 @@ bool idSecurityCamera::FindEnemy()
 	float dist;
 	float bestDist = idMath::INFINITY;
 	idEntity *bestEnemy = NULL;
+	enemies.Clear();
 
 	// check for player
 	if ( spawnArgs.GetBool("seePlayer", "1") )
@@ -949,6 +1026,7 @@ bool idSecurityCamera::FindEnemy()
 				bestEnemy = player;
 				delta = player->GetPhysics()->GetOrigin() - origin;
 				bestDist = delta.Length();
+				player->spawnNode.AddToFront(enemies);
 			}
 		}
 	}
@@ -965,12 +1043,6 @@ bool idSecurityCamera::FindEnemy()
 
 			// is the enemy AI beyond max scan distance?
 			if( dist > scanDist )
-			{
-				continue;
-			}
-
-			// is this AI no closer than the previous closest enemy?
-			if( dist >= bestDist && bestEnemy != NULL )
 			{
 				continue;
 			}
@@ -1062,8 +1134,21 @@ bool idSecurityCamera::FindEnemy()
 			// perform the visibility trace
 			if( CanSeeEnemy( ai ) )
 			{
-				bestDist = dist;
-				bestEnemy = ai;
+				//this is a potential AI enemy
+				//is it the first enemy we found, or closer than the previous best enemy?
+				if( bestEnemy == NULL || dist < bestDist )
+				{
+					//this is our new preferred enemy
+					bestDist = dist;
+					bestEnemy = ai;
+					ai->spawnNode.AddToFront(enemies);
+				}
+
+				else
+				{
+					//otherwise simply add to the list of visible enemies
+					ai->spawnNode.AddToEnd(enemies);
+				}
 			}
 		}
 	}
@@ -1299,7 +1384,7 @@ void idSecurityCamera::Think( void )
 		switch ( state )
 		{
 		case STATE_SWEEPING:
-			if ( FindEnemy() )
+			if ( FindEnemies() )
 			{
 				StopSound(SND_CHANNEL_ANY, false);
 				StartSound("snd_sight", SND_CHANNEL_BODY, 0, false, NULL);
@@ -1339,7 +1424,7 @@ void idSecurityCamera::Think( void )
 		case STATE_ENEMYSIGHTED:
 			if ( gameLocal.time >= startAlertTime )
 			{
-				if ( FindEnemy() )
+				if ( FindEnemies() )
 				{
 					StopSound(SND_CHANNEL_ANY, false);
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
@@ -1414,6 +1499,7 @@ void idSecurityCamera::Think( void )
 				}
 				UpdateColors();
 				enemy = NULL;
+				enemies.Clear();
 				if ( spawnArgs.GetBool("trigger_alarm_end", "0") )
 				{
 					ActivateTargets(this);
@@ -1500,7 +1586,7 @@ void idSecurityCamera::Think( void )
 			}
 
 			//check whether the enemy has moved to another position in the camera's view
-			if ( following && FindEnemy() )
+			if ( following && FindEnemies() )
 			{
 				float sweepDist		= fabs( idMath::AngleNormalize180(angleToEnemy - angleTarget) );
 				float inclineDist	= fabs( idMath::AngleNormalize180(inclineToEnemy - inclineTarget) );
@@ -1860,6 +1946,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	state = STATE_DEAD;
 	sweeping = false;
 	enemy = NULL;
+	enemies.Clear();
 
 	if ( spawnArgs.GetBool("notice_destroyed", "1") ) {
 		SetStimEnabled(ST_VISUAL, true); // let AIs see that the camera is destroyed
@@ -2049,6 +2136,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 	else
 	{
 		enemy = NULL;
+		enemies.Clear();
 		StopSound(SND_CHANNEL_ANY, false);
 		BecomeInactive(TH_THINK);
 	}

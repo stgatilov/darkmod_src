@@ -128,6 +128,7 @@ private:
 	idEntityPtr<idEntity>	sparks;
 	idEntityPtr<idEntity>	cameraDisplay;
 	idEntityPtr<idEntity>	enemy;
+	idLinkList<idEntity>	enemies;
 
 	int						state;
 	int						alertMode;
@@ -161,7 +162,7 @@ private:
 
 	void					StartSweep( void );
 	bool					CanSeeEnemy( idEntity *actor );
-	bool					FindEnemy( void );
+	bool					FindEnemies( void );
 	void					SetAlertMode( int status );
 	void					DrawFov( void );
 	const idVec3			GetAxis( void ) const;
@@ -185,6 +186,7 @@ private:
 	void					Event_SeeAnimals_State( float set );
 	void					Event_GetSpotLight(void);
 	void					Event_GetEnemy( void );
+	void					Event_GetNextEnemy( const idEntity* lastMatch );
 	bool					Event_CanSee( idEntity *ent );
 	void					Event_GetSecurityCameraState( void );
 	void					Event_GetHealth( void );
