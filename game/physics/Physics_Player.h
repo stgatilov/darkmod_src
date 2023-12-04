@@ -760,11 +760,6 @@ protected:
 	*/
 	float m_CurrentLeanTiltDegrees;
 
-	/**
-	* Current lean stretch fraction.  When this is 1.0, the player is at full stretch, at 0.0, not stretched
-	**/
-	float m_CurrentLeanStretch;
-
 	/*!
 	* The start (roll) angle of this lean movement
 	*/
@@ -779,11 +774,6 @@ protected:
 	* Max lean angle (set dynamically depending on forward/sideways leans)
 	**/
 	float m_leanMoveMaxAngle;
-
-	/**
-	* Maximum lean stretch (set dynamically depending on forward/sideways leans) 
-	**/
-	float m_leanMoveMaxStretch;
 
 	/*!
 	* Is the lean finished
@@ -832,7 +822,6 @@ protected:
 	* lean movement.
 	**/
 	void LeanMove();
-	void Lean2Move(); // Daft Mugi #6320: Add New Lean
 
 	/**
 	* Test clipping for the current eye position, plus delta in the lean direction
@@ -840,10 +829,9 @@ protected:
 	bool TestLeanClip();
 
 	/**
-	* Convert a lean angle and stretch into a point in space, in world coordinates
+	* Convert a lean angle into a point in space, in world coordinates
 	**/
-	idVec3 LeanParmsToPoint( float AngTilt, float Stretch );
-	idVec3 Lean2ParmsToPoint( float AngTilt ); // Daft Mugi #6320: Add New Lean
+	idVec3 LeanParmsToPoint( float AngTilt );
 
 	/**
 	* Start and maintain a peeking state until exited
@@ -857,10 +845,10 @@ protected:
 	* This is an internal method called by LeanMove.
 	* UpdateLeanPhysics must be called after this.
 	**/
-	void UpdateLeanAngle(float deltaLeanAngle, float deltaLeanStretch);
+	void UpdateLeanAngle(float deltaLeanAngle);
 
 	/**
-	* Takes the currently set m_CurrentLeanTiltDegrees and m_CurrentLeanStretch
+	* Takes the currently set m_CurrentLeanTiltDegrees
 	* And updates m_LeanTranslation and m_ViewLeanAngles
 	* Should be called after changing these member vars.
 	**/
@@ -904,8 +892,7 @@ public:
 	*
 	*/
 	void ToggleLean(float leanYawAngleDegrees);
-	void ToggleLean2(float leanYawAngleDegrees); // Daft Mugi #6320: Add New Lean
-	void UnLean(float leanYawAngleDegrees);      // Daft Mugi #6320: Add New Lean
+	void UnLean(float leanYawAngleDegrees);
 
 	/*!
 	* This method tests if the player is in the middle of a leaning

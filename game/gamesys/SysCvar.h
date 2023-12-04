@@ -242,14 +242,6 @@ extern idCVar cv_pm_shoulderDrop_angleIncrement;
 /**
 * TDM Leaning vars:
 **/
-extern idCVar cv_pm_lean_angle;
-extern idCVar cv_pm_lean_time;
-extern idCVar cv_pm_lean_height;
-extern idCVar cv_pm_lean_stretch;
-extern idCVar cv_pm_lean_forward_angle;
-extern idCVar cv_pm_lean_forward_time;
-extern idCVar cv_pm_lean_forward_height;
-extern idCVar cv_pm_lean_forward_stretch;
 extern idCVar cv_pm_lean_to_valid_increments;
 extern idCVar cv_pm_lean_door_increments;
 extern idCVar cv_pm_lean_door_max;
@@ -257,12 +249,11 @@ extern idCVar cv_pm_lean_door_bounds_exp;
 extern idCVar cv_tdm_toggle_lean;
 
 // Daft Mugi #6320: Add New Lean
-extern idCVar cv_pm_lean2_mode;
-extern idCVar cv_pm_lean2_time_to_lean;
-extern idCVar cv_pm_lean2_time_to_unlean;
-extern idCVar cv_pm_lean2_slide;
-extern idCVar cv_pm_lean2_angle;
-extern idCVar cv_pm_lean2_angle_mod;
+extern idCVar cv_pm_lean_time_to_lean;
+extern idCVar cv_pm_lean_time_to_unlean;
+extern idCVar cv_pm_lean_slide;
+extern idCVar cv_pm_lean_angle;
+extern idCVar cv_pm_lean_angle_mod;
 
 extern idCVar cv_frob_distance_default;
 extern idCVar cv_frob_width;

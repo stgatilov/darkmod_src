@@ -301,14 +301,6 @@ idCVar cv_pm_shoulderDrop_angleIncrement("pm_shoulderDrop_angleIncrement",	"22.5
 /**
 * Dark Mod Leaning
 **/
-idCVar cv_pm_lean_angle(			"pm_lean_angle",		"15.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees." );
-idCVar cv_pm_lean_time(				"pm_lean_time",			"400.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds." );
-idCVar cv_pm_lean_height(			"pm_lean_height",		"0.4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
-idCVar cv_pm_lean_stretch(			"pm_lean_stretch",		"2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
-idCVar cv_pm_lean_forward_angle(	"pm_lean_forward_angle",	"2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The tilt angle that the player can lean to at a full lean, in degrees." );
-idCVar cv_pm_lean_forward_time(		"pm_lean_forward_time",		"400.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Time it takes to get to a full lean, in milliseconds." );
-idCVar cv_pm_lean_forward_height(	"pm_lean_forward_height",	"0.4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
-idCVar cv_pm_lean_forward_stretch(	"pm_lean_forward_stretch",	"15",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
 idCVar cv_pm_lean_to_valid_increments( "pm_lean_to_valid_increments", "25",		CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Integer number of increments used for testing when leaning back to a valid position after a leaned clipping problem.  The higher the number, the smoother the un-lean will feel, but the higher the computation time." );
 idCVar cv_pm_lean_door_increments(	"pm_lean_door_increments", "10",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Integer number of increments used for testing when extending a lean through a door acoustically." );
 idCVar cv_pm_lean_door_max(			"pm_lean_door_max",		"40",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Max distance of door that may be listened through at normal incidence, in doom units." );
@@ -316,12 +308,11 @@ idCVar cv_pm_lean_door_bounds_exp(	"pm_lean_door_bounds_exp", "8.0",		CVAR_GAME 
 idCVar cv_tdm_toggle_lean(			"tdm_toggle_lean",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to make leaning toggleable." );
 
 // Daft Mugi #6320: Add New Lean
-idCVar cv_pm_lean2_mode("pm_lean2_mode", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to enable lean2 mode.");
-idCVar cv_pm_lean2_time_to_lean("pm_lean2_time_to_lean", "400", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds.", 0.0f, 2000.0f);
-idCVar cv_pm_lean2_time_to_unlean("pm_lean2_time_to_unlean", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to unlean, in milliseconds.", 0.0f, 2000.0f);
-idCVar cv_pm_lean2_slide("pm_lean2_slide", "200", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The slide distance that the player moves during a lean.", 0.0f, 1000.0f);
-idCVar cv_pm_lean2_angle("pm_lean2_angle", "8", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees.", 0.0f, 180.0f);
-idCVar cv_pm_lean2_angle_mod("pm_lean2_angle_mod", "0.5", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "The multiplier applied to the roll view angle during a left/right lean", 0.0f, 1.0f);
+idCVar cv_pm_lean_time_to_lean("pm_lean_time_to_lean", "400", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds.", 0.0f, 2000.0f);
+idCVar cv_pm_lean_time_to_unlean("pm_lean_time_to_unlean", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to unlean, in milliseconds.", 0.0f, 2000.0f);
+idCVar cv_pm_lean_slide("pm_lean_slide", "200", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The slide distance that the player moves during a lean.", 0.0f, 1000.0f);
+idCVar cv_pm_lean_angle("pm_lean_angle", "8", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees.", 0.0f, 180.0f);
+idCVar cv_pm_lean_angle_mod("pm_lean_angle_mod", "0.5", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "The multiplier applied to the roll view angle during a left/right lean", 0.0f, 1.0f);
 
 
 /**
