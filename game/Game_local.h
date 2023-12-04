@@ -899,7 +899,7 @@ public:
 	* @return The number of responses triggered
 	*
 	*/
-	int						DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin);
+	int						DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin, const float radius = 0.0f  );
 
 	/**
 	 * Trace a LOS path from gas origin to a point.

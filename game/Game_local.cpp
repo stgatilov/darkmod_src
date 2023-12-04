@@ -7355,7 +7355,7 @@ int idGameLocal::TraceGasPath( idVec3 from, idVec3 to, idEntity* ignore, idVec3&
 }
 
 
-int idGameLocal::DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin)
+int idGameLocal::DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin, const float radius )
 {
 	int numEntities = srEntities.Num();
 	int numResponses = 0;
@@ -7373,8 +7373,9 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, const idClip_EntityList 
 		if (!stim->m_bCollisionBased && !stim->m_bUseEntBounds)
 		{
 			// take the square radius, is faster
-			float radiusSqr = stim->GetRadius();
-			radiusSqr *= radiusSqr; 
+			// Dragofer: allow functions to provide an alternative radius, otherwise use what is stored in the stim
+			float radiusSqr = ( radius > 0 ) ? radius : stim->GetRadius();
+			radiusSqr *= radiusSqr;
 
 			idEntity *ent = srEntities[i];
 			idVec3 entitySpot = ent->GetPhysics()->GetOrigin();
