@@ -1039,6 +1039,9 @@ void R_ScreenShotWithViewpos_f( const idCmdArgs &args ) {
 		setColor, setAmbientGamma.c_str()
 	);
 
+	// hide console
+	console->Close();
+
 	cmdSystem->AppendCommandText(cmdString);
 }
 
