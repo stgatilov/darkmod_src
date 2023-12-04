@@ -732,6 +732,10 @@ bool idUserInterfaceLocal::ResetWindowTime(const char *windowName, int startTime
 	return true;
 }
 
+idCVar cv_tdm_subtitles_ring(
+	"tdm_subtitles_ring", "1", CVAR_BOOL | CVAR_SOUND | CVAR_ARCHIVE,
+	"Set to 1 to show subtitles location ring"
+);
 idCVar tdm_subtitles_ringRadius(
 	"tdm_subtitles_ringRadius", "5", CVAR_FLOAT | CVAR_SOUND | CVAR_ARCHIVE,
 	"Distance to speaker which corresponds to a point on the location ring boundary (in meters)."
@@ -836,12 +840,14 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 		SetStateFloat( alphaVar, m.volume );
 
 		// update direction cue
-		idVec2 normalizedLocation = idVec2( m.spatializedDirection.x, m.spatializedDirection.y ) / tdm_subtitles_ringRadius.GetFloat();
-		if ( normalizedLocation.Length() > 1.0f )
-			normalizedLocation.Normalize();
-		SetStateString( spatialVar, ( m.spatializedDirection.Length() == 0.0f ? "0" : "1" ) );
-		SetStateFloat( locationXVar, normalizedLocation.x );
-		SetStateFloat( locationYVar, normalizedLocation.y );
+		if ( cv_tdm_subtitles_ring.GetBool() ) {
+			idVec2 normalizedLocation = idVec2( m.spatializedDirection.x, m.spatializedDirection.y ) / tdm_subtitles_ringRadius.GetFloat();
+			if ( normalizedLocation.Length() > 1.0f )
+				normalizedLocation.Normalize();
+			SetStateString( spatialVar, ( m.spatializedDirection.Length() == 0.0f ? "0" : "1" ) );
+			SetStateFloat( locationXVar, normalizedLocation.x );
+			SetStateFloat( locationYVar, normalizedLocation.y );
+		}
 
 		// update debug text
 		idStr debugMessage;
