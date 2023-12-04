@@ -56,7 +56,7 @@ const idEventDef EV_SecurityCam_SeeAnimalsState( "state_see_animals", EventArgs(
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
 const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the enemy that's currently the focus of the security camera." );
 const idEventDef EV_SecurityCam_GetNextEnemy("getNextEnemy", EventArgs(
-	'E', "Last match: search will start after this entity. Use $null_entity or pass an uninitialized entity variable to start a new search. The first result in a new search will be the enemy the camera is focusing on.", ""),
+	'E', "lastMatch", "search will start after this entity.Use $null_entity or pass an uninitialized entity variable to start a new search.The first result in a new search will be the player, if the camera can see him."),
 	'e', "Returns the next enemy that the security camera can see.");
 const idEventDef EV_SecurityCam_CanSee( "canSee", EventArgs('E', "entity", ""), 'd', "Returns true if the security camera can see the specified entity." );
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
@@ -164,9 +164,10 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	cameraDisplay.Save(savefile);
 	enemy.Save(savefile);
 
-	savefile->WriteInt(enemies.Num());
-	for (idEntity* ent = enemies.Next(); ent != NULL; ent = ent->spawnNode.Next()) {
-		savefile->WriteObject(ent);
+	int i;
+	savefile->WriteInt( enemies.Num() );
+	for( i = 0; i < enemies.Num(); i++ ) {
+		enemies[ i ].Save( savefile );
 	}
 
 	savefile->WriteInt(state);
@@ -268,14 +269,11 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	enemy.Restore(savefile);
 
 	int num, i;
-	idEntity* ent;
+	enemies.Clear();
 	savefile->ReadInt( num );
+	enemies.SetNum( num );
 	for( i = 0; i < num; i++ ) {
-		savefile->ReadObject( reinterpret_cast<idClass *&>( ent ) );
-		assert( ent );
-		if ( ent ) {
-			ent->spawnNode.AddToEnd( enemies );
-		}
+		enemies[ i ].Restore( savefile );
 	}
 
 	savefile->ReadInt(state);
@@ -745,54 +743,43 @@ void idSecurityCamera::Event_GetEnemy()
 idSecurityCamera::Event_GetNextEnemy
 ================
 */
-void idSecurityCamera::Event_GetNextEnemy( const idEntity* lastMatch )
+void idSecurityCamera::Event_GetNextEnemy( const idEntity *lastMatch )
 {
 	int i = 0;
-	idEntity* ent;
+	int lastMatchIndex = -1;
 
-	//Return NULL if the list is empty
-	if( enemies.Num() == 0 )
+	for (i = 0; i < enemies.Num(); i++)
 	{
-		idThread::ReturnEntity(NULL);
-		return;
-	}
+		idEntity* ent = enemies[i].GetEntity();
 
-	//Iterate through the list of enemies
-	for( ent = enemies.Next(); ent != NULL; ent = ent->spawnNode.Next() )
-	{
-		i++;
-
-		//if this is a new search, return the first result we get
-		if ( lastMatch == NULL )
+		//skip nulls
+		if( !ent )
 		{
-			idThread::ReturnEntity(ent);
+			continue;
+		}
+
+		//if this is a new search, return the first valid enemy
+		//otherwise, look for a match. The next valid enemy will be returned
+		if( !lastMatch )
+		{
+			idThread::ReturnEntity( ent );
 			return;
 		}
 
-		//if we found our match...
-		else if( lastMatch == ent )
+		else if( ent == lastMatch )
 		{
-			//...and the list is not yet finished, return the next enemy
-			if( i < enemies.Num() )
-			{
-				idThread::ReturnEntity( ent->spawnNode.Next() );
-				return;
-			}
-
-			//otherwise there is no next enemy anymore
-			else
-			{
-				idThread::ReturnEntity(NULL);
-				return;
-			}
+			lastMatchIndex = i;
 		}
 
-		//if we reached the end without finding any match, return NULL
-		else if( i == enemies.Num() )
+		else if( i > lastMatchIndex && lastMatchIndex != -1 )
 		{
-			idThread::ReturnEntity( NULL );
+			idThread::ReturnEntity( ent );
+			return;
 		}
 	}
+
+	//if the list is empty, no match was found or there were no more entities after the last match, return NULL
+	idThread::ReturnEntity( NULL );
 }
 
 /*
@@ -1006,6 +993,7 @@ bool idSecurityCamera::FindEnemies()
 	float dist;
 	float bestDist = idMath::INFINITY;
 	idEntity *bestEnemy = NULL;
+	idEntityPtr<idEntity> ptr;
 	enemies.Clear();
 
 	// check for player
@@ -1026,7 +1014,9 @@ bool idSecurityCamera::FindEnemies()
 				bestEnemy = player;
 				delta = player->GetPhysics()->GetOrigin() - origin;
 				bestDist = delta.Length();
-				player->spawnNode.AddToFront(enemies);
+
+				ptr = static_cast<idEntity *>(player);
+				enemies.AddUnique(ptr);
 			}
 		}
 	}
@@ -1135,19 +1125,14 @@ bool idSecurityCamera::FindEnemies()
 			if( CanSeeEnemy( ai ) )
 			{
 				//this is a potential AI enemy
+				ptr = static_cast<idEntity*>(ai);
+				enemies.AddUnique(ptr);
+
 				//is it the first enemy we found, or closer than the previous best enemy?
 				if( bestEnemy == NULL || dist < bestDist )
 				{
-					//this is our new preferred enemy
 					bestDist = dist;
 					bestEnemy = ai;
-					ai->spawnNode.AddToFront(enemies);
-				}
-
-				else
-				{
-					//otherwise simply add to the list of visible enemies
-					ai->spawnNode.AddToEnd(enemies);
 				}
 			}
 		}

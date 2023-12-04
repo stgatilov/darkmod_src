@@ -128,7 +128,7 @@ private:
 	idEntityPtr<idEntity>	sparks;
 	idEntityPtr<idEntity>	cameraDisplay;
 	idEntityPtr<idEntity>	enemy;
-	idLinkList<idEntity>	enemies;
+	idList< idEntityPtr<idEntity> >	enemies;
 
 	int						state;
 	int						alertMode;
