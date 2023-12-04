@@ -829,6 +829,17 @@ void CInventory::RemoveItem(const CInventoryItemPtr& item)
 	}
 }
 
+bool CInventory::HasItem(idEntity* itemEnt)
+{
+	if (itemEnt == NULL) return false;
+
+	idStr invName = itemEnt->spawnArgs.GetString("inv_name");
+	CInventoryItemPtr item = GetItem(invName);
+
+	if (item)	return true;
+	else		return false;
+}
+
 CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryName, bool createCategory)
 {
 	// Do we have a specific category to search in?

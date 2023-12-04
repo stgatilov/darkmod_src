@@ -380,6 +380,7 @@ const idEventDef EV_ReplaceInvItem("replaceInvItem", EventArgs('e', "oldItem", "
 	"If <newItem> is the $null_entity, <oldItem> is just removed and no replacement happens.\n" \
 	"\n" \
 	"Returns 1 if the operation was successful, 0 otherwise.");	// olditem, newitem -> 1 if succeeded");
+const idEventDef EV_HasInvItem("hasInvItem", EventArgs('e', "item", ""), 'd', "Tests whether the player has the specified item entity in his inventory.");
 const idEventDef EV_GetNextInvItem("getNextInvItem", EventArgs(), 'e', 
 	"Cycles the standard cursor to the next inventory item.\n" \
 	"Returns the item entity pointed to after the operation is complete.");		// switches to the next inventory item
@@ -649,6 +650,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_AddInvItem,			idEntity::Event_AddInvItem )
 	EVENT( EV_AddItemToInv,			idEntity::Event_AddItemToInv )
 	EVENT( EV_ReplaceInvItem,		idEntity::Event_ReplaceInvItem )
+	EVENT( EV_HasInvItem,			idEntity::Event_HasInvItem )
 	EVENT( EV_GetNextInvItem,		idEntity::Event_GetNextInvItem )
 	EVENT( EV_GetPrevInvItem,		idEntity::Event_GetPrevInvItem )
 	EVENT( EV_SetCurInvCategory,	idEntity::Event_SetCurInvCategory )
@@ -11460,6 +11462,11 @@ bool idEntity::ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem)
 void idEntity::Event_ReplaceInvItem(idEntity* oldItem, idEntity* newItem)
 {
 	idThread::ReturnInt(ReplaceInventoryItem(oldItem, newItem) ? 1 : 0);
+}
+
+void idEntity::Event_HasInvItem(idEntity* item)
+{
+	idThread::ReturnInt( Inventory()->HasItem(item) ? 1 : 0 );
 }
 
 int idEntity::ChangeLootAmount(int lootType, int amount)

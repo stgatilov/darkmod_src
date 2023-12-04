@@ -1719,6 +1719,7 @@ public:			// Events should be public, so they can be used from other places as w
 	// Tels: The reverse of AddInvItem()
 	void					Event_AddItemToInv(idEntity* ent);
 	void					Event_ReplaceInvItem(idEntity* oldItem, idEntity* newItem);
+	void					Event_HasInvItem(idEntity* item);
 	void					Event_GetNextInvItem();
 	void					Event_GetPrevInvItem();
 	void					Event_SetCurInvCategory(const char* categoryName);

@@ -159,6 +159,11 @@ public:
 	bool					ReplaceItem(idEntity* oldItemEnt, idEntity* newItemEnt);
 
 	/**
+	 * Dragofer: tests whether the player has an item entity in his inventory
+	 */
+	bool					HasItem(idEntity* itemEnt);
+
+	/**
 	 * greebo: Removes the given inventory item and updates all cursors pointing to it.
 	 */
 	void					RemoveItem(const CInventoryItemPtr& item);
