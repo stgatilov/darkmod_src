@@ -124,6 +124,8 @@ extern const idEventDef EV_DestroyOverlay;
 extern const idEventDef EV_addFrobPeer;
 extern const idEventDef EV_removeFrobPeer;
 
+extern const idEventDef EV_setFrobMaster;
+
 // Think flags
 enum {
 	TH_ALL					= -1,
@@ -1198,6 +1200,8 @@ public:
 	// Obsttorte: #5976
 	void					Event_AddFrobPeer(idEntity* peer);
 	void					Event_RemoveFrobPeer(idEntity* peer);
+
+	void					Event_SetFrobMaster(idEntity* master);
 
 	// Returns the frob master for this entity or NULL if not set (or not existing anymore).
 	idEntity*				GetFrobMaster();

@@ -341,8 +341,10 @@ const idEventDef EV_DestroyOverlay( "destroyOverlay", EventArgs('d', "handle", "
 const idEventDef EV_LoadExternalData( "loadExternalData", EventArgs('s', "declFile", "", 's', "prefix", ""), 'd', "Load an external xdata declaration." );
 
 // Obsttorte: #5976
-const idEventDef EV_addFrobPeer("addFrobPeer", EventArgs('e', "peer", ""), EV_RETURNS_VOID, "Adds the passed entity as frob peer.");
-const idEventDef EV_removeFrobPeer("removeFrobPeer", EventArgs('e', "peer", ""), EV_RETURNS_VOID, "Removes the passed entity as frob peer.");
+const idEventDef EV_addFrobPeer("addFrobPeer", EventArgs('e', "peer", ""), EV_RETURNS_VOID, "Adds the passed entity as a frob peer.");
+const idEventDef EV_removeFrobPeer("removeFrobPeer", EventArgs('e', "peer", ""), EV_RETURNS_VOID, "Removes the passed entity as a frob peer.");
+
+const idEventDef EV_setFrobMaster("setFrobMaster", EventArgs('E', "master", ""), EV_RETURNS_VOID, "Sets the passed entity as the frob master. Pass null_entity to remove the current frob master, if any.");
 
 //===============================================================
 //                   TDM Inventory
@@ -635,6 +637,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	// Obsttorte #5976 
 	EVENT( EV_addFrobPeer,			idEntity::Event_AddFrobPeer ) 
 	EVENT( EV_removeFrobPeer,		idEntity::Event_RemoveFrobPeer )
+	EVENT( EV_setFrobMaster,		idEntity::Event_SetFrobMaster ) 
 
 	EVENT( EV_GetLootAmount,		idEntity::Event_GetLootAmount )
 	EVENT( EV_ChangeLootAmount,		idEntity::Event_ChangeLootAmount )
@@ -11727,6 +11730,18 @@ void idEntity::Event_RemoveFrobPeer(idEntity* peer)
 	RemoveFrobPeer(peer);
 	// don't stay frob-hilighted after peer has been removed
 	peer->SetFrobbed(false);
+}
+void idEntity::Event_SetFrobMaster(idEntity* master)
+{
+	if( master != NULL )
+	{
+		m_MasterFrob = master->name;
+	}
+
+	else
+	{
+		m_MasterFrob = "";
+	}
 }
 void idEntity::Event_DestroyOverlay(int handle)
 {
