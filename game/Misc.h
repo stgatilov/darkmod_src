@@ -387,6 +387,7 @@ public:
 
 	virtual void			Think( void );
 	void					Event_Activate( idEntity *activator );
+	void					Event_SetSmoke( const char *particleDef );
 
 private:
 	int						smokeTime;

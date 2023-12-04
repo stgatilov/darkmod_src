@@ -1877,8 +1877,11 @@ idFuncSmoke
 ===============================================================================
 */
 
+const idEventDef EV_SetSmoke( "setSmoke", EventArgs('s', "particleDef", ""), EV_RETURNS_VOID, "Changes the smoke particle of a func_smoke." );
+
 CLASS_DECLARATION( idEntity, idFuncSmoke )
 EVENT( EV_Activate,				idFuncSmoke::Event_Activate )
+EVENT( EV_SetSmoke,				idFuncSmoke::Event_SetSmoke )
 END_CLASS
 
 /*
@@ -1951,6 +1954,21 @@ void idFuncSmoke::Event_Activate( idEntity *activator ) {
 		BecomeActive( TH_UPDATEPARTICLES );
 		restart = true;
 		smokeTime = gameLocal.time;
+	}
+}
+
+/*
+================
+idFuncSmoke::Event_SetSmoke
+================
+*/
+void idFuncSmoke::Event_SetSmoke( const char *particleDef ) {
+	if ( *particleDef != '\0' ) {
+		gameLocal.Printf("setting smoke: %s \n", particleDef);
+		smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particleDef ) );
+	} else {
+		gameLocal.Printf("unsetting smoke \n");
+		smoke = NULL;
 	}
 }
 
