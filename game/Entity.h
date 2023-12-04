@@ -1588,6 +1588,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_SetShaderParm( int parmnum, float value );
 	void					Event_SetShaderParms( float parm0, float parm1, float parm2, float parm3 );
 	void					Event_SetColor( float red, float green, float blue );
+	void					Event_SetColorVec( const idVec3 &newColor );
 	void					Event_GetColor( void );
 	void					Event_SetHealth( float newHealth );
 	void					Event_GetHealth( void );

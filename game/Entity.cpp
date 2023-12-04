@@ -156,7 +156,8 @@ const idEventDef EV_SetShaderParm( "setShaderParm", EventArgs('d', "parm", "shad
 const idEventDef EV_SetShaderParms( "setShaderParms", EventArgs('f', "parm0", "red", 'f', "parm1", "green", 'f', "parm2", "blue", 'f', "parm3", "alpha"), EV_RETURNS_VOID, 
 	"Sets shader parms Parm0, Parm1, Parm2, and Parm3 (red, green, blue, and alpha respectively)." );
 const idEventDef EV_SetColor( "setColor", EventArgs('f', "parm0", "red", 'f', "parm1", "green", 'f', "parm2", "blue"), EV_RETURNS_VOID, 
-	"Sets the RGB color of this entity (shader parms Parm0, Parm1, Parm2)." );
+	"Sets the RGB color of this entity (shader parms Parm0, Parm1, Parm2). See also setColorVec for a variant that accepts a vector instead." );
+const idEventDef EV_SetColorVec( "setColorVec", EventArgs('v', "newColor", ""), EV_RETURNS_VOID, "Similar to setColor, but accepts the new RGB color as a vector instead of 3 different floats." );
 const idEventDef EV_GetColor( "getColor", EventArgs(), 'v', "Gets the color of this entity (shader parms Parm0, Parm1, Parm2)." );
 const idEventDef EV_SetHealth( "setHealth", EventArgs( 'f', "newHealth", "" ), EV_RETURNS_VOID, 
 	"Sets the health of this entity to the new value. Setting health to 0 or lower via this method will result in the entity switching to its broken state." );
@@ -558,6 +559,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetShaderParm,		idEntity::Event_SetShaderParm )
 	EVENT( EV_SetShaderParms,		idEntity::Event_SetShaderParms )
 	EVENT( EV_SetColor,				idEntity::Event_SetColor )
+	EVENT( EV_SetColorVec,			idEntity::Event_SetColorVec )
 	EVENT( EV_GetColor,				idEntity::Event_GetColor )
 	EVENT( EV_SetHealth,			idEntity::Event_SetHealth )
 	EVENT( EV_GetHealth,			idEntity::Event_GetHealth )
@@ -7122,6 +7124,15 @@ idEntity::Event_SetColor
 */
 void idEntity::Event_SetColor( float red, float green, float blue ) {
 	SetColor( red, green, blue );
+}
+
+/*
+================
+idEntity::Event_SetColorVec
+================
+*/
+void idEntity::Event_SetColorVec( const idVec3 &newColor ) {
+	SetColor( newColor );
 }
 
 /*
