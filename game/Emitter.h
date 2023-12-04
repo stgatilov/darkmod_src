@@ -49,7 +49,11 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 	void				Spawn( void );
+	void				On( void );
+	void				Off( void );
 	void				Event_Activate( idEntity *activator );
+	void				Event_On( void );
+	void				Event_Off( void );
 
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );

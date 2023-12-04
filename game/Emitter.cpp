@@ -32,9 +32,13 @@ const idEventDef EV_EmitterAddModel( "emitterAddModel", EventArgs('s', "modelNam
 	"Adds a new particle (or regular, if you wish) model to the emitter,\n" \
 	"located at modelOffset units away from the emitter's origin." );
 const idEventDef EV_EmitterGetNumModels( "emitterGetNumModels", EventArgs(), 'f', "Returns the number of models/particles this emitter has. Always >= 1." );
+const idEventDef EV_On( "On", EventArgs(), EV_RETURNS_VOID, "Switches the emitter on." );
+const idEventDef EV_Off( "Off", EventArgs(), EV_RETURNS_VOID, "Switches the emitter off." );
 
 CLASS_DECLARATION( idStaticEntity, idFuncEmitter )
 	EVENT( EV_Activate,				idFuncEmitter::Event_Activate )
+	EVENT( EV_On,					idFuncEmitter::Event_On )
+	EVENT( EV_Off,					idFuncEmitter::Event_Off )
 	EVENT( EV_EmitterAddModel,		idFuncEmitter::Event_EmitterAddModel )
 	EVENT( EV_EmitterGetNumModels,	idFuncEmitter::Event_EmitterGetNumModels )
 END_CLASS
@@ -336,6 +340,35 @@ void idFuncEmitter::Restore( idRestoreGame *savefile ) {
 }
 
 /*
+================
+idFuncEmitter::On
+================
+*/
+void idFuncEmitter::On( void ) {
+	//if this is a looping emitter that's already on, dont call On() to avoid refreshing it
+	if ( !hidden && !spawnArgs.GetBool("cycleTrigger") )	return;
+
+	renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = 0;
+	renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+	hidden = false;
+	UpdateVisuals();
+}
+
+/*
+================
+idFuncEmitter::Off
+================
+*/
+void idFuncEmitter::Off( void ) {
+	//if this emitter is already off, don't call Off() to avoid refreshing it
+	if ( hidden )	return;
+
+	renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC(gameLocal.time);
+	hidden = true;
+	UpdateVisuals();
+}
+
+/*
   ****************   Events   ****************************************
 */
 
@@ -345,15 +378,28 @@ idFuncEmitter::Event_Activate
 ================
 */
 void idFuncEmitter::Event_Activate( idEntity *activator ) {
-	if ( hidden || spawnArgs.GetBool( "cycleTrigger" ) ) {
-		renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = 0;
-		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
-		hidden = false;
-	} else {
-		renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC( gameLocal.time );
-		hidden = true;
-	}
+	if ( hidden || spawnArgs.GetBool( "cycleTrigger" ) )	On();
+	else													Off();
+
 	UpdateVisuals();
+}
+
+/*
+================
+idFuncEmitter::Event_On
+================
+*/
+void idFuncEmitter::Event_On( void ) {
+	On();
+}
+
+/*
+================
+idFuncEmitter::Event_Off
+================
+*/
+void idFuncEmitter::Event_Off( void ) {
+	Off();
 }
 
 /*
