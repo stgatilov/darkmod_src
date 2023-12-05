@@ -1964,10 +1964,8 @@ idFuncSmoke::Event_SetSmoke
 */
 void idFuncSmoke::Event_SetSmoke( const char *particleDef ) {
 	if ( *particleDef != '\0' ) {
-		gameLocal.Printf("setting smoke: %s \n", particleDef);
 		smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particleDef ) );
 	} else {
-		gameLocal.Printf("unsetting smoke \n");
 		smoke = NULL;
 	}
 }
