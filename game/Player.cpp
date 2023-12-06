@@ -6157,6 +6157,15 @@ bool idPlayer::HandleESC( void ) {
 		// return true?
 	}
 
+	// Daft Mugi #2758: Fix arms detach from body after main menu close.
+	// If the player is in the middle of an attack, sheathe the weapon
+	// before the main menu GUI opens.
+	if (currentWeapon > 0 && usercmd.buttons & BUTTON_ATTACK) {
+		if (idealWeapon != 0) { // only select weapon 0 once
+			SelectWeapon(0, false);
+		}
+	}
+
 	return false;
 }
 
@@ -7421,6 +7430,16 @@ void idPlayer::Think( void )
 	usercmd = gameLocal.usercmds;
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
+
+	// Daft Mugi #2758: Fix arms detach from body after main menu close
+	if ( gameLocal.mainMenuExited )
+	{
+		// Ignore BUTTON_ATTACK after the main menu closes. Otherwise,
+		// the weapon animation gets stuck if the player presses and
+		// holds BUTTON_ATTACK before the main menu closes and
+		// continues to hold BUTTON_ATTACK after the menu is closed.
+		usercmd.buttons &= ~BUTTON_ATTACK;
+	}
 
 	// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
 	if ( ! (gameLocal.mainMenuExited && ( usercmd.buttons & BUTTON_ATTACK )) )
