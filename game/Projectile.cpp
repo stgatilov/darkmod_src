@@ -2001,7 +2001,12 @@ void idProjectile::Event_Mine_Replace()
 ===============================================================================
 */
 
+const idEventDef EV_LaunchGuided("launchGuided",
+	EventArgs('v', "start", "", 'v', "dir", "", 'v', "velocity", "", 'E', "target", ""), EV_RETURNS_VOID,
+	"Launches the guided projectile from <start> in direction <dir> with the given <velocity> at <target entity>. Pass $null_entity to fire an unguided projectile.");
+
 CLASS_DECLARATION( idProjectile, idGuidedProjectile )
+	EVENT( EV_LaunchGuided,				idGuidedProjectile::Event_Launch )
 END_CLASS
 
 /*
@@ -2185,10 +2190,14 @@ idGuidedProjectile::Launch
 */
 void idGuidedProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire, const float launchPower, float dmgPower ) {
 	idProjectile::Launch( start, dir, pushVelocity, timeSinceFire, launchPower, dmgPower );
-	if ( owner.GetEntity() ) {
+
+	//If an enemy isn't already provided by Event_Launch, acquire the owner's enemy
+	if( !enemy.GetEntity() && owner.GetEntity() )
+	{ 
 		if ( owner.GetEntity()->IsType( idAI::Type ) ) {
 			enemy = static_cast<idAI *>( owner.GetEntity() )->GetEnemy();
-		} else if ( owner.GetEntity()->IsType( idPlayer::Type ) ) {
+		}
+		else if ( owner.GetEntity()->IsType( idPlayer::Type ) ) {
 			trace_t tr;
 			idPlayer *player = static_cast<idPlayer*>( owner.GetEntity() );
 			idVec3 start = player->GetEyePosition();
@@ -2203,6 +2212,7 @@ void idGuidedProjectile::Launch( const idVec3 &start, const idVec3 &dir, const i
 			}
 		}
 	}
+
 	const idVec3 &vel = physicsObj.GetLinearVelocity();
 	angles = vel.ToAngles();
 	speed = vel.Length();
@@ -2210,13 +2220,23 @@ void idGuidedProjectile::Launch( const idVec3 &start, const idVec3 &dir, const i
 	turn_max = spawnArgs.GetFloat( "turn_max", "180" ) / ( float )USERCMD_HZ;
 	clamp_dist = spawnArgs.GetFloat( "clamp_dist", "256" );
 	burstMode = spawnArgs.GetBool( "burstMode" );
-	unGuided = false;
 	burstDist = spawnArgs.GetFloat( "burstDist", "64" );
 	burstVelocity = spawnArgs.GetFloat( "burstVelocity", "1.25" );
+	unGuided = !( enemy.GetEntity() );
 	UpdateVisuals();
 }
 
+/*
+================
+idGuidedProjectile::Event_Launch
+================
+*/
+void idGuidedProjectile::Event_Launch( idVec3 const &origin, idVec3 const &direction, idVec3 const &velocity, idEntity *target ) {
+	if( target )
+		enemy = target;
 
+	Launch( origin, direction, velocity );
+}
 
 /*
 ===============================================================================

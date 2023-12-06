@@ -227,6 +227,8 @@ protected:
 	virtual void			GetSeekPos( idVec3 &out );
 
 private:
+	void					Event_Launch( idVec3 const &origin, idVec3 const &direction, idVec3 const &velocity, idEntity *target );
+
 	idAngles				rndScale;
 	idAngles				rndAng;
 	idAngles				angles;
