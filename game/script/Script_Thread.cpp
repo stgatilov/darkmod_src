@@ -96,6 +96,14 @@ const idEventDef EV_Thread_VecDotProduct( "DotProduct", EventArgs('v', "vec1", "
 const idEventDef EV_Thread_VecCrossProduct( "CrossProduct", EventArgs('v', "vec1", "", 'v', "vec2", ""), 'v', "Returns the cross product of the two vectors.");
 const idEventDef EV_Thread_VecToAngles( "VecToAngles", EventArgs('v', "vec", ""), 'v', "Returns Euler angles for the given direction.");
 const idEventDef EV_Thread_VecRotate( "VecRotate", EventArgs('v', "vector", "", 'v', "angles", ""), 'v', "Rotates a vector by the specified angles.");
+const idEventDef EV_Thread_GetInterceptTime( "getInterceptTime", 
+	EventArgs('v', "velocityTarget", "current velocity of target",
+			  'f', "speedInterceptor", "speed of interceptor",
+			  'v', "positionTarget", "current position of target",
+			  'v', "positionInterceptor", "starting position of interceptor"),
+	'f', 
+	"Returns how much time it will take for an interceptor like a projectile to intercept a moving target at the earliest possible opportunity. Returns 0 if an intercept is not possible or the speed of the target and interceptor are too similar.");
+
 const idEventDef EV_Thread_OnSignal( "onSignal", EventArgs('d', "signalNum", "", 'e', "ent", "", 's', "functionName", ""), EV_RETURNS_VOID, "Sets a script callback function for when the given signal is raised on the given entity.");
 const idEventDef EV_Thread_ClearSignal( "clearSignalThread", EventArgs('d', "signalNum", "", 'e', "ent", ""), EV_RETURNS_VOID, "Clears the script callback function set for when the given signal is raised on the given entity.");
 const idEventDef EV_Thread_SetCamera( "setCamera", EventArgs('e', "cameraEnt", ""), EV_RETURNS_VOID, "Turns over view control to the given camera entity.");
@@ -356,6 +364,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_VecCrossProduct,		idThread::Event_VecCrossProduct )
 	EVENT( EV_Thread_VecToAngles,			idThread::Event_VecToAngles )
 	EVENT( EV_Thread_VecRotate,				idThread::Event_VecRotate )
+	EVENT( EV_Thread_GetInterceptTime,		idThread::Event_GetInterceptTime )	
 	EVENT( EV_Thread_OnSignal,				idThread::Event_OnSignal )
 	EVENT( EV_Thread_ClearSignal,			idThread::Event_ClearSignalThread )
 	EVENT( EV_Thread_SetCamera,				idThread::Event_SetCamera )
@@ -1724,6 +1733,42 @@ void idThread::Event_VecRotate( idVec3 &vector, idAngles &angles ) {
 	idVec3 new_vec	= vector * axis;
 
 	ReturnVector( new_vec );
+}
+
+/*
+================
+idThread::Event_GetInterceptTime
+================
+*/
+void idThread::Event_GetInterceptTime(idVec3 &velTarget, float speedInterceptor, idVec3 &posTarget, idVec3 &posInterceptor ) {
+
+	float a = velTarget.LengthSqr() - Square(speedInterceptor);
+	float b = 2.0f * velTarget * (posTarget - posInterceptor);
+	float c = (posTarget - posInterceptor).LengthSqr();
+
+	//ensure stability by ignoring computation if target's squared speed
+	//is within 10% of interceptor's squared speed
+	if( abs( velTarget.LengthSqr() - Square(speedInterceptor) ) < 0.1 * Square(speedInterceptor) )
+		ReturnFloat(0.0f);
+
+	float roots[2] = { 0.0f, 0.0f };
+	int numRoots = 0;
+	float time = 0.0f;
+
+	//check whether and when an intercept is possible. 
+		//if both roots are real, choose the smallest positive root.
+		//otherwise choose the root that is real.
+		//otherwise use time = 0 and return the enemy's current position.
+	numRoots = idPolynomial::GetRoots2(a, b, c, roots);
+
+	if( numRoots == 2 )
+		time = ( roots[0] > 0 && roots[0] < roots[1] ) ? roots[0] : roots[1];
+	else if( numRoots == 1 )
+		time = roots[0];
+	else
+		time = 0.0f;
+
+	ReturnFloat(time);
 }
 
 /*
