@@ -109,6 +109,7 @@ public :
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 	virtual void			Explode( const trace_t &collision, idEntity *ignore );
+	virtual void			Bounced( const trace_t &collision, const idVec3 &velocity, idEntity *bounceEnt );
 	void					Fizzle( void );
 
 	static idVec3			GetVelocity( const idDict *projectile );

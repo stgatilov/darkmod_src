@@ -761,29 +761,29 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	//	ent->ProcessEvent( &EV_Activate , this );
 	//}
 
-	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) )
+	//is this a bouncing projectile?
+	if ( !projectileFlags.detonate_on_actor || !projectileFlags.detonate_on_world )
 	{
-		if ( !projectileFlags.detonate_on_actor )
-		{
-			return false;
-		}
-	}
-	else
-	{
-		if ( !projectileFlags.detonate_on_world )
-		{
-			if ( !StartSound( "snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL ) )
-			{
-				float len = velocity.Length();
-				float bounceSoundMinVelocity = spawnArgs.GetFloat("bounce_sound_min_velocity", "200");
-				float bounceSoundMaxVelocity = spawnArgs.GetFloat("bounce_sound_max_velocity", "400");
+		//if an AF attachment was hit, look for an AI that it might be attached to
+		idEntity* bounceEnt = ent;
 
-				if ( ( len > bounceSoundMinVelocity ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some projectiles should not propagate a bounce sound
-				{
-					SetSoundVolume( len > bounceSoundMaxVelocity ? 1.0f : idMath::Sqrt( len - bounceSoundMinVelocity ) * ( 1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity ) ) );
-					StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, true, NULL );
-				}
+		if( bounceEnt->IsType(idAFAttachment::Type) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType(idActor::Type) )
+		{
+			bounceEnt = static_cast<const idAFAttachment*>(ent)->GetBody();
+		}
+
+		//did the projectile hit an entity type that it can bounce off?
+		if( bounceEnt->IsType(idActor::Type) )
+		{
+			if( !projectileFlags.detonate_on_actor )
+			{
+				Bounced( collision, velocity, bounceEnt );
+				return false;
 			}
+		}
+		else if( !projectileFlags.detonate_on_world )
+		{
+			Bounced( collision, velocity, bounceEnt);
 			return false;
 		}
 	}
@@ -1396,6 +1396,28 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	if ( GetStimResponseCollection()->HasStim() )
 	{
 		GetStimResponseCollection()->RemoveStim( ST_VISUAL );
+	}
+}
+
+/*
+================
+idProjectile::Bounced
+================
+*/
+void idProjectile::Bounced( const trace_t &collision, const idVec3 &velocity, idEntity *bounceEnt ) {
+
+	//play bounce sounds if a world entity was hit and ricochet sounds are disabled
+	if( !bounceEnt->IsType(idActor::Type) && !StartSound("snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL) )
+	{
+		float len = velocity.Length();
+		float bounceSoundMinVelocity = spawnArgs.GetFloat("bounce_sound_min_velocity", "200");
+		float bounceSoundMaxVelocity = spawnArgs.GetFloat("bounce_sound_max_velocity", "400");
+
+		if ( ( len > bounceSoundMinVelocity ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some projectiles should not propagate a bounce sound
+		{
+			SetSoundVolume( len > bounceSoundMaxVelocity ? 1.0f : idMath::Sqrt( len - bounceSoundMinVelocity ) * ( 1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity ) ) );
+			StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, true, NULL );
+		}
 	}
 }
 
