@@ -86,6 +86,7 @@ idProjectile::idProjectile( void ) {
 	m_Lock				= NULL;  // grayman #2478
 	isMine				= false; // grayman #2478
 	replaced			= false; // grayman #2908
+	hasBounced			= false;
 }
 
 /*
@@ -162,6 +163,7 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( damagePower );
 	savefile->WriteBool(isMine);	// grayman #2478
 	savefile->WriteBool(replaced);	// grayman #2908
+	savefile->WriteBool(hasBounced);
 
 	savefile->WriteStaticObject( physicsObj );
 	savefile->WriteStaticObject( thruster );
@@ -201,6 +203,7 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( damagePower );
 	savefile->ReadBool(isMine);		// grayman #2478
 	savefile->ReadBool(replaced);	// grayman #2908
+	savefile->ReadBool(hasBounced);	// grayman #2908
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
@@ -1405,6 +1408,44 @@ idProjectile::Bounced
 ================
 */
 void idProjectile::Bounced( const trace_t &collision, const idVec3 &velocity, idEntity *bounceEnt ) {
+
+	//If this is the first bounce, check whether the mapper has specified new physics properties for after the first bounce
+	if( !hasBounced )
+	{
+		hasBounced = true;
+
+		const idKeyValue *kv = NULL;
+		while( kv = spawnArgs.MatchPrefix("postbounce_", kv) )
+		{
+			idStr key		= kv->GetKey();
+			idStr val		= kv->GetValue();
+			idStr suffix	= key.Right( key.Length() - 11 );	// "postbounce_gravity" > "gravity"
+
+			if( suffix == "gravity" )
+			{
+				idVec3 gravVec = gameLocal.GetGravity();
+				gravVec.NormalizeFast();
+				physicsObj.SetGravity( gravVec * atof(val) );
+			}
+			else if (suffix == "friction")
+			{
+				//[0]: linear, [1]: angular, [2]: contact friction
+				idVec3 friction = spawnArgs.GetVector( key, "0 0 0" );
+				physicsObj.SetFriction(friction[0], friction[1], friction[2]);
+				if ( friction[2] == 0.0f ) {
+					physicsObj.NoContact();
+				}
+			}
+			else if (suffix == "bounce")
+			{
+				physicsObj.SetBouncyness( atof(val) );
+			}
+			else if (suffix == "mass")
+			{
+				physicsObj.SetMass( atof(val) );
+			}
+		}
+	}
 
 	//play bounce sounds if a world entity was hit and ricochet sounds are disabled
 	if( !bounceEnt->IsType(idActor::Type) && !StartSound("snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL) )

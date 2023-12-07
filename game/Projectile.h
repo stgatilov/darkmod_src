@@ -178,6 +178,7 @@ protected:
 	PickableLock*			m_Lock;		// grayman #2478 - A lock implementation for this mover
 	bool					isMine;		// grayman #2478 - true if this is a mine
 	bool					replaced;	// grayman #2908 - true if this is a projectile mine that replaced a map author-placed armed mine
+	bool					hasBounced;	// whether the projectile has bounced at least once already
 
 protected:
 	/**
