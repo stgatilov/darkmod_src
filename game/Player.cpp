@@ -7420,7 +7420,7 @@ Called every tic for each player
 */
 void idPlayer::Think( void )
 {
-	bool allowAttack = false;
+	bool allowAttack = true;
 	renderEntity_t *headRenderEnt;
 	// latch button actions
 	oldButtons = usercmd.buttons;
@@ -7438,13 +7438,7 @@ void idPlayer::Think( void )
 		// the weapon animation gets stuck if the player presses and
 		// holds BUTTON_ATTACK before the main menu closes and
 		// continues to hold BUTTON_ATTACK after the menu is closed.
-		usercmd.buttons &= ~BUTTON_ATTACK;
-	}
-
-	// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
-	if ( ! (gameLocal.mainMenuExited && ( usercmd.buttons & BUTTON_ATTACK )) )
-	{
-		allowAttack = true;
+		allowAttack = false;
 		gameLocal.mainMenuExited = false;
 	}
 
@@ -7626,7 +7620,9 @@ void idPlayer::Think( void )
 
 	if ( spectating ) {
 		UpdateSpectating();
-	} else if ( health > 0 && allowAttack) {
+	} else if ( health > 0 ) {
+		// Daft Mugi #2758: Need to UpdateWeapon(), otherwise
+		// weapon animation does not finish properly.
 		UpdateWeapon();
 	}
 
