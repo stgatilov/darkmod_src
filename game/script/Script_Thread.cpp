@@ -1749,7 +1749,10 @@ void idThread::Event_GetInterceptTime(idVec3 &velTarget, float speedInterceptor,
 	//ensure stability by ignoring computation if target's squared speed
 	//is within 10% of interceptor's squared speed
 	if( abs( velTarget.LengthSqr() - Square(speedInterceptor) ) < 0.1 * Square(speedInterceptor) )
+	{
 		ReturnFloat(0.0f);
+		return;
+	}
 
 	float roots[2] = { 0.0f, 0.0f };
 	int numRoots = 0;
