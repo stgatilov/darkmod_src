@@ -1583,6 +1583,7 @@ void idPlayer::UpdateObjectivesGUI()
 	if (closeGUI)
 	{
 		ToggleObjectivesGUI();
+		ignoreWeaponAttack = true; // do not start attack on gui close
 		return;
 	}
 
@@ -1751,6 +1752,7 @@ void idPlayer::UpdateInventoryGridGUI()
 	if (closeGUI)
 	{
 		ToggleInventoryGridGUI();
+		ignoreWeaponAttack = true; // do not start attack on gui close
 		return;
 	}
 
