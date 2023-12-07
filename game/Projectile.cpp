@@ -35,9 +35,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 */
 
 
-static const float BOUNCE_SOUND_MIN_VELOCITY	= 200.0f;
-static const float BOUNCE_SOUND_MAX_VELOCITY	= 400.0f;
-
 const idEventDef EV_Explode( "<explode>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_Fizzle( "<fizzle>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_RadiusDamage( "<radiusdmg>", EventArgs('e', "", ""), EV_RETURNS_VOID, "internal" );
@@ -778,9 +775,12 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			if ( !StartSound( "snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL ) )
 			{
 				float len = velocity.Length();
-				if ( ( len > BOUNCE_SOUND_MIN_VELOCITY ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some projectiles should not propagate a bounce sound
+				float bounceSoundMinVelocity = spawnArgs.GetFloat("bounce_sound_min_velocity", "200");
+				float bounceSoundMaxVelocity = spawnArgs.GetFloat("bounce_sound_max_velocity", "400");
+
+				if ( ( len > bounceSoundMinVelocity ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some projectiles should not propagate a bounce sound
 				{
-					SetSoundVolume( len > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( len - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) ) );
+					SetSoundVolume( len > bounceSoundMaxVelocity ? 1.0f : idMath::Sqrt( len - bounceSoundMinVelocity ) * ( 1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity ) ) );
 					StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, true, NULL );
 				}
 			}
