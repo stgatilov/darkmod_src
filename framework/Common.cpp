@@ -2996,6 +2996,9 @@ void idCommonLocal::InitGame( void )
 
 	//PrintLoadingMessage( Translate( "#str_04345" ) );
 
+	// Reset cvars. Needed when switching between missions.
+	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "cvar_restart\n" );
+
 	// exec the startup scripts
 #ifdef NO_MFC
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec editor.cfg\n" );
@@ -3018,6 +3021,9 @@ void idCommonLocal::InitGame( void )
 			cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec " PADBINDS_FILE "\n");
 		}
 	}
+
+	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec mission.cfg\n" );
+
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );
 
 	// reload the language dictionary now that we've loaded config files
