@@ -31,6 +31,9 @@ CStim::CStim(idEntity *e, StimType type, int uniqueId) :
 	m_bCollisionBased = false;
 	m_bCollisionFired = false;
 	m_CollisionEnts.Clear();
+	m_bScriptBased = false;
+	m_bScriptFired = false;
+	m_ScriptRadiusOverride = -1.0f;
 	m_TimeInterleave = 0;
 	m_TimeInterleaveStamp = 0;
 	m_Radius = 0.0f;
@@ -66,6 +69,8 @@ void CStim::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_bUseEntBounds);
 	savefile->WriteBool(m_bCollisionBased);
 	savefile->WriteBool(m_bCollisionFired);
+	savefile->WriteBool(m_bScriptBased);
+	savefile->WriteBool(m_bScriptFired);
 
 	// Don't save collision ents (probably not required)
 	
@@ -101,8 +106,12 @@ void CStim::Restore(idRestoreGame *savefile)
 	savefile->ReadBool(m_bUseEntBounds);
 	savefile->ReadBool(m_bCollisionBased);
 	savefile->ReadBool(m_bCollisionFired);
+	savefile->ReadBool(m_bScriptBased);
+	savefile->ReadBool(m_bScriptFired);
 
 	// Don't restore collision ents (probably not required)
+	m_CollisionEnts.Clear();
+	m_ScriptRadiusOverride = -1.0f;
 	
 	savefile->ReadInt(m_TimeInterleave);
 	savefile->ReadInt(m_TimeInterleaveStamp);
@@ -161,6 +170,11 @@ void CStim::ClearResponseIgnoreList()
 
 float CStim::GetRadius()
 {
+	// stgatilov: script-triggered stims can get radius overriden by script call
+	if (m_bScriptBased && m_ScriptRadiusOverride >= 0.0f)
+	{
+		return m_ScriptRadiusOverride;
+	}
 	// greebo: Check for a time-dependent radius
 	if (m_RadiusFinal > 0 && m_Duration != 0)
 	{

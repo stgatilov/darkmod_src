@@ -408,6 +408,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict& args, idEntity* owner,
 		stim->m_FallOffExponent = args.GetInt(va("sr_falloffexponent_%u", index), "0");
 		stim->m_bUseEntBounds = args.GetBool(va("sr_use_bounds_%u", index), "0");
 		stim->m_bCollisionBased = args.GetBool(va("sr_collision_%u", index), "0");
+		stim->m_bScriptBased = args.GetBool(va("sr_script_%u", index), "0");
 
 		stim->m_Velocity = args.GetVector(va("sr_velocity_%u", index), "0 0 0");
 

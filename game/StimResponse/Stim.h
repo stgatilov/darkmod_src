@@ -94,19 +94,33 @@ public:
 	* It is not checked unless it collides, so the entity has to be one that collides.
 	**/
 	bool					m_bCollisionBased;
-
 	/**
 	* Collision stim info:
-	* bFired is set to true if the collision stim fired this frame 
+	* m_bCollisionFired is set to true if the collision happened but stim is not processed yet
 	* Reset in gameLocal::ProcessStimResponse
 	**/
 	bool					m_bCollisionFired;
-
 	/**
 	* List of entities with responses that the stimming entity collided with this frame
 	* Reset in gameLocal::ProcessStimResponse
 	**/
 	idList<idEntity *>		m_CollisionEnts;
+
+	/**
+	* If set to true, this stim is a script-driven stim
+	* and only checked after script calls Event_StimEmit
+	**/
+	bool					m_bScriptBased;
+	/**
+	* m_bScriptFired is set to true if Event_StimEmit was called but not processed yet
+	* Reset in gameLocal::ProcessStimResponse
+	**/
+	bool					m_bScriptFired;
+	/**
+	* Radius override passed to Event_StimEmit
+	* Reset in gameLocal::ProcessStimResponse
+	**/
+	float					m_ScriptRadiusOverride;
 
 	/**
 	* Milliseconds between interleaving for use with frame-based timer check (not StimTimer)

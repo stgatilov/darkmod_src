@@ -440,7 +440,7 @@ const idEventDef EV_StimClearIgnoreList( "StimClearIgnoreList", EventArgs('d', "
 	"It can be used if an entity changes state in some way that it would no longer be ignored");
 const idEventDef EV_StimEmit( "StimEmit", 
 	EventArgs('d', "type", "Index ID of the stim to emit, i.e. 21 or STIM_TRIGGER for a trigger stim.",
-			  'f', "radius", "How far the stim will reach. Pass 0 to use the radius settings on the entity.",
+			  'f', "radius", "How far the stim will reach. Pass negative to use the radius settings on the entity.",
 			  'v', "stimOrigin", "Emit the stim from here."), EV_RETURNS_VOID, 
 	"Emits a stim in a radius around the specified origin. The entity from which this event is called needs to have the corresponding stim setup on itself, it does not need to be active.");
 const idEventDef EV_ResponseEnable( "ResponseEnable", EventArgs('d', "type", "", 'd', "state", "0 = disabled, 1 = enabled"), EV_RETURNS_VOID, "");
@@ -9678,18 +9678,11 @@ void idEntity::Event_StimEmit(int stimType, float radius, idVec3& stimOrigin)
 	assert(srColl != NULL);
 	const CStimPtr& stim = srColl->GetStimByType( static_cast<StimType>(stimType) );
 	if( stim == NULL )
-	{
 		return;
-	}
 
-	//Create a list of entities within the stim radius
-	idClip_EntityList srEntities;
-	int n = gameLocal.EntitiesWithinRadius(stimOrigin, radius, srEntities);
-
-	if (n > 0)
-	{
-		// Do responses for entities within the radius of the stim
-		gameLocal.DoResponseAction(stim, srEntities, this, stimOrigin, radius);
+	if ( stim->m_bScriptBased ) {
+		stim->m_bScriptFired = true;
+		stim->m_ScriptRadiusOverride = radius;
 	}
 }
 

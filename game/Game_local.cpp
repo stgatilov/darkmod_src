@@ -7355,7 +7355,7 @@ int idGameLocal::TraceGasPath( idVec3 from, idVec3 to, idEntity* ignore, idVec3&
 }
 
 
-int idGameLocal::DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin, const float radius )
+int idGameLocal::DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin )
 {
 	int numEntities = srEntities.Num();
 	int numResponses = 0;
@@ -7373,8 +7373,7 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, const idClip_EntityList 
 		if (!stim->m_bCollisionBased && !stim->m_bUseEntBounds)
 		{
 			// take the square radius, is faster
-			// Dragofer: allow functions to provide an alternative radius, otherwise use what is stored in the stim
-			float radiusSqr = ( radius > 0 ) ? radius : stim->GetRadius();
+			float radiusSqr = stim->GetRadius();
 			radiusSqr *= radiusSqr;
 
 			idEntity *ent = srEntities[i];
@@ -7654,7 +7653,11 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 
 			if (stim->m_bCollisionBased && !stim->m_bCollisionFired)
 			{
-				continue; // Collision-based stim that did not fire with ::Collide this frame
+				continue; // Collision-based stim that did not fire
+			}
+			if (stim->m_bScriptBased && !stim->m_bScriptFired)
+			{
+				continue; // Script-driven stim that did not fire
 			}
 
 			// Check the interleaving timer and don't eval stim if it's not up yet
@@ -7754,6 +7757,13 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 					// Radius based stims
 					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities);
 					//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Entities touching bounds: %d\r", n);
+
+					if (stim->m_bScriptBased)
+					{
+						// stgatilov: clear fired state of script-driven stim
+						stim->m_bScriptFired = false;
+						stim->m_ScriptRadiusOverride = -1.0f;
+					}
 				}
 				
 				if (n > 0)
