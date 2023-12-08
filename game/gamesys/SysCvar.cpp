@@ -232,13 +232,13 @@ idCVar cv_pm_mantle_while_carrying(
 	"  2 --- unrestricted mantling while carrying a body or object (Cheat Mode)"
 );
 idCVar cv_pm_mantle_maxShoulderingObstacleHeight(
-	"pm_mantle_maxShoulderingObstacleHeight", "41", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"pm_mantle_maxShoulderingObstacleHeight", "41", CVAR_GAME | CVAR_FLOAT,
 	"The maximum height of obstacles allowed for a mantle while shouldering a body.\n"
 	"Note that mantling above eye level is disabled regardless of this value.",
 	0.0f, 100.0f
 );
 idCVar cv_pm_mantle_maxHoldingMidairObstacleHeight(
-	"pm_mantle_maxHoldingMidairObstacleHeight", "14", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"pm_mantle_maxHoldingMidairObstacleHeight", "14", CVAR_GAME | CVAR_FLOAT,
 	"The maximum height of obstacles allowed during a jump mantle while holding an object.\n"
 	"Note that mantling above eye level is disabled regardless of this value.",
 	0.0f, 100.0f
@@ -831,11 +831,11 @@ idCVar rb_showBuoyancy(             "rb_showBuoyancy",          "0",            
 
 
 // The default values for player movement cvars are set in def/player.def
-idCVar pm_jumpheight(				"pm_jumpheight",			"48",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "approximate hieght the player can jump" );
+idCVar pm_jumpheight(				"pm_jumpheight",			"48",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "approximate hieght the player can jump" );
 idCVar pm_stepsize(					"pm_stepsize",				"16",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "maximum height the player can step up without jumping" );
 // replaced by crouch multiplier
 //idCVar pm_crouchspeed(				"pm_crouchspeed",			"80",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "speed the player can move while crouched" );
-idCVar pm_walkspeed(				"pm_walkspeed",				"70",			CVAR_GAME | CVAR_ARCHIVE | CVAR_ARCHIVE | CVAR_FLOAT, "speed the player can move while walking" );
+idCVar pm_walkspeed(				"pm_walkspeed",				"70",			CVAR_GAME | CVAR_FLOAT, "speed the player can move while walking" );
 // also replaced by multiplier
 //idCVar pm_runspeed(					"pm_runspeed",				"220",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "speed the player can move while running" );
 idCVar pm_noclipspeed(				"pm_noclipspeed",			"200",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "speed the player can move while in noclip" );
@@ -854,7 +854,7 @@ idCVar pm_normalheight(				"pm_normalheight",			"74",			CVAR_GAME | CVAR_NETWORK
 idCVar pm_normalviewheight(			"pm_normalviewheight",		"68",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "height of player's view while standing" );
 idCVar pm_deadheight(				"pm_deadheight",			"20",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "height of player's bounding box while dead" );
 idCVar pm_deadviewheight(			"pm_deadviewheight",		"10",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "height of player's view while dead" );
-idCVar pm_crouchrate(				"pm_crouchrate",			"0.87",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "time it takes for player's view to change from standing to crouching" );
+idCVar pm_crouchrate(				"pm_crouchrate",			"0.87",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "time it takes for player's view to change from standing to crouching" );
 idCVar pm_bboxwidth(				"pm_bboxwidth",				"32",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "x/y size of player's bounding box" );
 idCVar pm_crouchbob(				"pm_crouchbob",				"0.2",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "bob much faster when crouched" );
 idCVar pm_walkbob(					"pm_walkbob",				"0.3",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_FLOAT, "bob slowly when walking" );
@@ -879,8 +879,8 @@ idCVar pm_thirdPersonClip(			"pm_thirdPersonClip",		"1",			CVAR_GAME | CVAR_NETW
 idCVar pm_thirdPerson(				"pm_thirdPerson",			"0",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_BOOL, "enables third person view" );
 idCVar pm_thirdPersonDeath(			"pm_thirdPersonDeath",		"0",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_BOOL, "enables third person view when player dies" );
 idCVar pm_modelView(				"pm_modelView",				"0",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_INTEGER, "draws camera from POV of player model (1 = always, 2 = when dead)", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
-idCVar pm_airTics(					"pm_air",					"1800",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_INTEGER, "how long the player can go without air before he starts taking damage (One tic corresponds to 16 ms)", 1, 1000000);
-idCVar pm_airTicsRegainingSpeed(	"pm_air_regainingSpeed",	"4",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_INTEGER, "how fast the player regains air after diving (value corresponds to number of tics regained every 16 ms)", 1, 8);
+idCVar pm_airTics(					"pm_air",					"1800",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_INTEGER, "how long the player can go without air before he starts taking damage (One tic corresponds to 16 ms)", 1, 1000000);
+idCVar pm_airTicsRegainingSpeed(	"pm_air_regainingSpeed",	"4",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_INTEGER, "how fast the player regains air after diving (value corresponds to number of tics regained every 16 ms)", 1, 8);
 
 idCVar g_showPlayerShadow(			"g_showPlayerShadow",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "enables shadow of player model" );
 idCVar g_showHud(					"g_showHud",				"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "toggles whether hud elements are shown in game" );
