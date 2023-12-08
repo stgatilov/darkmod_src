@@ -1550,7 +1550,7 @@ void idPlayer::DestroyObjectivesGUI()
 	idUserInterface* objGUI = m_overlays.getGui(objectivesOverlay);
 	int delay = objGUI->GetStateInt("DestroyDelay");
 	if (delay == 0) {
-		common->Warning("Objectives gui::DestroyDelay is not set or is set to 0");
+		common->Warning("DestroyDelay is either undefined or set to 0: %s", objGUI->Name());
 	}
 	PostEventMS(&EV_DestroyOverlay, delay,  objectivesOverlay);
 
@@ -1717,7 +1717,7 @@ void idPlayer::DestroyInventoryGridGUI()
 	idUserInterface* invgridGUI = m_overlays.getGui(inventoryGridOverlay);
 	int delay = invgridGUI->GetStateInt("DestroyDelay");
 	if (delay == 0) {
-		common->Warning("Inventory gui::DestroyDelay is not set or is set to 0");
+		common->Warning("DestroyDelay is either undefined or set to 0: %s", invgridGUI->Name());
 	}
 	PostEventMS(&EV_DestroyOverlay, delay,  inventoryGridOverlay);
 
