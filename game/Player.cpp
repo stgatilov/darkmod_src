@@ -1549,7 +1549,9 @@ void idPlayer::DestroyObjectivesGUI()
 	// DestroyOverlay(objectivesOverlay);
 	idUserInterface* objGUI = m_overlays.getGui(objectivesOverlay);
 	int delay = objGUI->GetStateInt("DestroyDelay");
-	delay = delay == 0 ? 100 : delay; // default 100ms if not set
+	if (delay == 0) {
+		common->Warning("Objectives gui::DestroyDelay is not set or is set to 0");
+	}
 	PostEventMS(&EV_DestroyOverlay, delay,  objectivesOverlay);
 
 	objectivesOverlay = -1;
@@ -1714,7 +1716,9 @@ void idPlayer::DestroyInventoryGridGUI()
 	// Delay required to prevent weapon attacks. Failure in Weapon_GUI?
 	idUserInterface* invgridGUI = m_overlays.getGui(inventoryGridOverlay);
 	int delay = invgridGUI->GetStateInt("DestroyDelay");
-	delay = delay == 0 ? 100 : delay; // default 100ms if not set
+	if (delay == 0) {
+		common->Warning("Inventory gui::DestroyDelay is not set or is set to 0");
+	}
 	PostEventMS(&EV_DestroyOverlay, delay,  inventoryGridOverlay);
 
 	inventoryGridOverlay = -1;
