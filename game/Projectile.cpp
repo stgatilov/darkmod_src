@@ -80,6 +80,7 @@ idProjectile::idProjectile( void ) {
 	lightEndTime		= 0;
 	lightColor			= vec3_zero;
 	damagePower			= 1.0f;
+	nextDamageTime		= 0;
 	memset( &projectileFlags, 0, sizeof( projectileFlags ) );
 	memset( &renderLight, 0, sizeof( renderLight ) );
 
@@ -161,6 +162,7 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( (int)state );
 
 	savefile->WriteFloat( damagePower );
+	savefile->WriteInt( nextDamageTime );
 	savefile->WriteBool(isMine);	// grayman #2478
 	savefile->WriteBool(replaced);	// grayman #2908
 	savefile->WriteBool(hasBounced);
@@ -201,6 +203,7 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)state );
 
 	savefile->ReadFloat( damagePower );
+	savefile->ReadInt( nextDamageTime );
 	savefile->ReadBool(isMine);		// grayman #2478
 	savefile->ReadBool(replaced);	// grayman #2908
 	savefile->ReadBool(hasBounced);	// grayman #2908
@@ -1458,6 +1461,56 @@ void idProjectile::Bounced( const trace_t &collision, const idVec3 &velocity, id
 		{
 			SetSoundVolume( len > bounceSoundMaxVelocity ? 1.0f : idMath::Sqrt( len - bounceSoundMinVelocity ) * ( 1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity ) ) );
 			StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, true, NULL );
+		}
+	}
+
+	//apply bounce-specific damage. Modified and abbreviated version of the damage component of idMoveable::Collide. Projectile mass does not play a role.
+	//world entities can also be damaged, i.e. glass or breakable containers
+	idStr	damageDef = spawnArgs.GetString("def_damage_bounce", "");
+	int		minDamageVelocity = spawnArgs.GetInt("min_damage_velocity", "200");
+	int		maxDamageVelocity = spawnArgs.GetInt("max_damage_velocity", "600");
+
+	if ( damageDef.Length() && ( gameLocal.time > nextDamageTime ) )
+	{
+		float f;
+		int preHealth = bounceEnt->health;
+		int location = 0;
+		trace_t newCollision = collision; // grayman #2816 - in case we need to modify collision
+
+		//calculate how much damage to apply
+		if ( velocity.Length() < minDamageVelocity )
+			f = 0.0f;
+		else if ( velocity.Length() < maxDamageVelocity )
+			f = idMath::Sqrt(( velocity.Length() - minDamageVelocity) / (maxDamageVelocity - minDamageVelocity));
+		else
+			f = 1.0f; // capped when v >= maxDamageVelocity
+
+		idVec3 dir = velocity;
+		dir.NormalizeFast();
+
+		// Blame the attack on the one who launched the projectile.
+		// Otherwise, assume it was put in motion by someone.
+
+		idEntity* attacker = GetOwner();
+		if ( attacker == NULL )
+		{
+			attacker = m_SetInMotionByActor.GetEntity();
+		}
+
+		if ( bounceEnt->IsType(idActor::Type) )
+		{
+			// Use a technique similar to what's used for a melee collision
+			// to find a better joint (location), because when the head is
+			// hit, the joint isn't identified correctly w/o it.
+
+			location = JOINT_HANDLE_TO_CLIPMODEL_ID( newCollision.c.id );
+		}
+
+		// Apply damage 
+		bounceEnt->Damage( this, attacker, dir, damageDef, f, location, const_cast<trace_t *>(&newCollision) );
+		if ( bounceEnt->health < preHealth ) // only set the timer if there was damage
+		{
+			nextDamageTime = gameLocal.time + 1000;
 		}
 	}
 }

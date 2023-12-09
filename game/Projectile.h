@@ -149,6 +149,7 @@ protected:
 	float					thrust;
 	int						thrust_end;
 	float					damagePower;
+	int						nextDamageTime;
 
 	renderLight_t			renderLight;
 	qhandle_t				lightDefHandle;				// handle to renderer light def
