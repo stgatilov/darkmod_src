@@ -7050,10 +7050,7 @@ void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] )
 int idGameLocal::CheckStimResponse(idList< idEntityPtr<idEntity> > &list, idEntity *e)
 {
 	// Construct an idEntityPtr with the given entity
-	idEntityPtr<idEntity> entPtr;
-	entPtr = e;
-
-	return list.FindIndex(entPtr);
+	return list.FindIndex(e);
 }
 
 void idGameLocal::LinkStimEntity(idEntity* ent)
@@ -7075,9 +7072,7 @@ bool idGameLocal::AddStim(idEntity *e)
 
 	if (CheckStimResponse(m_StimEntity, e) == -1)
 	{
-		idEntityPtr<idEntity> entPtr;
-		entPtr = e;
-		m_StimEntity.Append(entPtr);
+		m_StimEntity.Append(e);
 	}
 
 	return rc;
@@ -7099,9 +7094,7 @@ bool idGameLocal::AddResponse(idEntity *e)
 
 	if(CheckStimResponse(m_RespEntity, e) == -1)
 	{
-		idEntityPtr<idEntity> entPtr;
-		entPtr = e;
-		m_RespEntity.Append(entPtr);
+		m_RespEntity.Append(e);
 	}
 
 	return rc;
@@ -8108,8 +8101,6 @@ SuspiciousEvent* idGameLocal::FindSuspiciousEvent( int eventID ) // grayman #385
 
 int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ) // grayman #3857
 {
-	idEntityPtr<idEntity> _entity;	// entity, if relevant
-
 	for ( int i = 0 ; i < gameLocal.m_suspiciousEvents.Num() ; i++ )
 	{
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];

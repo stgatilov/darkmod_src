@@ -9491,7 +9491,7 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 	// no msg reading below this
 
-	if ( weapon.Set( weaponEntityId, weaponSpawnId ) ) {
+	if ( weapon.SetDirectlyWithIntegers( weaponEntityId, weaponSpawnId ) ) {
 		if ( weapon.GetEntity() ) {
 			// maintain ownership locally
 			weapon.GetEntity()->SetOwner( this );

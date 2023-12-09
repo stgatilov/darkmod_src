@@ -477,8 +477,7 @@ void CFrobLock::CloseAndLockTargets()
 void CFrobLock::AddLockHandle(CFrobLockHandle* handle)
 {
 	// Store the pointer and the original position
-	idEntityPtr<CFrobLockHandle> handlePtr;
-	handlePtr = handle;
+	idEntityPtr<CFrobLockHandle> handlePtr = handle;
 
 	if (m_Lockhandles.FindIndex(handlePtr) != -1)
 	{

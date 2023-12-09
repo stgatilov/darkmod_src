@@ -6604,9 +6604,7 @@ void idEntity::RemoveTarget(idEntity* target)
 
 void idEntity::AddTarget(idEntity* target)
 {
-	idEntityPtr<idEntity> ptr;
-	ptr = target;
-	targets.AddUnique(ptr);
+	targets.AddUnique(target);
 }
 
 /***********************************************************************
@@ -9946,8 +9944,7 @@ const CInventoryCursorPtr& idEntity::InventoryCursor()
 
 void idEntity::OnAddToLocationEntity(CObjectiveLocation* locationEnt)
 {
-	idEntityPtr<CObjectiveLocation> locationEntPtr;
-	locationEntPtr = locationEnt;
+	idEntityPtr<CObjectiveLocation> locationEntPtr = locationEnt;
 
 	// Ensure that objective locations don't add themselves twice or more times.
 
@@ -9974,8 +9971,7 @@ void idEntity::OnAddToLocationEntity(CObjectiveLocation* locationEnt)
 
 void idEntity::OnRemoveFromLocationEntity(CObjectiveLocation* locationEnt)
 {
-	idEntityPtr<CObjectiveLocation> locationEntPtr;
-	locationEntPtr = locationEnt;
+	idEntityPtr<CObjectiveLocation> locationEntPtr = locationEnt;
 
 	// Ensure that only registered location ents are removed
 	assert(m_objLocations.FindIndex(locationEntPtr) != -1 || gameLocal.GameState() == GAMESTATE_SHUTDOWN);

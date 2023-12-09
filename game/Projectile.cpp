@@ -1753,7 +1753,7 @@ void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 	int entId = msg.ReadBits( 32 );
 	int spnId = msg.ReadBits( 32 );
-	owner.Set( entId, spnId );
+	owner.SetDirectlyWithIntegers( entId, spnId );
 
 	newState = (projectileState_t) msg.ReadBits( 3 );
 	if ( msg.ReadBits( 1 ) ) {

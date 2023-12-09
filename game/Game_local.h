@@ -340,25 +340,40 @@ class idEntityPtr {
 public:
 							idEntityPtr();
 
+
+	// setting from entity pointer
+	idEntityPtr<type> &		operator=( type *ent );
+							idEntityPtr( type *ent );
+
+	// getting entity pointer
+	type *					GetEntity( void ) const;
+	bool					IsValid( void ) const;
+
+	// direct getters
+	int						GetSpawnNum( void ) const;
+	int						GetEntityNum( void ) const;
+
+	// comparison
+	bool					operator==(const idEntityPtr<type>& other) const;
+	bool					operator!=(const idEntityPtr<type>& other) const;
+	bool					operator< (const idEntityPtr<type>& other) const;
+
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
-	idEntityPtr<type> &		operator=( type *ent );
-	bool					operator==(const idEntityPtr<type>& other) const;
-
-	// synchronize entity pointers over the network
-	int						GetSpawnNum( void ) const;
-	bool					Set( int entityId, int spawnId );
-
-	bool					IsValid( void ) const;
-	type *					GetEntity( void ) const;
-	int						GetEntityNum( void ) const;
+	// old network code: don't use
+	bool					SetDirectlyWithIntegers( int entityId, int spawnId );
 
 private:
 	int						entityId;
 	int						spawnId;
 };
+static_assert(
+	std::is_trivially_copyable_v<idEntityPtr<idEntity>> &&
+	std::is_default_constructible_v<idEntityPtr<idEntity>>,
+	"messed up idEntityPtr constructors?"
+);
 
 // Note: Because lightgem.h uses idEntityPr, the file should be included here or 
 // idEntityPtr Definition should be moved to lightgem.h. - J.C.Denton
@@ -1097,7 +1112,7 @@ extern idAnimManager		animationLib;
 //============================================================================
 
 template< class type >
-ID_INLINE idEntityPtr<type>::idEntityPtr() {
+ID_FORCE_INLINE idEntityPtr<type>::idEntityPtr() {
 	entityId = 0;
 	spawnId = 0;
 }
@@ -1107,7 +1122,6 @@ ID_INLINE void idEntityPtr<type>::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( entityId );
 	savefile->WriteInt( spawnId );
 }
-
 template< class type >
 ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( entityId );
@@ -1115,7 +1129,7 @@ ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame *savefile ) {
 }
 
 template< class type >
-ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
+ID_FORCE_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
 	if ( ent == NULL ) {
 		entityId = spawnId = 0;
 	} else {
@@ -1124,15 +1138,26 @@ ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
 	}
 	return *this;
 }
-
 template< class type >
-ID_INLINE bool idEntityPtr<type>::operator==(const idEntityPtr<type>& other) const
-{
-	return spawnId == other.spawnId;
+ID_FORCE_INLINE idEntityPtr<type>::idEntityPtr( type *ent ) {
+	*this = ent;
 }
 
 template< class type >
-ID_INLINE bool idEntityPtr<type>::Set( int _entityId, int _spawnId ) {
+ID_FORCE_INLINE bool idEntityPtr<type>::operator==(const idEntityPtr<type>& other) const {
+	return spawnId == other.spawnId;
+}
+template< class type >
+ID_FORCE_INLINE bool idEntityPtr<type>::operator!=(const idEntityPtr<type>& other) const {
+	return spawnId != other.spawnId;
+}
+template< class type >
+ID_FORCE_INLINE bool idEntityPtr<type>::operator< (const idEntityPtr<type>& other) const {
+	return spawnId < other.spawnId;
+}
+
+template< class type >
+ID_INLINE bool idEntityPtr<type>::SetDirectlyWithIntegers( int _entityId, int _spawnId ) {
 	// the reason for this first check is unclear:
 	// the function returning false may mean the spawnId is already set right, or the entity is missing
 	if ( _spawnId == spawnId && entityId == _entityId ) {
@@ -1143,16 +1168,16 @@ ID_INLINE bool idEntityPtr<type>::Set( int _entityId, int _spawnId ) {
 		spawnId = _spawnId;
 		return true;
 	}
+	// why we don't clear member to zero here?
 	return false;
 }
 
 template< class type >
-ID_INLINE bool idEntityPtr<type>::IsValid( void ) const {
+ID_FORCE_INLINE bool idEntityPtr<type>::IsValid( void ) const {
 	return ( gameLocal.spawnIds[ entityId ] == spawnId );
 }
-
 template< class type >
-ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
+ID_FORCE_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
 	if ( gameLocal.spawnIds[ entityId ] == spawnId ) {
 		return static_cast<type *>( gameLocal.entities[ entityId ] );
 	}
@@ -1160,11 +1185,11 @@ ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
 }
 
 template< class type >
-ID_INLINE int idEntityPtr<type>::GetSpawnNum( void ) const {
+ID_FORCE_INLINE int idEntityPtr<type>::GetSpawnNum( void ) const {
 	return spawnId;
 }
 template< class type >
-ID_INLINE int idEntityPtr<type>::GetEntityNum( void ) const {
+ID_FORCE_INLINE int idEntityPtr<type>::GetEntityNum( void ) const {
 	return entityId;
 }
 

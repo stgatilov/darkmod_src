@@ -2599,7 +2599,7 @@ void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	ammoClip = msg.ReadBits( ASYNC_PLAYER_INV_CLIP_BITS );
 	int entId = msg.ReadBits( 32 );
 	int spnId = msg.ReadBits( 32 );
-	worldModel.Set( entId, spnId );
+	worldModel.SetDirectlyWithIntegers( entId, spnId );
 	bool snapLight = msg.ReadBits( 1 ) != 0;
 	isFiring = msg.ReadBits( 1 ) != 0;
 

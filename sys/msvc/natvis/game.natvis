@@ -17,7 +17,7 @@
 
   <Type Name="idEntityPtr&lt;*&gt;">
     <DisplayString Condition="spawnId == 0">Eptr (empty)</DisplayString>
-    <DisplayString Condition="spawnId != 0">Eptr (num = {spawnId}, spId = {spawnId})</DisplayString>
+    <DisplayString Condition="spawnId != 0">Eptr (num = {entityId}, spId = {spawnId})</DisplayString>
     <Expand>
       <Synthetic Name="[WRONG]" Condition="spawnId != 0 &amp;&amp; gameLocal.spawnIds[entityId] != spawnId">
         <DisplayString>set = {spawnId} != {gameLocal.spawnIds[entityId]} = stored</DisplayString>

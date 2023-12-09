@@ -316,9 +316,7 @@ idLight::~idLight()
 
 	if (IsAmbient())
 	{
-		idEntityPtr<idLight> lightPtr;
-		lightPtr = this;
-		gameLocal.m_ambientLights.Remove(lightPtr);
+		gameLocal.m_ambientLights.Remove(this);
 	}
 }
 
@@ -599,9 +597,7 @@ void idLight::Spawn( void )
 	// grayman #3584
 	if (IsAmbient())
 	{
-		idEntityPtr<idLight> lightPtr;
-		lightPtr = this;
-		gameLocal.m_ambientLights.Append(lightPtr); // add this light to the list of ambient lights
+		gameLocal.m_ambientLights.Append(this); // add this light to the list of ambient lights
 	}
 
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Spawning light: %08lX [%s] | noShadows: %u | noSpecular: %u | pointLight: %u | parallel: %u\r",
@@ -1995,9 +1991,7 @@ bool idLight::IsSeenByAI( void ) const
 // grayman #2603 - keep a list of switches for this light
 void idLight::AddSwitch(idEntity* newSwitch)
 {
-	idEntityPtr<idEntity> switchPtr;
-	switchPtr = newSwitch;
-	switchList.AddUnique(switchPtr);
+	switchList.AddUnique(newSwitch);
 }
 
 // grayman #2603 - If there are switches, return the closest one to the calling user
@@ -2117,8 +2111,7 @@ void idLight::SetNextTimeLightOutBark(int newNextTimeLightOutBark)
 
 bool idLight::NegativeBark(idAI* ai)
 {
-	idEntityPtr<idEntity> aiPtr;
-	aiPtr = ai;
+	idEntityPtr<idEntity> aiPtr = ai;
 	int aiBarksIndex = -1; // index of this ai in the aiBarks list
 	bool barking = false;
 

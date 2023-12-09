@@ -132,9 +132,7 @@ void CStim::AddResponseIgnore(idEntity *e)
 {
 	if(CheckResponseIgnore(e) != true)
 	{
-		idEntityPtr<idEntity> entPtr;
-		entPtr = e;
-		m_ResponseIgnore.Append(entPtr);
+		m_ResponseIgnore.Append(e);
 	}
 }
 
