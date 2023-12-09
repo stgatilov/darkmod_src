@@ -2322,18 +2322,15 @@ void idGuidedProjectile::Launch( const idVec3 &start, const idVec3 &dir, const i
 	{ 
 		//check if an enemy has been set as a spawnarg on the projectile
 		//otherwise get the enemy of the entity who launched the projectile, if any
-		idEntity *e;
-		idStr str;
-	
-		str = spawnArgs.GetString("enemy", "");
-		e = gameLocal.FindEntity(str);
-		if(e) {
+		idStr str = spawnArgs.GetString("enemy", "");
+		idEntity *e = gameLocal.FindEntity(str);
+		if ( e ) {
 			enemy = e;
 		}
 		else if ( owner.GetEntity() && owner.GetEntity()->IsType( idAI::Type ) ) {
 			enemy = static_cast<idAI *>( owner.GetEntity() )->GetEnemy();
 		}
-		else if (owner.GetEntity() && owner.GetEntity()->IsType( idPlayer::Type ) ) {
+		else if ( owner.GetEntity() && owner.GetEntity()->IsType( idPlayer::Type ) ) {
 			trace_t tr;
 			idPlayer *player = static_cast<idPlayer*>( owner.GetEntity() );
 			idVec3 start = player->GetEyePosition();
