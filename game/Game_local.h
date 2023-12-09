@@ -370,8 +370,8 @@ private:
 	int						spawnId;
 };
 static_assert(
-	std::is_trivially_copyable_v<idEntityPtr<idEntity>> &&
-	std::is_default_constructible_v<idEntityPtr<idEntity>>,
+	std::is_trivially_copyable<idEntityPtr<idEntity>>::value &&
+	std::is_default_constructible<idEntityPtr<idEntity>>::value,
 	"messed up idEntityPtr constructors?"
 );
 
