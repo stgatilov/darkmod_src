@@ -1453,13 +1453,23 @@ void idProjectile::Bounced( const trace_t &collision, const idVec3 &velocity, id
 	//play bounce sounds if a world entity was hit and ricochet sounds are disabled
 	if( !bounceEnt->IsType(idActor::Type) && !StartSound("snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL) )
 	{
-		float len = velocity.Length();
 		float bounceSoundMinVelocity = spawnArgs.GetFloat("bounce_sound_min_velocity", "200");
 		float bounceSoundMaxVelocity = spawnArgs.GetFloat("bounce_sound_max_velocity", "400");
 
-		if ( ( len > bounceSoundMinVelocity ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some projectiles should not propagate a bounce sound
+		if ( ( velocity.Length() > bounceSoundMinVelocity ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some projectiles should not propagate a bounce sound
 		{
-			SetSoundVolume( len > bounceSoundMaxVelocity ? 1.0f : idMath::Sqrt( len - bounceSoundMinVelocity ) * ( 1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity ) ) );
+			/* Dragofer: this method based on SetSoundVolume is not suitable for projectiles in its current form because other sounds i.e. the explosion are also quietened
+				// angua: modify the volume set in the def instead of setting a fixed value. 
+				// At minimum velocity, the volume should be "min_velocity_volume_decrease" lower (in db) than the one specified in the def
+				float minVelocityVolumeDecrease = abs(spawnArgs.GetFloat("min_velocity_volume_decrease", "0") );
+				float f = (velocity.Length() > bounceSoundMaxVelocity) ? 0.0f : minVelocityVolumeDecrease * (idMath::Sqrt(velocity.Length() - bounceSoundMinVelocity) * (1.0f / idMath::Sqrt(bounceSoundMaxVelocity - bounceSoundMinVelocity)) - 1);
+
+				const char* sound				= spawnArgs.GetString("snd_bounce");
+				const idSoundShader* sndShader	= declManager->FindSound(sound);
+				float volume					= sndShader->GetParms()->volume + f;
+				SetSoundVolume(volume);
+			*/
+
 			StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, true, NULL );
 		}
 	}
