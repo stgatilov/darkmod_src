@@ -1065,7 +1065,7 @@ void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *ext
 	if ( i < declFolders.Num() ) {
 		// stgatilov #5766: need to sort all decl files by core/FM domain first
 		// and then load + parse all of them in correct order
-		common->Warning( "Decl folder '%s' with extension '%s' registered twice: %s", folder, extension );
+		common->Warning( "Decl folder '%s' with extension '%s' registered twice", folder, extension );
 		declFolder = declFolders[i];
 	} else {
 		declFolder = new idDeclFolder;

@@ -453,7 +453,7 @@ void idBvhCreator::CompressBoundingCone(const idCircCone &cone, char coneCenter[
 	else {
 		// set cone axis to grid point, bound the old cone
 		bvhNode_t tempNode;
-		memcpy(tempNode.coneCenter, coneCenter, sizeof(coneCenter));
+		memcpy(tempNode.coneCenter, coneCenter, sizeof(tempNode.coneCenter));
 		tempNode.coneAngle = 0;
 		coneCompr = tempNode.GetCone();
 		coneCompr.AddConeSaveAxis(cone);
