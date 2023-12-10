@@ -913,12 +913,17 @@ ID_INLINE void idCurve_CubicBezier<type>::BasisSecondDerivative( const float t, 
 ===============================================================================
 */
 
+enum curveSplineBoundary_t {
+	CSB_FREE,
+	CSB_CLAMPED,
+	CSB_CLOSED,
+};
+
 template< class type >
 class idCurve_Spline : public idCurve<type> {
+	typedef curveSplineBoundary_t boundary_t;
 
 public:
-	enum				boundary_t { BT_FREE, BT_CLAMPED, BT_CLOSED };
-
 						idCurve_Spline( void );
 
 	virtual bool		IsDone( const float time ) const;
@@ -927,7 +932,7 @@ public:
 	virtual boundary_t	GetBoundaryType( void ) const { return boundaryType; }
 
 	virtual void		SetCloseTime( const float t ) { closeTime = t; this->changed = true; }
-	virtual float		GetCloseTime( void ) { return boundaryType == BT_CLOSED ? closeTime : 0.0f; }
+	virtual float		GetCloseTime( void ) { return boundaryType == CSB_CLOSED ? closeTime : 0.0f; }
 
 protected:
 	boundary_t			boundaryType;
@@ -945,7 +950,7 @@ idCurve_Spline::idCurve_Spline
 */
 template< class type >
 ID_INLINE idCurve_Spline<type>::idCurve_Spline( void ) {
-	boundaryType = BT_FREE;
+	boundaryType = CSB_FREE;
 	closeTime = 0.0f;
 }
 
@@ -961,7 +966,7 @@ ID_INLINE type idCurve_Spline<type>::ValueForIndex( const int index ) const {
 	int n = this->values.Num()-1;
 
 	if ( index < 0 ) {
-		if ( boundaryType == BT_CLOSED ) {
+		if ( boundaryType == CSB_CLOSED ) {
 			return this->values[ this->values.Num() + index % this->values.Num() ];
 		}
 		else {
@@ -969,7 +974,7 @@ ID_INLINE type idCurve_Spline<type>::ValueForIndex( const int index ) const {
 		}
 	}
 	else if ( index > n ) {
-		if ( boundaryType == BT_CLOSED ) {
+		if ( boundaryType == CSB_CLOSED ) {
 			return this->values[ index % this->values.Num() ];
 		}
 		else {
@@ -991,7 +996,7 @@ ID_INLINE float idCurve_Spline<type>::TimeForIndex( const int index ) const {
 	int n = this->times.Num()-1;
 
 	if ( index < 0 ) {
-		if ( boundaryType == BT_CLOSED ) {
+		if ( boundaryType == CSB_CLOSED ) {
 			return ( index / this->times.Num() ) * ( this->times[n] + closeTime ) - ( this->times[n] + closeTime - this->times[this->times.Num() + index % this->times.Num()] );
 		}
 		else {
@@ -999,7 +1004,7 @@ ID_INLINE float idCurve_Spline<type>::TimeForIndex( const int index ) const {
 		}
 	}
 	else if ( index > n ) {
-		if ( boundaryType == BT_CLOSED ) {
+		if ( boundaryType == CSB_CLOSED ) {
 			return ( index / this->times.Num() ) * ( this->times[n] + closeTime ) + this->times[index % this->times.Num()];
 		}
 		else {
@@ -1018,7 +1023,7 @@ idCurve_Spline::ClampedTime
 */
 template< class type >
 ID_INLINE float idCurve_Spline<type>::ClampedTime( const float t ) const {
-	if ( boundaryType == BT_CLAMPED ) {
+	if ( boundaryType == CSB_CLAMPED ) {
 		if ( t < this->times[0] ) {
 			return this->times[0];
 		}
@@ -1036,7 +1041,7 @@ idCurve_Spline::IsDone
 */
 template< class type >
 ID_INLINE bool idCurve_Spline<type>::IsDone( const float time ) const {
-	return ( boundaryType != BT_CLOSED && time >= this->times[ this->times.Num() - 1 ] );
+	return ( boundaryType != CSB_CLOSED && time >= this->times[ this->times.Num() - 1 ] );
 }
 
 
@@ -2511,13 +2516,13 @@ ID_INLINE float idCurve_NURBS<type>::WeightForIndex( const int index ) const {
 	int n = weights.Num()-1;
 
 	if ( index < 0 ) {
-		if ( this->boundaryType == idCurve_Spline<type>::BT_CLOSED ) {
+		if ( this->boundaryType == CSB_CLOSED ) {
 			return weights[ weights.Num() + index % weights.Num() ];
 		} else {
 			return weights[0] + index * ( weights[1] - weights[0] );
 		}
 	} else if ( index > n ) {
-		if ( this->boundaryType == idCurve_Spline<type>::BT_CLOSED ) {
+		if ( this->boundaryType == CSB_CLOSED ) {
 			return weights[ index % weights.Num() ];
 		} else {
 			return weights[n] + ( index - n ) * ( weights[n] - weights[n-1] );

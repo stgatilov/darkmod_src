@@ -55,7 +55,7 @@ void idSurface_SweptSpline::SetSweptCircle( const float radius ) {
 	nurbs->AddValue( 100.0f, idVec4( -radius,  radius, 0.0f, 0.25f ) );
 	nurbs->AddValue( 200.0f, idVec4( -radius, -radius, 0.0f, 0.50f ) );
 	nurbs->AddValue( 300.0f, idVec4(  radius, -radius, 0.0f, 0.75f ) );
-	nurbs->SetBoundaryType( idCurve_NURBS<idVec4>::BT_CLOSED );
+	nurbs->SetBoundaryType( CSB_CLOSED );
 	nurbs->SetCloseTime( 100.0f );
 	if ( sweptSpline ) {
 		delete sweptSpline;
@@ -146,7 +146,7 @@ void idSurface_SweptSpline::Tessellate( const int splineSubdivisions, const int 
 
 	// calculate the points and first derivatives for the swept spline
 	totalTime = sweptSpline->GetTime( sweptSpline->GetNumValues() - 1 ) - sweptSpline->GetTime( 0 ) + sweptSpline->GetCloseTime();
-	sweptSplineDiv = sweptSpline->GetBoundaryType() == idCurve_Spline<idVec3>::BT_CLOSED ? sweptSplineSubdivisions : sweptSplineSubdivisions - 1;
+	sweptSplineDiv = sweptSpline->GetBoundaryType() == CSB_CLOSED ? sweptSplineSubdivisions : sweptSplineSubdivisions - 1;
 	baseOffset = (splineSubdivisions-1) * sweptSplineSubdivisions;
 	for ( i = 0; i < sweptSplineSubdivisions; i++ ) {
 		t = totalTime * i / sweptSplineDiv;
@@ -159,7 +159,7 @@ void idSurface_SweptSpline::Tessellate( const int splineSubdivisions, const int 
 
 	// sweep the spline
 	totalTime = spline->GetTime( spline->GetNumValues() - 1 ) - spline->GetTime( 0 ) + spline->GetCloseTime();
-	splineDiv = spline->GetBoundaryType() == idCurve_Spline<idVec3>::BT_CLOSED ? splineSubdivisions : splineSubdivisions - 1;
+	splineDiv = spline->GetBoundaryType() == CSB_CLOSED ? splineSubdivisions : splineSubdivisions - 1;
 	splineMat.Identity();
 	for ( i = 0; i < splineSubdivisions; i++ ) {
 		t = totalTime * i / splineDiv;

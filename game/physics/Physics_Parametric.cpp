@@ -1025,7 +1025,7 @@ idPhysics_Parametric::GetLinearEndTime
 */
 int idPhysics_Parametric::GetLinearEndTime( void ) const {
 	if ( current.spline != NULL ) {
-		if ( current.spline->GetBoundaryType() != idCurve_Spline<idVec3>::BT_CLOSED ) {
+		if ( current.spline->GetBoundaryType() != CSB_CLOSED ) {
 			return static_cast<int>(current.spline->GetTime( current.spline->GetNumValues() - 1 ));
 		} else {
 			return 0;

@@ -6733,7 +6733,7 @@ idCurve_Spline<idVec3> *idEntity::GetSpline( void ) const {
 		spline = new idCurve_BSpline<idVec3>();
 	}
 
-	spline->SetBoundaryType( idCurve_Spline<idVec3>::BT_CLAMPED );
+	spline->SetBoundaryType( CSB_CLAMPED );
 
 	lex.LoadMemory( kv->GetValue(), kv->GetValue().Length(), curveTag );
 	numPoints = lex.ParseInt();
