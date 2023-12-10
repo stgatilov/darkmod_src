@@ -3230,12 +3230,7 @@ size_t idFileSystemLocal::CurlWriteFunction( void *ptr, size_t size, size_t nmem
 	if ( !bgl->f ) {
 		return size * nmemb;
 	}
-#ifdef _WIN32
-	//return _write(static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, ptr, static_cast<unsigned int>(size * nmemb));
-	return fwrite(ptr, size, nmemb, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr());
-#else
 	return fwrite( ptr, size, nmemb, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
-#endif
 }
 
 /*
@@ -3279,12 +3274,7 @@ void BackgroundDownloadThread(void *parms) {
 
 		if ( bgl->opcode == DLTYPE_FILE ) {
 			// use the low level read function, because fread may allocate memory
-#ifdef WIN32
-			fread(bgl->file.buffer, bgl->file.length, 1, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr());
-			//_read( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, bgl->file.buffer, bgl->file.length );
-#else
-			fread( bgl->file.buffer, bgl->file.length, 1, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
-#endif
+			size_t res = fread( bgl->file.buffer, bgl->file.length, 1, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
 			bgl->completed = true;
 		} else {
 #if ID_ENABLE_CURL

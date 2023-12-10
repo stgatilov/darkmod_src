@@ -1431,7 +1431,7 @@ void CMissionManager::LoadModDetailsFromXml(const XmlDocumentPtr& doc, int modNu
 	
 	*/
 
-	pugi::xpath_node node = doc->select_single_node("//tdm/mission");
+	pugi::xpath_node node = doc->select_node("//tdm/mission");
 	
 	assert(modNum >= 0 && modNum < _downloadableMods.Num());
 

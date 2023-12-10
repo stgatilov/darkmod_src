@@ -399,8 +399,10 @@ void Sys_DecodeStackTrace(uint8_t *data, int len, debugStackFrame_t *frames) {
 		fprintf(f, "%p\n", addresses[i]);
 		fflush(f);
 		char lines[2][1024];
-		fgets(lines[0], sizeof(lines[0]), f);
-		fgets(lines[1], sizeof(lines[1]), f);
+		if (!fgets(lines[0], sizeof(lines[0]), f))
+			continue;
+		if (!fgets(lines[1], sizeof(lines[1]), f))
+			continue;
 
 		//parse first line (function name)
 		int l = strcspn(lines[0], "()\n");

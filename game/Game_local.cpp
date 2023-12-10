@@ -628,7 +628,7 @@ void idGameLocal::CheckTDMVersion()
 
 	XmlDocumentPtr doc = req->GetResultXml();
 
-	pugi::xpath_node node = doc->select_single_node("//tdm/currentVersion");
+	pugi::xpath_node node = doc->select_node("//tdm/currentVersion");
 
 	if (node)
 	{

@@ -243,7 +243,7 @@ XmlDocumentPtr CHttpRequest::GetResultXml()
 {
 	XmlDocumentPtr doc(new pugi::xml_document);
 	
-	doc->load(GetResultString().c_str());
+	doc->load_string(GetResultString().c_str());
 
 	return doc;
 }
