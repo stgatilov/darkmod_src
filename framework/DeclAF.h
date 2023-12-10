@@ -34,6 +34,7 @@ typedef enum {
 	DECLAF_CONSTRAINT_HINGE,
 	DECLAF_CONSTRAINT_SLIDER,
 	DECLAF_CONSTRAINT_SPRING
+	// note: see ConvertConstraintType if you add anything here
 } declAFConstraintType_t;
 
 typedef enum {

@@ -1003,7 +1003,7 @@ bool idAF::Load( idEntity *ent, const char *fileName ) {
 		idAFConstraint *constraint = physicsObj.GetConstraint( i );
 		for ( j = 0; j < file->constraints.Num(); j++ ) {
 			if ( file->constraints[j]->name.Icmp( constraint->GetName() ) == 0 &&
-					file->constraints[j]->type == constraint->GetType() ) {
+				ConvertConstraintType(file->constraints[j]->type) == constraint->GetType() ) {
 				break;
 			}
 		}
