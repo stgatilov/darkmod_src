@@ -818,7 +818,7 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 		{
 			GuiMessage msgRestart;
 			// "Current mission was updated.\nGame restart is required!"
-			msgRestart.message = va(common->Translate("#str_menu_updatedcurrentfm"));
+			msgRestart.message = common->Translate("#str_menu_updatedcurrentfm");
 			msgRestart.type = GuiMessage::MSG_CUSTOM;
 			msgRestart.positiveCmd = "close_msg_box;darkmodRestart";
 			msgRestart.negativeCmd = "close_msg_box;onDownloadCompleteConfirm";

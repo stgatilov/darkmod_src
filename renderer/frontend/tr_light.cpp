@@ -745,8 +745,8 @@ idStr idInteractionTable::Stats() const {
 	char buff[256];
 	if (useInteractionTable == 1) {
 		idStr::snPrintf(buff, sizeof(buff), "size = L%d x E%d x %dB = %d MB",
-			INTERACTION_TABLE_MAX_LIGHTS, INTERACTION_TABLE_MAX_ENTITYS, sizeof(SM_matrix[0]),
-			INTERACTION_TABLE_MAX_LIGHTS * INTERACTION_TABLE_MAX_ENTITYS * sizeof(SM_matrix[0])
+			INTERACTION_TABLE_MAX_LIGHTS, INTERACTION_TABLE_MAX_ENTITYS, int(sizeof(SM_matrix[0])),
+			int( (INTERACTION_TABLE_MAX_LIGHTS * INTERACTION_TABLE_MAX_ENTITYS * sizeof(SM_matrix[0])) >> 20 )
 		);
 	}
 	if (useInteractionTable == 2) {

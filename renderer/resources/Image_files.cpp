@@ -1161,7 +1161,7 @@ void idImageReader::LoadBMP() {
 	}
 
 	if ( bmpHeader.fileSize != srcLength ) {
-		common->Warning( "LoadBMP: header size does not match file size (%lu vs. %d)", bmpHeader.fileSize, srcLength );
+		common->Warning( "LoadBMP: header size does not match file size (%u vs. %d)", bmpHeader.fileSize, srcLength );
 		goto onerror;
 	}
 

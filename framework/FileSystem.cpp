@@ -2032,7 +2032,7 @@ void idFileSystemLocal::Path_f( const idCmdArgs &args ) {
 				} else {
 					status += ")\n";
 				}
-				common->Printf( status.c_str() );
+				common->Printf( "%s", status.c_str() );
 			} else {
 				common->Printf( "  [%c] %s (%i files - 0x%x)\n",
 					domain,
@@ -3544,14 +3544,14 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 
 	if ( dllFile ) {
         timeDll = dllFile->Timestamp();
-		common->Printf( "gamex86 - Found %s in EXE path with timestamp of %d - %s\n", GAMEEXT, timeDll, dllFile->GetFullPath() ); 
+		common->Printf( "gamex86 - Found %s in EXE path with timestamp of %d - %s\n", GAMEEXT, int(timeDll), dllFile->GetFullPath() ); 
 	} else {
         common->Printf( "gamex86 - No %s found in EXE path\n", GAMEEXT ); 
     }
     
     if ( dllFileInPak ) {
         timePak = dllFileInPak->Timestamp();
-		common->Printf( "gamex86 - Found %s in pak file with timestamp of %d - %s\n", GAMEEXT, timePak, dllFileInPak->GetFullPath() );
+		common->Printf( "gamex86 - Found %s in pak file with timestamp of %d - %s\n", GAMEEXT, int(timePak), dllFileInPak->GetFullPath() );
     } else {
         common->Printf( "gamex86 - No %s found in pak file\n", GAMEEXT );
     }
@@ -3564,7 +3564,7 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
         }
     } else { 
 		if ( dllFileInPak ) {
-			common->Printf( "gamex86 - %s in pak file is newer, extracting to darkmod path\n", GAMEEXT, dllFileInPak->GetFullPath() );
+			common->Printf( "gamex86 - %s in pak file is newer, extracting to darkmod path\n", GAMEEXT );
 			
             if ( dllFile ) {
                 CloseFile( dllFile );
@@ -3635,7 +3635,7 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	} else {
 		dllPath = "";
 	}
-	idStr::snPrintf( _dllPath, MAX_OSPATH, dllPath.c_str() );
+	idStr::snPrintf( _dllPath, MAX_OSPATH, "%s", dllPath.c_str() );
 }
 
 /*

@@ -169,7 +169,7 @@ void CModelGenerator::Restore( idRestoreGame *savefile ) {
 			// Read LOD data
 			if ((m_LODList[i].LODPtr = new lod_data_t) == NULL)
 			{
-				gameLocal.Error("Could not allocate %i bytes for a new LOD struct.\n", sizeof(lod_data_t));
+				gameLocal.Error("Could not allocate %i bytes for a new LOD struct.\n", int(sizeof(lod_data_t)));
 			}
 			RestoreLOD( savefile, m_LODList[i].LODPtr );
 		}
@@ -297,7 +297,7 @@ lod_handle	CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
 
 	if (m_LODList[smallestFree].LODPtr == NULL)
 	{
-		gameLocal.Error("Could not allocate %i bytes for a new LOD struct.\n", sizeof(lod_data_t));
+		gameLocal.Error("Could not allocate %i bytes for a new LOD struct.\n", int(sizeof(lod_data_t)));
 	}
 #ifdef M_DEBUG
 		gameLocal.Printf("DistCheckInterval %i fLODNormalDistance %0.02f\n",
@@ -473,11 +473,11 @@ void CModelGenerator::Print( void ) const {
 	}
 	if (memory_saved > 0)
 	{
-		gameLocal.Printf("ModelGenerator memory: %i LOD entries with %ld users using %ld bytes, memory saved: %ld bytes.\n", n, users, memory, memory_saved);
+		gameLocal.Printf("ModelGenerator memory: %i LOD entries with %d users using %d bytes, memory saved: %d bytes.\n", n, users, memory, memory_saved);
 	}
 	else
 	{
-		gameLocal.Printf("ModelGenerator memory: %i LOD entries with %ld users using %ld bytes.\n", n, users, memory);
+		gameLocal.Printf("ModelGenerator memory: %i LOD entries with %d users using %d bytes.\n", n, users, memory);
 	}
 }
 

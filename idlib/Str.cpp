@@ -2115,10 +2115,10 @@ idStr idStr::FormatNumber( int64 number ) {
 	}
 
 	if ( found ) {
-		string += va( "%3.3i", number );
+		string += va( "%3.3lli", number );
 	}
 	else {
-		string += va( "%i", number );
+		string += va( "%lli", number );
 	}
 
 	// pad to proper size

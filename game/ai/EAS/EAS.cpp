@@ -161,7 +161,7 @@ void tdmEAS::AssignElevatorsToClusters()
 		}
 	}
 
-	gameLocal.Printf("[%s]: Assigned %d multistatemover positions to AAS areas and ignored %d.\n", _aas->name.c_str(), _elevatorStations.size(), ignoredStations);
+	gameLocal.Printf("[%s]: Assigned %zu multistatemover positions to AAS areas and ignored %zu.\n", _aas->name.c_str(), _elevatorStations.size(), ignoredStations);
 }
 
 // grayman - debug route info

@@ -1713,7 +1713,7 @@ void idDeclManagerLocal::ListDecls_f( const idCmdArgs &args ) {
 		}
 		totalStructs += size;
 
-		common->Printf( "%4ik %4i %s\n", size >> 10, num, declManagerLocal.declTypes[i]->typeName.c_str() );
+		common->Printf( "%4zuk %4i %s\n", size >> 10, num, declManagerLocal.declTypes[i]->typeName.c_str() );
 	}
 
 	for ( i = 0 ; i < declManagerLocal.loadedFiles.Num() ; i++ ) {

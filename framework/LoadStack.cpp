@@ -173,7 +173,7 @@ void LoadStack::Level::Clear() {
 }
 
 void LoadStack::ShowMemoryUsage_f( const idCmdArgs &args ) {
-	idLib::common->Printf( "%5d KB in %d loadstack strings\n", pool.Size() >> 10, pool.Num() );
+	idLib::common->Printf( "%5zu KB in %d loadstack strings\n", pool.Size() >> 10, pool.Num() );
 }
 void LoadStack::ListStrings_f( const idCmdArgs &args ) {
 	pool.PrintAll("loadStack");

@@ -253,10 +253,10 @@ int SCR_DrawMemoryUsage( int y ) {
 	memoryStats_t allocs, frees;
 	
 	Mem_GetStats( allocs );
-	SCR_DrawTextRightAlign( y, "total allocated memory: %4d, %4dkB", allocs.num, allocs.totalSize>>10 );
+	SCR_DrawTextRightAlign( y, "total allocated memory: %4d, %4zukB", allocs.num, allocs.totalSize>>10 );
 
 	Mem_GetFrameStats( allocs, frees );
-	SCR_DrawTextRightAlign( y, "frame alloc: %4d, %4dkB  frame free: %4d, %4dkB", allocs.num, allocs.totalSize>>10, frees.num, frees.totalSize>>10 );
+	SCR_DrawTextRightAlign( y, "frame alloc: %4d, %4zukB  frame free: %4d, %4zukB", allocs.num, allocs.totalSize>>10, frees.num, frees.totalSize>>10 );
 
 	Mem_ClearFrameStats();
 
@@ -1109,7 +1109,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	// draw the version number
 	{
 		// BluePill #4539 - show whether this is a 32-bit or 64-bit binary
-		const idStr version = va("%s/%u #%d", ENGINE_VERSION, sizeof(void*) * 8, RevisionTracker::Instance().GetHighestRevision());
+		const idStr version = va("%s/%zu #%d", ENGINE_VERSION, sizeof(void*) * 8, RevisionTracker::Instance().GetHighestRevision());
 		const int vlen = version.Length();
 
 		for ( x = 0; x < vlen; x++ ) {

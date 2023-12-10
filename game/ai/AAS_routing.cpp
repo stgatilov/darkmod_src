@@ -366,9 +366,9 @@ void idAASLocal::RoutingStats( void ) const {
 	gameLocal.Printf( "%6d area cache (%d KB)\n", numAreaCache, totalAreaCacheMemory >> 10 );
 	gameLocal.Printf( "%6d portal cache (%d KB)\n", numPortalCache, totalPortalCacheMemory >> 10 );
 	gameLocal.Printf( "%6d total cache (%d KB)\n", numAreaCache + numPortalCache, totalCacheMemory >> 10 );
-	gameLocal.Printf( "%6d area travel times (%d KB)\n", numAreaTravelTimes, ( numAreaTravelTimes * sizeof( unsigned short ) ) >> 10 );
-	gameLocal.Printf( "%6d area cache entries (%d KB)\n", areaCacheIndexSize, ( areaCacheIndexSize * sizeof( idRoutingCache * ) ) >> 10 );
-	gameLocal.Printf( "%6d portal cache entries (%d KB)\n", portalCacheIndexSize, ( portalCacheIndexSize * sizeof( idRoutingCache * ) ) >> 10 );
+	gameLocal.Printf( "%6d area travel times (%lld KB)\n", numAreaTravelTimes, int64( numAreaTravelTimes * sizeof( unsigned short ) ) >> 10 );
+	gameLocal.Printf( "%6d area cache entries (%lld KB)\n", areaCacheIndexSize, int64( areaCacheIndexSize * sizeof( idRoutingCache * ) ) >> 10 );
+	gameLocal.Printf( "%6d portal cache entries (%lld KB)\n", portalCacheIndexSize, int64( portalCacheIndexSize * sizeof( idRoutingCache * ) ) >> 10 );
 }
 
 /*

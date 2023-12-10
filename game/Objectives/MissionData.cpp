@@ -2616,7 +2616,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	else if ( busted == 1 )
 	{
 		// 1 Sighting
-		sightingBust = va( common->Translate( "#str_02219" )/*, minutesSeen, secondsSeen*/); // grayman #4363
+		sightingBust = /*va(*/ common->Translate( "#str_02219" )/*, minutesSeen, secondsSeen)*/; // grayman #4363
 		timeSeenString = va("%im %is", minutesSeen, secondsSeen); // grayman #4363
 	}
 	else

@@ -522,7 +522,7 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 		size += check->spawnArgs.Allocated();
 	}
 
-	gameLocal.Printf( "...%d entities\n...%d bytes of spawnargs\n", count, size );
+	gameLocal.Printf( "...%d entities\n...%zu bytes of spawnargs\n", count, size );
 }
 
 /*
@@ -1623,7 +1623,7 @@ static void PrintFloat( float f ) {
 		buf[i] = ' ';
 	}
 	buf[i] = '\0';
-	gameLocal.Printf( buf );
+	gameLocal.Printf( "%s", buf );
 }
 
 /*
@@ -1848,7 +1848,7 @@ static void Cmd_ListAnims_f( const idCmdArgs &args ) {
 			}
 		}
 
-		gameLocal.Printf( "%d memory used in %d entity animators\n", size, num );
+		gameLocal.Printf( "%zu memory used in %d entity animators\n", size, num );
 	}
 }
 
@@ -3538,7 +3538,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		mat->Invalidate();
 		mat->FreeData();
 	}
-	gameLocal.Printf(" %lu Materials processed and changed in total.\n", ulMaterialsProcessed );
+	gameLocal.Printf(" %u Materials processed and changed in total.\n", ulMaterialsProcessed );
 }
 
 

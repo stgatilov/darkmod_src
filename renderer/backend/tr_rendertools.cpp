@@ -1074,8 +1074,8 @@ static void RB_ShowEntityDraws() {
 		runningTotal += n;
 		list[i] = idStr::Fmt( "%6i %s", runningTotal, list[i].c_str() );
 	}
-	for ( auto &s : list )
-		common->Printf( s );
+	for ( idStr s : list )
+		common->Printf( "%s", s.c_str() );
 
 	r_showEntityDraws = false;
 }

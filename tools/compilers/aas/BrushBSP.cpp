@@ -979,7 +979,7 @@ void idBrushBSP::Build( idBrushList brushList, int skipContents,
 		TRACE_CPU_SCOPE("ProcessGrid")
 		common->Printf( "\r%6d %%", 0 );
 		for ( i = 0; i < gridCells.Num(); i++ ) {
-			TRACE_CPU_SCOPE_FORMAT( "Process:Cell", gridCells[i]->volume->GetBounds().ToString().c_str() );
+			TRACE_CPU_SCOPE_FORMAT( "Process:Cell", "%s", gridCells[i]->volume->GetBounds().ToString().c_str() );
 			DisplayRealTimeString( "\r%6d", i * 100 / gridCells.Num() );
 			ProcessGridCell( gridCells[i], skipContents );
 		}

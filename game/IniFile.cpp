@@ -287,7 +287,7 @@ void IniFile::ParseFromString(const std::string& str)
 		}
 		//check what sort of error it is
 		if (equalCount > 1)
-			common->Warning("%d equality signs in a line of INI file: '%s'", equalCount, line.c_str());
+			common->Warning("%zu equality signs in a line of INI file: '%s'", equalCount, line.c_str());
 		else
 			common->Warning("Excessive line in INI file: '%s'", line.c_str());
 	}

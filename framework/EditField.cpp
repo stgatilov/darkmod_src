@@ -282,7 +282,7 @@ void idEditField::AutoComplete( void ) {
 		autoComplete = globalAutoComplete;
 
 		// and print it
-		idStr::snPrintf( buffer, sizeof( buffer ), autoComplete.currentMatch );
+		idStr::snPrintf( buffer, sizeof( buffer ), "%s", autoComplete.currentMatch );
         if (autoComplete.length > static_cast<int>(strlen(buffer))) {
             autoComplete.length = static_cast<int>(strlen(buffer));
 		}

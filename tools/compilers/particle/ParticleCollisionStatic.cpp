@@ -469,7 +469,6 @@ void PrtCollision::ProcessMap() {
 	RenderWorld();
 
 	common->Printf("Processing collisionStatic particle systems...\n");
-	common->Printf("");
 	// find all particle-emitting surfaces with "collisionStatic" particle stages
 	// only brushes/patches are looked as candidates, models are ignored completely
 	int numEnts = mapFile->GetNumEntities();

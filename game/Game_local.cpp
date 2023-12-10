@@ -465,7 +465,7 @@ void idGameLocal::Init( void ) {
 	Printf( "--------- Initializing Game ----------\n" );
 
 	// BluePill #4539 - show whether this is a 32-bit or 64-bit binary
-	Printf( "%s %d.%02d/%u, %s, code revision %d\n", 
+	Printf( "%s %d.%02d/%zu, %s, code revision %d\n", 
  		GAME_VERSION, 
 		TDM_VERSION_MAJOR,
 		TDM_VERSION_MINOR,
@@ -4743,7 +4743,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "mainmenu_init")
 	{
-		gui->SetStateString("tdmversiontext", va("TDM %d.%02d/%u", TDM_VERSION_MAJOR, TDM_VERSION_MINOR, sizeof(void*) * 8)); // BluePill #4539 - show whether this is a 32-bit or 64-bit binary 
+		gui->SetStateString("tdmversiontext", va("TDM %d.%02d/%zu", TDM_VERSION_MAJOR, TDM_VERSION_MINOR, sizeof(void*) * 8)); // BluePill #4539 - show whether this is a 32-bit or 64-bit binary 
 		UpdateGUIScaling(gui);
 		gui->SetStateString( "tdm_lang", common->GetI18N()->GetCurrentLanguage().c_str() );
 		idStr gui_lang = "lang_";

@@ -1219,10 +1219,10 @@ static void CheckInfoLocations(uEntity_t *e) {
 	// is there location separator at each inter-area portal?
 	idList<const char *> separatorPerVisportal;
 	separatorPerVisportal.SetNum(numInterAreaPortals);
-	memset(separatorPerVisportal.Ptr(), NULL, separatorPerVisportal.Allocated());
+	memset(separatorPerVisportal.Ptr(), 0, separatorPerVisportal.Allocated());
 	idList<bool> visportalBlocked;
 	visportalBlocked.SetNum(numInterAreaPortals);
-	memset(visportalBlocked.Ptr(), false, visportalBlocked.Allocated());
+	memset(visportalBlocked.Ptr(), 0, visportalBlocked.Allocated());
 
 	// read location separators and fill separatorPerVisportal
 	for (int entnum = 1; entnum < dmapGlobals.num_entities; entnum++) {
