@@ -47,6 +47,7 @@ if (UNIX)
 			-Wno-unused-variable            # too many
 			-Wno-unused-but-set-variable
 			-Wno-sign-compare               # in particular, int/size_t conversions
+			-Wno-format-security            # format string is often composed dynamically
 	)
 	# configure other compile options
 	add_compile_options(
