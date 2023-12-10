@@ -133,12 +133,6 @@ ID_INLINE void WriteIndexPair( triIndex_t * dest, const triIndex_t a, const triI
 	*(unsigned *)dest = (unsigned)a | ( (unsigned)b<<16 );
 }
 
-#if defined(_DEBUG) || defined(_lint)
-#define NODEFAULT	default: assert( 0 )
-#else
-#define NODEFAULT	default: __assume( 0 )
-#endif
-
 /*
 ================================================================================================
 
