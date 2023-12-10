@@ -47,7 +47,6 @@ if (UNIX)
 			-Wno-unused-variable            # too many
 			-Wno-unused-but-set-variable
 			-Wno-sign-compare               # in particular, int/size_t conversions
-			-Wno-class-memaccess            # memcpy into custom structs
 	)
 	# configure other compile options
 	add_compile_options(
@@ -78,7 +77,7 @@ elseif (MSVC)
 			_ALLOW_KEYWORD_MACROS
 			NO_WARN_MBCS_MFC_DEPRECATION
 			_MBCS
-			)
+	)
 	# disable certain warnings
 	add_compile_options(/wd4127 /wd4458 /wd4267)
 	add_compile_options(/MP /Gm-)
