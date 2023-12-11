@@ -48,6 +48,7 @@ if (UNIX)
 			-Wno-unused-but-set-variable
 			-Wno-sign-compare               # in particular, int/size_t conversions
 			-Wno-format-security            # format string is often composed dynamically
+			-Wno-invalid-offsetof           # idBlockAlloc::Free has this nasty offsetof
 	)
 	# configure other compile options
 	add_compile_options(
