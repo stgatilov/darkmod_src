@@ -48,7 +48,6 @@ if (UNIX)
 			-Wno-unused-but-set-variable
 			-Wno-sign-compare               # in particular, int/size_t conversions
 			-Wno-format-security            # format string is often composed dynamically
-			-Wno-invalid-offsetof           # idBlockAlloc::Free has this nasty offsetof
 	)
 	# configure other compile options
 	add_compile_options(
@@ -58,7 +57,7 @@ if (UNIX)
 			-fmessage-length=0
 			-fvisibility=hidden
 			-fno-unsafe-math-optimizations
-			-std=c++14
+			$<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
 	)
 	# enable SSE2 if supported (mainly 32-bit x86)
 	check_cxx_compiler_flag(-msse2 MSSE2_SUPPORTED)
