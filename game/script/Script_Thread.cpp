@@ -1742,33 +1742,7 @@ idThread::Event_GetInterceptTime
 */
 void idThread::Event_GetInterceptTime(idVec3 &velTarget, float speedInterceptor, idVec3 &posTarget, idVec3 &posInterceptor ) {
 
-	float a = velTarget.LengthSqr() - Square(speedInterceptor);
-	float b = 2.0f * velTarget * (posTarget - posInterceptor);
-	float c = (posTarget - posInterceptor).LengthSqr();
-
-	//ensure stability by ignoring computation if target's squared speed
-	//is within 10% of interceptor's squared speed
-	if( idMath::Fabs( velTarget.LengthSqr() - Square(speedInterceptor) ) < 0.1 * Square(speedInterceptor) ) {
-		ReturnFloat(0.0f);
-		return;
-	}
-
-	//check whether and when an intercept is possible. 
-	//if both roots are real, choose the smallest positive root.
-	//otherwise choose the root that is real.
-	//otherwise use time = 0 and return the enemy's current position.
-	float roots[2] = { 0.0f, 0.0f };
-	int numRoots = idPolynomial::GetRoots2(a, b, c, roots);
-
-	float time = 0.0f;
-	for ( int i = 0; i < numRoots; i++ ) {
-		if ( roots[i] <= 0 )
-			continue;
-		if ( time == 0.0f || time > roots[i])
-			time = roots[i];
-	}
-
-	ReturnFloat(time);
+	ReturnFloat( idPolynomial::GetInterceptTime( velTarget, speedInterceptor, posTarget, posInterceptor) );
 }
 
 /*

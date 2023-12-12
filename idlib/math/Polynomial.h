@@ -74,6 +74,8 @@ public:
 	static int		GetRoots3( float a, float b, float c, float d, float *roots );
 	static int		GetRoots4( float a, float b, float c, float d, float e, float *roots );
 
+	static float	GetInterceptTime( idVec3 &velTarget, float speedInterceptor, idVec3 &posTarget, idVec3 &posInterceptor );
+
 	const float *	ToFloatPtr( void ) const;
 	float *			ToFloatPtr( void );
 	const char *	ToString( int precision = 2 ) const;
