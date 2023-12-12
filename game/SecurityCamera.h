@@ -44,6 +44,9 @@ public:
 	virtual	void			Damage(idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName,
 														const float damageScale, const int location, trace_t *tr = NULL);
 	virtual void			Present(void);
+	int						GetSecurityCameraState( void );
+
+	idList< idEntityPtr<idEntity> >	enemies;
 
 private:
 
@@ -128,7 +131,6 @@ private:
 	idEntityPtr<idEntity>	sparks;
 	idEntityPtr<idEntity>	cameraDisplay;
 	idEntityPtr<idEntity>	enemy;
-	idList< idEntityPtr<idEntity> >	enemies;
 
 	int						state;
 	int						alertMode;

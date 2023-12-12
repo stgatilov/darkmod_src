@@ -802,19 +802,18 @@ bool idSecurityCamera::Event_CanSee( idEntity *ent )
 
 /*
 ================
-idSecurityCamera::Event_GetSecurityCameraState
+idSecurityCamera::GetSecurityCameraState
 ================
 */
-void idSecurityCamera::Event_GetSecurityCameraState()
+int idSecurityCamera::GetSecurityCameraState()
 {
-	int retFloat;
+	int retFloat = 0;
 
 	if (!powerOn && state != STATE_DEAD)
 	{
 		//camera is switched off and not destroyed
 		retFloat = 4;
-		idThread::ReturnFloat(retFloat);
-		return;
+		return retFloat;
 	}
 
 	/*
@@ -822,7 +821,6 @@ void idSecurityCamera::Event_GetSecurityCameraState()
 	They will therefore only rarely be detected and
 	are functionally identical to STATE_SWEEPING (camera is unalerted and active).
 	*/
-
 	switch (state)
 	{
 	case STATE_SWEEPING:
@@ -851,7 +849,17 @@ void idSecurityCamera::Event_GetSecurityCameraState()
 		break;
 	}
 
-	idThread::ReturnFloat( retFloat );
+	return retFloat;
+}
+
+/*
+================
+idSecurityCamera::Event_GetSecurityCameraState
+================
+*/
+void idSecurityCamera::Event_GetSecurityCameraState()
+{
+	idThread::ReturnFloat( GetSecurityCameraState() );
 }
 
 /*
