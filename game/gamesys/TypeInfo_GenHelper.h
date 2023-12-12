@@ -92,6 +92,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../game/Target.h"
 #include "../game/TimerManager.h"
 #include "../game/Trigger.h"
+#include "../game/Turret.h"
 #include "../game/UserManager.h"
 #include "../game/Weapon.h"
 #include "../game/WorldSpawn.h"

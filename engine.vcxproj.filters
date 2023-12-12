@@ -1134,6 +1134,9 @@
     <ClInclude Include="game\Trigger.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="game\Turret.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="game\UserManager.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -3603,6 +3606,9 @@
     </ClCompile>
     <ClCompile Include="renderer\resources\Image_compress.cpp">
       <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Turret.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

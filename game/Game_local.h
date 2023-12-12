@@ -1288,6 +1288,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "Sound.h"
 #include "FX.h"
 #include "SecurityCamera.h"
+#include "Turret.h"
 #include "BrittleFracture.h"
 #include "Liquid.h"
 #include "AbsenceMarker.h"

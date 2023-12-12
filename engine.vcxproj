@@ -510,6 +510,7 @@
     <ClInclude Include="game\Target.h" />
     <ClInclude Include="game\TimerManager.h" />
     <ClInclude Include="game\Trigger.h" />
+    <ClInclude Include="game\Turret.h" />
     <ClInclude Include="game\UserManager.h" />
     <ClInclude Include="game\Weapon.h" />
     <ClInclude Include="game\WorldSpawn.h" />
@@ -1145,6 +1146,7 @@
     <ClCompile Include="game\Target.cpp" />
     <ClCompile Include="game\TimerManager.cpp" />
     <ClCompile Include="game\Trigger.cpp" />
+    <ClCompile Include="game\Turret.cpp" />
     <ClCompile Include="game\UserManager.cpp" />
     <ClCompile Include="game\Weapon.cpp" />
     <ClCompile Include="game\WorldSpawn.cpp" />
