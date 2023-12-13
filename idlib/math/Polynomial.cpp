@@ -233,7 +233,7 @@ void idPolynomial::Test( void ) {
 idPolynomial::GetInterceptTime
 ================
 */
-float idPolynomial::GetInterceptTime( idVec3 &velTarget, float speedInterceptor, idVec3 &posTarget, idVec3 &posInterceptor ) {
+float idPolynomial::GetInterceptTime( const idVec3 &velTarget, float speedInterceptor, const idVec3 &posTarget, const idVec3 &posInterceptor ) {
 
 	float a = velTarget.LengthSqr() - Square(speedInterceptor);
 	float b = 2.0f * velTarget * (posTarget - posInterceptor);
