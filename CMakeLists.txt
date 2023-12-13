@@ -57,7 +57,7 @@ if (UNIX)
 			-fmessage-length=0
 			-fvisibility=hidden
 			-fno-unsafe-math-optimizations
-			$<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+			-std=c++14
 	)
 	# enable SSE2 if supported (mainly 32-bit x86)
 	check_cxx_compiler_flag(-msse2 MSSE2_SUPPORTED)
