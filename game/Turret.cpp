@@ -377,7 +377,7 @@ void idTurret::UpdateEnemies(void)
 		return;
 
 	idEntity *bestEnemy = NULL;
-	boolean canAttackBestEnemy, canAttackNewEnemy;
+	bool canAttackBestEnemy, canAttackNewEnemy;
 
 	for (int i = 0; i < cams.Num(); i++)
 	{
@@ -747,7 +747,7 @@ void idTurret::RoutEnemies( void )
 			continue;
 
 		//is this an enemy of any security camera?
-		boolean enemyToCams = false;
+		bool enemyToCams = false;
 
 		for (int i = 0; i < cams.Num(); i++)
 		{
