@@ -840,14 +840,12 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 		SetStateFloat( alphaVar, m.volume );
 
 		// update direction cue
-		if ( cv_tdm_subtitles_ring.GetBool() ) {
-			idVec2 normalizedLocation = idVec2( m.spatializedDirection.x, m.spatializedDirection.y ) / tdm_subtitles_ringRadius.GetFloat();
-			if ( normalizedLocation.Length() > 1.0f )
-				normalizedLocation.Normalize();
-			SetStateString( spatialVar, ( m.spatializedDirection.Length() == 0.0f ? "0" : "1" ) );
-			SetStateFloat( locationXVar, normalizedLocation.x );
-			SetStateFloat( locationYVar, normalizedLocation.y );
-		}
+		idVec2 normalizedLocation = idVec2( m.spatializedDirection.x, m.spatializedDirection.y ) / tdm_subtitles_ringRadius.GetFloat();
+		if ( normalizedLocation.Length() > 1.0f )
+			normalizedLocation.Normalize();
+		SetStateString( spatialVar, ( m.spatializedDirection.Length() > 0.0f && cv_tdm_subtitles_ring.GetBool() ? "1" : "0" ) );
+		SetStateFloat( locationXVar, normalizedLocation.x );
+		SetStateFloat( locationYVar, normalizedLocation.y );
 
 		// update debug text
 		idStr debugMessage;
