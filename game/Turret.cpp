@@ -422,8 +422,8 @@ void idTurret::UpdateEnemies(void)
 			//otherwise decide based on distance
 			else
 			{
-				float distNew	= ( GetPhysics()->GetOrigin() - GetEnemyPosition(newEnemy) ).LengthFast();
-				float distBest	= ( GetPhysics()->GetOrigin() - GetEnemyPosition(bestEnemy) ).LengthFast();
+				float distNew	= ( GetPhysics()->GetOrigin() - GetEnemyPosition(newEnemy) ).Length();
+				float distBest	= ( GetPhysics()->GetOrigin() - GetEnemyPosition(bestEnemy) ).Length();
 
 				if( distNew < distBest )
 				{
@@ -538,69 +538,68 @@ bool idTurret::CanAttack( idEntity *ent, bool useCurrentAngles )
 		return false;
 
 	//is the enemy within range?
-		float	maxFireRange	= spawnArgs.GetFloat("fire_range_max", "512");
-		float	minFireRange	= spawnArgs.GetFloat("fire_range_min", "16");
-		idVec3 enemyPos;
-			if(ent)		enemyPos	= GetEnemyPosition( ent );
-			else		enemyPos	= attackPos;
+	float	maxFireRange	= spawnArgs.GetFloat("fire_range_max", "512");
+	float	minFireRange	= spawnArgs.GetFloat("fire_range_min", "16");
+	idVec3 enemyPos;
+	if(ent)		enemyPos	= GetEnemyPosition( ent );
+	else		enemyPos	= attackPos;
 
-		float	distToPos		= (GetPhysics()->GetOrigin() - enemyPos).LengthFast();
-		if( distToPos > maxFireRange )	return false;
-		if( distToPos < minFireRange )	return false;
+	float	distToPos		= (GetPhysics()->GetOrigin() - enemyPos).Length();
+	if( distToPos < minFireRange || distToPos > maxFireRange )
+		return false;
 
 	//can the turret turn far enough to fire in this direction?
-		float	fireTolerance	= spawnArgs.GetFloat("fire_tolerance", "15");
-		idAngles attackAngles;
-			if( useCurrentAngles )	attackAngles = GetPhysics()->GetAxis().ToAngles();
-			else					attackAngles = GetAttackAngles(enemyPos);
+	float	fireTolerance	= spawnArgs.GetFloat("fire_tolerance", "15");
+	idAngles attackAngles;
+	if( useCurrentAngles )	attackAngles = GetPhysics()->GetAxis().ToAngles();
+	else					attackAngles = GetAttackAngles(enemyPos);
 
-		idVec3		launchPos		= GetPhysics()->GetOrigin() + ( spawnArgs.GetVector("projectile_offset", "0 0 0") * attackAngles.ToMat3() );
-		idAngles	anglesToEnemy	= ( enemyPos - launchPos ).ToAngles();
-		idAngles	anglesDiff		= ( anglesToEnemy - attackAngles ).Normalize180();
+	idVec3		launchPos		= GetPhysics()->GetOrigin() + ( spawnArgs.GetVector("projectile_offset", "0 0 0") * attackAngles.ToMat3() );
+	idAngles	anglesToEnemy	= ( enemyPos - launchPos ).ToAngles();
+	idAngles	anglesDiff		= ( anglesToEnemy - attackAngles ).Normalize180();
 
-		if( fabs(anglesDiff.yaw) > fireTolerance || fabs(anglesDiff.pitch) > fireTolerance )
-			return false;
+	if( fabs(anglesDiff.yaw) > fireTolerance || fabs(anglesDiff.pitch) > fireTolerance )
+		return false;
 
 	//only collisions left. Manual override?
 	if( m_bManualModeIgnoreCollisions )
 		return true;
 
 	//perform a collision trace
-		trace_t trace;
-		idVec3	traceRadius		= spawnArgs.GetVector("projectile_trace_radius", "4 4 4");
-		float	traceMask		= MASK_SHOT_BOUNDINGBOX;
-		gameLocal.clip.TraceBounds(trace, launchPos, enemyPos, idBounds(-traceRadius, traceRadius), traceMask, this);
+	trace_t trace;
+	idVec3	traceRadius		= spawnArgs.GetVector("projectile_trace_radius", "4 4 4");
+	float	traceMask		= MASK_SHOT_BOUNDINGBOX;
+	gameLocal.clip.TraceBounds(trace, launchPos, enemyPos, idBounds(-traceRadius, traceRadius), traceMask, this);
 
 	//is the trace hitting something else than the desired enemy?
-		idEntity *traceEnt = gameLocal.entities[trace.c.entityNum];
+	idEntity *traceEnt = gameLocal.entities[trace.c.entityNum];
 
-		if( trace.fraction < 1 && traceEnt && traceEnt != enemy.GetEntity() )
+	if( trace.fraction < 1 && traceEnt && traceEnt != enemy.GetEntity() )
+	{
+		//if it is an AI and friendy fire is not wanted, check whether it's the enemy of at least one alerted camera
+		if( traceEnt->IsType(idAI::Type) && spawnArgs.GetBool("friendly_fire", "1") )
 		{
-			//if it is an AI and friendy fire is not wanted, check whether it's the enemy of at least one alerted camera
-			if( traceEnt->IsType(idAI::Type) && spawnArgs.GetBool("friendly_fire", "1") )
+			bool friendlyToCam = true;
+
+			for (int i = 0; i < cams.Num(); i++)
 			{
-				bool friendlyToCam = true;
+				idSecurityCamera *cam = static_cast<idSecurityCamera*>( cams[i].GetEntity() );
+				if( !cam )
+					continue;
 
-				for (int i = 0; i < cams.Num(); i++)
-				{
-					idSecurityCamera *cam = static_cast<idSecurityCamera*>( cams[i].GetEntity() );
-					if( !cam )
-						continue;
-
-					if( cam->GetSecurityCameraState() == 3 && gameLocal.m_RelationsManager->GetRelNum( cam->team, traceEnt->team ) == -1 )
-						friendlyToCam = false;
-				}
-
-				if( friendlyToCam )
-					return false;
+				if( cam->GetSecurityCameraState() == 3 && gameLocal.m_RelationsManager->GetRelNum( cam->team, traceEnt->team ) == -1 )
+					friendlyToCam = false;
 			}
 
-			//otherwise check if it's attached to the enemy
-			else if( ent && traceEnt->GetBindMaster() != ent )
-			{
+			if( friendlyToCam )
 				return false;
-			}
 		}
+		//otherwise check if it's attached to the enemy
+		else if( ent && traceEnt->GetBindMaster() != ent )
+		{
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -623,7 +622,6 @@ idVec3 idTurret::GetEnemyPosition( idEntity *ent )
 		idPlayer *player = static_cast<idPlayer *>(ent);
 		enemyPos = player->GetEyePosition() - idVec3{ 0,0,6 };
 	}
-
 	else if( ent )
 	{
 		enemyPos = ent->GetPhysics()->GetOrigin();
@@ -641,7 +639,7 @@ idVec3 idTurret::GetEnemyPosition( idEntity *ent )
 		idVec3		launchPos		= GetPhysics()->GetOrigin() + ( spawnArgs.GetVector("projectile_offset", "0 0 0") * GetPhysics()->GetAxis() );
 		idVec3		enemyVelocity	= ent->GetPhysics()->GetLinearVelocity();
 		float		projectileSpeed	= spawnArgs.GetFloat("projectile_speed", "600");
-		float		distToEnemy		= ( enemyPos - launchPos ).LengthFast();
+		float		distToEnemy		= ( enemyPos - launchPos ).Length();
 
 		//is an intercept possible or are the projectile and enemy speed too similar?
 		//otherwise use a less accurate prediction method
@@ -674,38 +672,40 @@ idAngles idTurret::GetAttackAngles( idVec3 enemyPos )
 void idTurret::ShootCannon( idVec3 enemyPos )
 {	
 	//set launch parameters
-		idVec3		launchPos		= GetPhysics()->GetOrigin() + ( spawnArgs.GetVector("projectile_offset", "0 0 0") * GetPhysics()->GetAxis() );
+	idVec3		launchPos		= GetPhysics()->GetOrigin() + ( spawnArgs.GetVector("projectile_offset", "0 0 0") * GetPhysics()->GetAxis() );
 
-		float		accuracy		= spawnArgs.GetFloat("accuracy", "0");			//the launch direction of the projectile will vary by a random number of degrees up to the value specified in this spawnarg. Set to 0 for perfect accuracy.
-		idAngles	anglesToEnemy	= ( enemyPos - launchPos ).ToAngles().Normalize180();	
+	//Note: the launch direction of the projectile will vary by a random number of degrees up to the value specified in this spawnarg.
+	//Set to 0 for perfect accuracy.
+	float		accuracy		= spawnArgs.GetFloat("accuracy", "0");
+	idAngles	anglesToEnemy	= ( enemyPos - launchPos ).ToAngles().Normalize180();	
 
-		idAngles launchAngles = idAngles{ 0,0,0 };
-			launchAngles.pitch	= anglesToEnemy.pitch + ( 1 - 2 * gameLocal.random.RandomFloat() * accuracy );
-			launchAngles.yaw	= anglesToEnemy.yaw + ( 1 - 2 * gameLocal.random.RandomFloat() * accuracy );
-			launchAngles.roll	= anglesToEnemy.roll + ( 1 - 2 * gameLocal.random.RandomFloat() * accuracy );
+	idAngles launchAngles = idAngles{ 0,0,0 };
+	launchAngles.pitch	= anglesToEnemy.pitch + ( 1 - 2 * gameLocal.random.RandomFloat() * accuracy );
+	launchAngles.yaw	= anglesToEnemy.yaw + ( 1 - 2 * gameLocal.random.RandomFloat() * accuracy );
+	launchAngles.roll	= anglesToEnemy.roll + ( 1 - 2 * gameLocal.random.RandomFloat() * accuracy );
 
-		idVec3	projDir			= launchAngles.ToForward().Normalized();
-		float	distToTarget	= ( enemyPos - launchPos ).LengthFast();
-		idVec3	projVel			= ( enemyPos - launchPos ) * ( spawnArgs.GetFloat("projectile_speed", "600") / distToTarget);
+	idVec3	projDir			= launchAngles.ToForward().Normalized();
+	float	distToTarget	= ( enemyPos - launchPos ).Length();
+	idVec3	projVel			= ( enemyPos - launchPos ) * ( spawnArgs.GetFloat("projectile_speed", "600") / distToTarget);
 
 	//spawn and launch the projectile
-		idDict	args;
+	idDict	args;
 
-		args.Set( "classname", spawnArgs.GetString("def_projectile", "atdm:turret01_projectile") );
-		args.Set( "origin", launchPos.ToString() );
-		args.Set( "velocity", projVel.ToString() );
-		if( enemy.GetEntity() )
-			args.Set( "enemy", enemy.GetEntity()->name.c_str() );
+	args.Set( "classname", spawnArgs.GetString("def_projectile", "atdm:turret01_projectile") );
+	args.Set( "origin", launchPos.ToString() );
+	args.Set( "velocity", projVel.ToString() );
+	if( enemy.GetEntity() )
+		args.Set( "enemy", enemy.GetEntity()->name.c_str() );
 
-		idEntity *projectile = NULL;
-		if( gameLocal.SpawnEntityDef(args, &projectile, false) && projectile )
-			static_cast<idProjectile *>(projectile)->Launch( launchPos, projDir, idVec3{0.0f,0.0f,0.0f} );
+	idEntity *projectile = NULL;
+	if( gameLocal.SpawnEntityDef(args, &projectile, false) && projectile )
+		static_cast<idProjectile *>(projectile)->Launch( launchPos, projDir, idVec3{0.0f,0.0f,0.0f} );
 
 	//try to rout enemies, if enabled
-		RoutEnemies();
+	RoutEnemies();
 
 	//play sound and visual sfx
-		StartSound( "snd_fire", 8, 0, false, NULL );
+	StartSound( "snd_fire", 8, 0, false, NULL );
 
 	//provide a script hook for scripts, i.e. to generate FX
 	idStr thread = spawnArgs.GetString("script_fired", "");
@@ -739,7 +739,7 @@ void idTurret::RoutEnemies( void )
 	for ( newAI = gameLocal.spawnedAI.Next(); newAI != NULL; newAI = newAI->aiNode.Next() )
 	{
 		//is this AI close enough to the attacked enemy?
-		if( ( newAI->GetPhysics()->GetOrigin() - ai->GetPhysics()->GetOrigin() ).LengthFast() > routRadius)
+		if( ( newAI->GetPhysics()->GetOrigin() - ai->GetPhysics()->GetOrigin() ).Length() > routRadius)
 			continue;
 
 		//is this the enemy again?
@@ -786,7 +786,6 @@ void idTurret::SetPower( bool newState )
 		nextAttackCheck = 0;
 		BecomeActive(TH_THINK);
 	}
-
 	else
 	{
 		Event_SetSkin( spawnArgs.GetString("skin_off", "turret_off") );
@@ -974,7 +973,6 @@ void idTurret::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 		idEntity::BecomeBroken(inflictor);
 		Event_SetSkin( spawnArgs.GetString("skin_broken", "turret_off") );
 	}
-
 	// Turret was already broken, it's now being damaged again. Should it flinderize now?
 	else if ( m_bFlinderize && !flinderized )
 	{
@@ -1108,7 +1106,6 @@ void idTurret::TriggerSparks( void )
 		{
 			if ( sparksOn == m_bPower )
 				return;
-
 			else
 				sparksOn = m_bPower;
 		}
@@ -1117,7 +1114,6 @@ void idTurret::TriggerSparks( void )
 	//Create a func_emitter if none exists yet
 	if ( !sparks.GetEntity() )
 		AddSparks();
-
 	//Otherwise use the existing one
 	else
 		sparks.GetEntity()->Activate(NULL);
