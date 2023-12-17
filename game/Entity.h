@@ -1742,6 +1742,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_StimEnable(int stimType, int state);
 	void					Event_StimClearIgnoreList(int stimType);
 	void					Event_StimEmit(int stimType, float radius, idVec3& stimOrigin);
+	void					Event_StimSetScriptBased(int stimType, bool state);
 	void					Event_ResponseAdd(int stimType);
 	void					Event_ResponseRemove(int stimType);
 	void					Event_ResponseEnable(int stimType, int State);

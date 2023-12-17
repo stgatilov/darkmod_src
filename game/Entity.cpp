@@ -443,6 +443,10 @@ const idEventDef EV_StimEmit( "StimEmit",
 			  'f', "radius", "How far the stim will reach. Pass negative to use the radius settings on the entity.",
 			  'v', "stimOrigin", "Emit the stim from here."), EV_RETURNS_VOID, 
 	"Emits a stim in a radius around the specified origin. The entity from which this event is called needs to have the corresponding stim setup on itself, it does not need to be active.");
+const idEventDef EV_StimSetScriptBased( "StimSetScriptBased", 
+	EventArgs('d', "type", "Index ID of the stim to alter, i.e. 21 or STIM_TRIGGER for a trigger stim.",
+			  'd', "state", "New state."), EV_RETURNS_VOID, 
+	"Converts a stim to being script-based. It will only be emitted when a script calls StimEmit on the entity.");
 const idEventDef EV_ResponseEnable( "ResponseEnable", EventArgs('d', "type", "", 'd', "state", "0 = disabled, 1 = enabled"), EV_RETURNS_VOID, "");
 const idEventDef EV_ResponseAdd( "ResponseAdd", EventArgs('d', "type", ""), EV_RETURNS_VOID, "");
 const idEventDef EV_ResponseRemove( "ResponseRemove", EventArgs('d', "type", ""), EV_RETURNS_VOID, "");
@@ -673,6 +677,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_StimEnable,			idEntity::Event_StimEnable)
 	EVENT( EV_StimClearIgnoreList,	idEntity::Event_StimClearIgnoreList)
 	EVENT( EV_StimEmit,				idEntity::Event_StimEmit)
+	EVENT( EV_StimSetScriptBased,	idEntity::Event_StimSetScriptBased)
 	EVENT( EV_ResponseEnable,		idEntity::Event_ResponseEnable)
 	EVENT( EV_ResponseAdd,			idEntity::Event_ResponseAdd)
 	EVENT( EV_ResponseRemove,		idEntity::Event_ResponseRemove)
@@ -9671,6 +9676,17 @@ void idEntity::Event_StimEmit(int stimType, float radius, idVec3& stimOrigin)
 		stim->m_bScriptFired = true;
 		stim->m_ScriptRadiusOverride = radius;
 	}
+}
+
+void idEntity::Event_StimSetScriptBased(int stimType, bool state)
+{
+	CStimResponseCollection* srColl = GetStimResponseCollection();
+	assert(srColl != NULL);
+	const CStimPtr& stim = srColl->GetStimByType( static_cast<StimType>(stimType) );
+	if( stim == NULL )
+		return;
+
+	stim->m_bScriptBased = state;
 }
 
 void idEntity::Event_ResponseEnable(int stimType, int enabled)
