@@ -50,10 +50,10 @@ public:
 	virtual void	Show( void );
 
 	void			SaveState( idDict *args );
-	virtual void	SetColor( const float red, const float green, const float blue );
-	virtual void	SetColor( const idVec4 &color );
-	virtual void	GetColor( idVec3 &out ) const;
-	virtual void	GetColor( idVec4 &out ) const;
+	virtual void	SetColor( const idVec3 &color ) override;
+	virtual void	SetColor( const idVec4 &color ) override;
+	virtual void	GetColor( idVec3 &out ) const override;
+	virtual void	GetColor( idVec4 &out ) const override;
 
 	/**
 	* Tels: idLight::GetLightOrigin returns the origin of the light in the world. This

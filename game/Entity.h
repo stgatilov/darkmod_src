@@ -535,7 +535,7 @@ public:
 													// refreshed to update surface properties after a skin change. CM will be regenerated 
 													// from the original model file with the new skin. -- SteveL #4232
 	void					SetShaderParm( int parmnum, float value );
-	virtual void			SetColor( const float red, const float green, const float blue );
+	void					SetColor( const float red, const float green, const float blue ) { SetColor( idVec3(red, green, blue) ); }
 	virtual void			SetColor( const idVec3 &color );
 	virtual void			GetColor( idVec3 &out ) const;
 	virtual void			SetColor( const idVec4 &color );

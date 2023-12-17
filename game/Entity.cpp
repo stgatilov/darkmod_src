@@ -2720,21 +2720,10 @@ void idEntity::SetShaderParm( int parmnum, float value )
 idEntity::SetColor
 ================
 */
-void idEntity::SetColor( const float red, const float green, const float blue ) {
-	renderEntity.shaderParms[ SHADERPARM_RED ]		= red;
-	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= green;
-	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= blue;
-	// tels: TODO: See note in idEntity::SetShaderParm about optimizing this.
-	UpdateVisuals();
-}
-
-/*
-================
-idEntity::SetColor
-================
-*/
 void idEntity::SetColor( const idVec3 &color ) {
-	SetColor( color[ 0 ], color[ 1 ], color[ 2 ] );
+	renderEntity.shaderParms[ SHADERPARM_RED ]		= color.x;
+	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= color.y;
+	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= color.z;
 	// tels: TODO: See note in idEntity::SetShaderParm about optimizing this.
 	UpdateVisuals();
 }
