@@ -6001,7 +6001,7 @@ void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		}
 		else
 		{
-			Pain( inflictor, attacker, damage, dir, location );
+			Pain( inflictor, attacker, damage, dir, location, damageDef );
 		}
 	}
 }
@@ -6059,7 +6059,7 @@ Called whenever an entity recieves damage.  Returns whether the entity responds 
 This is a virtual function that subclasses are expected to implement.
 ============
 */
-bool idEntity::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+bool idEntity::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef ) {
 	return false;
 }
 

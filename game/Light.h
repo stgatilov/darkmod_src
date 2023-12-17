@@ -73,7 +73,7 @@ public:
 	void			FadeOut( float time );
 	void			FadeIn( float time );
 	void			FadeTo( idVec3 color, float time );
-	void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	void			BecomeBroken( idEntity *activator );
 	qhandle_t		GetLightDefHandle( void ) const { return lightDefHandle; }
 	void			SetLightParent( idEntity *lparent ) { lightParent = lparent; }

@@ -59,12 +59,12 @@ public:
 	virtual void				Think( void );
 	virtual void				ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 	virtual void				AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) override;
-	virtual void				AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
-	virtual void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual void				AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) override;
+	virtual void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	// SteveL #4180: Let all damage types paint crack decals. Extend idEntity::Damage()
 	virtual void				Damage( idEntity *inflictor, idEntity *attacker, 
 										const idVec3 &dir, const char *damageDefName, 
-										const float damageScale, const int location, trace_t *tr = NULL );
+										const float damageScale, const int location, trace_t *tr = NULL ) override;
 
 	void						ProjectDecal( const idVec3 &point, const idVec3 &dir, const int time, const char *damageDefName );
 	bool						IsBroken( void ) const;

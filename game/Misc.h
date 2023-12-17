@@ -187,7 +187,7 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 	void				Spawn( void );
-	void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 
 private:
 	int					count;

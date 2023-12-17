@@ -39,10 +39,10 @@ public:
 	virtual void			Think( void );
 
 	virtual renderView_t *	GetRenderView();
-	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
-	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
+	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict *damageDef ) override;
 	virtual	void			Damage(idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName,
-														const float damageScale, const int location, trace_t *tr = NULL);
+														const float damageScale, const int location, trace_t *tr = NULL) override;
 	virtual void			Present(void);
 	int						GetSecurityCameraState( void );
 

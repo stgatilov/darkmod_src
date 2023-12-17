@@ -106,7 +106,7 @@ public :
 	void					SetReplaced(); // grayman #2908
 
 	virtual void			Think( void );
-	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 	virtual void			Explode( const trace_t &collision, idEntity *ignore );
 	virtual void			Bounced( const trace_t &collision, const idVec3 &velocity, idEntity *bounceEnt );
@@ -269,7 +269,7 @@ public :
 	void					Create( idEntity *owner, const idVec3 &start, const idMat3 &axis );
 	void					Launch( void );
 	void					Think( void );
-	void					Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	void					Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	void					Explode( void );
 	void					Fizzle( void );
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );

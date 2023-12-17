@@ -125,7 +125,7 @@ public:
 
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 									const char *damageDefName, const float damageScale,
-									const int location, trace_t *tr = NULL );
+									const int location, trace_t *tr = NULL ) override;
 	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
 
 	void					SetCombatModel( void );
@@ -230,7 +230,7 @@ public:
 
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 									const char *damageDefName, const float damageScale,
-									const int location, trace_t *tr = NULL );
+									const int location, trace_t *tr = NULL ) override;
 	void					SetCombatModel( void );
 	idClipModel *			GetCombatModel( void ) const;
 
@@ -427,7 +427,7 @@ public:
 	void					Restore( idRestoreGame *savefile );
 	virtual void			Present( void );
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName,
-									const float damageScale, const int location, trace_t *tr = NULL );
+									const float damageScale, const int location, trace_t *tr = NULL ) override;
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
 
 protected:
