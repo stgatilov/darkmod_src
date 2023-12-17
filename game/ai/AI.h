@@ -1460,7 +1460,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					StaticMove( void );
 
 	// greebo: Overrides idActor::PlayFootStepSound()
-	virtual void			PlayFootStepSound();
+	virtual void			PlayFootStepSound() override;
 
 	// greebo: Plays the given bark sound (will override any sounds currently playing)
 	virtual void			Bark(const idStr& soundName);

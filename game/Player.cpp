@@ -11372,7 +11372,12 @@ void idPlayer::SetJumpHinderance( const char *source, float mCap, float aCap )
 	}
 }
 
-void idPlayer::PlayFootStepSound(idVec3* pPointOfContact /*= NULL*/, const bool skipTimeCheck /*= false */)
+void idPlayer::PlayFootStepSound()
+{
+	PlayPlayerFootStepSound();
+}
+
+void idPlayer::PlayPlayerFootStepSound(idVec3* pPointOfContact /*= NULL*/, const bool skipTimeCheck /*= false */)
 {
 	// Check wether there is actual contact with the ground
 	const idMaterial* contactMaterial = NULL;

@@ -4407,7 +4407,7 @@ void idPhysics_Player::StartMantle
 		// We make contact with the feet. Play footstep sound and the endpos
 		idPlayer* pPlayer = dynamic_cast<idPlayer*>(self);
 		if (pPlayer)
-			pPlayer->PlayFootStepSound(&endPos, true);
+			pPlayer->PlayPlayerFootStepSound(&endPos, true);
 
 		// Play grunt at high velocity
 		if (current.velocity.LengthSqr() >
