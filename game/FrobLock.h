@@ -64,8 +64,8 @@ public:
 	void			UnlockTargets();
 	void			CloseAndLockTargets();
 
-	virtual bool	CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse);	// Overrides idEntity::CanBeUsedBy
-	virtual bool	UseBy(EImpulseState impulseState, const CInventoryItemPtr& item);	// Overrides idEntity::UseBy
+	virtual bool	CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) override;
+	virtual bool	UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item) override;
 
 	virtual void	AttackAction(idPlayer* player); // Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
 

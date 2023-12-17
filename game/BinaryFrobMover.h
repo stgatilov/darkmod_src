@@ -79,8 +79,8 @@ public:
 
 	virtual void			ToggleOpen();
 	virtual void			ToggleLock();
-	virtual bool			CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse); // grayman #3643
-	virtual bool			UseBy(EImpulseState impulseState, const CInventoryItemPtr& item); // grayman #3643
+	virtual bool			CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) override; // grayman #3643
+	virtual bool			UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item) override; // grayman #3643
 	virtual void			Event_ClearPlayerImmobilization(idEntity* player); // grayman #3643
 	virtual void			Event_Lock_StatusUpdate(); // grayman #3643
 	virtual void			Event_Lock_OnLockPicked(); // grayman #3643

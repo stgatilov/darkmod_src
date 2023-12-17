@@ -188,12 +188,12 @@ void CFrobLock::ToggleLock()
 	}
 }
 
-bool CFrobLock::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
+bool CFrobLock::CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
 	// First, check if the frob master can be used
 	// If this doesn't succeed, perform additional checks
 	idEntity* master = GetFrobMaster();
-	if( master != NULL && master->CanBeUsedBy(item, isFrobUse) )
+	if( master != NULL && master->CanBeUsedByItem(item, isFrobUse) )
 	{
 		return true;
 	}
@@ -226,20 +226,20 @@ bool CFrobLock::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 	return false;
 }
 
-bool CFrobLock::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+bool CFrobLock::UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	if (item == NULL) return false;
 
 	// Pass the call on to the master, if we have one
 	if (GetFrobMaster() != NULL) 
 	{
-		return GetFrobMaster()->UseBy(impulseState, item);
+		return GetFrobMaster()->UseByItem(impulseState, item);
 	}
 
 	// Call the used_action_script via the generic idEntity method, if desired by the mapper
 	if ( spawnArgs.GetBool("call_used_action_script", "0") )
 	{
-		idEntity::UseBy(impulseState, item);
+		idEntity::UseByItem(impulseState, item);
 	}
 
 	assert(item->Category() != NULL);

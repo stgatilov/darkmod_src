@@ -193,8 +193,8 @@ private:
 	void					AddDefaultDamageEffect( const trace_t &collision, const idVec3 &velocity );
 
 	void					AddObjectsToSaveGame(idSaveGame* savefile); // grayman #2478
-	bool					CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse); // grayman #2478
-	bool					UseBy(EImpulseState impulseState, const CInventoryItemPtr& item); // grayman #2478
+	bool					CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) override; // grayman #2478
+	bool					UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item) override; // grayman #2478
 	bool					IsLocked(); // grayman #2478
 	void					Event_ClearPlayerImmobilization(idEntity* player); // grayman #2478
 

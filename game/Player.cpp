@@ -10173,10 +10173,10 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 
 	bool itemIsUsable = ent->spawnArgs.GetBool("usable");
 	
-	if ( (highlightedEntity != NULL) && itemIsUsable && highlightedEntity->CanBeUsedBy(item, isFrobUse))
+	if ( (highlightedEntity != NULL) && itemIsUsable && highlightedEntity->CanBeUsedByItem(item, isFrobUse))
 	{
 		// Pass the use call
-		if (highlightedEntity->UseBy(impulseState, item))
+		if (highlightedEntity->UseByItem(impulseState, item))
 		{
 			// Item could be used, return TRUE, we're done
 			return true;
@@ -11066,7 +11066,7 @@ void idPlayer::PerformFrobCheckInternal()
 		// Inventory items might impose a reduction of the frob distance to some entities
 		if ( curItem != NULL ) 
 		{
-			bool bCanBeUsed = ent->CanBeUsedBy(curItem, true);
+			bool bCanBeUsed = ent->CanBeUsedByItem(curItem, true);
 
 			if ( bCanBeUsed && ( traceDist > curItem->GetFrobDistanceCap() + extraSpace ) )
 			{
@@ -11166,7 +11166,7 @@ void idPlayer::PerformFrobCheckInternal()
 
 		if (curItem != NULL) // grayman #2478 - rearranged code
 		{
-			bool canBeUsed = ent->CanBeUsedBy(curItem, true);
+			bool canBeUsed = ent->CanBeUsedByItem(curItem, true);
 
 			// Inventory items might impose a reduction of the frob distance to some entities.
 			// grayman #2478 - If the frobbed entity is a mine, increase the distance.
@@ -11687,7 +11687,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
 		// Only allow items with UseOnFrob == TRUE to be used when frobbing
-		if ( item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedBy(item, true))
+		if ( item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedByItem(item, true))
 		{
 			// Try to use the item
 			bool couldBeUsed = UseInventoryItem( impulseState, item, USERCMD_MSEC, true ); // true => is frob action

@@ -847,7 +847,7 @@ public:
 	 *
 	 * @isFrobUse: This is true if the Use action originated from a frob button hit.
 	 */
-	virtual bool CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse);
+	virtual bool CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse);
 
 	/**
 	 * greebo: Returns TRUE if the given entity matches this entity, i.e.
@@ -859,7 +859,7 @@ public:
 	 * The standard entity returns FALSE, this method needs to be overridden 
 	 * by the subclasses.
 	 */
-	virtual bool CanBeUsedBy(idEntity* entity, const bool isFrobUse);
+	virtual bool CanBeUsedByEntity(idEntity* entity, const bool isFrobUse);
 
 	/**
 	 * greebo: Uses this entity by the given inventory item. The button state
@@ -868,7 +868,7 @@ public:
 	 *
 	 * @returns: TRUE if the item could be used, FALSE otherwise.
 	 */
-	virtual bool UseBy(EImpulseState nState, const CInventoryItemPtr& item);
+	virtual bool UseByItem(EImpulseState nState, const CInventoryItemPtr& item);
 
 	/**
 	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::PerformFrobCheck

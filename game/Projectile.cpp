@@ -1926,7 +1926,7 @@ idProjectile::CanBeUsedBy - grayman #2478
 =========================
 */
 
-bool idProjectile::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
+bool idProjectile::CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
 	if (item == NULL)
 	{
@@ -1954,11 +1954,11 @@ bool idProjectile::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobU
 
 /*
 ===================
-idProjectile::UseBy - grayman #2478
+idProjectile::UseByItem - grayman #2478
 ===================
 */
 
-bool idProjectile::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+bool idProjectile::UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	if (item == NULL)
 	{

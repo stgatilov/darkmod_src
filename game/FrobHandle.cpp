@@ -99,16 +99,16 @@ idEntity* CFrobHandle::GetFrobMaster()
 	return m_FrobMaster;
 }
 
-bool CFrobHandle::CanBeUsedBy(const CInventoryItemPtr& item, bool isFrobUse)
+bool CFrobHandle::CanBeUsedByItem(const CInventoryItemPtr& item, bool isFrobUse)
 {
 	// Pass the call to the master, if we have one, otherwise let the base class handle it
-	return (m_FrobMaster != NULL) ? m_FrobMaster->CanBeUsedBy(item, isFrobUse) : idEntity::CanBeUsedBy(item, isFrobUse);
+	return (m_FrobMaster != NULL) ? m_FrobMaster->CanBeUsedByItem(item, isFrobUse) : idEntity::CanBeUsedByItem(item, isFrobUse);
 }
 
-bool CFrobHandle::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+bool CFrobHandle::UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	// Pass the call to the master, if we have one, otherwise let the base class handle it
-	return (m_FrobMaster != NULL) ? m_FrobMaster->UseBy(impulseState, item) : idEntity::UseBy(impulseState, item);
+	return (m_FrobMaster != NULL) ? m_FrobMaster->UseByItem(impulseState, item) : idEntity::UseByItem(impulseState, item);
 }
 
 void CFrobHandle::AttackAction(idPlayer* player)

@@ -9446,7 +9446,7 @@ void idEntity::AttackAction(idPlayer* player)
 	}
 }
 
-bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
+bool idEntity::CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
 	if (item == NULL)
 	{
@@ -9457,7 +9457,7 @@ bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 	idEntity* master = GetFrobMaster();
 	if ( master != NULL )
 	{
-		return  master->CanBeUsedBy(item, isFrobUse);
+		return  master->CanBeUsedByItem(item, isFrobUse);
 	}
 
 	// No frob master set
@@ -9483,7 +9483,7 @@ bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 	return (bMatchInvName || bMatchCategory);
 }
 
-bool idEntity::CanBeUsedBy(idEntity* entity, const bool isFrobUse) 
+bool idEntity::CanBeUsedByEntity(idEntity* entity, const bool isFrobUse) 
 {
 	if (entity == NULL) return false;
 
@@ -9491,7 +9491,7 @@ bool idEntity::CanBeUsedBy(idEntity* entity, const bool isFrobUse)
 	idEntity* master = GetFrobMaster();
 
 	if (master != NULL) 
-		return master->CanBeUsedBy(entity, isFrobUse);
+		return master->CanBeUsedByEntity(entity, isFrobUse);
 
 	// No frob master set
 	// Check entity name, inv_name, inv_category, and classname
@@ -9516,14 +9516,14 @@ bool idEntity::CanBeUsedBy(idEntity* entity, const bool isFrobUse)
 	return (bMatchInvName || bMatchCategory);
 }
 
-bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+bool idEntity::UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	// Redirect the call to the master if we have one
 	idEntity* master = GetFrobMaster();
 
 	if (master != NULL)
 	{
-		return master->UseBy(impulseState, item);
+		return master->UseByItem(impulseState, item);
 	}
 
 	// no master, continue...
@@ -11036,7 +11036,7 @@ void idEntity::Event_CheckAbsence()
 
 void idEntity::Event_CanBeUsedBy( idEntity *itemEnt )
 {
-	idThread::ReturnInt( CanBeUsedBy( itemEnt, true ) );
+	idThread::ReturnInt( CanBeUsedByEntity( itemEnt, true ) );
 }
 
 

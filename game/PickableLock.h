@@ -26,7 +26,7 @@ extern const idEventDef EV_TDM_Lock_OnLockStatusChange; // called when the lock 
  * greebo: This implements the Lock part of a door or chest.
  * It can be set up as being pickable by lockpicks.
  *
- * The class provides UseBy() methods and notifies its master
+ * The class provides UseByItem() methods and notifies its master
  * about lock state changes using the event system.
  */
 class PickableLock :
