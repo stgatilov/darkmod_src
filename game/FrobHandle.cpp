@@ -119,13 +119,13 @@ void CFrobHandle::AttackAction(idPlayer* player)
 	}
 }
 
-void CFrobHandle::FrobAction(bool bMaster)
+/*void CFrobHandle::FrobAction(bool bMaster)
 {
 	if (m_FrobMaster != NULL)
 	{
 		m_FrobMaster->FrobAction(bMaster);
 	}
-}
+}*/
 
 void CFrobHandle::ToggleLock() 
 {}

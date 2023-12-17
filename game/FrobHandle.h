@@ -51,7 +51,9 @@ public:
 	virtual bool			UseBy(EImpulseState impulseState, const CInventoryItemPtr& item);	// Overrides idEntity::UseBy
 	virtual void			AttackAction(idPlayer* player);
 
-	void					FrobAction(bool bMaster);
+	// stgatilov: this method does NOT override idEntity::FrobAction and is never called
+	// this has been so for ages, so I'm not sure I want to change it now
+	//void					FrobAction(bool bMaster) override;
 
 	// These functions need to be disabled on the handle. Therefore
 	// they are provided but empty.
