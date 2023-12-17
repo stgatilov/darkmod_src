@@ -9675,6 +9675,7 @@ void idEntity::Event_StimEmit(int stimType, float radius, idVec3& stimOrigin)
 	if ( stim->m_bScriptBased ) {
 		stim->m_bScriptFired = true;
 		stim->m_ScriptRadiusOverride = radius;
+		stim->m_ScriptPositionOverride = stimOrigin;
 	}
 }
 

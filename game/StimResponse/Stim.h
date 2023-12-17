@@ -117,10 +117,15 @@ public:
 	**/
 	bool					m_bScriptFired;
 	/**
-	* Radius override passed to Event_StimEmit
+	* Radius override passed to Event_StimEmit (negative means none)
 	* Reset in gameLocal::ProcessStimResponse
 	**/
 	float					m_ScriptRadiusOverride;
+	/**
+	* Position (origin) override passed to Event_StimEmit (exactly zero means none)
+	* Reset in gameLocal::ProcessStimResponse
+	**/
+	idVec3					m_ScriptPositionOverride;
 
 	/**
 	* Milliseconds between interleaving for use with frame-based timer check (not StimTimer)
