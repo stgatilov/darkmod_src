@@ -110,9 +110,9 @@ public:
 						idSndWindow() { showWaveform = false; }
 						~idSndWindow() {}
 
-	bool				InitFromFile( const char *qpath, bool looping );
-	cinData_t			ImageForTime( int milliseconds );
-	int					AnimationLength();
+	virtual bool		InitFromFile( const char *qpath, bool looping, bool withAudio ) override;
+	virtual cinData_t	ImageForTime( int milliseconds ) override;
+	virtual int			AnimationLength() override;
 
 private:
 	bool				showWaveform;

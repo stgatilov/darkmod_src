@@ -35,11 +35,11 @@ public:
 	static void InitCinematic();
 	static void ShutdownCinematic();
 
-	virtual bool			InitFromFile( const char *qpath, bool looping, bool withAudio );
-	virtual cinData_t		ImageForTime( int milliseconds );
-	virtual int				AnimationLength();
-	virtual void			Close();
-	virtual void			ResetTime(int time);
+	virtual bool			InitFromFile( const char *qpath, bool looping, bool withAudio ) override;
+	virtual cinData_t		ImageForTime( int milliseconds ) override;
+	virtual int				AnimationLength() override;
+	virtual void			Close() override;
+	virtual void			ResetTime(int time) override;
 
 private:
 	size_t					mcomp[256];

@@ -39,13 +39,13 @@ public:
 	static void			InitCinematic(void);
 	static void			ShutdownCinematic(void);
 
-	virtual bool			InitFromFile(const char *qpath, bool looping, bool withAudio);
-	virtual int				AnimationLength();
-	virtual cinData_t		ImageForTime(int milliseconds);
-	virtual bool SoundForTimeInterval(int sampleOffset44k, int *sampleSize, float *output);
-	virtual int GetRealSoundOffset(int sampleOffset44k) const;
-	virtual cinStatus_t GetStatus() const;
-	virtual const char *GetFilePath() const;
+	virtual bool			InitFromFile(const char *qpath, bool looping, bool withAudio) override;
+	virtual int				AnimationLength() override;
+	virtual cinData_t		ImageForTime(int milliseconds) override;
+	virtual bool SoundForTimeInterval(int sampleOffset44k, int *sampleSize, float *output) override;
+	virtual int GetRealSoundOffset(int sampleOffset44k) const override;
+	virtual cinStatus_t GetStatus() const override;
+	virtual const char *GetFilePath() const override;
 
 
 	virtual void			ResetTime(int time);
