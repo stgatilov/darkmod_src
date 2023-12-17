@@ -369,7 +369,7 @@ jointHandle_t idAFAttachment::GetAttachJoint( void ) const
 /**
 * Return true if we can mantle this attachment, false otherwise.
 **/
-bool idAFAttachment::IsMantleable()
+bool idAFAttachment::IsMantleable() const
 {
 	return (!body || body->IsMantleable()) && idEntity::IsMantleable();
 }

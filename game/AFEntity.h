@@ -110,7 +110,7 @@ public:
 	// ishtvan: Added this
 	jointHandle_t			GetAttachJoint( void ) const;
 
-	bool					IsMantleable( void );
+	bool					IsMantleable( void ) const override;
 
 	virtual void			Think( void );
 
