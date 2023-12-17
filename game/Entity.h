@@ -1037,7 +1037,7 @@ public:
 	/**
 	* Reattach to a predefined attach position, otherwise same as above
 	**/
-	virtual void ReAttachToPos( const char *AttName, const char *PosName  );
+	virtual void ReAttachToPos( const char *AttName, const char *PosName );
 
 	/**
 	* Show or hide an attachment, by name or by attachment array index.
@@ -1858,7 +1858,7 @@ public:
 	* Ent is the entity being attached
 	* PosName is the optional position name to attach to.
 	**/
-	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL ) override;
 
 	/**
 	* Reattach an existing attachment
@@ -1867,7 +1867,7 @@ public:
 	* offset from that joint, and a (pitch, yaw, roll) angle vector that defines the 
 	* rotation of the attachment relative to the joint's orientation.
 	**/
-	virtual void			ReAttachToCoords( const char *AttName, idStr jointName, idVec3 offset, idAngles angles );
+	virtual void			ReAttachToCoordsOfJoint( const char *AttName, idStr jointName, idVec3 offset, idAngles angles );
 
 	/**
 	* Cache the animation rates from spawnargs

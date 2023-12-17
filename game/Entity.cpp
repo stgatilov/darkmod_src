@@ -8781,7 +8781,7 @@ void idAnimatedEntity::GetAttachingTransform( jointHandle_t jointHandle, idVec3 
 idAnimatedEntity::ReAttachToCoords
 ========================
 */
-void idAnimatedEntity::ReAttachToCoords
+void idAnimatedEntity::ReAttachToCoordsOfJoint
 	( const char *AttName, idStr jointName, 
 		const idVec3 offset, const idAngles angles  ) 
 {

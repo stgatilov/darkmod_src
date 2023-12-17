@@ -1812,7 +1812,7 @@ void idAFEntity_Base::ReAttachToPos
 	}
 }
 
-void idAFEntity_Base::ReAttachToCoords
+void idAFEntity_Base::ReAttachToCoordsOfJoint
 	( const char *AttName, idStr jointName, 
 		idVec3 offset, idAngles angles  )
 {
@@ -1843,7 +1843,7 @@ void idAFEntity_Base::ReAttachToCoords
 		bStoredAFBodyInfo = true;
 	}
 
-	idAnimatedEntity::ReAttachToCoords( AttName, jointName, offset, angles );
+	idAnimatedEntity::ReAttachToCoordsOfJoint( AttName, jointName, offset, angles );
 
 	// copy over the old AF body contents
 	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL

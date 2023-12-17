@@ -263,7 +263,7 @@ void Cmd_AttachmentOffset_f( const idCmdArgs &args )
 	offset.y = atof(args.Argv( 4 ));
 	offset.z = atof(args.Argv( 5 ));
 
-	actor->ReAttachToCoords( attName, joint, offset, pos->angleOffset );
+	actor->ReAttachToCoordsOfJoint( attName, joint, offset, pos->angleOffset );
 }
 
 /*
@@ -310,7 +310,7 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	angles.yaw = atof(args.Argv( 4 ));
 	angles.roll = atof(args.Argv( 5 ));
 
-	actor->ReAttachToCoords( attName, joint, pos->originOffset, angles );
+	actor->ReAttachToCoordsOfJoint( attName, joint, pos->originOffset, angles );
 }
 
 /*
