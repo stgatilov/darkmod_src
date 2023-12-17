@@ -33,6 +33,7 @@ public:
 #ifdef ENABLE_SSE_PROCESSORS
 	virtual void NormalizeTangents( idDrawVert *verts, const int numVerts );
 	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
+	using idSIMD_SSE::MinMax;	// avoid warning for hiding base methods
 	virtual	void MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count );
 	virtual void MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count );
 	virtual void DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes );
