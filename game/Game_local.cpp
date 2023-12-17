@@ -7750,13 +7750,6 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 					// Radius based stims
 					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities);
 					//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Entities touching bounds: %d\r", n);
-
-					if (stim->m_bScriptBased)
-					{
-						// stgatilov: clear fired state of script-driven stim
-						stim->m_bScriptFired = false;
-						stim->m_ScriptRadiusOverride = -1.0f;
-					}
 				}
 				
 				if (n > 0)
@@ -7776,6 +7769,14 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 
 				// The stim has fired, let it do any post-firing activity it may have
 				stim->PostFired(numResponses);
+
+				if (stim->m_bScriptBased)
+				{
+					// stgatilov: clear fired state of script-driven stim
+					// this should be done AFTER stim is processed, since overrides are during response processing
+					stim->m_bScriptFired = false;
+					stim->m_ScriptRadiusOverride = -1.0f;
+				}
 			}
 		}
 	}
