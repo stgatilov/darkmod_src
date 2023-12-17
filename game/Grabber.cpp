@@ -531,7 +531,7 @@ if (!cv_drag_new.GetBool()) {
 			int OnGroundCount = 0;
 			for( int i=0; i<AFPtr->m_GroundBodyList.Num(); i++ )
 			{
-				if( AFPtr->GetAFPhysics()->HasGroundContacts( AFPtr->m_GroundBodyList[i] ) )
+				if( AFPtr->GetAFPhysics()->HasGroundContactsAtJoint( AFPtr->m_GroundBodyList[i] ) )
 					OnGroundCount++;
 			}
 

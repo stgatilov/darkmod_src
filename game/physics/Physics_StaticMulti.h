@@ -113,9 +113,9 @@ public:	// common physics interface
 	void					AddContactEntity( idEntity *e );
 	void					RemoveContactEntity( idEntity *e );
 
-	bool					HasGroundContacts( void ) const;
-	bool					IsGroundEntity( int entityNum ) const;
-	bool					IsGroundClipModel( int entityNum, int id ) const;
+	bool					HasGroundContacts( void ) const override;
+	bool					IsGroundEntity( int entityNum ) const override;
+	bool					IsGroundClipModel( int entityNum, int id ) const override;
 
 	void					SetPushed( int deltaTime );
 	const idVec3 &			GetPushedLinearVelocity( const int id = 0 ) const;

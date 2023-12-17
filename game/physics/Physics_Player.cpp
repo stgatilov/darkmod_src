@@ -2365,7 +2365,7 @@ void idPhysics_Player::CheckClimbable( void )
 			{
 				// make sure rope segment is not touching the ground
 				int bodyID = m_RopeEntTouched.GetEntity()->BodyForClipModelId( trace.c.id );
-				if( !static_cast<idPhysics_AF *>(m_RopeEntTouched.GetEntity()->GetPhysics())->HasGroundContacts( bodyID ) )
+				if( !static_cast<idPhysics_AF *>(m_RopeEntTouched.GetEntity()->GetPhysics())->HasGroundContactsAtJoint( bodyID ) )
 				{
 					m_bRopeContact = true;
 					m_bJustHitRope = true;
@@ -2466,7 +2466,7 @@ void idPhysics_Player::CheckClimbable( void )
 				dist <= ROPE_DISTANCE
 				&& ( angleOff >= idMath::Cos( ROPE_ATTACHANGLE ) || bLookingUp )
 				&& (m_RopeEntTouched.GetEntity() != m_RopeEntity.GetEntity() || gameLocal.time > m_NextAttachTime)
-				&& !static_cast<idPhysics_AF *>(m_RopeEntTouched.GetEntity()->GetPhysics())->HasGroundContacts( touchedBody )
+				&& !static_cast<idPhysics_AF *>(m_RopeEntTouched.GetEntity()->GetPhysics())->HasGroundContactsAtJoint( touchedBody )
 			)
 		{
 				m_bRopeContact = true;

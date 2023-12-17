@@ -329,7 +329,7 @@ void CForce_Grab::Evaluate( int time )
 			bool inAir = true;
 			for (int i = 0; i < phys->GetNumBodies(); i++) {
 				totalMass += phys->GetMass(i);
-				if (phys->HasGroundContacts(i))
+				if (phys->HasGroundContactsAtJoint(i))
 					inAir = false;
 			}
 			float gravAccel = gameLocal.GetGravity().Length();

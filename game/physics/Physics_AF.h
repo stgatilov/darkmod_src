@@ -910,18 +910,18 @@ public:
 							// update the clip model positions
 	void					UpdateClipModels( void );
 	/**
-* DarkMod:
-* Returns the origin of the AF body nearest to the given point
-* 
-* If int pointer body is non-NULL, the body Id of the nearest body is written
-*	to this pointer.  Will be set to -1 if no body was found.
-**/
-idVec3					NearestBodyOrig( idVec3 point, int *bodyID = NULL );
+	 * DarkMod:
+	 * Returns the origin of the AF body nearest to the given point
+	 * 
+	 * If int pointer body is non-NULL, the body Id of the nearest body is written
+	 *	to this pointer.  Will be set to -1 if no body was found.
+	 */
+	idVec3					NearestBodyOrig( idVec3 point, int *bodyID = NULL );
 	/**
-* Returns true if the specified body is in contact with the ground
-* (Called by the rope climbing code)
-**/
-bool					HasGroundContacts( int id );
+	 * Returns true if the specified body is in contact with the ground
+	 * (Called by the rope climbing code)
+	 */
+	bool					HasGroundContactsAtJoint( int id );
 #ifdef MOD_WATERPHYSICS
 	// buoyancy stuff
 	void					SetLiquidDensity( float density ); // MOD_WATERPHYSICS
