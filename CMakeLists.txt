@@ -48,6 +48,7 @@ if (UNIX)
 			-Wno-unused-but-set-variable
 			-Wno-sign-compare               # in particular, int/size_t conversions
 			-Wno-format-security            # format string is often composed dynamically
+			-Woverloaded-virtual            # almost-overriding virtual functions is dangerous for us
 	)
 	# configure other compile options
 	add_compile_options(
