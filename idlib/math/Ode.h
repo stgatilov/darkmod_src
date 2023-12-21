@@ -56,9 +56,9 @@ class idODE_Euler : public idODE {
 
 public:
 						idODE_Euler( const int dim, const deriveFunction_t dr, const void *ud );
-	virtual				~idODE_Euler( void );
+	virtual				~idODE_Euler( void ) override;
 
-	virtual float		Evaluate( const float *state, float *newState, float t0, float t1 );
+	virtual float		Evaluate( const float *state, float *newState, float t0, float t1 ) override;
 
 protected:
 	float *				derivatives;	// space to store derivatives
@@ -74,9 +74,9 @@ class idODE_Midpoint : public idODE {
 
 public:
 						idODE_Midpoint( const int dim, const deriveFunction_t dr, const void *ud );
-	virtual				~idODE_Midpoint( void );
+	virtual				~idODE_Midpoint( void ) override;
 
-	virtual float		Evaluate( const float *state, float *newState, float t0, float t1 );
+	virtual float		Evaluate( const float *state, float *newState, float t0, float t1 ) override;
 
 protected:
 	float *				tmpState;
@@ -93,9 +93,9 @@ class idODE_RK4 : public idODE {
 
 public:
 						idODE_RK4( const int dim, const deriveFunction_t dr, const void *ud );
-	virtual				~idODE_RK4( void );
+	virtual				~idODE_RK4( void ) override;
 
-	virtual float		Evaluate( const float *state, float *newState, float t0, float t1 );
+	virtual float		Evaluate( const float *state, float *newState, float t0, float t1 ) override;
 
 protected:
 	float *				tmpState;
@@ -115,9 +115,9 @@ class idODE_RK4Adaptive : public idODE {
 
 public:
 						idODE_RK4Adaptive( const int dim, const deriveFunction_t dr, const void *ud );
-	virtual				~idODE_RK4Adaptive( void );
+	virtual				~idODE_RK4Adaptive( void ) override;
 
-	virtual float		Evaluate( const float *state, float *newState, float t0, float t1 );
+	virtual float		Evaluate( const float *state, float *newState, float t0, float t1 ) override;
 	void				SetMaxError( const float err );
 
 protected:

@@ -41,16 +41,15 @@ public:
 	PathTask(idPathCorner* path);
 
 	// Get the name of this task
-	virtual const idStr& GetName() const = 0;
+	virtual const idStr& GetName() const override = 0;
 
-	// Override the base Init method
-	virtual void Init(idAI* owner, Subsystem& subsystem);
+	virtual void Init(idAI* owner, Subsystem& subsystem) override;
 
-	virtual bool Perform(Subsystem& subsystem) = 0;
+	virtual bool Perform(Subsystem& subsystem) override = 0;
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 
 	// Class-specific methods

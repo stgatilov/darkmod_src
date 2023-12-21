@@ -37,14 +37,14 @@ public:
 
 	CLASS_PROTOTYPE( CMultiStateMoverButton );
 
-	void	Spawn();
+	void			Spawn();
 
 private:
 	bool	targetingOff; // grayman #3029
 
-	void	Event_RegisterSelfWithElevator();
-	void	ToggleOpen(); // grayman #3029
-	void	Event_RestoreTargeting( bool toc, bool too, bool two); // grayman #3029
+	void			Event_RegisterSelfWithElevator();
+	virtual void	ToggleOpen() override; // grayman #3029
+	void			Event_RestoreTargeting( bool toc, bool too, bool two); // grayman #3029
 };
 
 #endif /* __MULTISTATEMOVER_BUTTON_H_ */

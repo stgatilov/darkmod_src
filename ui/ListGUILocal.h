@@ -30,19 +30,19 @@ public:
 						idListGUILocal() { m_pGUI = NULL; m_water = 0; m_stateUpdates = true; }
 
 	// idListGUI interface
-	void				Config( idUserInterface *pGUI, const char *name ) { m_pGUI = pGUI; m_name = name; }
-	void				Add( int id, const idStr& s );
+	virtual void		Config( idUserInterface *pGUI, const char *name ) override { m_pGUI = pGUI; m_name = name; }
+	virtual void		Add( int id, const idStr& s ) override;
 						// use the element count as index for the ids
-	void				Push( const idStr& s );
-	bool				Del( int id );
-	void				Clear( void );
-	int					Num( void ) { return idList<idStr>::Num(); }
-	int					GetSelection( char *s, int size, int sel = 0 ) const; // returns the id, not the list index (or -1)
-	void				SetSelection( int sel );
-	int					GetNumSelections();
-	bool				IsConfigured( void ) const;
-	void				SetStateChanges( bool enable );
-	void				Shutdown( void );
+	virtual void		Push( const idStr& s ) override;
+	virtual bool		Del( int id ) override;
+	virtual void		Clear( void ) override;
+	virtual int			Num( void ) override { return idList<idStr>::Num(); }
+	virtual int			GetSelection( char *s, int size, int sel = 0 ) const override; // returns the id, not the list index (or -1)
+	virtual void		SetSelection( int sel ) override;
+	virtual int			GetNumSelections() override;
+	virtual bool		IsConfigured( void ) const override;
+	virtual void		SetStateChanges( bool enable ) override;
+	virtual void		Shutdown( void ) override;
 
 private:
 	idUserInterface *	m_pGUI;

@@ -34,7 +34,7 @@ class idCinematicFFMpeg : public idCinematic
 {
 public:
 	idCinematicFFMpeg();
-	virtual					~idCinematicFFMpeg();
+	virtual					~idCinematicFFMpeg() override;
 
 	static void			InitCinematic(void);
 	static void			ShutdownCinematic(void);
@@ -48,8 +48,8 @@ public:
 	virtual const char *GetFilePath() const override;
 
 
-	virtual void			ResetTime(int time);
-	virtual void			Close();
+	virtual void			ResetTime(int time) override;
+	virtual void			Close() override;
 
 private: // methods
 	void _ResetTime();

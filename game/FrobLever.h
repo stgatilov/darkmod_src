@@ -43,11 +43,11 @@ public:
 
 protected:
 	// Specialise the postspawn event 
-	virtual void	PostSpawn();
+	virtual void	PostSpawn() override;
 
 	// Specialise the BinaryFrobMover events
-	virtual void	OnOpenPositionReached();
-	virtual void	OnClosedPositionReached();
+	virtual void	OnOpenPositionReached() override;
+	virtual void	OnClosedPositionReached() override;
 
 protected:
 	// The latch is to keep track of our visited positions.

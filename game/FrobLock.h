@@ -67,10 +67,10 @@ public:
 	virtual bool	CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) override;
 	virtual bool	UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item) override;
 
-	virtual void	AttackAction(idPlayer* player); // Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
+	virtual void	AttackAction(idPlayer* player) override; // Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
 
 	// Override idEntity to register the PickableLock class as object
-	virtual void	AddObjectsToSaveGame(idSaveGame* savefile);
+	virtual void	AddObjectsToSaveGame(idSaveGame* savefile) override;
 
 	void			Save(idSaveGame *savefile) const;
 	void			Restore(idRestoreGame *savefile);

@@ -56,17 +56,17 @@ public:
 
 							CFrobDoor();
 
-	virtual					~CFrobDoor();
+	virtual					~CFrobDoor() override;
 
 	void					Spawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Open(bool Master);
-	virtual void			Close(bool Master);
+	virtual void			Open(bool Master) override;
+	virtual void			Close(bool Master) override;
 
-	virtual void			Think( void ); // grayman #3042 - need to think while moving
+	virtual void			Think( void ) override; // grayman #3042 - need to think while moving
 
 	/** 
 	 * greebo: The OpenDoor method is necessary to give the FrobDoorHandles a 
@@ -76,8 +76,8 @@ public:
 	 */
 	virtual void			OpenDoor(bool Master);		
 
-	virtual void			Lock(bool Master);
-	virtual bool			Unlock(bool Master); // grayman #3643
+	virtual void			Lock(bool Master) override;
+	virtual bool			Unlock(bool Master) override; // grayman #3643
 
 	CFrobDoorHandle*		GetDoorhandle();
 	// Adds a door handle to this door. A door can have multiple handles
@@ -87,7 +87,7 @@ public:
 	virtual bool			UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item) override;
 
 	// Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
-	virtual void			AttackAction(idPlayer* player);
+	virtual void			AttackAction(idPlayer* player) override;
 
 	/**
 	 * Write the proper sound loss value to the soundprop portal data
@@ -108,11 +108,11 @@ public:
 	/**
 	 * Close the visportal, but only if the double door is also closed.
 	 **/
-	virtual void			ClosePortal();
+	virtual void			ClosePortal() override;
 
 	// Override the idEntity frob methods
-	virtual void			SetFrobbed(const bool val);
-	virtual bool			IsFrobbed() const;
+	virtual void			SetFrobbed(const bool val) override;
+	virtual bool			IsFrobbed() const override;
 
 	// angua: returns the number of open peers
 	ID_INLINE int			GetOpenPeersNum()
@@ -125,14 +125,14 @@ public:
 	 * to the doorhandle. This avoids sounds being played from door origins,
 	 * which is barely audible to the player.
 	 */
-	virtual int				FrobMoverStartSound(const char* soundName);
+	virtual int				FrobMoverStartSound(const char* soundName) override;
 
 	/** 
 	 * greebo: Override the standard idEntity method so sounds are emitted from the nearest position 
 	 * to the player instead of from the bounding box center, which might be on the far side
 	 * of a closed portal. This method gets applied to doors without handles, usually.
 	 */
-	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis);
+	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis) override;
 
 	void					SetLastUsedBy(idEntity* ent);	// grayman #2859
 	idEntity*				GetLastUsedBy() const;			// grayman #2859
@@ -184,7 +184,7 @@ public:
 	bool					UnlockControllers(bool bMaster);
 
 	// grayman #3643 - IsLocked() now has to deal with testing door controllers if used
-	bool					IsLocked();
+	virtual bool			IsLocked() override;
 
 	void					PushDoorHard();		 // grayman #3748
 	void					StopPushingDoorHard(); // grayman #3748
@@ -201,7 +201,7 @@ protected:
 	 * while it is picked. Also other intialization stuff, that can only be done after all
 	 * the entities are loaded, should be done here.
 	 */
-	virtual void			PostSpawn();
+	virtual void			PostSpawn() override;
 
 	void					Event_PostPostSpawn(); // grayman #3643
 
@@ -229,18 +229,18 @@ protected:
 	void					AutoSetupDoubleDoor();
 
 	// angua: Specialise the CBinaryFrobMover::PreLock method to check whether lock peers are closed
-	virtual bool			PreLock(bool bMaster);
+	virtual bool			PreLock(bool bMaster) override;
 
 	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
-	virtual void			OnLock(bool bMaster);
-	virtual bool			OnUnlock(bool bMaster); // grayman #3643
+	virtual void			OnLock(bool bMaster) override;
+	virtual bool			OnUnlock(bool bMaster) override; // grayman #3643
 
 	// Specialise the OnStartOpen/OnStartClose event to send the call to the open peers
-	virtual void			OnStartOpen(bool wasClosed, bool bMaster);
-	virtual void			OnStartClose(bool wasOpen, bool bMaster);
+	virtual void			OnStartOpen(bool wasClosed, bool bMaster) override;
+	virtual void			OnStartClose(bool wasOpen, bool bMaster) override;
 
 	// Gets called when the mover finishes its closing move and is fully closed (virtual override)
-	virtual void			OnClosedPositionReached();
+	virtual void			OnClosedPositionReached() override;
 
 	// Helper functions to cycle through the m_OpenList members
 	void					OpenPeers();
@@ -268,8 +268,8 @@ protected:
 	void					UpdateHandlePosition();
 
 	// Required events which are called by the PickableLock class
-	void					Event_Lock_StatusUpdate();
-	void					Event_Lock_OnLockPicked();
+	virtual void			Event_Lock_StatusUpdate() override;
+	virtual void			Event_Lock_OnLockPicked() override;
 
 	// Script event interface
 	void					Event_GetDoorhandle();

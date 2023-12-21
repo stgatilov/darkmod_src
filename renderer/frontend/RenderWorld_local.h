@@ -131,67 +131,67 @@ private:
 class idRenderWorldLocal : public idRenderWorld {
 public:
 							idRenderWorldLocal();
-	virtual					~idRenderWorldLocal();
+	virtual					~idRenderWorldLocal() override;
 
-	virtual	qhandle_t		AddEntityDef( const renderEntity_t *re );
-	virtual	void			UpdateEntityDef( qhandle_t entityHandle, const renderEntity_t *re );
-	virtual	void			FreeEntityDef( qhandle_t entityHandle );
-	virtual const renderEntity_t *GetRenderEntity( qhandle_t entityHandle ) const;
+	virtual	qhandle_t		AddEntityDef( const renderEntity_t *re ) override;
+	virtual	void			UpdateEntityDef( qhandle_t entityHandle, const renderEntity_t *re ) override;
+	virtual	void			FreeEntityDef( qhandle_t entityHandle ) override;
+	virtual const renderEntity_t *GetRenderEntity( qhandle_t entityHandle ) const override;
 
-	virtual	qhandle_t		AddLightDef( const renderLight_t *rlight );
-	virtual	void			UpdateLightDef( qhandle_t lightHandle, const renderLight_t *rlight ); 
-	virtual	void			FreeLightDef( qhandle_t lightHandle );
-	virtual const renderLight_t *GetRenderLight( qhandle_t lightHandle ) const;
+	virtual	qhandle_t		AddLightDef( const renderLight_t *rlight ) override;
+	virtual	void			UpdateLightDef( qhandle_t lightHandle, const renderLight_t *rlight ) override; 
+	virtual	void			FreeLightDef( qhandle_t lightHandle ) override;
+	virtual const renderLight_t *GetRenderLight( qhandle_t lightHandle ) const override;
 
-	virtual bool			CheckAreaForPortalSky( int areaNum );
+	virtual bool			CheckAreaForPortalSky( int areaNum ) override;
 
-	virtual	void			GenerateAllInteractions();
-	virtual void			RegenerateWorld();
+	virtual	void			GenerateAllInteractions() override;
+	virtual void			RegenerateWorld() override;
 
-	virtual void			ProjectDecalOntoWorld( const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime );
-	virtual void			ProjectDecal( qhandle_t entityHandle, const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime );
-	virtual void			ProjectOverlay( qhandle_t entityHandle, const idPlane localTextureAxis[2], const idMaterial *material );
-	virtual void			RemoveDecals( qhandle_t entityHandle );
+	virtual void			ProjectDecalOntoWorld( const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) override;
+	virtual void			ProjectDecal( qhandle_t entityHandle, const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) override;
+	virtual void			ProjectOverlay( qhandle_t entityHandle, const idPlane localTextureAxis[2], const idMaterial *material ) override;
+	virtual void			RemoveDecals( qhandle_t entityHandle ) override;
 
-	virtual void			SetRenderView( const renderView_t *renderView );
-	virtual	void			RenderScene( const renderView_t &renderView );
+	virtual void			SetRenderView( const renderView_t *renderView ) override;
+	virtual	void			RenderScene( const renderView_t &renderView ) override;
 
-	virtual	int				NumAreas( void ) const;
-	virtual int				GetAreaAtPoint( const idVec3 &point ) const;
+	virtual	int				NumAreas( void ) const override;
+	virtual int				GetAreaAtPoint( const idVec3 &point ) const override;
 	virtual int				GetPointInArea( int areaNum, idVec3 &point ) const override;
-	virtual int				FindAreasInBounds( const idBounds &bounds, int *areas, int maxAreas ) const;
-	virtual	int				NumPortalsInArea( int areaNum );
+	virtual int				FindAreasInBounds( const idBounds &bounds, int *areas, int maxAreas ) const override;
+	virtual	int				NumPortalsInArea( int areaNum ) override;
 	// grayman #3042 - set portal sound loss (in dB)
-	virtual void			SetPortalPlayerLoss( qhandle_t portal, float loss );
+	virtual void			SetPortalPlayerLoss( qhandle_t portal, float loss ) override;
 
-	virtual exitPortal_t	GetPortal( int areaNum, int portalNum );
+	virtual exitPortal_t	GetPortal( int areaNum, int portalNum ) override;
 
 #if 0
-	virtual	guiPoint_t		GuiTrace( qhandle_t entityHandle, const idVec3 start, const idVec3 end ) const;
+	virtual	guiPoint_t		GuiTrace( qhandle_t entityHandle, const idVec3 start, const idVec3 end ) const override;
 #endif
-	virtual bool			ModelTrace( modelTrace_t &trace, qhandle_t entityHandle, const idVec3 &start, const idVec3 &end, const float radius ) const;
-	virtual bool			Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic = true, bool skipPlayer = false ) const;
-	virtual bool			FastWorldTrace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end ) const;
-	virtual bool			MaterialTrace( const idVec3 &p, const idMaterial *mat, idStr &matName ) const;
-	virtual bool			TraceAll( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, bool fastWorld = false, float radius = 0.0f, TraceFilterFunc filterCallback = nullptr, void *context = nullptr ) const;
+	virtual bool			ModelTrace( modelTrace_t &trace, qhandle_t entityHandle, const idVec3 &start, const idVec3 &end, const float radius ) const override;
+	virtual bool			Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic = true, bool skipPlayer = false ) const override;
+	virtual bool			FastWorldTrace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end ) const override;
+	virtual bool			MaterialTrace( const idVec3 &p, const idMaterial *mat, idStr &matName ) const override;
+	virtual bool			TraceAll( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, bool fastWorld = false, float radius = 0.0f, TraceFilterFunc filterCallback = nullptr, void *context = nullptr ) const override;
 
-	virtual void			DebugClearLines( int time );
-	virtual void			DebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifetime = 0, const bool depthTest = false );
-	virtual void			DebugArrow( const idVec4 &color, const idVec3 &start, const idVec3 &end, int size, const int lifetime = 0 );
-	virtual void			DebugWinding( const idVec4 &color, const idWinding &w, const idVec3 &origin, const idMat3 &axis, const int lifetime = 0, const bool depthTest = false );
-	virtual void			DebugCircle( const idVec4 &color, const idVec3 &origin, const idVec3 &dir, const float radius, const int numSteps, const int lifetime = 0, const bool depthTest = false );
-	virtual void			DebugSphere( const idVec4 &color, const idSphere &sphere, const int lifetime = 0, bool depthTest = false );
-	virtual void			DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org = vec3_origin, const int lifetime = 0 );
-	virtual void			DebugBox( const idVec4 &color, const idBox &box, const int lifetime = 0 );
-	virtual void			DebugFrustum( const idVec4 &color, const idFrustum &frustum, const bool showFromOrigin = false, const int lifetime = 0 );
-	virtual void			DebugCone( const idVec4 &color, const idVec3 &apex, const idVec3 &dir, float radius1, float radius2, const int lifetime = 0 );
-	virtual void			DebugScreenRect( const idVec4 &color, const idScreenRect &rect, const viewDef_t *viewDef, const int lifetime = 0 );
-	virtual void			DebugAxis( const idVec3 &origin, const idMat3 &axis );
+	virtual void			DebugClearLines( int time ) override;
+	virtual void			DebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifetime = 0, const bool depthTest = false ) override;
+	virtual void			DebugArrow( const idVec4 &color, const idVec3 &start, const idVec3 &end, int size, const int lifetime = 0 ) override;
+	virtual void			DebugWinding( const idVec4 &color, const idWinding &w, const idVec3 &origin, const idMat3 &axis, const int lifetime = 0, const bool depthTest = false ) override;
+	virtual void			DebugCircle( const idVec4 &color, const idVec3 &origin, const idVec3 &dir, const float radius, const int numSteps, const int lifetime = 0, const bool depthTest = false ) override;
+	virtual void			DebugSphere( const idVec4 &color, const idSphere &sphere, const int lifetime = 0, bool depthTest = false ) override;
+	virtual void			DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org = vec3_origin, const int lifetime = 0 ) override;
+	virtual void			DebugBox( const idVec4 &color, const idBox &box, const int lifetime = 0 ) override;
+	virtual void			DebugFrustum( const idVec4 &color, const idFrustum &frustum, const bool showFromOrigin = false, const int lifetime = 0 ) override;
+	virtual void			DebugCone( const idVec4 &color, const idVec3 &apex, const idVec3 &dir, float radius1, float radius2, const int lifetime = 0 ) override;
+	void					DebugScreenRect( const idVec4 &color, const idScreenRect &rect, const viewDef_t *viewDef, const int lifetime = 0 );
+	virtual void			DebugAxis( const idVec3 &origin, const idMat3 &axis ) override;
 
-	virtual void			DebugClearPolygons( int time );
-	virtual void			DebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime = 0, const bool depthTest = false );
+	virtual void			DebugClearPolygons( int time ) override;
+	virtual void			DebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime = 0, const bool depthTest = false ) override;
 
-	virtual void			DebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align = 1, const int lifetime = 0, bool depthTest = false );
+	virtual void			DebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align = 1, const int lifetime = 0, bool depthTest = false ) override;
 
 	//-----------------------
 
@@ -246,7 +246,7 @@ public:
 	void					TouchWorldModels( void );
 	void					AddWorldModelEntities();
 	void					ClearPortalStates();
-	virtual	bool			InitFromMap( const char *mapName );
+	virtual	bool			InitFromMap( const char *mapName ) override;
 
 	//--------------------------
 	// RenderWorld_portals.cpp
@@ -271,14 +271,14 @@ public:
 	bool					FloodShadowFrustumThroughArea_r( FloodShadowFrustumContext &context, const idBounds &bounds ) const;
 	void					FlowShadowFrustumThroughPortals( idScreenRect &scissorRect, const idFrustum &frustum, const int *startAreas, int startAreasNum ) const;
 
-	int						NumPortals( void ) const;
-	qhandle_t				FindPortal( const idBounds &b ) const;
+	virtual int				NumPortals( void ) const override;
+	virtual qhandle_t		FindPortal( const idBounds &b ) const override;
 	static bool				DoesVisportalContactBox( const idWinding &visportalWinding, const idBounds &box );	//stgatilov #5354
-	void					SetPortalState( qhandle_t portal, int blockingBits );
-	int						GetPortalState( qhandle_t portal );
-	idPlane					GetPortalPlane( qhandle_t portal );	//stgatilov #5462
+	virtual void			SetPortalState( qhandle_t portal, int blockingBits ) override;
+	virtual int				GetPortalState( qhandle_t portal ) override;
+	virtual idPlane			GetPortalPlane( qhandle_t portal ) override;	//stgatilov #5462
 
-	bool					AreasAreConnected( int areaNum1, int areaNum2, portalConnection_t connection );
+	virtual bool			AreasAreConnected( int areaNum1, int areaNum2, portalConnection_t connection ) override;
 	void					FloodConnectedAreas( portalArea_t *area, int portalAttributeIndex );
 	const idScreenRect &	GetAreaScreenRect( int areaNum ) const { return portalAreas[areaNum].areaScreenRect; }
 	void					ShowPortals();
@@ -286,9 +286,9 @@ public:
 	//--------------------------
 	// RenderWorld_demo.cpp
 
-	void					StartWritingDemo( idDemoFile *demo );
-	void					StopWritingDemo();
-	bool					ProcessDemoCommand( idDemoFile *readDemo, renderView_t *demoRenderView, int *demoTimeOffset );
+	virtual void			StartWritingDemo( idDemoFile *demo ) override;
+	virtual void			StopWritingDemo() override;
+	virtual bool			ProcessDemoCommand( idDemoFile *readDemo, renderView_t *demoRenderView, int *demoTimeOffset ) override;
 
 	void					WriteLoadMap();
 	void					WriteRenderView( const renderView_t &renderView );

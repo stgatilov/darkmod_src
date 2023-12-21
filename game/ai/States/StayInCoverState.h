@@ -30,17 +30,17 @@ private:
 	int _emergeDelay;
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init(idAI* owner);
+	virtual void Init(idAI* owner) override;
 
 	// Gets called each time the mind is thinking
-	virtual void Think(idAI* owner);
+	virtual void Think(idAI* owner) override;
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 	
 	static StatePtr CreateInstance();
 

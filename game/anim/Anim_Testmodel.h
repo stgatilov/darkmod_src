@@ -29,14 +29,14 @@ public:
 	CLASS_PROTOTYPE( idTestModel );
 
 							idTestModel();
-							~idTestModel();
+	virtual					~idTestModel() override;
 
 	void					Save( idSaveGame *savefile );
 	void					Restore( idRestoreGame *savefile );
 
 	void					Spawn( void );
 
-	virtual bool			ShouldConstructScriptObjectAtSpawn( void ) const;
+	virtual bool			ShouldConstructScriptObjectAtSpawn( void ) const override;
 
 	void					NextAnim( const idCmdArgs &args );
 	void					PrevAnim( const idCmdArgs &args );
@@ -74,7 +74,7 @@ private:
 
 	idList<copyJoints_t>	copyJoints;
 
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 
 	void					Event_Footstep( void );
 };

@@ -42,11 +42,11 @@ public:
 
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
-	virtual void			Hide( void );
-	virtual void			Show( void );
+	virtual void			Hide( void ) override;
+	virtual void			Show( void ) override;
 
 	void					SetPortalState( bool open );
 
@@ -256,15 +256,15 @@ public:
 	CLASS_PROTOTYPE( idMover_Binary );
 
 							idMover_Binary();
-							~idMover_Binary();
+	virtual					~idMover_Binary() override;
 
 	void					Spawn( void );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			PreBind( void );
-	virtual void			PostBind( void );
+	virtual void			PreBind( void ) override;
+	virtual void			PostBind( void ) override;
 
 	void					Enable( bool b );
 	void					InitSpeed( idVec3 &mpos1, idVec3 &mpos2, float mspeed, float maccelTime, float mdecelTime );
@@ -281,8 +281,8 @@ public:
 	bool					IsBlocked( void );
 	idEntity *				GetActivator( void ) const;
 
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 	void					SetPortalState( bool open );
 
@@ -343,16 +343,16 @@ public:
 	CLASS_PROTOTYPE( idPlat );
 
 							idPlat( void );
-							~idPlat( void );
+	virtual					~idPlat( void ) override;
 
 	void					Spawn( void );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think( void );
-	virtual void			PreBind( void );
-	virtual void			PostBind( void );
+	virtual void			Think( void ) override;
+	virtual void			PreBind( void ) override;
+	virtual void			PostBind( void ) override;
 
 private:
 	idClipModel *			trigger;
@@ -387,10 +387,10 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 protected:
 	idPhysics_Parametric	physicsObj;

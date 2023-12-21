@@ -258,10 +258,10 @@ int idWaveFile::CloseOGG( void ) {
 
 class idSampleDecoderLocal : public idSampleDecoder {
 public:
-	virtual void			Decode( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest );
-	virtual void			ClearDecoder( void );
-	virtual idSoundSample *	GetSample( void ) const;
-	virtual int				GetLastDecodeTime( void ) const;
+	virtual void			Decode( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest ) override;
+	virtual void			ClearDecoder( void ) override;
+	virtual idSoundSample *	GetSample( void ) const override;
+	virtual int				GetLastDecodeTime( void ) const override;
 
 	void					Clear( void );
 	int						DecodePCM( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest );

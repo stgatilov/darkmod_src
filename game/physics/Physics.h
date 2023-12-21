@@ -75,7 +75,7 @@ class idPhysics : public idClass {
 public:
 	ABSTRACT_PROTOTYPE( idPhysics );
 
-	virtual						~idPhysics( void );
+	virtual						~idPhysics( void ) override;
 	static int					SnapTimeToPhysicsFrame( int t );
 
 	// Must not be virtual

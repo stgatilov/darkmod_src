@@ -51,16 +51,16 @@ struct idConsoleLine : idStr {
 
 class idConsoleLocal : public idConsole {
 public:
-	virtual	void		Init( void );
-	virtual void		Shutdown( void );
-	virtual	void		LoadGraphics( void );
-	virtual	bool		ProcessEvent( const sysEvent_t *event, bool forceAccept );
-	virtual	bool		Active( void );
-	virtual	void		ClearNotifyLines( void );
-	virtual	void		Close( void );
-	virtual void		Open( const float frac );
-	virtual	void		Print( const char *text );
-	virtual	void		Draw( bool forceFullScreen );
+	virtual	void		Init( void ) override;
+	virtual void		Shutdown( void ) override;
+	virtual	void		LoadGraphics( void ) override;
+	virtual	bool		ProcessEvent( const sysEvent_t *event, bool forceAccept ) override;
+	virtual	bool		Active( void ) override;
+	virtual	void		ClearNotifyLines( void ) override;
+	virtual	void		Close( void ) override;
+	virtual void		Open( const float frac ) override;
+	virtual	void		Print( const char *text ) override;
+	virtual	void		Draw( bool forceFullScreen ) override;
 
 	// #3947: Add an optional "unwrap" keyword to Dump() that causes full lines to be continued by
 	// the succeeding line without a line break. It's not possible to recover where the original line 
@@ -93,8 +93,8 @@ private:
 	void				SetDisplayFraction( float frac );
 	void				UpdateDisplayFraction( void );
 
-    virtual void		SaveHistory();
-    virtual void		LoadHistory();
+    virtual void		SaveHistory() override;
+    virtual void		LoadHistory() override;
 
 	//============================
 

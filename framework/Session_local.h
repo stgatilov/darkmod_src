@@ -83,48 +83,48 @@ class idSessionLocal : public idSession {
 public:
 
 						idSessionLocal();
-	virtual				~idSessionLocal();
+	virtual				~idSessionLocal() override;
 
-	virtual void		Init();
+	virtual void		Init() override;
 
-	virtual void		Shutdown();
+	virtual void		Shutdown() override;
 
-	virtual void		Stop();
-	virtual void		TerminateFrontendThread();
+	virtual void		Stop() override;
+	virtual void		TerminateFrontendThread() override;
 
-	virtual void		UpdateScreen( bool outOfSequence = true );
+	virtual void		UpdateScreen( bool outOfSequence = true ) override;
 
-	virtual void		PacifierUpdate(loadkey_t key, int count); // grayman #3763
+	virtual void		PacifierUpdate(loadkey_t key, int count) override; // grayman #3763
 
-	virtual void		Frame();
+	virtual void		Frame() override;
 
-	virtual bool		ProcessEvent( const sysEvent_t *event );
+	virtual bool		ProcessEvent( const sysEvent_t *event ) override;
 
-	virtual void		StartMenu( bool playIntro = false );
-	virtual void		ExitMenu();
-	virtual void		GuiFrameEvents();
-	virtual void		SetGUI( idUserInterface *gui, HandleGuiCommand_t handle );
-	virtual idUserInterface* GetGui(GuiType type) const;
-	virtual bool		RunGuiScript(const char *windowName, int scriptNum);
+	virtual void		StartMenu( bool playIntro = false ) override;
+	void				ExitMenu();
+	virtual void		GuiFrameEvents() override;
+	virtual void		SetGUI( idUserInterface *gui, HandleGuiCommand_t handle ) override;
+	virtual idUserInterface* GetGui(GuiType type) const override;
+	virtual bool		RunGuiScript(const char *windowName, int scriptNum) override;
 
-	virtual const char *MessageBox( msgBoxType_t type, const char *message, const char *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false  );
-	virtual void		StopBox( void );
-	virtual void		DownloadProgressBox( backgroundDownload_t *bgl, const char *title, int progress_start = 0, int progress_end = 100 );
-	virtual void		SetPlayingSoundWorld();
+	virtual const char *ShowMessageBox( msgBoxType_t type, const char *message, const char *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false  ) override;
+	virtual void		StopBox( void ) override;
+	virtual void		DownloadProgressBox( backgroundDownload_t *bgl, const char *title, int progress_start = 0, int progress_end = 100 ) override;
+	virtual void		SetPlayingSoundWorld() override;
 
-	virtual void		TimeHitch( int msec );
+	virtual void		TimeHitch( int msec ) override;
 
-	virtual int			GetSaveGameVersion( void );
+	virtual int			GetSaveGameVersion( void ) override;
     
-	virtual void		RunGameTic(int timestepMs, bool minorTic);
-	virtual void		ActivateFrontend();
-	virtual void		WaitForFrontendCompletion();
-	virtual void		StartFrontendThread();
-	virtual void		ExecuteFrameCommand(const char *command, bool delayed);
-	virtual void		ExecuteDelayedFrameCommands();
+	virtual void		RunGameTic(int timestepMs, bool minorTic) override;
+	virtual void		ActivateFrontend() override;
+	virtual void		WaitForFrontendCompletion() override;
+	virtual void		StartFrontendThread() override;
+	virtual void		ExecuteFrameCommand(const char *command, bool delayed) override;
+	virtual void		ExecuteDelayedFrameCommands() override;
 
 
-	virtual const char *GetCurrentMapName();
+	virtual const char *GetCurrentMapName() override;
 
 	//=====================================
 
@@ -299,7 +299,7 @@ public:
 	std::shared_ptr<ErrorReportedException> frontendException;
 
 	void				FrontendThreadFunction();
-	bool				IsFrontend() const;
+	virtual bool		IsFrontend() const override;
 
 	//=====================================
 	void				Clear();

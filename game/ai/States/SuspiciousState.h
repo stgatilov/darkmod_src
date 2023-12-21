@@ -29,19 +29,19 @@ class SuspiciousState :
 
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init(idAI* owner);
+	virtual void Init(idAI* owner) override;
 
 	// Gets called each time the mind is thinking
-	virtual void Think(idAI* owner);
+	virtual void Think(idAI* owner) override;
 
 	static StatePtr CreateInstance();
 
 protected:
 	// Override base class method
-	virtual bool CheckAlertLevel(idAI* owner);
+	virtual bool CheckAlertLevel(idAI* owner) override;
 };
 
 } // namespace ai

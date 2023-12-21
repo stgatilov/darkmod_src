@@ -26,34 +26,34 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idSysLocal : public idSys {
 public:
-	virtual void			DebugPrintf( const char *fmt, ... )id_attribute((format(printf,2,3)));
-	virtual void			DebugVPrintf( const char *fmt, va_list arg );
+	virtual void			DebugPrintf( const char *fmt, ... ) override id_attribute((format(printf,2,3)));
+	virtual void			DebugVPrintf( const char *fmt, va_list arg ) override;
 
-	virtual double			GetClockTicks( void );
-	virtual double			ClockTicksPerSecond( void );
-	virtual cpuid_t			GetProcessorId( void );
-	virtual const char *	GetProcessorString( void );
+	virtual double			GetClockTicks( void ) override;
+	virtual double			ClockTicksPerSecond( void ) override;
+	virtual cpuid_t			GetProcessorId( void ) override;
+	virtual const char *	GetProcessorString( void ) override;
 
-	virtual void			FPU_SetFTZ( bool enable );
-	virtual void			FPU_SetDAZ( bool enable );
-	virtual void			FPU_SetExceptions(bool enable);
+	virtual void			FPU_SetFTZ( bool enable ) override;
+	virtual void			FPU_SetDAZ( bool enable ) override;
+	virtual void			FPU_SetExceptions(bool enable) override;
 
 	virtual void			ThreadStartup() override;
 	virtual void			ThreadHeartbeat( const char *threadName ) override;
 
-	virtual bool			LockMemory( void *ptr, int bytes );
-	virtual bool			UnlockMemory( void *ptr, int bytes );
+	virtual bool			LockMemory( void *ptr, int bytes ) override;
+	virtual bool			UnlockMemory( void *ptr, int bytes ) override;
 
-    virtual uintptr_t		DLL_Load(const char *dllName);
-    virtual void *			DLL_GetProcAddress(uintptr_t dllHandle, const char *procName);
-    virtual void			DLL_Unload(uintptr_t dllHandle);
-	virtual void			DLL_GetFileName( const char *baseName, char *dllName, int maxLength );
+    virtual uintptr_t		DLL_Load(const char *dllName) override;
+    virtual void *			DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) override;
+    virtual void			DLL_Unload(uintptr_t dllHandle) override;
+	virtual void			DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) override;
 
-	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down );
-	virtual sysEvent_t		GenerateMouseMoveEvent( int deltax, int deltay );
+	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down ) override;
+	virtual sysEvent_t		GenerateMouseMoveEvent( int deltax, int deltay ) override;
 
-	virtual void			OpenURL( const char *url, bool quit );
-	virtual void			StartProcess( const char *exeName, bool quit );
+	virtual void			OpenURL( const char *url, bool quit ) override;
+	virtual void			StartProcess( const char *exeName, bool quit ) override;
 };
 
 #endif /* !__SYS_LOCAL__ */

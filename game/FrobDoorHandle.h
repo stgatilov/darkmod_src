@@ -55,10 +55,8 @@ public:
 	 *
 	 * The Tap() algorithm attempts to rotate the door handle down until and 
 	 * calls OpenDoor() when the handle reaches its end rotation/position.
-	 *
-	 * Overrides CFrobHandle::Tap()
 	 */
-	virtual void			Tap();
+	virtual void			Tap() override;
 
 	/**
 	 * Get/set the door associated with this handle.
@@ -71,7 +69,7 @@ public:
 
 protected:
 	// Specialise the OpenPositionReached method of BinaryFrobMover to trigger the door's Open() routine
-	virtual void			OnOpenPositionReached();
+	virtual void			OnOpenPositionReached() override;
 
 	// Script event interface
 	void					Event_GetDoor();

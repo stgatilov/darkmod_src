@@ -91,7 +91,7 @@ public :
 	CLASS_PROTOTYPE( idProjectile );
 
 							idProjectile();
-	virtual					~idProjectile();
+	virtual					~idProjectile() override;
 
 	void					Spawn( void );
 
@@ -100,14 +100,14 @@ public :
 
 	void					Create( idEntity *owner, const idVec3 &start, const idVec3 &dir );
 	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
-	virtual void			FreeLightDef( void );
+	virtual void			FreeLightDef( void ) override;
 
 	idEntity *				GetOwner( void ) const;
 	void					SetReplaced(); // grayman #2908
 
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
-	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
+	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity ) override;
 	virtual void			Explode( const trace_t &collision, idEntity *ignore );
 	virtual void			Bounced( const trace_t &collision, const idVec3 &velocity, idEntity *bounceEnt );
 	void					Fizzle( void );
@@ -122,16 +122,16 @@ public :
 
 	static void				DefaultDamageEffect( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity );
 	static bool				ClientPredictionCollide( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity, bool addDamageEffect );
-	virtual void			ClientPredictionThink( void );
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
-	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual void			ClientPredictionThink( void ) override;
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
+	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 	void					MineExplode( int entityNumber ); // grayman #2478
 	bool					IsMine();	// grayman #2478
 	bool					IsArmed();	// grayman #2906
 	bool					DetonateOnWater(); // grayman #1104
 	void					SetNoSplashDamage(bool setting); // grayman #1104
-	void					AttackAction(idPlayer* player); // grayman #2934
+	virtual void			AttackAction(idPlayer* player) override; // grayman #2934
 	void					Event_ActivateProjectile();
 
 protected:
@@ -192,7 +192,7 @@ protected:
 private:
 	void					AddDefaultDamageEffect( const trace_t &collision, const idVec3 &velocity );
 
-	void					AddObjectsToSaveGame(idSaveGame* savefile); // grayman #2478
+	virtual void			AddObjectsToSaveGame(idSaveGame* savefile) override; // grayman #2478
 	bool					CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) override; // grayman #2478
 	bool					UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item) override; // grayman #2478
 	bool					IsLocked(); // grayman #2478
@@ -207,7 +207,7 @@ private:
 	void					Event_Lock_OnLockPicked();	// grayman #2478
 	void					Event_Mine_Replace();		// grayman #2478
 	float					AngleAdjust(float angle);	// grayman #2478
-	void					AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ); // grayman #2478
+	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) override; // grayman #2478
 };
 
 class idGuidedProjectile : public idProjectile {
@@ -215,14 +215,14 @@ public :
 	CLASS_PROTOTYPE( idGuidedProjectile );
 
 							idGuidedProjectile( void );
-							~idGuidedProjectile( void );
+	virtual					~idGuidedProjectile( void ) override;
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
 	void					Spawn( void );
-	virtual void			Think( void );
-	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
+	virtual void			Think( void ) override;
+	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f ) override;
 
 protected:
 	float					speed;
@@ -258,7 +258,7 @@ public :
 	CLASS_PROTOTYPE( idDebris );
 
 							idDebris();
-							~idDebris();
+	virtual					~idDebris() override;
 
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
@@ -268,11 +268,11 @@ public :
 
 	void					Create( idEntity *owner, const idVec3 &start, const idMat3 &axis );
 	void					Launch( void );
-	void					Think( void );
-	void					Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
+	virtual void			Think( void ) override;
+	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	void					Explode( void );
 	void					Fizzle( void );
-	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
+	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity ) override;
 
 
 private:

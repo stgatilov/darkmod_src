@@ -759,7 +759,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 							break;
 					}
 					if ( n_clients > maxclients ) {
-						if ( MessageBox( MSG_OKCANCEL, va( common->Translate( "#str_04315" ), dedicated ? maxclients : Min( 8, maxclients + 1 ) ), common->Translate( "#str_04316" ), true, "OK" )[ 0 ] == '\0' ) {
+						if ( ShowMessageBox( MSG_OKCANCEL, va( common->Translate( "#str_04315" ), dedicated ? maxclients : Min( 8, maxclients + 1 ) ), common->Translate( "#str_04316" ), true, "OK" )[ 0 ] == '\0' ) {
 							continue;
 						}
 						cvarSystem->SetCVarInteger( "si_maxPlayers", dedicated ? maxclients : Min( 8, maxclients + 1 ) );
@@ -769,7 +769,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 
 			if ( !dedicated && !cvarSystem->GetCVarBool( "net_LANServer" ) && cvarSystem->GetCVarInteger("si_maxPlayers") > 4 ) {
 				// "Dedicated server mode is recommended for internet servers with more than 4 players. Continue in listen mode?"
-				if ( !MessageBox( MSG_YESNO, common->Translate( "#str_00100625" ), common->Translate ( "#str_00100626" ), true, "yes" )[ 0 ] ) {
+				if ( !ShowMessageBox( MSG_YESNO, common->Translate( "#str_00100625" ), common->Translate ( "#str_00100626" ), true, "yes" )[ 0 ] ) {
 					continue;
 				}
 			}
@@ -865,10 +865,10 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
 				if ( old != cvarSystem->GetCVarInteger( "s_numberOfSpeakers" ) ) {
 #ifdef _WIN32
-					MessageBox( MSG_OK, common->Translate( "#str_07236" ), common->Translate( "#str_07235" ), true );
+					ShowMessageBox( MSG_OK, common->Translate( "#str_07236" ), common->Translate( "#str_07235" ), true );
 #else
 					// a message that doesn't mention the windows control panel
-					MessageBox( MSG_OK, common->Translate( "#str_07234" ), common->Translate( "#str_07235" ), true );
+					ShowMessageBox( MSG_OK, common->Translate( "#str_07234" ), common->Translate( "#str_07235" ), true );
 #endif
 				}
 			}
@@ -878,24 +878,24 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
                     switch (efx) {
 					case 1:
 						// when you restart
-						MessageBox( MSG_OK, common->Translate( "#str_04137" ), common->Translate( "#str_07231" ), true );
+						ShowMessageBox( MSG_OK, common->Translate( "#str_04137" ), common->Translate( "#str_07231" ), true );
 						break;
 					case -1:
 						cvarSystem->SetCVarBool( "s_useEAXReverb", false );
 						// disabled
-						MessageBox( MSG_OK, common->Translate( "#str_07233" ), common->Translate( "#str_07231" ), true );
+						ShowMessageBox( MSG_OK, common->Translate( "#str_07233" ), common->Translate( "#str_07231" ), true );
 						break;
 					case 0:
 						cvarSystem->SetCVarBool( "s_useEAXReverb", false );
 						// not available
-						MessageBox( MSG_OK, common->Translate( "#str_07232" ), common->Translate( "#str_07231" ), true );
+						ShowMessageBox( MSG_OK, common->Translate( "#str_07232" ), common->Translate( "#str_07231" ), true );
 						break;
 					}
 				} else {
 					// also turn off OpenAL so we fully go back to legacy mixer
 					cvarSystem->SetCVarBool( "s_useOpenAL", false );
 					// when you restart
-					MessageBox( MSG_OK, common->Translate( "#str_04137" ), common->Translate( "#str_07231" ), true );
+					ShowMessageBox( MSG_OK, common->Translate( "#str_04137" ), common->Translate( "#str_07231" ), true );
 				}
 			}
 			if ( !vcmd.Icmp( "drivar" ) ) {
@@ -1151,10 +1151,10 @@ bool idSessionLocal::BoxDialogSanityCheck( void ) {
 
 /*
 =================
-idSessionLocal::MessageBox
+idSessionLocal::ShowMessageBox
 =================
 */
-const char* idSessionLocal::MessageBox( msgBoxType_t type, const char *message, const char *title, bool wait, const char *fire_yes, const char *fire_no, bool network ) {
+const char* idSessionLocal::ShowMessageBox( msgBoxType_t type, const char *message, const char *title, bool wait, const char *fire_yes, const char *fire_no, bool network ) {
 	
 	common->DPrintf( "MessageBox: %s - %s\n", title ? title : "", message ? message : "" );
 	

@@ -38,28 +38,28 @@ typedef struct commandDef_s {
 
 class idCmdSystemLocal : public idCmdSystem {
 public:
-	virtual void			Init( void );
-	virtual void			Shutdown( void );
+	virtual void			Init( void ) override;
+	virtual void			Shutdown( void ) override;
 
-	virtual void			AddCommand( const char *cmdName, cmdFunction_t function, int flags, const char *description, argCompletion_t argCompletion = NULL );
-	virtual void			RemoveCommand( const char *cmdName );
-	virtual void			RemoveFlaggedCommands( int flags );
+	virtual void			AddCommand( const char *cmdName, cmdFunction_t function, int flags, const char *description, argCompletion_t argCompletion = NULL ) override;
+	virtual void			RemoveCommand( const char *cmdName ) override;
+	virtual void			RemoveFlaggedCommands( int flags ) override;
 
-	virtual void			CommandCompletion( void(*callback)( const char *s ) );
-	virtual void			ArgCompletion( const char *cmdString, void(*callback)( const char *s ) );
-	virtual void			ExecuteCommandText( const char* text );
-	virtual void			AppendCommandText( const char* text );
+	virtual void			CommandCompletion( void(*callback)( const char *s ) ) override;
+	virtual void			ArgCompletion( const char *cmdString, void(*callback)( const char *s ) ) override;
+	void					ExecuteCommandText( const char* text );
+	virtual void			AppendCommandText( const char* text ) override;
 
-	virtual void			BufferCommandText( cmdExecution_t exec, const char *text );
-	virtual void			ExecuteCommandBuffer( void );
+	virtual void			BufferCommandText( cmdExecution_t exec, const char *text ) override;
+	virtual void			ExecuteCommandBuffer( void ) override;
 
-	virtual void			ArgCompletion_FolderExtension( const idCmdArgs &args, void(*callback)( const char *s ), const char *folder, bool stripFolder, ... );
-	virtual void			ArgCompletion_DeclName( const idCmdArgs &args, void(*callback)( const char *s ), int type );
+	virtual void			ArgCompletion_FolderExtension( const idCmdArgs &args, void(*callback)( const char *s ), const char *folder, bool stripFolder, ... ) override;
+	virtual void			ArgCompletion_DeclName( const idCmdArgs &args, void(*callback)( const char *s ), int type ) override;
 
-	virtual void			BufferCommandArgs( cmdExecution_t exec, const idCmdArgs &args );
+	virtual void			BufferCommandArgs( cmdExecution_t exec, const idCmdArgs &args ) override;
 
-	virtual void			SetupReloadEngine( const idCmdArgs &args );
-	virtual bool			PostReloadEngine( void );
+	virtual void			SetupReloadEngine( const idCmdArgs &args ) override;
+	virtual bool			PostReloadEngine( void ) override;
 
 	void					SetWait( int numFrames ) { wait = numFrames; }
 	commandDef_t *			GetCommands( void ) const { return commands; }

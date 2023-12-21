@@ -32,12 +32,11 @@ class MoveToCoverTask :
 {
 public:
 	// Get the name of this task
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
-	// Override the base Init method
-	virtual void Init(idAI* owner, Subsystem& subsystem);
+	virtual void Init(idAI* owner, Subsystem& subsystem) override;
 
-	virtual bool Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem) override;
 
 	// Creates a new Instance of this task
 	static MoveToCoverTaskPtr CreateInstance();

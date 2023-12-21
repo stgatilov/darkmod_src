@@ -26,9 +26,9 @@ public:
 	
 	CObjectiveLocation();
 
-	~CObjectiveLocation();
+	virtual ~CObjectiveLocation() override;
 
-	void Think( void );
+	virtual void Think( void ) override;
 	void Spawn( void );
 
 	// Called by ~idEntity to catch entity destructions

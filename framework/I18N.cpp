@@ -31,66 +31,66 @@ class I18NLocal :
 public:
 	I18NLocal();
 
-	~I18NLocal();
+	virtual ~I18NLocal() override;
 
 	/**
 	* Called by idCommon at game init time.
 	*/
-	void				Init();
+	virtual void			Init() override;
 
 	// Called at game shutdown time
-	void				Shutdown();
+	virtual void			Shutdown() override;
 
 	/**
 	* Attempt to translate a string template in the form of "#str_12345" into
 	* the current user selected language, using the FM specific dict first.
 	*/
-	const char*			Translate( const idStr &in );
+	virtual const char*		Translate( const idStr &in ) override;
 	/**
 	* The same, but with a const char*
 	*/
-	const char*			Translate( const char* in );
+	virtual const char*		Translate( const char* in ) override;
 
 	/**
 	* Returns the current active language.
 	*/
-	const idStr&		GetCurrentLanguage() const;
+	virtual const idStr&	GetCurrentLanguage() const override;
 
 	/**
 	* Returns the path to the fonts for the current active language.
 	*/
-	const idStr&		GetCurrentFontPath() const;
+	virtual const idStr&	GetCurrentFontPath() const override;
 
 	/**
 	* Print memory usage info.
     */
-	void				Print() const;
+	virtual void			Print() const override;
 
 	/**
 	* Load a new character mapping based on the new language. Returns the
 	* number of characters that should be remapped upon dictionary and
 	* readable load time.
 	*/
-	int					LoadCharacterMapping( idStr& lang );
+	virtual int				LoadCharacterMapping( idStr& lang ) override;
 
 	/**
 	* Set a new laguage (example: "english").
 	*/
-	bool				SetLanguage( const char* lang, bool firstTime = false );
+	virtual bool			SetLanguage( const char* lang, bool firstTime = false ) override;
 
 	/**
 	* Given an English string like "Maps", returns the "#str_xxxxx" template
 	* string that would result back in "Maps" under English. Can be used to
 	* make translation work even for hard-coded English strings.
 	*/
-	const char*			TemplateFromEnglish( const char* in);
-	const char*			TemplateFromEnglish( const idStr &in);
+	virtual const char*		TemplateFromEnglish( const char* in) override;
+	virtual const char*		TemplateFromEnglish( const idStr &in) override;
 
 	/**
 	* Changes the given string from "A Little House" to "Little House, A",
 	* supporting multiple languages like English, German, French etc.
 	*/
-	void				MoveArticlesToBack(const idStr& title, idStr& prefix, idStr& suffix); // grayman #3110
+	virtual void			MoveArticlesToBack(const idStr& title, idStr& prefix, idStr& suffix) override; // grayman #3110
 
 private:
 	// current language

@@ -206,9 +206,9 @@ typedef struct particleEmitter_s {
 class idAASFindCover : public idAASCallback {
 public:
 						idAASFindCover( const idActor* hidingActor, const idEntity* hideFromEnt, const idVec3 &hideFromPos );
-						~idAASFindCover();
+	virtual				~idAASFindCover() override;
 
-	virtual bool		TestArea( const idAAS *aas, int areaNum );
+	virtual bool		TestArea( const idAAS *aas, int areaNum ) override;
 
 private:
 	const idActor*		hidingActor;
@@ -220,7 +220,7 @@ class idAASFindAreaOutOfRange : public idAASCallback {
 public:
 						idAASFindAreaOutOfRange( const idVec3 &targetPos, float maxDist );
 
-	virtual bool		TestArea( const idAAS *aas, int areaNum );
+	virtual bool		TestArea( const idAAS *aas, int areaNum ) override;
 
 private:
 	idVec3				targetPos;
@@ -230,9 +230,9 @@ private:
 class idAASFindAttackPosition : public idAASCallback {
 public:
 						idAASFindAttackPosition(idAI *self, const idMat3 &gravityAxis, idEntity *target, const idVec3 &targetPos, const idVec3 &fireOffset);
-						~idAASFindAttackPosition();
+	virtual				~idAASFindAttackPosition() override;
 
-	virtual bool		TestArea( const idAAS *aas, int areaNum );
+	virtual bool		TestArea( const idAAS *aas, int areaNum ) override;
 
 private:
 	idAI				*self;
@@ -248,9 +248,9 @@ private:
 class idAASFindObservationPosition : public idAASCallback {
 public:
 						idAASFindObservationPosition( const idAI *self, const idMat3 &gravityAxis, const idVec3 &targetPos, const idVec3 &eyeOffset, float maxDistanceFromWhichToObserve );
-						~idAASFindObservationPosition();
+	virtual				~idAASFindObservationPosition() override;
 
-	virtual bool		TestArea( const idAAS *aas, int areaNum );
+	virtual bool		TestArea( const idAAS *aas, int areaNum ) override;
 
 	// Gets the best goal result, even if it didn't meet the maximum distance
 	bool getBestGoalResult
@@ -280,7 +280,7 @@ public:
 	CLASS_PROTOTYPE( idAI );
 
 							idAI();
-	virtual				~idAI();
+	virtual					~idAI() override;
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -496,12 +496,12 @@ public:
 	* Unfortunately this is exactly the same as idPlayer::GetMovementVolMod
 	* It's bad coding, but that's how D3 wrote the movement vars.
 	**/
-	float GetMovementVolMod( void );
+	virtual float GetMovementVolMod( void ) override;
 
 	/**
 	* Returns true if AI is knocked out
 	**/
-	bool  IsKnockedOut( void )
+	virtual bool  IsKnockedOut( void ) override
 	{
 		return (AI_KNOCKEDOUT!=0);
 	};
@@ -509,7 +509,7 @@ public:
 	/**
 	* grayman #3525 - get eye position
 	**/
-	idVec3 GetEyePosition( void ) const;
+	virtual idVec3 GetEyePosition( void ) const override;
 
 	/** 
 	* Ishtvan: Swap the AI's head CM to a larger one
@@ -521,13 +521,13 @@ public:
 	/**
 	* Return a damage multiplier if a sneak attack has occurred
 	**/
-	virtual float			StealthDamageMult( void );
+	virtual float			StealthDamageMult( void ) override;
 
 	/**
 	* Ishtvan: Overload AI target changing to re-initialize movement tasks
 	**/
-	virtual void			RemoveTarget(idEntity* target);
-	virtual void			AddTarget(idEntity* target);
+	virtual void			RemoveTarget(idEntity* target) override;
+	virtual void			AddTarget(idEntity* target) override;
 
 	// angua: calls the script functions for sitting down and getting up
 	void SitDown();
@@ -1384,10 +1384,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	BackboneStateMap backboneStates;
 
 	void					SetAAS( void );
-	virtual	void			DormantBegin( void );	// called when entity becomes dormant
-	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant
-	void					Think( void );
-	void					Activate( idEntity *activator );
+	virtual	void			DormantBegin( void ) override;	// called when entity becomes dormant
+	virtual	void			DormantEnd( void ) override;	// called when entity wakes from being dormant
+	virtual void			Think( void ) override;
+	virtual void			Activate( idEntity *activator ) override;
 	int						ReactionTo( const idEntity *ent );
 	bool					CheckForEnemy( void );
 	void					EnemyDead( void );
@@ -1433,15 +1433,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	bool					IsSearching(); // grayman #2603
 
-	virtual void			Hide( void );
-	virtual void			Show( void );
+	virtual void			Hide( void ) override;
+	virtual void			Show( void ) override;
 	virtual bool			CanBecomeSolid();
 	idVec3					FirstVisiblePointOnPath( const idVec3 origin, const idVec3 &target, int travelFlags );
 	void					CalculateAttackOffsets( void );
 	void					PlayCinematic( void );
 
 	// movement
-	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
+	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse ) override;
 	void					GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delta );
 	void					CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos );
 	void					DeadMove( void );
@@ -1500,12 +1500,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*
 	* Note: overrides idActor::TestKnockoutBlow.
 	**/
-	virtual bool			TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow, bool performAttack=true );  
+	virtual bool			TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow, bool performAttack = true ) override;
 	
 	/**
 	* Can the AI greet someone?
 	**/
-	bool					CanGreet(); // grayman #3338
+	virtual bool			CanGreet() override; // grayman #3338
 
 	/**
 	* grayman #3559 - react to having had something stolen
@@ -1558,8 +1558,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// navigation
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );
 
-	// greebo: For Documentation, see idActor class (this is an override).
-	virtual bool			ReEvaluateArea(int areaNum);
+	// greebo: For Documentation, see idActor class.
+	virtual bool			ReEvaluateArea(int areaNum) override;
 
 	/**
 	 * greebo: ReachedPos checks whether we the AI has reached the given target position <pos>.
@@ -1608,18 +1608,18 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* This is a virtual override of the idActor method.  It takes lighting levels into consideration
 	* additional to the ordinary FOV/trace check in idActor.
 	*/
-	virtual bool			CanSee( idEntity *ent, bool useFOV ) const;
+	virtual bool			CanSee( idEntity *ent, bool useFOV ) const override;
 
 
 	/**
 	* This version can optionally use or not use lighting and fov
 	*/
-	virtual bool			CanSeeExt ( idEntity* ent, const bool useFOV, const bool useLighting ) const;
+	bool					CanSeeExt ( idEntity* ent, const bool useFOV, const bool useLighting ) const;
 
 	/**
 	* This tests if a position is visible.  it can optionally use lighting and fov.
 	*/
-	virtual bool			CanSeePositionExt( idVec3 position, const bool useFOV, const bool useLighting );
+	bool					CanSeePositionExt( idVec3 position, const bool useFOV, const bool useLighting );
 
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
 
@@ -1645,7 +1645,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	/**
 	* Overloaded idActor::CheckFOV with FOV check that depends on head joint orientation
 	**/
-	virtual bool			CheckFOV( const idVec3 &pos ) const;
+	virtual bool			CheckFOV( const idVec3 &pos ) const override;
 
 	/**
 	* Darkmod enemy tracking: Is an entity shrouded in darkness?
@@ -1717,8 +1717,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					MoveToEntity( idEntity *ent );
 	bool					IsAfraid( void ); // grayman #3848
 
-	// Override idActor::OnElevator. See idActor class for documentation.
-	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;
+	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const override;
 
 	/**
 	 * greebo: This moves the entity to the given point.
@@ -1938,11 +1937,11 @@ private:
 	void					RemoveProjectile( void );
 
 	
-	virtual void			SwapLODModel( const char *modelname ); // SteveL #3770
+	virtual void			SwapLODModel( const char *modelname ) override; // SteveL #3770
 
 public:
 	idProjectile*			LaunchProjectile( const char *jointname, idEntity *target, bool clampToAttackCone );
-	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
+	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage ) override;
 	void					DirectDamage( const char *meleeDefName, idEntity *ent );
 	bool					TestMelee( void ) const;
 	/** ishtvan: test melee anticipating future positions **/
@@ -1958,13 +1957,13 @@ public:
 	void					InitMuzzleFlash( void );
 	void					TriggerWeaponEffects( const idVec3 &muzzle );
 	void					UpdateMuzzleFlash( void );
-	virtual bool			UpdateAnimationControllers( void );
+	virtual bool			UpdateAnimationControllers( void ) override;
 	void					UpdateParticles( void );
 	void					TriggerParticles( const char *jointName );
 
 	// AI script state management
-	virtual void			LinkScriptVariables( void );
-	virtual void			UpdateScript(); // overrides idActor::UpdateScript
+	virtual void			LinkScriptVariables( void ) override;
+	virtual void			UpdateScript() override;
 
 	// Returns true if the current enemy can be reached
 	bool					CanReachEnemy();

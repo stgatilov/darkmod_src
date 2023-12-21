@@ -30,7 +30,7 @@ public:
 	CLASS_PROTOTYPE( idForce_Spring );
 
 						idForce_Spring( void );
-	virtual				~idForce_Spring( void );
+	virtual				~idForce_Spring( void ) override;
 						// initialize the spring
 	void				InitSpring( float Kstretch, float Kcompress, float damping, float restLength );
 						// set the entities and positions on these entities the spring is attached to
@@ -38,8 +38,8 @@ public:
 										idPhysics *physics2, int id2, const idVec3 &p2 );
 
 public: // common force interface
-	virtual void		Evaluate( int time );
-	virtual void		RemovePhysics( const idPhysics *phys );
+	virtual void		Evaluate( int time ) override;
+	virtual void		RemovePhysics( const idPhysics *phys ) override;
 
 private:
 

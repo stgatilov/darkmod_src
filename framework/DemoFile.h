@@ -34,10 +34,10 @@ typedef enum {
 class idDemoFile : public idFile {
 public:
 					idDemoFile();
-					~idDemoFile();
+	virtual			~idDemoFile() override;
 
-	const char *	GetName( void ) { return (f?f->GetName():""); }
-	const char *	GetFullPath( void ) { return (f?f->GetFullPath():""); }
+	virtual const char *	GetName( void ) override { return (f?f->GetName():""); }
+	virtual const char *	GetFullPath( void ) override { return (f?f->GetFullPath():""); }
 
 	void			SetLog( bool b, const char *p );
 	void			Log( const char *p );
@@ -51,8 +51,8 @@ public:
 	void			ReadDict( idDict &dict );
 	void			WriteDict( const idDict &dict );
 
-	int				Read( void *buffer, int len );
-	int				Write( const void *buffer, int len );
+	virtual int		Read( void *buffer, int len ) override;
+	virtual int		Write( const void *buffer, int len ) override;
 
 private:
 	static idCompressor *AllocCompressor( int type );

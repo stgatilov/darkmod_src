@@ -83,42 +83,42 @@ protected:
 
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init(idAI* owner);
+	virtual void Init(idAI* owner) override;
 
 	// Gets called each time the mind is thinking
-	virtual void Think(idAI* owner);
+	virtual void Think(idAI* owner) override;
 
 	// Override the alert functions
-	virtual void OnTactileAlert(idEntity* tactEnt);
-	virtual void OnVisualAlert(idActor* enemy);
-	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman #3857
+	virtual void OnTactileAlert(idEntity* tactEnt) override;
+	virtual void OnVisualAlert(idActor* enemy) override;
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) override; // grayman #3847 // grayman #3857
 
-	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner);
-	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);
+	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner) override;
+	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead) override;
 
 	// grayman #3317 - It's possible that an AI will enter Combat mode after encountering a
 	// dead or KO'ed AI, but before the post processing for those events occurs. If that happens,
 	// these methods will catch the post processing and abort it.
-	virtual void Post_OnDeadPersonEncounter(idActor* person, idAI* owner);
-	virtual void Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
+	virtual void Post_OnDeadPersonEncounter(idActor* person, idAI* owner) override;
+	virtual void Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner) override;
 
-	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck); // grayman #3431
-	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner); // grayman #3857
+	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck) override; // grayman #3431
+	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner) override; // grayman #3857
 	
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	static StatePtr CreateInstance();
 
 protected:
 	// Override base class method
-	virtual bool CheckAlertLevel(idAI* owner);
+	virtual bool CheckAlertLevel(idAI* owner) override;
 
-	virtual void DelayedVisualStim( idEntity* stimSource, idAI* owner); // grayman #2924
+	virtual void DelayedVisualStim( idEntity* stimSource, idAI* owner) override; // grayman #2924
 
 	// Checks enemy status (dead, visible, not an enemy anymore).
 	// Returns false if the enemy is not applicable anymore and the state has ended

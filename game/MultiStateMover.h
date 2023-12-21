@@ -57,7 +57,7 @@ public:
 	void	Save(idSaveGame *savefile) const;
 	void	Restore(idRestoreGame *savefile);
 
-	void	Activate(idEntity* activator);
+	virtual void Activate(idEntity* activator) override;
 
 	// Returns the list of position infos, populates the list if none are assigned yet.
 	const idList<MoverPositionInfo>& GetPositionInfoList();
@@ -100,7 +100,7 @@ public:
 
 protected:
 	// override idMover's DoneMoving() to trigger targets
-	virtual void DoneMoving();
+	virtual void DoneMoving() override;
 
 private:
 	// greebo: Controls the direction of targetted rotaters, depending on the given moveTargetPosition
@@ -124,7 +124,7 @@ private:
 	/**
 	 * grayman #4370: "Override" the TeamBlocked event to detect collisions with the player.
 	 */
-	virtual void OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
+	virtual void OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity) override;
 };
 
 #endif /* _MULTI_STATE_MOVER_H_ */

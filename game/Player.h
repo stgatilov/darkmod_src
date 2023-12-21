@@ -516,24 +516,24 @@ public:
 	CLASS_PROTOTYPE( idPlayer );
 
 							idPlayer();
-	virtual					~idPlayer();
+	virtual					~idPlayer() override;
 
 	void					Spawn( void );
-	void					Think( void );
+	virtual void			Think( void ) override;
 
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
-	virtual void			Hide( void );
-	virtual void			Show( void );
+	virtual void			Hide( void ) override;
+	virtual void			Show( void ) override;
 
 	idPlayerView&			GetPlayerView() { return playerView; }
 
 	void					Init( void );
 	void					PrepareForRestart( void );
-	virtual void			Restart( void );
-	void					LinkScriptVariables( void );
+	virtual void			Restart( void ) override;
+	virtual void			LinkScriptVariables( void ) override;
 	void					SetupWeaponEntity( void );
 	void					SelectInitialSpawnPoint( idVec3 &origin, idAngles &angles );
 	void					SpawnFromSpawnSpot( void );
@@ -578,9 +578,9 @@ public:
 	void					SetJumpHinderance( const char *source, float mCap, float aCap );
 
 	// greebo: Sets the "player is pushing something heavy" state to the given bool (virtual override)
-	virtual void			SetIsPushing(bool isPushing);
+	virtual void			SetIsPushing(bool isPushing) override;
 	// Returns whether the player is currently pushing something heavy (virtual override)
-	virtual bool			IsPushing();
+	virtual bool			IsPushing() override;
 
 	// Called by the grabber to signal that we start/stop shouldering a body
 	void					OnStartShoulderingBody(idEntity* body);
@@ -623,28 +623,25 @@ public:
 	idVec3					GetListenLoc( void );
 
 	void					CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity );
-	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
+	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity ) override;
 
-	virtual void			GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const;
-	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos );
-	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
+	virtual void			GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const override;
+	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos ) override;
+	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage ) override;
 	void					CalcDamagePoints(  idEntity *inflictor, idEntity *attacker, const idDict *damageDef,
 							   const float damageScale, const int location, int *health );
-	virtual	void			Damage
-							( 
-							idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
+	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 							const char *damageDefName, const float damageScale, const int location,
-							trace_t *collision = NULL
-							);
+							trace_t *collision = NULL ) override;
 
 							// use exitEntityNum to specify a teleport with private camera view and delayed exit
-	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
+	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination ) override;
 
 	void					Kill( bool delayRespawn, bool nodamage );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	void					StartFxOnBone(const char *fx, const char *bone);
 
-	renderView_t *			GetRenderView( void );
+	virtual renderView_t *	GetRenderView( void ) override;
 	void					CalculateRenderView( void );	// called every tic by player code
 	void					CalculateFirstPersonView( void );
 
@@ -655,10 +652,10 @@ public:
 	float					DefaultFov( void ) const;
 	float					CalcFov( bool honorZoom );
 	void					CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis );
-	idVec3					GetEyePosition( void ) const;
-	bool					CanGreet(); // grayman #3338
+	virtual idVec3			GetEyePosition( void ) const override;
+	virtual bool			CanGreet() override; // grayman #3338
 
-	void					GetViewPos( idVec3 &origin, idMat3 &axis ) const;
+	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis ) const override;
 	void					OffsetThirdPersonView( float angle, float range, float height, bool clip );
 
 	bool					Give( const char *statname, const char *value );
@@ -727,7 +724,7 @@ public:
 	int						getAirTicks() const;
 	void					setAirTicks(int airTicks);
 
-	virtual bool			HandleSingleGuiCommand( idEntity *entityGui, idLexer *src );
+	virtual bool			HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) override;
 #if 0
 	bool					GuiActive( void ) { return focusGUIent != NULL; }
 #endif
@@ -798,18 +795,17 @@ public:
 	void					UpdateHudStats( idUserInterface *hud );
 	void					UpdateHudAmmo();
 
-	virtual void			ClientPredictionThink( void );
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			ClientPredictionThink( void ) override;
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 	void					WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg );
 
-	virtual bool			ServerReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual bool			ServerReceiveEvent( int event, int time, const idBitMsg &msg ) override;
+	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) override;
+	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis ) override;
+	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 
-	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis );
-	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
-
-	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 	bool					IsReady( void );
 	bool					IsRespawning( void );
 	bool					IsInTeleport( void );
@@ -837,9 +833,8 @@ public:
 	float					HoldFrobViewDistance( void );
 	bool					IsAdditionalHoldFrobGrabbableType(idEntity* target);
 
-	bool					OnLadder( void ) const;
-	// Virtal override of idActor::OnElevator()
-	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;
+	virtual bool			OnLadder( void ) const override;
+	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const override;
 
 	bool					SelfSmooth( void );
 
@@ -915,12 +910,12 @@ public:
 	* Update movement volumes: Reads the movement volume
 	* modifiers from cvars (for now)
 	**/
-	void UpdateMoveVolumes( void );
+	virtual void UpdateMoveVolumes( void ) override;
 
 	/**
 	* Get the volume modifier for a given movement type
 	**/
-	float GetMovementVolMod( void );
+	virtual float GetMovementVolMod( void ) override;
 
 	/**
 	 * greebo: Cycles through the inventory and opens the next map.
@@ -976,15 +971,15 @@ public:
 	bool SelectInventoryItem(const idStr& name);
 
 	// Override idEntity method to get notified upon item changes
-	virtual void OnInventoryItemChanged();
+	virtual void OnInventoryItemChanged() override;
 
 	// Override idEntity method: the "selection changed" event is called after the inventory cursor has changed its position
-	virtual void OnInventorySelectionChanged(const CInventoryItemPtr& prevItem);
+	virtual void OnInventorySelectionChanged(const CInventoryItemPtr& prevItem) override;
 
 	/**
 	 * Overload the idEntity::AddToInventory method to catch weapon items.
 	 */
-	virtual CInventoryItemPtr AddToInventory(idEntity *ent);
+	virtual CInventoryItemPtr AddToInventory(idEntity *ent) override;
 
 	/**
 	 * greebo: Attempts to put the current grabber item back into the inventory.
@@ -1008,7 +1003,7 @@ public:
 	int GetLightgemModifier(int curLightgemValue);
 
 	/// Am I a ranged threat to the given entity (or entities in general if target is NULL)?
-	float			RangedThreatTo(idEntity* target);
+	virtual float	RangedThreatTo(idEntity* target) override;
 	
 	// greebo: Sends a message to the HUD (used for "Game Saved" and such).
 	void			SendHUDMessage(const idStr& text);

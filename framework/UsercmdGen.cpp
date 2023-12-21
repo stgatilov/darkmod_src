@@ -341,35 +341,35 @@ class idUsercmdGenLocal : public idUsercmdGen {
 public:
 					idUsercmdGenLocal( void );
 	
-	void			Init( void );
+	virtual void	Init( void ) override;
 
-	void			InitForNewMap( void );
+	virtual void	InitForNewMap( void ) override;
 
-	void			Shutdown( void );
+	virtual void	Shutdown( void ) override;
 
-	void			Clear( void );
+	virtual void	Clear( void ) override;
 
-	void			ClearAngles( void );
+	virtual void	ClearAngles( void ) override;
 
-	usercmd_t		TicCmd( int ticNumber );
+	virtual usercmd_t	TicCmd( int ticNumber ) override;
 
-	void			InhibitUsercmd( inhibit_t subsystem, bool inhibit );
+	virtual void	InhibitUsercmd( inhibit_t subsystem, bool inhibit ) override;
 
-	void			UsercmdInterrupt( void );
+	virtual void	UsercmdInterrupt( void ) override;
 
-	int				CommandStringUsercmdData( const char *cmdString );
+	virtual int		CommandStringUsercmdData( const char *cmdString ) override;
 
-	int				GetNumUserCommands( void );
+	virtual int		GetNumUserCommands( void ) override;
 
-	const char *	GetUserCommandName( int index );
+	virtual const char *GetUserCommandName( int index ) override;
 
-	void			MouseState( int *x, int *y, int *button, bool *down );
+	virtual void	MouseState( int *x, int *y, int *button, bool *down ) override;
 
-	int				ButtonState( int key );
-	int				KeyState( int key );
+	virtual int		ButtonState( int key ) override;
+	virtual int		KeyState( int key ) override;
 
-	usercmd_t		GetDirectUsercmd( void );
-	int&			hack_Flags();
+	virtual usercmd_t	GetDirectUsercmd( void ) override;
+	virtual int&	hack_Flags() override;
 
 private:
 	void			MakeCurrent( void );

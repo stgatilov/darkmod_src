@@ -27,21 +27,21 @@ class idMarkerWindow : public idWindow {
 public:
 	idMarkerWindow(idUserInterfaceLocal *gui);
 	idMarkerWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual ~idMarkerWindow();
-	virtual size_t Allocated(){return idWindow::Allocated();};
+	virtual ~idMarkerWindow() override;
+	virtual size_t Allocated() override { return idWindow::Allocated(); }
 	virtual idWinVar *GetThisWinVarByName(const char *varname) override;
 
-	virtual const char *HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual void PostParse();
-	virtual void Draw(int time, float x, float y);
-	virtual const char *RouteMouseCoords(float xd, float yd);
-	virtual void		Activate(bool activate, idStr &act);
-	virtual void MouseExit();
-	virtual void MouseEnter();
+	virtual const char *HandleEvent(const sysEvent_t *event, bool *updateVisuals) override;
+	virtual void PostParse() override;
+	virtual void Draw(int time, float x, float y) override;
+	virtual const char *RouteMouseCoords(float xd, float yd) override;
+	virtual void Activate(bool activate, idStr &act) override;
+	virtual void MouseExit() override;
+	virtual void MouseEnter() override;
 
 	
 private:
-	virtual bool ParseInternalVar(const char *name, idParser *src);
+	virtual bool ParseInternalVar(const char *name, idParser *src) override;
 	void CommonInit();
 	void Line(int x1, int y1, int x2, int y2, dword* out, dword color);
 	void Point(int x, int y, dword *out, dword color);

@@ -65,7 +65,7 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	virtual bool		ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual bool		ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 
 private:
 	int					teleportStage;
@@ -96,7 +96,7 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
 private:
 	bool				stay_on;
@@ -137,7 +137,7 @@ class tdmPathFlee : public idEntity {
 public:
 	CLASS_PROTOTYPE( tdmPathFlee );
 
-	virtual ~tdmPathFlee();
+	virtual ~tdmPathFlee() override;
 
 	void				Spawn( void );
 
@@ -156,7 +156,7 @@ class tdmPathGuard : public idEntity
 public:
 	CLASS_PROTOTYPE( tdmPathGuard );
 
-	virtual			~tdmPathGuard();
+	virtual			~tdmPathGuard() override;
 
 	int				m_priority; // 1 = lowest
 	float			m_angle;	// yaw to face
@@ -187,7 +187,7 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 	void				Spawn( void );
-	void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
+	virtual void		Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 
 private:
 	int					count;
@@ -232,7 +232,7 @@ public:
 
 	void				Spawn( void );
 
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
 private:
 	idEntity *			ent1;
@@ -264,7 +264,7 @@ public:
 
 	void				Spawn( void );
 
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
 private:
 	idForce_Field		forceField;
@@ -296,12 +296,12 @@ public:
 	void					Restore( idRestoreGame *savefile );
 
 	void					Spawn( void );
-	virtual bool			LoadAF( void );
+	virtual bool			LoadAF( void ) override;
 	bool					StartRagdoll( void );
-	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
+	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis ) override;
 
-	virtual void			Think( void );								//	\ SteveL #3770: to enable LOD
-	virtual void			SwapLODModel( const char *modelname );		//	/	
+	virtual void			Think( void ) override;								//	\ SteveL #3770: to enable LOD
+	virtual void			SwapLODModel( const char *modelname ) override;		//	/	
 	
 private:
 	int						num_anims;
@@ -342,16 +342,16 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 	void				Spawn( void );
-	void				ShowEditingDialog( void );
-	virtual void		Hide( void );
-	virtual void		Show( void );
+	virtual void		ShowEditingDialog( void ) override;
+	virtual void		Hide( void ) override;
+	virtual void		Show( void ) override;
 	void				Fade( const idVec4 &to, float fadeTime );
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
-	virtual void		ReapplyDecals(); // #3817
+	virtual void		ReapplyDecals() override; // #3817
 
-	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 private:
 	void				Event_Activate( idEntity *activator );
@@ -385,7 +385,7 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 	void					Event_Activate( idEntity *activator );
 	void					Event_SetSmoke( const char *particleDef );
 
@@ -413,7 +413,7 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
 private:
 	idStr				text;
@@ -472,7 +472,7 @@ class idPortalEntity : public idEntity {
 public:
 	CLASS_PROTOTYPE( idPortalEntity );
 	idPortalEntity();
-	~idPortalEntity();
+	virtual ~idPortalEntity() override;
 
 	static idBounds		GetBounds( const idVec3 &origin );
 
@@ -590,15 +590,15 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
 	void				SetMaster( idBeam *masterbeam );
 	void				SetBeamTarget( const idVec3 &origin );
 
-	virtual void		Show( void );
+	virtual void		Show( void ) override;
 
-	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 private:
 	void				Event_MatchTarget( void );
@@ -684,7 +684,7 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
 private:
 	int					nextTriggerTime;
@@ -718,7 +718,7 @@ public:
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
-	void				Think( void );
+	virtual void		Think( void ) override;
 
 	void				OpenPortal( void );
 	void				ClosePortal( void );
@@ -819,7 +819,7 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
 private:
 	void				Event_Activate( idEntity *activator );
@@ -854,7 +854,7 @@ public:
 
 	idPortalSky();
 
-	virtual ~idPortalSky();
+	virtual ~idPortalSky() override;
 
 	void				Spawn( void );
 	void				Event_PostSpawn();
@@ -912,7 +912,7 @@ public:
 	CLASS_PROTOTYPE(idPeek);
 	
 	idPeek(); // Constructor
-	virtual ~idPeek(); // Destructor
+	virtual ~idPeek() override; // Destructor
 
 	void	Spawn();
 };

@@ -62,12 +62,11 @@ public:
 	MoveToPositionTask(idEntity* targetEntity, float entityReachDistance = DEFAULT_ENTITY_REACH_DISTANCE, float accuracy = -1);
 
 	// Get the name of this task
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
-	// Override the base Init method
-	virtual void Init(idAI* owner, Subsystem& subsystem);
+	virtual void Init(idAI* owner, Subsystem& subsystem) override;
 
-	virtual bool Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem) override;
 
 	void SetPosition(idVec3 targetPosition);
 
@@ -75,8 +74,8 @@ public:
 	void SetEntityReachDistance(float distance);
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Creates a new Instance of this task
 	static MoveToPositionTaskPtr CreateInstance();

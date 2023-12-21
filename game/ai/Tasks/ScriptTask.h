@@ -60,18 +60,17 @@ public:
 	ScriptTask(const idStr& functionName);
 
 	// Get the name of this task
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
-	// Override the base Init method
-	virtual void Init(idAI* owner, Subsystem& subsystem);
+	virtual void Init(idAI* owner, Subsystem& subsystem) override;
 
-	virtual bool Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem) override;
 
 	// Gets called when this task is finished (or gets terminated)
-	virtual void OnFinish(idAI* owner);
+	virtual void OnFinish(idAI* owner) override;
 
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Creates a new Instance of this task
 	static ScriptTaskPtr CreateInstance();

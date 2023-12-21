@@ -25,24 +25,24 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 class idRenderModelManagerLocal : public idRenderModelManager {
 public:
 							idRenderModelManagerLocal();
-	virtual					~idRenderModelManagerLocal() {}
+	virtual					~idRenderModelManagerLocal() override {}
 
-	virtual void			Init();
-	virtual void			Shutdown();
-	virtual idRenderModel *	AllocModel();
-	virtual void			FreeModel( idRenderModel *model );
-	virtual idRenderModel *	FindModel( const char *modelName );
-	virtual idRenderModel *	CheckModel( const char *modelName );
-	virtual idRenderModel *	DefaultModel();
-	virtual void			AddModel( idRenderModel *model );
-	virtual void			RemoveModel( idRenderModel *model );
-	virtual void			ReloadModels( bool forceAll = false );
-	virtual void			FreeModelVertexCaches();
-	virtual void			WritePrecacheCommands( idFile *file );
-	virtual void			BeginLevelLoad();
-	virtual void			EndLevelLoad();
+	virtual void			Init() override;
+	virtual void			Shutdown() override;
+	virtual idRenderModel *	AllocModel() override;
+	virtual void			FreeModel( idRenderModel *model ) override;
+	virtual idRenderModel *	FindModel( const char *modelName ) override;
+	virtual idRenderModel *	CheckModel( const char *modelName ) override;
+	virtual idRenderModel *	DefaultModel() override;
+	virtual void			AddModel( idRenderModel *model ) override;
+	virtual void			RemoveModel( idRenderModel *model ) override;
+	virtual void			ReloadModels( bool forceAll = false ) override;
+	virtual void			FreeModelVertexCaches() override;
+	virtual void			WritePrecacheCommands( idFile *file ) override;
+	virtual void			BeginLevelLoad() override;
+	virtual void			EndLevelLoad() override;
 
-	virtual	void			PrintMemInfo( MemInfo_t *mi );
+	virtual	void			PrintMemInfo( MemInfo_t *mi ) override;
 
 private:
 	idList<idRenderModel*>	models;

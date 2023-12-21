@@ -59,7 +59,7 @@ public:
 	void					Restore( idRestoreGame *savefile );
 
 	// Override idEntity to register the PickableLock class.
-	virtual void			AddObjectsToSaveGame(idSaveGame* savefile);
+	virtual void			AddObjectsToSaveGame(idSaveGame* savefile) override;
 
 	/**
 	 * greebo: A set of convenience methods, which set the master bool to TRUE.
@@ -90,9 +90,9 @@ public:
 	virtual void			CloseAndLock();
 
 	// Ishtvan: Allow for fine control when frob is held
-	virtual void			FrobAction(bool frobMaster, bool isFrobPeerAction = false);
-	virtual void			FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
-	virtual void			FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
+	virtual void			FrobAction(bool frobMaster, bool isFrobPeerAction = false) override;
+	virtual void			FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0) override;
+	virtual void			FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0) override;
 
 	void					RegisterAI(idAI* ai);	// grayman #1145
 	void					TellRegisteredUsers();	// grayman #1145
@@ -148,13 +148,13 @@ public:
 	* apply an impulse to the physics object, 'ent' is the entity applying the impulse
 	**/
 
-	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
+	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse ) override;
 
 	/**
 	* Overloading idMover::DoneRotating/DoneMoving in order to close the portal when door closes
 	**/
-	virtual void			DoneRotating();
-	virtual void			DoneMoving();
+	virtual void			DoneRotating() override;
+	virtual void			DoneMoving() override;
 
 	/**
 	 * A helper function that implements the finalisation for rotations or movings.
@@ -234,7 +234,7 @@ public:
 	 *
 	 * @returns: The length of the sound in msec.
 	 */
-	virtual int			FrobMoverStartSound(const char* soundName);
+	virtual int	FrobMoverStartSound(const char* soundName);
 
 	/** 
 	 * greebo: Returns TRUE if the mover is at the open position. Doesn't change
@@ -408,8 +408,8 @@ protected:
 	 *         according to the current rotation and translation states. This is needed to let doors
 	 *         open/close in the right speed after they've been interrupted.
 	 */
-	virtual float			GetMoveTimeRotationFraction(); // grayman #3711
-	virtual float			GetMoveTimeTranslationFraction(); // grayman #3711
+	virtual float			GetMoveTimeRotationFraction() override; // grayman #3711
+	virtual float			GetMoveTimeTranslationFraction() override; // grayman #3711
 
 	/**
 	* By default, a BinaryFrobMover toggles its state when triggered
@@ -437,7 +437,7 @@ protected:
 	/**
 	 * greebo: "Override" the TeamBlocked event to detect collisions with the player.
 	 */
-	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
+	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity) override;
 
 protected:
 

@@ -39,14 +39,14 @@ public:
 
 	idLiquid( void );
 
-	virtual ~idLiquid();
+	virtual ~idLiquid() override;
 
 	void				Spawn( void );
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	virtual bool		Collide( const trace_t &collision, const idVec3 &velocity );
+	virtual bool		Collide( const trace_t &collision, const idVec3 &velocity ) override;
 
 private:
 	void				Event_Touch( idEntity *other, trace_t *trace );

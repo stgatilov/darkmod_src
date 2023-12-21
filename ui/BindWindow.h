@@ -20,17 +20,17 @@ class idBindWindow : public idWindow {
 public:
 	idBindWindow(idUserInterfaceLocal *gui);
 	idBindWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual ~idBindWindow();
+	virtual ~idBindWindow() override;
 
-	virtual const char *HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual void PostParse();
-	virtual void Draw(int time, float x, float y);
-	virtual size_t Allocated(){return idWindow::Allocated();};
+	virtual const char *HandleEvent(const sysEvent_t *event, bool *updateVisuals) override;
+	virtual void PostParse() override;
+	virtual void Draw(int time, float x, float y) override;
+	virtual size_t Allocated() override { return idWindow::Allocated(); }
 // 
 //  
 	virtual idWinVar *GetThisWinVarByName(const char *varname) override;
 // 
-	virtual void Activate( bool activate, idStr &act );
+	virtual void Activate( bool activate, idStr &act ) override;
 	
 private:
 	void CommonInit();

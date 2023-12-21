@@ -22,7 +22,7 @@ class idSliderWindow : public idWindow {
 public:
 						idSliderWindow(idUserInterfaceLocal *gui);
 						idSliderWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual				~idSliderWindow();
+	virtual				~idSliderWindow() override;
 
 	void				InitWithDefaults(const char *_name, const idRectangle &rect, const idVec4 &foreColor, const idVec4 &matColor, const char *_background, const char *thumbShader, bool _vertical, bool _scrollbar);
 
@@ -31,22 +31,22 @@ public:
 	float				GetHigh() { return high; }
 
 	void				SetValue(float _value);
-	float				GetValue() { return value; };
+	float				GetValue() { return value; }
 
-	virtual size_t		Allocated(){return idWindow::Allocated();};
+	virtual size_t		Allocated() override{ return idWindow::Allocated(); }
 	virtual idWinVar *	GetThisWinVarByName(const char *varname) override;
-	virtual const char *HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual void		PostParse();
-	virtual void		Draw(int time, float x, float y);
-	virtual void		DrawBackground(const idRectangle &drawRect);
-	virtual const char *RouteMouseCoords(float xd, float yd);
-	virtual void		Activate(bool activate, idStr &act);
-	virtual void		SetBuddy(idWindow *buddy);
+	virtual const char *HandleEvent(const sysEvent_t *event, bool *updateVisuals) override;
+	virtual void		PostParse() override;
+	virtual void		Draw(int time, float x, float y) override;
+	virtual void		DrawBackground(const idRectangle &drawRect) override;
+	virtual const char *RouteMouseCoords(float xd, float yd) override;
+	virtual void		Activate(bool activate, idStr &act) override;
+	virtual void		SetBuddy(idWindow *buddy) override;
 
-	void				RunNamedEvent( const char* eventName );
+	virtual void		RunNamedEvent( const char* eventName ) override;
 	
 private:
-	virtual bool		ParseInternalVar(const char *name, idParser *src);
+	virtual bool		ParseInternalVar(const char *name, idParser *src) override;
 	void				CommonInit();
 	void				InitCvar();
 						// true: read the updated cvar from cvar system

@@ -48,16 +48,16 @@ public:
 	CLASS_PROTOTYPE( idBrittleFracture );
 
 								idBrittleFracture( void );
-	virtual						~idBrittleFracture( void );
+	virtual						~idBrittleFracture( void ) override;
 
 	void						Save( idSaveGame *savefile ) const;
 	void						Restore( idRestoreGame *savefile );
 
 	void						Spawn( void );
 
-	virtual void				Present( void );
-	virtual void				Think( void );
-	virtual void				ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
+	virtual void				Present( void ) override;
+	virtual void				Think( void ) override;
+	virtual void				ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse ) override;
 	virtual void				AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) override;
 	virtual void				AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) override;
 	virtual void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
@@ -75,8 +75,8 @@ public:
 		EVENT_MAXEVENTS
 	};
 
-	virtual void				ClientPredictionThink( void );
-	virtual bool				ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual void				ClientPredictionThink( void ) override;
+	virtual bool				ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 
 	/**
 	* Update soundprop to set losses in associated portal, if portal is present

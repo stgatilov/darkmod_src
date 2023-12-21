@@ -43,13 +43,13 @@ public:
 	/**
 	 * Functions that must be forwarded to the master.
 	 */
-	virtual void			SetFrobbed(const bool val);
-	bool					IsFrobbed() const;
+	virtual void			SetFrobbed(const bool val) override;
+	virtual bool			IsFrobbed() const override;
 
 	// Action function, these are re-routed to the frobmaster entity
 	virtual bool			CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) override;
 	virtual bool			UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item) override;
-	virtual void			AttackAction(idPlayer* player);
+	virtual void			AttackAction(idPlayer* player) override;
 
 	// stgatilov: this method does NOT override idEntity::FrobAction and is never called
 	// this has been so for ages, so I'm not sure I want to change it now
@@ -57,7 +57,7 @@ public:
 
 	// These functions need to be disabled on the handle. Therefore
 	// they are provided but empty.
-	void					ToggleLock();
+	virtual void			ToggleLock() override;
 
 	// Returns the associated master entity
 	void					SetFrobMaster(idEntity* frobMaster);
@@ -83,7 +83,7 @@ public:
 	 * greebo: Override the standard idEntity method to emit sounds from the nearest position 
 	 * to the player instead of the bounding box center.
 	 */
-	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis);
+	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis) override;
 
 protected:
 	// Script event interface

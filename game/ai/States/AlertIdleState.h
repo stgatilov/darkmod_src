@@ -35,22 +35,22 @@ class AlertIdleState :
 
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
 	// This is called when the state is first attached to the AI's Mind.
 	// Note: we do not call IdleState::Init
-	virtual void Init(idAI* owner);
+	virtual void Init(idAI* owner) override;
 
 	// Think is inherited from IdleState::Think
 
 	static StatePtr CreateInstance();
 
-	virtual void ForgetSittingSleeping() { _startSitting = _startSleeping = false; };   // grayman #3154
+	virtual void ForgetSittingSleeping() override { _startSitting = _startSleeping = false; };   // grayman #3154
 
 protected:
 	// Returns the initial idle bark sound, depending on the alert level 
 	// and the current state of mind
-	virtual idStr GetInitialIdleBark(idAI* owner);
+	virtual idStr GetInitialIdleBark(idAI* owner) override;
 };
 
 } // namespace ai

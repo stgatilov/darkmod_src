@@ -30,7 +30,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 class idCinematicLocal : public idCinematic {
 public:
 							idCinematicLocal();
-	virtual					~idCinematicLocal();
+	virtual					~idCinematicLocal() override;
 
 	static void InitCinematic();
 	static void ShutdownCinematic();

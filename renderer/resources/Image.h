@@ -277,7 +277,7 @@ public:
 
 	static const ImageType Type = IT_ASSET;
 	virtual ImageType GetType() const override { return Type; }
-	virtual idImageAsset *AsAsset() { return this; }
+	virtual idImageAsset *AsAsset() override { return this; }
 
 	// used internally to specify the actual data
 	// data goes from the bottom to the top line of the image, as OpenGL expects it
@@ -344,7 +344,7 @@ class idImageScratch : public idImage {
 public:
 	static const ImageType Type = IT_SCRATCH;
 	virtual ImageType GetType() const override { return Type; }
-	virtual idImageScratch *AsScratch() { return this; }
+	virtual idImageScratch *AsScratch() override { return this; }
 
 	virtual void Print() const override;
 

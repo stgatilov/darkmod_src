@@ -472,7 +472,7 @@ public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
 	idEntity();
-	virtual ~idEntity();
+	virtual					~idEntity() override;
 
 	void					Spawn( void );
 
@@ -1834,24 +1834,24 @@ public:
 
 	void					Spawn( void ); //TDM: added so that we can cache anim rates
 
-	virtual void			ClientPredictionThink( void );
-	virtual void			Think( void );
+	virtual void			ClientPredictionThink( void ) override;
+	virtual void			Think( void ) override;
 
 	void					UpdateAnimation( void );
 
-	virtual idAnimator *	GetAnimator( void );
-	virtual void			SetModel( const char *modelname );
-	virtual void			SwapLODModel( const char *modelname ); // SteveL #3770
+	virtual idAnimator *	GetAnimator( void ) override;
+	virtual void			SetModel( const char *modelname ) override;
+	virtual void			SwapLODModel( const char *modelname ) override; // SteveL #3770
 
 	bool					GetJointWorldTransform( jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis );
 	bool					GetJointTransformForAnim( jointHandle_t jointHandle, int animNum, int currentTime, idVec3 &offset, idMat3 &axis ) const;
 
 	virtual int				GetDefaultSurfaceType( void ) const;
-	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
+	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) override;
 	void					AddLocalDamageEffect( jointHandle_t jointNum, const idVec3 &localPoint, const idVec3 &localNormal, const idVec3 &localDir, const idDeclEntityDef *def, const idMaterial *collisionMaterial );
 	void					UpdateDamageEffects( void );
 
-	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 
 	/**
 	* Overloads idEntity::Attach to bind to a joint
@@ -1917,7 +1917,7 @@ protected:
 	* Replace decal overlays after LOD switch, hiding, shouldering, save game loading. SteveL #3817
 	**/
 protected:
-	virtual void ReapplyDecals();			  // Internal method, called at end of Think() 
+	virtual void ReapplyDecals() override;			  // Internal method, called at end of Think() 
 
 protected:
 	idAnimator				animator;

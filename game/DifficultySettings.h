@@ -147,14 +147,14 @@ public:
 	CVARSetting();
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile);
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Applies this setting
 	void Apply();
 
 	// Load the settings with the given <index> matching the given <level> from the given dict.
-	virtual void ParseFromDict(const idDict& dict, int level, int index);
+	virtual void ParseFromDict(const idDict& dict, int level, int index) override;
 };
 
 /**

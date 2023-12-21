@@ -27,24 +27,24 @@ class idEditWindow : public idWindow {
 public:
 						idEditWindow(idUserInterfaceLocal *gui);
 						idEditWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual 			~idEditWindow();
+	virtual 			~idEditWindow() override;
 
-	virtual void		Draw( int time, float x, float y );
-	virtual const char *HandleEvent( const sysEvent_t *event, bool *updateVisuals );
-	virtual void		PostParse();
-	virtual void		GainFocus();
-	virtual size_t		Allocated(){return idWindow::Allocated();};
+	virtual void		Draw( int time, float x, float y ) override;
+	virtual const char *HandleEvent( const sysEvent_t *event, bool *updateVisuals ) override;
+	virtual void		PostParse() override;
+	virtual void		GainFocus() override;
+	virtual size_t		Allocated() override { return idWindow::Allocated(); }
 	
 	virtual idWinVar *	GetThisWinVarByName(const char *varname) override;
 	
-	virtual void 		HandleBuddyUpdate(idWindow *buddy);
-	virtual void		Activate(bool activate, idStr &act);
+	virtual void 		HandleBuddyUpdate(idWindow *buddy) override;
+	virtual void		Activate(bool activate, idStr &act) override;
 	
-	void				RunNamedEvent( const char* eventName );
+	virtual void		RunNamedEvent( const char* eventName ) override;
 	
 private:
 
-	virtual bool		ParseInternalVar(const char *name, idParser *src);
+	virtual bool		ParseInternalVar(const char *name, idParser *src) override;
 
 	void				InitCvar();
 						// true: read the updated cvar from cvar system

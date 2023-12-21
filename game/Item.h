@@ -30,7 +30,7 @@ public:
 	CLASS_PROTOTYPE( idItem );
 
 							idItem();
-	virtual					~idItem();
+	virtual					~idItem() override;
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -39,8 +39,8 @@ public:
 	void					GetAttributes( idDict &attributes );
 	virtual bool			GiveToPlayer( idPlayer *player );
 	virtual bool			Pickup( idPlayer *player );
-	virtual void			Think( void );
-	virtual void			Present();
+	virtual void			Think( void ) override;
+	virtual void			Present() override;
 
 
 	enum {
@@ -50,16 +50,16 @@ public:
 		EVENT_MAXEVENTS
 	};
 
-	virtual void			ClientPredictionThink( void );
-	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual void			ClientPredictionThink( void ) override;
+	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 
 	// networking
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 	// TDM: SZ: UpdateVisuals is overridden to check if the object moved in case
 	// we have to spawn an absence entity
-	virtual void			UpdateVisuals( void );
+	virtual void			UpdateVisuals( void ) override;
 
 	// This indicates which team owns the item (or thinks it does :P )
 	int ownerTeam;
@@ -104,24 +104,24 @@ public:
 	CLASS_PROTOTYPE( idMoveableItem );
 
 							idMoveableItem();
-	virtual					~idMoveableItem();
+	virtual					~idMoveableItem() override;
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
 	void					Spawn( void );
-	virtual void			Think( void );
-	virtual bool			Pickup( idPlayer *player );
+	virtual void			Think( void ) override;
+	virtual bool			Pickup( idPlayer *player ) override;
 
 	static void				DropItems( idAnimatedEntity *ent, const char *type, idList<idEntity *> *list );
 	static idEntity	*		DropItem( const char *classname, const idVec3 &origin, const idMat3 &axis, const idVec3 &velocity, int activateDelay, int removeDelay );
 
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 protected:
-	void					Hide();
-	void					Show();
+	virtual void			Hide() override;
+	virtual void			Show() override;
 
 private:
 	idPhysics_RigidBody		physicsObj;

@@ -47,7 +47,7 @@ public:
 	void				Event_ShooterFireProjectile();
 
 	// Overload the derived idEntity::Think method so that this object gets called each frame
-	virtual void		Think();
+	virtual void		Think() override;
 
 	/**
 	* Fires a projectile and sets the timer to gameLocal.time.

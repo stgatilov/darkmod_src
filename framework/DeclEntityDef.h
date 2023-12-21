@@ -28,11 +28,11 @@ class idDeclEntityDef : public idDecl {
 public:
 	idDict					dict;
 
-	virtual size_t			Size( void ) const;
-	virtual const char *	DefaultDefinition() const;
-	virtual bool			Parse( const char *text, const int textLength );
-	virtual void			FreeData( void );
-	virtual void			Print( void ) const;
+	virtual size_t			Size( void ) const override;
+	virtual const char *	DefaultDefinition() const override;
+	virtual bool			Parse( const char *text, const int textLength ) override;
+	virtual void			FreeData( void ) override;
+	virtual void			Print( void ) const override;
 };
 
 #endif /* !__DECLENTITYDEF_H__ */

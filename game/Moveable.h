@@ -32,24 +32,24 @@ public:
 	CLASS_PROTOTYPE( idMoveable );
 
 							idMoveable( void );
-							virtual ~idMoveable( void );
+	virtual					~idMoveable( void ) override;
 
 	void					Spawn( void );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 
-	virtual void			Hide( void );
-	virtual void			Show( void );
+	virtual void			Hide( void ) override;
+	virtual void			Show( void ) override;
 
 	bool					AllowStep( void ) const;
 	void					EnableDamage( bool enable, float duration );
-	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
+	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity ) override;
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 	// Update the "pushed" state of this entity
 	virtual void			SetIsPushed(bool isPushed, const idVec3& pushDirection);
@@ -128,9 +128,9 @@ public:
 	void					Restore( idRestoreGame *savefile );
 
 	void					BarrelThink( void );
-	virtual void			Think( void );
-	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis );
-	virtual void			ClientPredictionThink( void );
+	virtual void			Think( void ) override;
+	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) override;
+	virtual void			ClientPredictionThink( void ) override;
 
 private:
 	float					radius;					// radius of barrel
@@ -157,22 +157,22 @@ public:
 	CLASS_PROTOTYPE( idExplodingBarrel );
 
 							idExplodingBarrel();
-							virtual ~idExplodingBarrel();
+	virtual					~idExplodingBarrel() override;
 
 	void					Spawn( void );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 	virtual void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
 								const char *damageDefName,const float damageScale,
 								const int location, trace_t *tr = NULL ) override;
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
-	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
+	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 
 	enum {
 		EVENT_EXPLODE = idEntity::EVENT_MAXEVENTS,

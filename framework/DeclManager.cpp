@@ -77,34 +77,34 @@ class idDeclLocal : public idDeclBase {
 
 public:
 								idDeclLocal();
-	virtual 					~idDeclLocal() {};
-	virtual const char *		GetName( void ) const;
-	virtual declType_t			GetType( void ) const;
-	virtual declState_t			GetState( void ) const;
-	virtual bool				IsImplicit( void ) const;
-	virtual bool				IsValid( void ) const;
-	virtual void				Invalidate( void );
-	virtual void				Reload( void );
-	virtual void				EnsureNotPurged( void );
-	virtual int					Index( void ) const;
-	virtual int					GetLineNum( void ) const;
-	virtual const char *		GetFileName( void ) const;
-	virtual size_t				Size( void ) const;
-	virtual void				GetText( char *text ) const;
-	virtual int					GetTextLength( void ) const;
-	virtual void				SetText( const char *text );
-	virtual bool				ReplaceSourceFileText( void );
-	virtual bool				SourceFileChanged( void ) const;
-	virtual void				MakeDefault( void );
-	virtual bool				EverReferenced( void ) const;
+	virtual 					~idDeclLocal() override {}
+	virtual const char *		GetName( void ) const override;
+	virtual declType_t			GetType( void ) const override;
+	virtual declState_t			GetState( void ) const override;
+	virtual bool				IsImplicit( void ) const override;
+	virtual bool				IsValid( void ) const override;
+	virtual void				Invalidate( void ) override;
+	virtual void				Reload( void ) override;
+	virtual void				EnsureNotPurged( void ) override;
+	virtual int					Index( void ) const override;
+	virtual int					GetLineNum( void ) const override;
+	virtual const char *		GetFileName( void ) const override;
+	virtual size_t				Size( void ) const override;
+	virtual void				GetText( char *text ) const override;
+	virtual int					GetTextLength( void ) const override;
+	virtual void				SetText( const char *text ) override;
+	virtual bool				ReplaceSourceFileText( void ) override;
+	virtual bool				SourceFileChanged( void ) const override;
+	virtual void				MakeDefault( void ) override;
+	virtual bool				EverReferenced( void ) const override;
 
 protected:
-	virtual bool				SetDefaultText( void );
-	virtual const char *		DefaultDefinition( void ) const;
-	virtual bool				Parse( const char *text, const int textLength );
-	virtual void				FreeData( void );
-	virtual void				List( void ) const;
-	virtual void				Print( void ) const;
+	virtual bool				SetDefaultText( void ) override;
+	virtual const char *		DefaultDefinition( void ) const override;
+	virtual bool				Parse( const char *text, const int textLength ) override;
+	virtual void				FreeData( void ) override;
+	virtual void				List( void ) const override;
+	virtual void				Print( void ) const override;
 
 protected:
 	void						AllocateSelf( void );
@@ -170,11 +170,11 @@ class idDeclManagerLocal : public idDeclManager {
 	friend class idDeclLocal;
 
 public:
-	virtual void				Init( void );
-	virtual void				Shutdown( void );
-	virtual void				Reload( bool force );
-	virtual void				BeginLevelLoad();
-	virtual void				EndLevelLoad();
+	virtual void				Init( void ) override;
+	virtual void				Shutdown( void ) override;
+	virtual void				Reload( bool force ) override;
+	virtual void				BeginLevelLoad() override;
+	virtual void				EndLevelLoad() override;
 	virtual void				BeginEntityLoad(idMapEntity *entity) override;
 	virtual void				EndEntityLoad(idMapEntity *entity) override;
 	virtual void				BeginModelLoad(idRenderModel *model) override;
@@ -182,37 +182,37 @@ public:
 	virtual void				BeginWindowLoad(idWindow *model) override;
 	virtual void				EndWindowLoad(idWindow *model) override;
 	virtual const LoadStack &	GetLoadStack() const override;
-	virtual void				RegisterDeclType( const char *typeName, declType_t type, idDecl *(*allocator)( void ) );
-	virtual void				RegisterDeclFolder( const char *folder, const char *extension, declType_t defaultType );
-	virtual int					GetChecksum( void ) const;
-	virtual int					GetNumDeclTypes( void ) const;
-	virtual int					GetNumDecls( declType_t type );
-	virtual const char *		GetDeclNameFromType( declType_t type ) const;
-	virtual declType_t			GetDeclTypeFromName( const char *typeName ) const;
-	virtual const idDecl *		FindType( declType_t type, const char *name, bool makeDefault = true );
-	virtual const idDecl *		DeclByIndex( declType_t type, int index, bool forceParse = true );
+	virtual void				RegisterDeclType( const char *typeName, declType_t type, idDecl *(*allocator)( void ) ) override;
+	virtual void				RegisterDeclFolder( const char *folder, const char *extension, declType_t defaultType ) override;
+	virtual int					GetChecksum( void ) const override;
+	virtual int					GetNumDeclTypes( void ) const override;
+	virtual int					GetNumDecls( declType_t type ) override;
+	virtual const char *		GetDeclNameFromType( declType_t type ) const override;
+	virtual declType_t			GetDeclTypeFromName( const char *typeName ) const override;
+	virtual const idDecl *		FindType( declType_t type, const char *name, bool makeDefault = true ) override;
+	virtual const idDecl *		DeclByIndex( declType_t type, int index, bool forceParse = true ) override;
 
-	virtual const idDecl*		FindDeclWithoutParsing( declType_t type, const char *name, bool makeDefault = true );
-	virtual void				ReloadFile( const char* filename, bool force );
+	virtual const idDecl*		FindDeclWithoutParsing( declType_t type, const char *name, bool makeDefault = true ) override;
+	virtual void				ReloadFile( const char* filename, bool force ) override;
 
-	virtual void				ListType( const idCmdArgs &args, declType_t type );
-	virtual void				PrintType( const idCmdArgs &args, declType_t type );
+	virtual void				ListType( const idCmdArgs &args, declType_t type ) override;
+	virtual void				PrintType( const idCmdArgs &args, declType_t type ) override;
 
-	virtual idDecl *			CreateNewDecl( declType_t type, const char *name, const char *fileName );
+	virtual idDecl *			CreateNewDecl( declType_t type, const char *name, const char *fileName ) override;
 
 	//BSM Added for the material editors rename capabilities
-	virtual bool				RenameDecl( declType_t type, const char* oldName, const char* newName );
+	virtual bool				RenameDecl( declType_t type, const char* oldName, const char* newName ) override;
 
-	virtual void				MediaPrint( const char *fmt, ... ) id_attribute((format(printf,2,3)));
-	virtual void				WritePrecacheCommands( idFile *f );
+	virtual void				MediaPrint( const char *fmt, ... ) override id_attribute((format(printf,2,3)));
+	virtual void				WritePrecacheCommands( idFile *f ) override;
 
-	virtual const idMaterial *		FindMaterial( const char *name, bool makeDefault = true );
-	virtual const idDeclSkin *		FindSkin( const char *name, bool makeDefault = true );
-	virtual const idSoundShader *	FindSound( const char *name, bool makeDefault = true );
+	virtual const idMaterial *		FindMaterial( const char *name, bool makeDefault = true ) override;
+	virtual const idDeclSkin *		FindSkin( const char *name, bool makeDefault = true ) override;
+	virtual const idSoundShader *	FindSound( const char *name, bool makeDefault = true ) override;
 
-	virtual const idMaterial *		MaterialByIndex( int index, bool forceParse = true );
-	virtual const idDeclSkin *		SkinByIndex( int index, bool forceParse = true );
-	virtual const idSoundShader *	SoundByIndex( int index, bool forceParse = true );
+	virtual const idMaterial *		MaterialByIndex( int index, bool forceParse = true ) override;
+	virtual const idDeclSkin *		SkinByIndex( int index, bool forceParse = true ) override;
+	virtual const idSoundShader *	SoundByIndex( int index, bool forceParse = true ) override;
 
 public:
 	static void					MakeNameCanonical( const char *name, char *result, int maxLength );

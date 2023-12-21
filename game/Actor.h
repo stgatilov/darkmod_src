@@ -450,7 +450,7 @@ public:
 
 public:
 							idActor( void );
-	virtual					~idActor( void );
+	virtual					~idActor( void ) override;
 
 	void					Spawn( void );
 	virtual void			Restart( void );
@@ -458,23 +458,23 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Hide( void );
-	virtual void			Show( void );
-	virtual int				GetDefaultSurfaceType( void ) const;
-	virtual void			ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material, bool save = true );
+	virtual void			Hide( void ) override;
+	virtual void			Show( void ) override;
+	virtual int				GetDefaultSurfaceType( void ) const override;
+	virtual void			ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material, bool save = true ) override;
 
-	virtual bool			LoadAF( void );
+	virtual bool			LoadAF( void ) override;
 	void					SetupBody( void );
 
 	void					CheckBlink( void );
 
-	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis );
-	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
+	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) override;
+	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis ) override;
 
 							// script state management
 	void					ShutdownThreads( void );
-	virtual bool			ShouldConstructScriptObjectAtSpawn( void ) const;
-	virtual idThread *		ConstructScriptObject( void );
+	virtual bool			ShouldConstructScriptObjectAtSpawn( void ) const override;
+	virtual idThread *		ConstructScriptObject( void ) override;
 	virtual void			UpdateScript();
 	const function_t		*GetScriptFunction( const char *funcname );
 	void					SetState( const function_t *newState );
@@ -560,11 +560,11 @@ public:
 							// model/combat model/ragdoll
 	void					SetCombatModel( void );
 	idClipModel *			GetCombatModel( void ) const;
-	virtual void			LinkCombat( void );
-	virtual void			UnlinkCombat( void );
+	virtual void			LinkCombat( void ) override;
+	virtual void			UnlinkCombat( void ) override;
 	bool					StartRagdoll( void );
 	void					StopRagdoll( void );
-	virtual bool			UpdateAnimationControllers( void );
+	virtual bool			UpdateAnimationControllers( void ) override;
 
 							// delta view angles to allow movers to rotate the view of the actor
 	const idAngles &		GetDeltaViewAngles( void ) const;
@@ -594,7 +594,7 @@ public:
 	/**
 	* Called when the given ent is about to be bound/attached to this actor.
 	**/
-	void					BindNotify( idEntity *ent, const char *jointName ); // grayman #3074
+	virtual void			BindNotify( idEntity *ent, const char *jointName ) override; // grayman #3074
 	
 	/**
 	* Called to determine if an actor can exchange greetings with another actor.
@@ -622,7 +622,7 @@ public:
 	/**
 	* Called when the given ent is about to be unbound/detached from this actor.
 	**/
-	virtual void			UnbindNotify( idEntity *ent );
+	virtual void			UnbindNotify( idEntity *ent ) override;
 
 	/**
 	* Attach an entity.  Entity spawnArgs checked for attachments are:
@@ -631,7 +631,7 @@ public:
 	* Ent is the entity being attached
 	* PosName is the optional position name to attach to.
 	**/
-	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL ) override;
 
 	/**
 	 * greebo: Returns the number of attached melee weapons. These are the entities
@@ -653,9 +653,9 @@ public:
 	bool GetAttackFlag(ECombatType type) const;
 	void SetAttackFlag(ECombatType type, bool enabled);
 
-	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
+	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination ) override;
 
-	virtual	renderView_t *	GetRenderView();	
+	virtual	renderView_t *	GetRenderView() override;
 	
 							// animation state control
 	int						GetAnim( int channel, const char *name );
@@ -681,7 +681,7 @@ public:
 	void					SetWaitState( const char *_waitstate );
 	void					SetWaitState( int channel, const char *_waitstate );
 	bool					AnimDone( int channel, int blendFrames ) const;
-	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
+	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName ) override;
 
 	/**
 	* Returns the modification to movement volume based on the movement type
@@ -817,7 +817,7 @@ protected:
 	float					m_stepvol_crouch_creep;
 	float					m_stepvol_crouch_run;
 
-	virtual void			Gib( const idVec3 &dir, const char *damageDefName );
+	virtual void			Gib( const idVec3 &dir, const char *damageDefName ) override;
 
 							// removes attachments with "remove" set for when character dies
 	void					RemoveAttachments( void );

@@ -34,8 +34,8 @@ protected:
 public:
 	virtual ~CStim();
 
-	virtual void Save(idSaveGame *savefile) const;
-	virtual void Restore(idRestoreGame *savefile);
+	virtual void Save(idSaveGame *savefile) const override;
+	virtual void Restore(idRestoreGame *savefile) override;
 
 	/**
 	 * Add a responseentity to the ignore list. If the response is already

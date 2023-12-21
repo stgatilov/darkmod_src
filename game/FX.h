@@ -44,14 +44,14 @@ public:
 	CLASS_PROTOTYPE( idEntityFx );
 
 							idEntityFx();
-	virtual					~idEntityFx();
+	virtual					~idEntityFx() override;
 
 	void					Spawn( void );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think();
+	virtual void			Think() override;
 	void					Setup( const char *fx );
 	void					Run( int time );
 	void					Start( int time );
@@ -61,9 +61,9 @@ public:
 	const char *			Joint( void );
 	const bool				Done();
 
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
-	virtual void			ClientPredictionThink( void );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
+	virtual void			ClientPredictionThink( void ) override;
 
 	static idEntityFx *		StartFx( const char *fx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind );
 

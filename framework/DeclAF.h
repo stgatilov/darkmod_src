@@ -130,12 +130,12 @@ class idDeclAF : public idDecl {
 	friend class idAFFileManager;
 public:
 							idDeclAF( void );
-	virtual					~idDeclAF( void );
+	virtual					~idDeclAF( void ) override;
 
-	virtual size_t			Size( void ) const;
-	virtual const char *	DefaultDefinition( void ) const;
-	virtual bool			Parse( const char *text, const int textLength );
-	virtual void			FreeData( void );
+	virtual size_t			Size( void ) const override;
+	virtual const char *	DefaultDefinition( void ) const override;
+	virtual bool			Parse( const char *text, const int textLength ) override;
+	virtual void			FreeData( void ) override;
 
 	virtual void			Finish( const getJointTransform_t GetJointTransform, const idJointMat *frame, void *model ) const;
 

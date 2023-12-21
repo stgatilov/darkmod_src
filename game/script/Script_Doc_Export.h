@@ -51,7 +51,7 @@ class ScriptEventDocGeneratorD3Script :
 	public ScriptEventDocGenerator
 {
 public:
-	void WriteDoc(idFile& outputFile);
+	virtual void WriteDoc(idFile& outputFile) override;
 
 private:
 	idStr GetEventDocumentation(const idEventDef& ev);
@@ -62,7 +62,7 @@ class ScriptEventDocGeneratorMediaWiki :
 	public ScriptEventDocGenerator
 {
 public:
-	void WriteDoc(idFile& outputFile);
+	virtual void WriteDoc(idFile& outputFile) override;
 
 private:
 	idStr GetEventDescription(const idEventDef& ev);
@@ -74,7 +74,7 @@ class ScriptEventDocGeneratorXml :
 	public ScriptEventDocGenerator
 {
 public:
-	void WriteDoc(idFile& outputFile);
+	virtual void WriteDoc(idFile& outputFile) override;
 
 private:
 	idStr GetEventDescription(const idEventDef& ev);

@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 class idGameWindowProxy : public idWindow {
 public:
 				idGameWindowProxy( idDeviceContext *d, idUserInterfaceLocal *gui );
-	void		Draw( int time, float x, float y );
+	virtual void Draw( int time, float x, float y ) override;
 };
 
 #endif

@@ -680,48 +680,48 @@ public:
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
-							~idGameLocal();
+	virtual					~idGameLocal() override;
 
-	virtual void			Init( void );
-	virtual void			Shutdown( void );
-	virtual void			SetLocalClient( int clientNum );
-	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify );
-	virtual const idDict *	GetUserInfo( int clientNum );
-	virtual void			SetServerInfo( const idDict &serverInfo );
+	virtual void			Init( void ) override;
+	virtual void			Shutdown( void ) override;
+	virtual void			SetLocalClient( int clientNum ) override;
+	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify ) override;
+	virtual const idDict *	GetUserInfo( int clientNum ) override;
+	virtual void			SetServerInfo( const idDict &serverInfo ) override;
 
-	virtual const idDict &	GetPersistentPlayerInfo( int clientNum );
-	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo );
+	virtual const idDict &	GetPersistentPlayerInfo( int clientNum ) override;
+	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo ) override;
 	// Obsttorte
-	virtual idStr			triggeredSave();
-	virtual bool			savegamesDisallowed();
-	virtual bool			quicksavesDisallowed();
-	virtual bool			PlayerReady();	// SteveL #4139. Prevent saving before player has clicked "ready" to start the map
+	virtual idStr			triggeredSave() override;
+	virtual bool			savegamesDisallowed() override;
+	virtual bool			quicksavesDisallowed() override;
+	virtual bool			PlayerReady() override;	// SteveL #4139. Prevent saving before player has clicked "ready" to start the map
 	// <--- end
-	virtual void			InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randSeed );
-	virtual bool			InitFromSaveGame( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, idFile *saveGameFile );
-	virtual void			SaveGame( idFile *saveGameFile );
-	virtual void			MapShutdown( void );
-	virtual void			CacheDictionaryMedia( const idDict *dict );
-	virtual void			SpawnPlayer( int clientNum );
-	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds, int timestepMs, bool minorTic );
-	virtual int				GetSpyglassOverlay(); // grayman #3807
-	virtual int				GetPeekOverlay(); // grayman #4882
-	virtual int				DetermineAspectRatio(); // grayman #3807
+	virtual void			InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randSeed ) override;
+	virtual bool			InitFromSaveGame( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, idFile *saveGameFile ) override;
+	virtual void			SaveGame( idFile *saveGameFile ) override;
+	virtual void			MapShutdown( void ) override;
+	virtual void			CacheDictionaryMedia( const idDict *dict ) override;
+	virtual void			SpawnPlayer( int clientNum ) override;
+	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds, int timestepMs, bool minorTic ) override;
+	int						GetSpyglassOverlay(); // grayman #3807
+	int						GetPeekOverlay(); // grayman #4882
+	int						DetermineAspectRatio(); // grayman #3807
 
 	/**
 	* TDM: Pause/Unpause game
 	**/
-	virtual void			PauseGame( bool bPauseState );
-	virtual bool			Draw( int clientNum );
-	virtual void			DrawLightgem( int clientNum );
-	virtual escReply_t		HandleESC( idUserInterface **gui );
-	virtual const char *	HandleGuiCommands( const char *menuCommand );
-	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
+	void					PauseGame( bool bPauseState );
+	virtual bool			Draw( int clientNum ) override;
+	virtual void			DrawLightgem( int clientNum ) override;
+	virtual escReply_t		HandleESC( idUserInterface **gui ) override;
+	virtual const char *	HandleGuiCommands( const char *menuCommand ) override;
+	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui ) override;
 
 	/**
 	* Adjusts the size of GUI variables to support stretching/scaling of the GUI.
     */
-	virtual void			UpdateGUIScaling( idUserInterface *gui );
+	void					UpdateGUIScaling( idUserInterface *gui );
 
 	// ---------------------- Public idGameLocal Interface -------------------
 
@@ -965,10 +965,10 @@ public:
 	void					ClearPersistentInfo();
 
 	// Events invoked by the engine on reloadImages or vid_restart
-	void					OnReloadImages();
-	void					OnVidRestart();
+	virtual void			OnReloadImages() override;
+	virtual void			OnVidRestart() override;
 
-	bool					PlayerUnderwater(); // grayman #3556
+	virtual bool			PlayerUnderwater() override; // grayman #3556
 
 	void					AllowImmediateStim( idEntity* e, int stimType ); // grayman #3317
 
@@ -1081,15 +1081,15 @@ private:
 
 	void					DumpOggSounds( void );
 	void					GetShakeSounds( const idDict *dict );
-	void					SelectTimeGroup( int timeGroup );
-	int						GetTimeGroupTime( int timeGroup );
-	void					GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] );
+	virtual void			SelectTimeGroup( int timeGroup ) override;
+	virtual int				GetTimeGroupTime( int timeGroup ) override;
+	virtual void			GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] ) override;
 
 	void					Tokenize( idStrList &out, const char *in );
 
 	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
 
-	void					GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
+	virtual void			GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) override;
 
 	// Sets the video CVARs according to the settings in the given GUI
 	void					UpdateScreenResolutionFromGUI(idUserInterface* gui);

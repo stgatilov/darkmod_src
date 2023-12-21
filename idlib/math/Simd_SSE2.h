@@ -31,17 +31,17 @@ public:
 	idSIMD_SSE2();
 
 #ifdef ENABLE_SSE_PROCESSORS
-	virtual void NormalizeTangents( idDrawVert *verts, const int numVerts );
-	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
+	virtual void NormalizeTangents( idDrawVert *verts, const int numVerts ) override;
+	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) override;
 	using idSIMD_SSE::MinMax;	// avoid warning for hiding base methods
-	virtual	void MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count );
-	virtual void MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count );
-	virtual void DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes );
-	virtual int  CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts );
-	virtual void TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts );
+	virtual	void MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count ) override;
+	virtual void MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) override;
+	virtual void DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) override;
+	virtual int  CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts ) override;
+	virtual void TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) override;
 
 	virtual void MemcpyNT( void* dst, const void* src, const int count ) override;
-	virtual void CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing );
+	virtual void CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing ) override;
 
 	virtual void GenerateMipMap2x2( const byte *srcPtr, int srcStride, int halfWidth, int halfHeight, byte *dstPtr, int dstStride ) override;
 	virtual void CompressRGTCFromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) override;

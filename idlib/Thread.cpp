@@ -244,7 +244,7 @@ idMyThread test class.
 */
 class idMyThread : public idSysThread {
 public:
-	virtual int Run() {
+	virtual int Run() override {
 		// run threaded code here
 		return 0;
 	}

@@ -469,9 +469,9 @@ class idCurve_Bezier : public idCurve<type> {
 public:
 						idCurve_Bezier( void );
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	void				Basis( const int order, const float t, float *bvals ) const;
@@ -657,9 +657,9 @@ class idCurve_QuadraticBezier : public idCurve<type> {
 public:
 						idCurve_QuadraticBezier( void );
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	void				Basis( const float t, float *bvals ) const;
@@ -786,9 +786,9 @@ class idCurve_CubicBezier : public idCurve<type> {
 public:
 						idCurve_CubicBezier( void );
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	void				Basis( const float t, float *bvals ) const;
@@ -926,7 +926,7 @@ class idCurve_Spline : public idCurve<type> {
 public:
 						idCurve_Spline( void );
 
-	virtual bool		IsDone( const float time ) const;
+	virtual bool		IsDone( const float time ) const override;
 
 	virtual void		SetBoundaryType( const boundary_t bt ) { boundaryType = bt; this->changed = true; }
 	virtual boundary_t	GetBoundaryType( void ) const { return boundaryType; }
@@ -1059,11 +1059,11 @@ class idCurve_NaturalCubicSpline : public idCurve_Spline<type> {
 public:
 						idCurve_NaturalCubicSpline( void );
 
-	virtual void		Clear( void ) { idCurve_Spline<type>::Clear(); this->values.Clear(); b.Clear(); c.Clear(); d.Clear(); }
+	virtual void		Clear( void ) override { idCurve_Spline<type>::Clear(); this->values.Clear(); b.Clear(); c.Clear(); d.Clear(); }
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	mutable idList<type>b;
@@ -1361,9 +1361,9 @@ class idCurve_CatmullRomSpline : public idCurve_Spline<type> {
 public:
 						idCurve_CatmullRomSpline( void );
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	void				Basis( const int index, const float t, float *bvals ) const;
@@ -1532,14 +1532,14 @@ class idCurve_KochanekBartelsSpline : public idCurve_Spline<type> {
 public:
 						idCurve_KochanekBartelsSpline( void );
 
-	virtual int			AddValue( const float time, const type &value );
+	virtual int			AddValue( const float time, const type &value ) override;
 	virtual int			AddValue( const float time, const type &value, const float tension, const float continuity, const float bias );
-	virtual void		RemoveIndex( const int index ) { this->values.RemoveIndex(index); this->times.RemoveIndex(index); tension.RemoveIndex(index); continuity.RemoveIndex(index); bias.RemoveIndex(index); }
-	virtual void		Clear( void ) { this->values.Clear(); this->times.Clear(); tension.Clear(); continuity.Clear(); bias.Clear(); this->currentIndex = -1; }
+	virtual void		RemoveIndex( const int index ) override { this->values.RemoveIndex(index); this->times.RemoveIndex(index); tension.RemoveIndex(index); continuity.RemoveIndex(index); bias.RemoveIndex(index); }
+	virtual void		Clear( void ) override { this->values.Clear(); this->times.Clear(); tension.Clear(); continuity.Clear(); bias.Clear(); this->currentIndex = -1; }
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	idList<float>		tension;
@@ -1795,9 +1795,9 @@ public:
 	virtual int			GetOrder( void ) const { return order; }
 	virtual void		SetOrder( const int i ) { assert( i > 0 && i < 10 ); order = i; }
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	int					order;
@@ -1969,9 +1969,9 @@ class idCurve_UniformCubicBSpline : public idCurve_BSpline<type> {
 public:
 						idCurve_UniformCubicBSpline( void );
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	void				Basis( const int index, const float t, float *bvals ) const;
@@ -2138,9 +2138,9 @@ class idCurve_NonUniformBSpline : public idCurve_BSpline<type> {
 public:
 						idCurve_NonUniformBSpline( void );
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	void				Basis( const int index, const int order, const float t, float *bvals ) const;
@@ -2324,14 +2324,14 @@ class idCurve_NURBS : public idCurve_NonUniformBSpline<type> {
 public:
 						idCurve_NURBS( void );
 
-	virtual int			AddValue( const float time, const type &value );
+	virtual int			AddValue( const float time, const type &value ) override;
 	virtual int			AddValue( const float time, const type &value, const float weight );
-	virtual void		RemoveIndex( const int index ) { this->values.RemoveIndex(index); this->times.RemoveIndex(index); weights.RemoveIndex(index); }
-	virtual void		Clear( void ) { this->values.Clear(); this->times.Clear(); weights.Clear(); this->currentIndex = -1; }
+	virtual void		RemoveIndex( const int index ) override { this->values.RemoveIndex(index); this->times.RemoveIndex(index); weights.RemoveIndex(index); }
+	virtual void		Clear( void ) override { this->values.Clear(); this->times.Clear(); weights.Clear(); this->currentIndex = -1; }
 
-	virtual type		GetCurrentValue( const float time ) const;
-	virtual type		GetCurrentFirstDerivative( const float time ) const;
-	virtual type		GetCurrentSecondDerivative( const float time ) const;
+	virtual type		GetCurrentValue( const float time ) const override;
+	virtual type		GetCurrentFirstDerivative( const float time ) const override;
+	virtual type		GetCurrentSecondDerivative( const float time ) const override;
 
 protected:
 	idList<float>		weights;

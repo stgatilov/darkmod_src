@@ -28,22 +28,22 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idCompressor_None : public idCompressor {
 public:
-					idCompressor_None( void );
+						idCompressor_None( void );
 
-	void			Init( idFile *f, bool compress, int wordLength );
-	void			FinishCompress( void );
-	float			GetCompressionRatio( void ) const;
+	virtual void		Init( idFile *f, bool compress, int wordLength ) override;
+	virtual void		FinishCompress( void ) override;
+	virtual float		GetCompressionRatio( void ) const override;
 
-	const char *	GetName( void );
-	const char *	GetFullPath( void );
-	int				Read( void *outData, int outLength );
-	int				Write( const void *inData, int inLength );
-	int				Length( void );
-	ID_TIME_T			Timestamp( void );
-	int				Tell( void );
-	void			ForceFlush( void );
-	void			Flush( void );
-	int				Seek( long offset, fsOrigin_t origin );
+	virtual const char *GetName( void ) override;
+	virtual const char *GetFullPath( void ) override;
+	virtual int			Read( void *outData, int outLength ) override;
+	virtual int			Write( const void *inData, int inLength ) override;
+	virtual int			Length( void ) override;
+	virtual ID_TIME_T	Timestamp( void ) override;
+	virtual int			Tell( void ) override;
+	virtual void		ForceFlush( void ) override;
+	virtual void		Flush( void ) override;
+	virtual int			Seek( long offset, fsOrigin_t origin ) override;
 
 protected:
 	idFile *		file;
@@ -223,12 +223,12 @@ class idCompressor_BitStream : public idCompressor_None {
 public:
 					idCompressor_BitStream( void ) {}
 
-	void			Init( idFile *f, bool compress, int wordLength );
-	void			FinishCompress( void );
-	float			GetCompressionRatio( void ) const;
+	virtual void	Init( idFile *f, bool compress, int wordLength ) override;
+	virtual void	FinishCompress( void ) override;
+	virtual float	GetCompressionRatio( void ) const override;
 
-	int				Write( const void *inData, int inLength );
-	int				Read( void *outData, int outLength );
+	virtual int		Write( const void *inData, int inLength ) override;
+	virtual int		Read( void *outData, int outLength ) override;
 
 protected:
 	byte			buffer[65536];
@@ -601,10 +601,10 @@ class idCompressor_RunLength : public idCompressor_BitStream {
 public:
 					idCompressor_RunLength( void ) {}
 
-	void			Init( idFile *f, bool compress, int wordLength );
+	virtual void	Init( idFile *f, bool compress, int wordLength ) override;
 
-	int				Write( const void *inData, int inLength );
-	int				Read( void *outData, int outLength );
+	virtual int		Write( const void *inData, int inLength ) override;
+	virtual int		Read( void *outData, int outLength ) override;
 
 private:
 	int				runLengthCode;
@@ -714,8 +714,8 @@ class idCompressor_RunLength_ZeroBased : public idCompressor_BitStream {
 public:
 					idCompressor_RunLength_ZeroBased( void ) {}
 
-	int				Write( const void *inData, int inLength );
-	int				Read( void *outData, int outLength );
+	virtual int		Write( const void *inData, int inLength ) override;
+	virtual int		Read( void *outData, int outLength ) override;
 
 private:
 };
@@ -809,12 +809,12 @@ class idCompressor_Huffman : public idCompressor_None {
 public:
 					idCompressor_Huffman( void ) {}
 
-	void			Init( idFile *f, bool compress, int wordLength );
-	void			FinishCompress( void );
-	float			GetCompressionRatio( void ) const;
+	virtual void	Init( idFile *f, bool compress, int wordLength ) override;
+	virtual void	FinishCompress( void ) override;
+	virtual float	GetCompressionRatio( void ) const override;
 
-	int				Write( const void *inData, int inLength );
-	int				Read( void *outData, int outLength );
+	virtual int		Write( const void *inData, int inLength ) override;
+	virtual int		Read( void *outData, int outLength ) override;
 
 private:
 	byte			seq[65536];
@@ -1368,11 +1368,11 @@ class idCompressor_Arithmetic : public idCompressor_BitStream {
 public:
 					idCompressor_Arithmetic( void ) {}
 
-	void			Init( idFile *f, bool compress, int wordLength );
-	void			FinishCompress( void );
+	virtual void	Init( idFile *f, bool compress, int wordLength ) override;
+	virtual void	FinishCompress( void ) override;
 
-	int				Write( const void *inData, int inLength );
-	int				Read( void *outData, int outLength );
+	virtual int		Write( const void *inData, int inLength ) override;
+	virtual int		Read( void *outData, int outLength ) override;
 	
 private:
 					typedef struct acProbs_s {
@@ -1796,11 +1796,11 @@ class idCompressor_LZSS : public idCompressor_BitStream {
 public:
 					idCompressor_LZSS( void ) {}
 
-	void			Init( idFile *f, bool compress, int wordLength );
-	void			FinishCompress( void );
+	virtual void	Init( idFile *f, bool compress, int wordLength ) override;
+	virtual void	FinishCompress( void ) override;
 
-	int				Write( const void *inData, int inLength );
-	int				Read( void *outData, int outLength );
+	virtual int		Write( const void *inData, int inLength ) override;
+	virtual int		Read( void *outData, int outLength ) override;
 
 protected:
 	int				offsetBits;
@@ -2075,10 +2075,10 @@ class idCompressor_LZSS_WordAligned : public idCompressor_LZSS {
 public:
 					idCompressor_LZSS_WordAligned( void ) {}
 
-	void			Init( idFile *f, bool compress, int wordLength );
+	virtual void	Init( idFile *f, bool compress, int wordLength ) override;
 private:
-	virtual void	CompressBlock( void );
-	virtual void	DecompressBlock( void );
+	virtual void	CompressBlock( void ) override;
+	virtual void	DecompressBlock( void ) override;
 };
 
 /*
@@ -2214,11 +2214,11 @@ class idCompressor_LZW : public idCompressor_BitStream {
 public:
 					idCompressor_LZW( void ) {}
 
-	void			Init( idFile *f, bool compress, int wordLength );
-	void			FinishCompress( void );
+	virtual void	Init( idFile *f, bool compress, int wordLength ) override;
+	virtual void	FinishCompress( void ) override;
 
-	int				Write( const void *inData, int inLength );
-	int				Read( void *outData, int outLength );
+	virtual int		Write( const void *inData, int inLength ) override;
+	virtual int		Read( void *outData, int outLength ) override;
 
 protected:
 	int				AddToDict( int w, int k );

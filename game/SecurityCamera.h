@@ -36,14 +36,14 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 
-	virtual renderView_t *	GetRenderView();
+	virtual renderView_t *	GetRenderView() override;
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict *damageDef ) override;
 	virtual	void			Damage(idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName,
 														const float damageScale, const int location, trace_t *tr = NULL) override;
-	virtual void			Present(void);
+	virtual void			Present(void) override;
 	int						GetSecurityCameraState( void );
 
 	idList< idEntityPtr<idEntity> >	enemies;
@@ -201,7 +201,7 @@ private:
 	void					TriggerSparks( void );
 	void					UpdateColors( void );
 
-	void					Activate( idEntity* activator );
+	virtual void			Activate( idEntity* activator ) override;
 	bool					IsEntityHiddenByDarkness(idEntity* actor, const float sightThreshold);
 
 };

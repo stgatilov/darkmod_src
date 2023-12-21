@@ -31,7 +31,7 @@ public:
 	void					Spawn( void );
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 
 private:
 
@@ -55,10 +55,10 @@ private:
 	void					ShootCannon( idVec3 enemyPos );
 	void					RoutEnemies( void );
 	void					SetPower( bool newState );
-	void					Activate( idEntity* activator );
-	void					Damage(idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-								const char *damageDefName, const float damageScale,	const int location, trace_t *tr);
-	void					Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual void			Activate( idEntity* activator ) override;
+	virtual void			Damage(idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
+								const char *damageDefName, const float damageScale,	const int location, trace_t *tr) override;
+	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	void					AddSparks( void );
 	void					TriggerSparks( void );
 

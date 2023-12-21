@@ -199,41 +199,41 @@ public:
 public:	// common physics interface
 
 	// virtual override of base class method SetSelf() to set the push force owner
-	virtual void			SetSelf( idEntity *e );
+	virtual void			SetSelf( idEntity *e ) override;
 
-	bool					Evaluate( int timeStepMSec, int endTimeMSec );
-	void					UpdateTime( int endTimeMSec );
-	int						GetTime( void ) const;
+	virtual bool			Evaluate( int timeStepMSec, int endTimeMSec ) override;
+	virtual void			UpdateTime( int endTimeMSec ) override;
+	virtual int				GetTime( void ) const override;
 
-	void					GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const;
-	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
-	bool					IsAtRest( void ) const;
-	int						GetRestStartTime( void ) const;
+	virtual void			GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const override;
+	virtual void			ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) override;
+	virtual bool			IsAtRest( void ) const override;
+	virtual int				GetRestStartTime( void ) const override;
 
-	void					SaveState( void );
-	void					RestoreState( void );
+	virtual void			SaveState( void ) override;
+	virtual void			RestoreState( void ) override;
 
-	void					SetOrigin( const idVec3 &newOrigin, int id = -1 );
-	void					SetAxis( const idMat3 &newAxis, int id = -1 );
+	virtual void			SetOrigin( const idVec3 &newOrigin, int id = -1 ) override;
+	virtual void			SetAxis( const idMat3 &newAxis, int id = -1 ) override;
 
-	void					Translate( const idVec3 &translation, int id = -1 );
-	void					Rotate( const idRotation &rotation, int id = -1 );
+	virtual void			Translate( const idVec3 &translation, int id = -1 ) override;
+	virtual void			Rotate( const idRotation &rotation, int id = -1 ) override;
 
-	void					SetLinearVelocity( const idVec3 &newLinearVelocity, int id = 0 );
+	virtual void			SetLinearVelocity( const idVec3 &newLinearVelocity, int id = 0 ) override;
 
-	const idVec3 &			GetLinearVelocity( int id = 0 ) const;
+	virtual const idVec3 &	GetLinearVelocity( int id = 0 ) const override;
 
 	// This is true as soon as the player's velocity is well enough above walk speed
 	bool					HasRunningVelocity();
 
-	void					SetPushed( int deltaTime );
-	const idVec3 &			GetPushedLinearVelocity( const int id = 0 ) const;
+	virtual void			SetPushed( int deltaTime ) override;
+	virtual const idVec3 &	GetPushedLinearVelocity( const int id = 0 ) const override;
 	void					ClearPushedVelocity( void );
 
-	void					SetMaster( idEntity *master, const bool orientated = true );
+	virtual void			SetMaster( idEntity *master, const bool orientated = true ) override;
 
-	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
-	void					ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 /**
 * Removes stale pointers when a rope entity is destroyed

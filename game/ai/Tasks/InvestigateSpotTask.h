@@ -68,12 +68,11 @@ public:
 	InvestigateSpotTask(bool investigateClosely);
 
 	// Get the name of this task
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
-	// Override the base Init method
-	virtual void Init(idAI* owner, Subsystem& subsystem);
+	virtual void Init(idAI* owner, Subsystem& subsystem) override;
 
-	virtual bool Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem) override;
 
 	/** 
 	 * greebo: Sets a new goal position for this task.
@@ -87,11 +86,11 @@ public:
 	 */
 	virtual void SetInvestigateClosely(bool closely);
 
-	virtual void OnFinish(idAI* owner); // grayman #2560
+	virtual void OnFinish(idAI* owner) override; // grayman #2560
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Creates a new Instance of this task
 	static InvestigateSpotTaskPtr CreateInstance();

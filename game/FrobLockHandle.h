@@ -40,10 +40,8 @@ public:
 
 	/**
 	 * greebo: This method is invoked directly or it gets called by the attached master.
-	 *
-	 * Overrides CFrobHandle::Tap()
 	 */
-	virtual void			Tap();
+	virtual void			Tap() override;
 
 	/**
 	 * Get/set the lock associated with this handle.
@@ -56,7 +54,7 @@ public:
 
 protected:
 	// Specialise the OpenPositionReached method of BinaryFrobMover to trigger the lock's open event
-	virtual void			OnOpenPositionReached();
+	virtual void			OnOpenPositionReached() override;
 
 	// Script event interface
 	void					Event_GetLock();

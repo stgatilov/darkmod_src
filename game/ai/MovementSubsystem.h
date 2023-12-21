@@ -76,7 +76,7 @@ public:
 	// Called regularly by the Mind to run the currently assigned routine.
 	// @returns: TRUE if the subsystem is enabled and the task was performed, 
 	// @returns: FALSE if the subsystem is disabled and nothing happened.
-	virtual bool PerformTask();
+	virtual bool PerformTask() override;
 
 	void StartPatrol();
 	void StopPatrol(); // grayman #5056
@@ -88,12 +88,12 @@ public:
 
 	virtual void NextPath();
 
-	virtual void ClearTasks();
+	virtual void ClearTasks() override;
 
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Returns the current "blocked" state
 	BlockedState GetBlockedState() const

@@ -42,9 +42,9 @@ public:
 	PositionWithinRangeFinder(const idAI *self, const idMat3 &gravityAxis, 
 			const idVec3 &targetPos, const idVec3 &eyeOffset, float maxDistance);
 
-	~PositionWithinRangeFinder();
+	virtual ~PositionWithinRangeFinder() override;
 
-	bool TestArea( const idAAS *aas, int areaNum );
+	virtual bool TestArea( const idAAS *aas, int areaNum ) override;
 
 	bool GetBestGoalResult(float& out_bestGoalDistance, aasGoal_t& out_bestGoal);
 };

@@ -812,50 +812,50 @@ static const int	MAX_RENDER_CROPS = 8;
 class idRenderSystemLocal : public idRenderSystem {
 public:
 	// external functions
-	virtual void			Init( void );
-	virtual void			Shutdown( void );
-	virtual void			InitOpenGL( void );
-	virtual void			ShutdownOpenGL( void );
-	virtual bool			IsOpenGLRunning( void ) const;
-	virtual bool			IsFullScreen( void ) const;
-	virtual int				GetScreenWidth( void ) const;
-	virtual int				GetScreenHeight( void ) const;
-	virtual idRenderWorld 	*AllocRenderWorld( void );
-	virtual void			FreeRenderWorld( idRenderWorld *rw );
-	virtual void			BeginLevelLoad( void );
-	virtual void			EndLevelLoad( void );
+	virtual void			Init( void ) override;
+	virtual void			Shutdown( void ) override;
+	virtual void			InitOpenGL( void ) override;
+	virtual void			ShutdownOpenGL( void ) override;
+	virtual bool			IsOpenGLRunning( void ) const override;
+	virtual bool			IsFullScreen( void ) const override;
+	virtual int				GetScreenWidth( void ) const override;
+	virtual int				GetScreenHeight( void ) const override;
+	virtual idRenderWorld 	*AllocRenderWorld( void ) override;
+	virtual void			FreeRenderWorld( idRenderWorld *rw ) override;
+	virtual void			BeginLevelLoad( void ) override;
+	virtual void			EndLevelLoad( void ) override;
 	virtual bool			RegisterFont( const char *fontName, const fontParameters_t &params, fontInfoEx_t &font ) override;
-	virtual void			SetColor( const idVec4 &rgba );
-	virtual void			SetColor4( float r, float g, float b, float a );
+	virtual void			SetColor( const idVec4 &rgba ) override;
+	virtual void			SetColor4( float r, float g, float b, float a ) override;
 	virtual void			DrawStretchPic( const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *material,
-											bool clip = true, float x = 0.0f, float y = 0.0f, float w = 640.0f, float h = 0.0f );
-	virtual void			DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material );
+											bool clip = true, float x = 0.0f, float y = 0.0f, float w = 640.0f, float h = 0.0f ) override;
+	virtual void			DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material ) override;
 
-	virtual void			DrawStretchTri( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material );
-	virtual void			GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
-	virtual void			GetGLSettings( int &width, int &height );
-	virtual void			PrintMemInfo( MemInfo_t *mi );
+	virtual void			DrawStretchTri( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material ) override;
+	virtual void			GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) override;
+	virtual void			GetGLSettings( int &width, int &height ) override;
+	virtual void			PrintMemInfo( MemInfo_t *mi ) override;
 
-	virtual void			DrawSmallChar( int x, int y, int ch, const idMaterial *material );
-	virtual void			DrawSmallStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material );
-	virtual void			DrawBigChar( int x, int y, int ch, const idMaterial *material );
-	virtual void			DrawBigStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material );
-	virtual void			WriteDemoPics();
-	virtual void			DrawDemoPics();
-	virtual void			BeginFrame( int windowWidth, int windowHeight );
-	virtual void			EndFrame( int *frontEndMsec, int *backEndMsec );
-	virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref, bool envshot = false );
-	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false );
-	virtual void			GetCurrentRenderCropSize( int &width, int &height );
+	virtual void			DrawSmallChar( int x, int y, int ch, const idMaterial *material ) override;
+	virtual void			DrawSmallStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material ) override;
+	virtual void			DrawBigChar( int x, int y, int ch, const idMaterial *material ) override;
+	virtual void			DrawBigStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material ) override;
+	virtual void			WriteDemoPics() override;
+	virtual void			DrawDemoPics() override;
+	virtual void			BeginFrame( int windowWidth, int windowHeight ) override;
+	virtual void			EndFrame( int *frontEndMsec, int *backEndMsec ) override;
+	virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref, bool envshot = false ) override;
+	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false ) override;
+	virtual void			GetCurrentRenderCropSize( int &width, int &height ) override;
 	virtual void			CaptureRenderToImage( idImageScratch &image ) override;
-	virtual void			CaptureRenderToBuffer( unsigned char *buffer, bool usePbo = false );
-	virtual void			PostProcess();
-	virtual void			UnCrop();
+	virtual void			CaptureRenderToBuffer( unsigned char *buffer, bool usePbo = false ) override;
+	virtual void			PostProcess() override;
+	virtual void			UnCrop() override;
 
 public:
 	// internal functions
-	idRenderSystemLocal() { Clear(); }
-	~idRenderSystemLocal() {}
+							idRenderSystemLocal() { Clear(); }
+	virtual					~idRenderSystemLocal() override {}
 
 	void					Clear( void );
 	void					RenderViewToViewport( const renderView_t &renderView, idScreenRect &viewport );

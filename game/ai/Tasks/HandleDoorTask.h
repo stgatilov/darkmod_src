@@ -94,16 +94,15 @@ private:
 
 public:
 	// Get the name of this task
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
-	// Override the base Init method
-	virtual void Init(idAI* owner, Subsystem& subsystem);
+	virtual void Init(idAI* owner, Subsystem& subsystem) override;
 
-	virtual bool Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem) override;
 
-	virtual void OnFinish(idAI* owner);
+	virtual void OnFinish(idAI* owner) override;
 
-	virtual bool CanAbort(); // grayman #2706
+	virtual bool CanAbort() override; // grayman #2706
 
 	void MoveToSafePosition(CFrobDoor* door); // grayman #3390
 
@@ -127,8 +126,8 @@ public:
 
 	void DrawDebugOutput(idAI* owner);
 
-	void Save(idSaveGame* savefile) const;
-	void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Creates a new Instance of this task
 	static HandleDoorTaskPtr CreateInstance();

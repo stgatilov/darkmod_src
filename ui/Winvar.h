@@ -87,10 +87,10 @@ protected:
 
 class idWinBool : public idWinVar {
 public:
-	idWinBool() : idWinVar() {};
-	~idWinBool() {};
+	idWinBool() : idWinVar() {}
+	virtual ~idWinBool() override {}
 	virtual const char *GetTypeName() const override { return "bool"; }
-	virtual void Init(const char *_name, idWindow *win) { idWinVar::Init(_name, win);
+	virtual void Init(const char *_name, idWindow *win) override { idWinVar::Init(_name, win);
 		if (guiDict) {
 			data = guiDict->GetBool(GetName());
 		}
@@ -126,26 +126,26 @@ public:
 		return good;
 	}
 
-	virtual void Update() {	
+	virtual void Update() override {	
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			data = guiDict->GetBool( s );
 		}
 	}
 
-	virtual const char *c_str() const {return va("%i", data); }
+	virtual const char *c_str() const override { return va("%i", data); }
 
 	// SaveGames
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 		savefile->Write( &data, sizeof( data ) );
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 		savefile->Read( &data, sizeof( data ) );
 	}
 
-	virtual float x( void ) const { return data ? 1.0f : 0.0f; };
+	virtual float x( void ) const override { return data ? 1.0f : 0.0f; };
 
 protected:
 	bool data = false;
@@ -153,10 +153,10 @@ protected:
 
 class idWinStr : public idWinVar {
 public:
-	idWinStr() : idWinVar() {};
-	~idWinStr() {};
+	idWinStr() : idWinVar() {}
+	virtual ~idWinStr() override {}
 	virtual const char *GetTypeName() const override { return "str"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
 			data = guiDict->GetString(GetName());
@@ -204,7 +204,7 @@ public:
 		}
 		data.RemoveColors();
 	}
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return data.c_str();
 	}
 
@@ -218,20 +218,20 @@ public:
 		return true;
 	}
 
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			data = guiDict->GetString( s );
 		}
 	}
 
-	virtual size_t Size() {
+	virtual size_t Size() override {
 		size_t sz = idWinVar::Size();
 		return sz +data.Allocated();
 	}
 
 	// SaveGames
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 
 		int len = data.Length();
@@ -240,7 +240,7 @@ public:
 			savefile->Write( data.c_str(), len );
 		}
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 
 		int len;
@@ -252,7 +252,7 @@ public:
 	}
 
 	// return wether string is emtpy
-	virtual float x( void ) const { return data[0] ? 1.0f : 0.0f; };
+	virtual float x( void ) const override { return data[0] ? 1.0f : 0.0f; };
 
 protected:
 	idStr data;
@@ -260,10 +260,10 @@ protected:
 
 class idWinInt : public idWinVar {
 public:
-	idWinInt() : idWinVar() {};
-	~idWinInt() {};
+	idWinInt() : idWinVar() {}
+	virtual ~idWinInt() override {}
 	virtual const char *GetTypeName() const override { return "int"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinVar::Init(_name,  win);
 		if (guiDict) {
 			data = guiDict->GetInt(GetName());
@@ -297,28 +297,28 @@ public:
 		return good;
 	}
 
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			data = guiDict->GetInt( s );
 		}
 	}
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return va("%i", data);
 	}
 
 	// SaveGames
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 		savefile->Write( &data, sizeof( data ) );
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 		savefile->Read( &data, sizeof( data ) );
 	}
 
 	// no suitable conversion
-	virtual float x( void ) const { assert( false ); return 0.0f; };
+	virtual float x( void ) const override { assert( false ); return 0.0f; };
 
 protected:
 	int data = 0;
@@ -326,10 +326,10 @@ protected:
 
 class idWinFloat : public idWinVar {
 public:
-	idWinFloat() : idWinVar() {};
-	~idWinFloat() {};
+	idWinFloat() : idWinVar() {}
+	virtual ~idWinFloat() override {}
 	virtual const char *GetTypeName() const override { return "float"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
 			data = guiDict->GetFloat(GetName());
@@ -362,36 +362,36 @@ public:
 		}
 		return good;
 	}
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			data = guiDict->GetFloat( s );
 		}
 	}
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return va("%f", data);
 	}
 
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 		savefile->Write( &data, sizeof( data ) );
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 		savefile->Read( &data, sizeof( data ) );
 	}
 
-	virtual float x( void ) const { return data; };
+	virtual float x( void ) const override { return data; };
 protected:
 	float data = 0.0f;
 };
 
 class idWinRectangle : public idWinVar {
 public:
-	idWinRectangle() : idWinVar() {};
-	~idWinRectangle() {};
+	idWinRectangle() : idWinVar() {}
+	virtual ~idWinRectangle() override {}
 	virtual const char *GetTypeName() const override { return "rect"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
 			idVec4 v = guiDict->GetVec4(GetName());
@@ -432,7 +432,7 @@ public:
 		return data;
 	}
 
-	float x() const {
+	virtual float x() const override {
 		return data.x;
 	}
 	float y() const {
@@ -472,7 +472,7 @@ public:
 		}
 		return (ret == 4);
 	}
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			idVec4 v = guiDict->GetVec4( s );
@@ -483,15 +483,15 @@ public:
 		}
 	}
 
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return data.ToVec4().ToString();
 	}
 
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 		savefile->Write( &data, sizeof( data ) );
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 		savefile->Read( &data, sizeof( data ) );
 	}
@@ -502,10 +502,10 @@ protected:
 
 class idWinVec2 : public idWinVar {
 public:
-	idWinVec2() : idWinVar() {};
-	~idWinVec2() {};
+	idWinVec2() : idWinVar() {}
+	virtual ~idWinVec2() override {}
 	virtual const char *GetTypeName() const override { return "vec2"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
 			data = guiDict->GetVec2(GetName());
@@ -527,7 +527,7 @@ public:
 		}
 		return data;
 	}
-	float x() const {
+	virtual float x() const override {
 		return data.x;
 	}
 	float y() const {
@@ -552,24 +552,24 @@ public:
 	operator const idVec2&() const {
 		return data;
 	}
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			data = guiDict->GetVec2( s );
 		}
 	}
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return data.ToString();
 	}
 	void Zero() {
 		data.Zero();
 	}
 
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 		savefile->Write( &data, sizeof( data ) );
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 		savefile->Read( &data, sizeof( data ) );
 	}
@@ -580,10 +580,10 @@ protected:
 
 class idWinVec4 : public idWinVar {
 public:
-	idWinVec4() : idWinVar() {};
-	~idWinVec4() {};
+	idWinVec4() : idWinVar() {}
+	virtual ~idWinVec4() override {}
 	virtual const char *GetTypeName() const override { return "vec4"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
 			data = guiDict->GetVec4(GetName());
@@ -608,7 +608,7 @@ public:
 		return data;
 	}
 
-	float x() const {
+	virtual float x() const override {
 		return data.x;
 	}
 
@@ -641,13 +641,13 @@ public:
 		}
 		return good;
 	}
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			data = guiDict->GetVec4( s );
 		}
 	}
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return data.ToString();
 	}
 
@@ -662,11 +662,11 @@ public:
 		return data.ToVec3();
 	}
 
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 		savefile->Write( &data, sizeof( data ) );
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 		savefile->Read( &data, sizeof( data ) );
 	}
@@ -677,10 +677,10 @@ protected:
 
 class idWinVec3 : public idWinVar {
 public:
-	idWinVec3() : idWinVar() {};
-	~idWinVec3() {};
+	idWinVec3() : idWinVar() {}
+	virtual ~idWinVec3() override {}
 	virtual const char *GetTypeName() const override { return "vec3"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
 			data = guiDict->GetVector(GetName());
@@ -705,7 +705,7 @@ public:
 		return data;
 	}
 
-	float x() const {
+	virtual float x() const override {
 		return data.x;
 	}
 
@@ -733,13 +733,13 @@ public:
 		}
 		return (ret == 3);
 	}
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			data = guiDict->GetVector( s );
 		}
 	}
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return data.ToString();
 	}
 
@@ -750,11 +750,11 @@ public:
 		}
 	}
 
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 		savefile->Write( &data, sizeof( data ) );
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 		savefile->Read( &data, sizeof( data ) );
 	}
@@ -767,10 +767,10 @@ class idWinBackground : public idWinStr {
 public:
 	idWinBackground() : idWinStr() {
 		mat = NULL;
-	};
-	~idWinBackground() {};
+	}
+	virtual ~idWinBackground() override {}
 	virtual const char *GetTypeName() const override { return "background"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinStr::Init(_name, win);
 		if (guiDict) {
 			data = guiDict->GetString(GetName());
@@ -821,7 +821,7 @@ public:
 		}
 		return data.Length();
 	}
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return data.c_str();
 	}
 
@@ -844,7 +844,7 @@ public:
 		return true;
 	}
 
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		if ( guiDict && s[0] != '\0' ) {
 			data = guiDict->GetString( s );
@@ -858,16 +858,16 @@ public:
 		}
 	}
 
-	virtual size_t Size() {
+	virtual size_t Size() override {
 		size_t sz = idWinVar::Size();
-		return sz +data.Allocated();
+		return sz + data.Allocated();
 	}
 
 	void SetMaterialPtr( const idMaterial **m ) {
 		mat = m;
 	}
 
-	virtual void WriteToSaveGame( idFile *savefile ) {
+	virtual void WriteToSaveGame( idFile *savefile ) override {
 		savefile->Write( &eval, sizeof( eval ) );
 
 		int len = data.Length();
@@ -876,7 +876,7 @@ public:
 			savefile->Write( data.c_str(), len );
 		}
 	}
-	virtual void ReadFromSaveGame( idFile *savefile ) {
+	virtual void ReadFromSaveGame( idFile *savefile ) override {
 		savefile->Read( &eval, sizeof( eval ) );
 
 		int len;
@@ -917,10 +917,10 @@ public:
 //so I added this type specifically for such hacky cases
 class idWinUIntPtr : public idWinVar {
 public:
-	idWinUIntPtr() : idWinVar() {};
-	~idWinUIntPtr() {};
+	idWinUIntPtr() : idWinVar() {}
+	virtual ~idWinUIntPtr() override {}
 	virtual const char *GetTypeName() const override { return "uintptr"; }
-	virtual void Init(const char *_name, idWindow *win) {
+	virtual void Init(const char *_name, idWindow *win) override {
 		idWinVar::Init(_name, win);
 		assert(!guiDict);
 	}
@@ -948,24 +948,24 @@ public:
 		return good;
 	}
 
-	virtual void Update() {
+	virtual void Update() override {
 		const char *s = GetName();
 		assert(!guiDict);
 	}
-	virtual const char *c_str() const {
+	virtual const char *c_str() const override {
 		return va("%zu", data);
 	}
 
 	// SaveGames
-	virtual void WriteToSaveGame(idFile *savefile) {
+	virtual void WriteToSaveGame(idFile *savefile) override {
 		assert(false);
 	}
-	virtual void ReadFromSaveGame(idFile *savefile) {
+	virtual void ReadFromSaveGame(idFile *savefile) override {
 		assert(false);
 	}
 
 	// no suitable conversion
-	virtual float x(void) const { assert(false); return 0.0f; };
+	virtual float x(void) const override { assert(false); return 0.0f; };
 
 protected:
 	size_t data = 0;

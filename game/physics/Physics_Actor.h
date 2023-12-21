@@ -46,7 +46,7 @@ public:
 	CLASS_PROTOTYPE( idPhysics_Actor );
 
 							idPhysics_Actor( void );
-							~idPhysics_Actor( void );
+	virtual					~idPhysics_Actor( void ) override;
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -67,38 +67,38 @@ public:
 #endif
 
 public:	// common physics interface
-	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
-	idClipModel *			GetClipModel( int id = 0 ) const;
-	int						GetNumClipModels( void ) const;
+	virtual void			SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true ) override;
+	virtual idClipModel *	GetClipModel( int id = 0 ) const override;
+	virtual int				GetNumClipModels( void ) const override;
 
-	void					SetMass( float mass, int id = -1 );
-	float					GetMass( int id = -1 ) const;
+	virtual void			SetMass( float mass, int id = -1 ) override;
+	virtual float			GetMass( int id = -1 ) const override;
 
-	void					SetContents( int contents, int id = -1 );
-	int						GetContents( int id = -1 ) const;
+	virtual void			SetContents( int contents, int id = -1 ) override;
+	virtual int				GetContents( int id = -1 ) const override;
 
-	const idBounds &		GetBounds( int id = -1 ) const;
-	const idBounds &		GetAbsBounds( int id = -1 ) const;
+	virtual const idBounds &GetBounds( int id = -1 ) const override;
+	virtual const idBounds &GetAbsBounds( int id = -1 ) const override;
 
-	bool					IsPushable( void ) const;
+	virtual bool			IsPushable( void ) const override;
 
-	const idVec3 &			GetOrigin( int id = 0 ) const;
-	const idMat3 &			GetAxis( int id = 0 ) const;
+	virtual const idVec3 &	GetOrigin( int id = 0 ) const override;
+	virtual const idMat3 &	GetAxis( int id = 0 ) const override;
 
-	void					SetGravity( const idVec3 &newGravity );
+	virtual void			SetGravity( const idVec3 &newGravity ) override;
 	const idMat3 &			GetGravityAxis( void ) const;
 
-	void					ClipTranslation( trace_t &results, const idVec3 &translation, const idClipModel *model ) const;
-	void					ClipRotation( trace_t &results, const idRotation &rotation, const idClipModel *model ) const;
-	int						ClipContents( const idClipModel *model ) const;
+	virtual void			ClipTranslation( trace_t &results, const idVec3 &translation, const idClipModel *model ) const override;
+	virtual void			ClipRotation( trace_t &results, const idRotation &rotation, const idClipModel *model ) const override;
+	virtual int				ClipContents( const idClipModel *model ) const override;
 
-	void					DisableClip( void );
-	void					EnableClip( void );
+	virtual void			DisableClip( void ) override;
+	virtual void			EnableClip( void ) override;
 
-	void					UnlinkClip( void );
-	void					LinkClip( void );
+	virtual void			UnlinkClip( void ) override;
+	virtual void			LinkClip( void ) override;
 
-	bool					EvaluateContacts( void );
+	virtual bool			EvaluateContacts( void ) override;
 
 protected:
 #ifdef MOD_WATERPHYSICS

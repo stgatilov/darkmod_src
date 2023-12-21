@@ -38,14 +38,13 @@ public:
 	PathAnimTask(idPathCorner* path);
 
 	// Get the name of this task
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
-	// Override the base Init method
-	virtual void Init(idAI* owner, Subsystem& subsystem);
+	virtual void Init(idAI* owner, Subsystem& subsystem) override;
 
-	virtual bool Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem) override;
 
-	virtual void OnFinish(idAI* owner);
+	virtual void OnFinish(idAI* owner) override;
 
 	// Creates a new Instance of this task
 	static PathAnimTaskPtr CreateInstance();
