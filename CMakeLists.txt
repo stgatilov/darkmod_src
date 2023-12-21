@@ -49,6 +49,7 @@ if (UNIX)
 			-Wno-sign-compare               # in particular, int/size_t conversions
 			-Wno-format-security            # format string is often composed dynamically
 			-Woverloaded-virtual            # almost-overriding virtual functions is dangerous for us
+			-Wsuggest-override              # recommend using "override" keyword
 	)
 	# configure other compile options
 	add_compile_options(
