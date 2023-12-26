@@ -2832,10 +2832,15 @@ static void SetDoorsState(bool open)
 		if (!ent || !ent->IsType(CFrobDoor::Type))
 			continue;
 		CFrobDoor *door = (CFrobDoor*)ent;
-		if (open)
+
+		if (open) {
+			if (door->IsLocked())
+				door->Unlock(false);
 			door->Open(false);
-		else
+		}
+		else {
 			door->Close(false);
+		}
 	}
 }
 void Cmd_OpenDoors_f(const idCmdArgs& args)
