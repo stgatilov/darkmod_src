@@ -285,14 +285,18 @@ ID_INLINE float idCurve<type>::GetTimeForLength( const float length, const float
 		len1 = accumLength[index] - accumLength[index-1];
 	}
 
+	idIgnoreFpExceptions guard;
 	// invert the arc length integral using Newton's method
 	t = ( times[index+1] - times[index] ) * len0 / len1;
 	for ( i = 0; i < 32; i++ ) {
 		diff = RombergIntegral( times[index], times[index] + t, 5 ) - len0;
 		if ( idMath::Fabs( diff ) <= epsilon ) {
-			return times[index] + t;
+			break;
 		}
 		t -= diff / GetSpeed( times[index] + t );
+	}
+	if ( !(t >= -idMath::INFINITY && t <= idMath::INFINITY) ) {
+		t = 0.0f;	// protect against NaN
 	}
 	return times[index] + t;
 }
