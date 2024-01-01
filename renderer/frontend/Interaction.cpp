@@ -1297,6 +1297,7 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 		return true;
 	}
 
+/*
 	// duzenko: cull away interaction if light and entity are in disconnected areas
 	// note: this cannot be done for noshadows lights, since they light objects through closed doors!
 	// stgatilov #5121: parallelSky light originates in many areas, so skip this check for it
@@ -1316,6 +1317,7 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 			return false;
 		}
 	}
+*/
 
 	// sophisticated culling does not seem to be worth it for static world models
 	if ( entityDef->parms.hModel->IsStaticWorldModel() ) {

@@ -1880,6 +1880,7 @@ void idRenderWorldLocal::GetFrustumCoveredAreas(idRenderEntityLocal* def, AreaLi
 	context.coveredAreas = &areaIds;
 	idRenderMatrix::GetFrustumCorners(context.corners, def->inverseBaseModelProject, bounds_unitCube);
 
+	// traverse down the BSP tree into areas
 	GetFrustumCoveredAreas_r(context, 0);
 }
 
@@ -1890,66 +1891,36 @@ void idRenderWorldLocal::GetFrustumCoveredAreas(idRenderLightLocal* def, AreaLis
 	context.coveredAreas = &areaIds;
 	idRenderMatrix::GetFrustumCorners(context.corners, def->inverseBaseLightProject, bounds_zeroOneCube);
 
+	// traverse down the BSP tree into areas
 	GetFrustumCoveredAreas_r(context, 0);
 }
 
-void idRenderWorldLocal::GetParallelLightEnteringAreas(idRenderLightLocal* light, AreaList &areaIds) const {
+void idRenderWorldLocal::GetAreasOfLightFrustumEnterFaces(idRenderLightLocal* light, AreaList &areaIds) const {
 	areaIds.Clear();
 
-	assert(light->parms.parallel);
-	// copy/pasted from R_DeriveLightData
-	idVec3 lightDirectionReversed = light->parms.lightCenter;
-	if (lightDirectionReversed.Normalize() == 0.0f)
-		lightDirectionReversed[2] = 1.0f;
-
-	// Origin point has no sense for a parallel light.
-	// Parallel light covers a frustum and originates on all the "entering" faces of the frustum.
-	// These are the faces through which light rays enters the volume.
-	// All the areas covered by these faces must be included in starting ones for portal flow.
-
 	// go through all faces of light frustum
-	for (int d = 0; d < 3; d++)
-		for (int s = 0; s < 2; s++) {
-			// find outer normal (global coords)
-			idVec3 localNormal = vec3_zero;
-			localNormal[d] = 2 * s - 1;
-			idVec3 globalNormal;
-			light->inverseBaseLightProject.TransformDir(localNormal, globalNormal, false);
+	for (int i = 0; i < 6; i++) {
+		const idPlane &plane = light->frustum[i];
+		const idWinding &winding = light->frustumWindings[i];
 
-			// only consider faces through which parallel light enters the volume
-			if (globalNormal * lightDirectionReversed <= 0.0f)
-				continue;
+		// only consider faces through which light enters the volume
+		if (plane.Distance(light->globalLightOrigin) <= LIGHT_CLIP_EPSILON)
+			continue;
 
-			// the face is singular aabox in local coordinates
-			idBounds localBounds = bounds_zeroOneCube;
-			localBounds[0][d] = localBounds[1][d] = s;
+		// add all areas touched by this face
+		FrustumCoveredContext context;
+		context.coveredAreas = &areaIds;
 
-			// add all areas touched by this face
-			FrustumCoveredContext context;
-			context.coveredAreas = &areaIds;
-			idRenderMatrix::GetFrustumCorners(context.corners, light->inverseBaseLightProject, localBounds);
-			GetFrustumCoveredAreas_r(context, 0);
+		assert(winding.GetNumPoints() == 4);	// by construction, see R_PolytopeSurfaceFrustumLike
+		for (int v = 0; v < 4; v++) {
+			context.corners.x[v] = context.corners.x[v + 4] = winding[v].x;
+			context.corners.y[v] = context.corners.y[v + 4] = winding[v].y;
+			context.corners.z[v] = context.corners.z[v + 4] = winding[v].z;
 		}
 
-
-	// In a typical scenario of global moonlight, entering faces are completely outside playable areas.
-	// In order to make parallel light useful, we have to allow light to enter areas from "void" (i.e. solid nowhere) --- unlike point lights.
-	// In particular, it is natural to expect that parallel lights can enter through portalsky boundary surfaces.
-	// So we add all areas with portalsky which are covered by light frustum.
-
-	AreaList coveredAreas;
-	GetFrustumCoveredAreas(light, coveredAreas);
-
-	for (int i = 0; i < coveredAreas.Num(); i++) {
-		int areaNum = coveredAreas[i];
-		if (light->world->CheckAreaForPortalSky(areaNum)) {
-			if (!areaIds.Find(areaNum)) {
-				areaIds.AddGrow(areaNum);
-			}
-		}
+		GetFrustumCoveredAreas_r(context, 0);
 	}
 }
-
 
 void idRenderWorldLocal::AddEntityToAreas(idRenderEntityLocal* def) {
 	AreaList areaIds;
@@ -1989,65 +1960,176 @@ idCVar r_useLightPortalFlowCulling( "r_useLightPortalFlowCulling", "1",
 	"Use windings through which light reaches areas for culling interactions"
 );
 
-void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
-	AreaList areaIds;
+void idRenderWorldLocal::AddLightRefToArea( idRenderLightLocal *def, int areaIdx ) {
+	portalArea_t *area = &portalAreas[areaIdx];
+	AddLightRefToArea( def, area );
+}
 
-	if (def && def->parms.areaLock != renderEntity_s::RAL_NONE && r_useAreaLocks & 2) {
+void idRenderWorldLocal::AddLightRefsToFrustumCoveredAreas( idRenderLightLocal *def ) {
+	AreaList coveredAreas;
+	GetFrustumCoveredAreas( def, coveredAreas );
+
+	for ( int i = 0; i < coveredAreas.Num(); i++ ) {
+		AddLightRefToArea( def, coveredAreas[i] );
+	}
+}
+
+void idRenderWorldLocal::AddLightRefsByPortalFlow( idRenderLightLocal *def, const AreaList &startingAreas ) {
+	// should we store light beams in each area for more culling later?
+	lightPortalFlow_t *flow = nullptr;
+	if ( r_useLightPortalFlowCulling.GetBool() )
+		flow = &def->lightPortalFlow;
+
+	AreaList areasWithPresence;
+	FlowLightThroughPortals( def, startingAreas, &areasWithPresence, flow );
+	// add references to areas with full presence
+	// all interactions should be generated there
+	for ( int i = 0; i < areasWithPresence.Num(); i++ ) {
+		AddLightRefToArea( def, areasWithPresence[i] );
+	}
+
+	AreaList coveredAreas;
+	GetFrustumCoveredAreas( def, coveredAreas );
+	// in additional areas, we should only generate shadows from major world geometry
+	for ( int i = 0; i < coveredAreas.Num(); i++ ) {
+		if ( !areasWithPresence.Find( coveredAreas[i] ) )
+			def->areasForAdditionalWorldShadows.AddGrow( coveredAreas[i] );
+	}
+}
+
+void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
+
+	if ( def->parms.areaLock != renderEntity_s::RAL_NONE && (r_useAreaLocks & 2) ) {
 		// 2.08 Dragofer's draw call optimization
 		// try to find single area by key point
-		idVec3 point = def->parms.areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalLightBounds.GetCenter();
+		idVec3 point = ( def->parms.areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalLightBounds.GetCenter() );
 
-		int areaNum = GetAreaAtPoint(point);
-		if (areaNum >= 0) {
-			areaIds.AddGrow(areaNum);
-			goto found;
+		int areaNum = GetAreaAtPoint( point );
+		if ( areaNum >= 0 ) {
+			AddLightRefToArea( def, areaNum );
+			return;
+		}
+		// else ignore areaLock keyword and set areas normally
+	}
+
+	if ( def->parms.noShadows || !def->lightShader->LightCastsShadows() ) {
+		// no shadows => full interactions with everything in all covered areas
+		AddLightRefsToFrustumCoveredAreas( def );
+		return;
+	}
+
+	// idTech4: determine the areaNum for the light origin, which may let us
+	// cull the light if it is behind a closed door
+	// it is debatable if we want to use the entity origin or the center offset origin,
+	// but we definitely don't want to use a parallel offset origin
+	int originAreaNum = GetAreaAtPoint( def->globalLightOrigin );
+	if ( originAreaNum == -1 ) {
+		originAreaNum = GetAreaAtPoint( def->parms.origin );
+		if ( originAreaNum != -1 ) {
+			// this is really bad, can't use any portal-based culling =)
+			// in fact, we should not use this area number for anything!
+			def->isOriginInVoidButActive = true;
 		}
 	}
 
-	// if we have a prelight model that includes all the shadows for the major world occluders,
-	// we can limit the area references to those visible through the portals from the light center.
-	// We can't do this in the normal case, because shadows are cast from back facing triangles, which
-	// may be in areas not directly visible to the light projection center.
-	if ( !def->parms.noShadows && def->lightShader->LightCastsShadows() ) {
-		// stgatilov #5172: also save portal windings along with area indices
-		lightPortalFlow_t *flow = ( r_useLightPortalFlowCulling.GetBool() ? &def->lightPortalFlow : nullptr );
-
+	if ( def->parms.parallel && !def->parms.parallelSky ) {
 		// parallel lights are garbage in Doom 3, and mappers introduced all sort of hacks to make them work
 		// changing ANYTHING in culling immediately breaks these hacky missions
 		// so just try to do exactly the same stupid things as Doom 3 did
-		bool forceOldCodeForParallel = def->parms.parallel && !def->parms.parallelSky;
-		if ( forceOldCodeForParallel )
-			flow = nullptr;
+		if ( originAreaNum >= 0 ) {
+			def->isOriginOutsideVolumeMajor = def->isOriginOutsideVolume = true;
 
-		if ( def->parms.prelightModel && r_useLightPortalFlow.GetInteger() == 1 || forceOldCodeForParallel ) {
-			FlowLightThroughPortals( def, &areaIds, flow );
-			goto found;
+			AreaList startingAreas, areasWithPresence;
+			startingAreas.AddGrow( originAreaNum );
+			FlowLightThroughPortals( def, startingAreas, &areasWithPresence, nullptr );
+			for ( int i = 0; i < areasWithPresence.Num(); i++ )
+				AddLightRefToArea( def, areasWithPresence[i] );
+		}
+		return;
+	}
+
+	if ( def->parms.parallelSky ) {
+		def->isOriginOutsideVolumeMajor = def->isOriginOutsideVolume = true;
+
+		// Origin point has no sense for a parallel light.
+		// Parallel light covers a frustum and originates on all the "entering" faces of the frustum.
+		// These are the faces through which light rays enters the volume.
+		// All the areas covered by these faces must be included in starting ones for portal flow.
+		AreaList startingAreas;
+		GetAreasOfLightFrustumEnterFaces( def, startingAreas );
+
+		// #5121: In a typical scenario of global moonlight, entering faces are completely outside playable areas.
+		// In order to make parallel light useful, we have to allow light to enter areas from "void" (i.e. solid nowhere) --- unlike point lights.
+		// In particular, it is natural to expect that parallel lights can enter through portalsky boundary surfaces.
+		// So we add all areas with portalsky which are covered by light frustum.
+		AreaList coveredAreas;
+		GetFrustumCoveredAreas( def, coveredAreas );
+		for ( int i = 0; i < coveredAreas.Num(); i++ ) {
+			int areaNum = coveredAreas[i];
+			if ( def->world->CheckAreaForPortalSky( areaNum ) ) {
+				if ( !startingAreas.Find( areaNum ) ) {
+					startingAreas.AddGrow( areaNum );
+				}
+			}
 		}
 
-		// stgatilov #5172: now we use this code for all shadowing lights regardless of prelight existance.
-		// we ensure separately that world geometry produces shadows in all covered areas.
-		if ( r_useLightPortalFlow.GetInteger() == 2 ) {
-			FlowLightThroughPortals( def, &areaIds, flow );
+		AddLightRefsByPortalFlow( def, startingAreas );
+		return;
+	}
 
-			AreaList coveredAreas;
-			GetFrustumCoveredAreas( def, coveredAreas );
-			for ( int i = 0; i < coveredAreas.Num(); i++ )
-				if ( !areaIds.Find( coveredAreas[i] ) )
-					def->areasForAdditionalWorldShadows.AddGrow( coveredAreas[i] );
-
-			goto found;
+	for ( int i = 0; i < 6; i++ ) {
+		float distance = def->frustum[i].Distance( def->globalLightOrigin );
+		if ( distance > LIGHT_CLIP_EPSILON ) {
+			// this is quite bad for culling
+			// if we trace light portal flow from origin, we might different results
+			// because world geometry between origin and frustum would occlude flow while it should not cast shadows
+			def->isOriginOutsideVolume = true;
+			break;
+		}
+	}
+	if ( def->isOriginOutsideVolume ) {
+		AreaList enteringFacesAreas;
+		GetAreasOfLightFrustumEnterFaces( def, enteringFacesAreas );
+		if ( enteringFacesAreas.Num() == 1 && enteringFacesAreas[0] == originAreaNum ) {
+			// faces where light rays enter light volume cover the same single area where light origin is
+			// it means if we run light portal flow from origin area, we'll get same results since there are no occluding portals in-between
+		}
+		else {
+			// we have to disable culling, otherwise some portals between areas will introduce unwanted shadowing
+			def->isOriginOutsideVolumeMajor = true;
 		}
 	}
 
-	// push these points down the BSP tree into areas
-	GetFrustumCoveredAreas( def, areaIds );
+	if ( !def->isOriginInVoidButActive && !def->isOriginOutsideVolumeMajor ) {
+		AreaList startingAreas;
+		if (originAreaNum >= 0) {
+			startingAreas.AddGrow( originAreaNum );
+		} else {
+			// this light has no effect?...
+		}
 
-found:
-	// add reference to all found areas
-	for (int i = 0; i < areaIds.Num(); i++) {
-		portalArea_t *area = &portalAreas[areaIds[i]];
-		AddLightRefToArea( def, area );
+		if ( r_useLightPortalFlow.GetInteger() == 1 && def->parms.prelightModel ) {
+			// idTech4: if we have a prelight model that includes all the shadows for the major world occluders,
+			// we can limit the area references to those visible through the portals from the light center.
+			// We can't do this in the normal case, because shadows are cast from back facing triangles, which
+			// may be in areas not directly visible to the light projection center.
+			AddLightRefsByPortalFlow( def, startingAreas );
+			return;
+		}
+		else if ( r_useLightPortalFlow.GetInteger() == 2 ) {
+			// stgatilov #5172: now we use this code for all shadowing lights regardless of prelight existance.
+			// we ensure separately that world geometry produces shadows in all covered areas.
+			AddLightRefsByPortalFlow( def, startingAreas );
+			return;
+		}
 	}
+	else {
+		// this light is ill-defined: don't try culling anything
+		// add interactions with everything in light volume to keep things simple
+	}
+
+	AddLightRefsToFrustumCoveredAreas( def );
+	return;
 }
 
 /*

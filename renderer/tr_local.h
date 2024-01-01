@@ -244,24 +244,21 @@ public:
 	void			ForceUpdate();
 	int				GetIndex();
 
+
 	renderLight_t			parms;					// specification
 
 	bool					lightHasMoved;			// the light has changed its position since it was
-	// first added, so the prelight model is not valid
+													// first added, so the prelight model is not valid
 
 	float					modelMatrix[16];		// this is just a rearrangement of parms.axis and parms.origin
 
 	idRenderWorldLocal 		*world;
 	int						index;					// in world lightdefs
 
-	int						areaNum;				// if not -1, we may be able to cull all the light's
-	// interactions if !viewDef->connectedAreas[areaNum]
-
 	int						lastModifiedFrameNum;	// to determine if it is constantly changing,
-	// and should go in the dynamic frame memory, or kept
-	// in the cached memory
+													// and should go in the dynamic frame memory, or kept
+													// in the cached memory
 	bool					archived;				// for demo writing
-
 
 	// derived information
 	idPlane					lightProject[4];
@@ -287,14 +284,28 @@ public:
 	int						viewCount;				// if == tr.viewCount, the light is on the viewDef->viewLights list
 	struct viewLight_s 		*viewLight;
 
+	idInteraction 			*firstInteraction;		// doubly linked list
+	idInteraction 			*lastInteraction;
+
+	// light origin is outside light volume
+	// BAD: objects between origin and volume don't cast shadows, or can cast culling-dependent partial shadows
+	bool					isOriginOutsideVolume;
+	// light origin and entering faces of light volume cover different sets of areas
+	// BAD: it is questionable where to start light portal flow, so better not use it
+	// note: spotlight is an important "origin outside volume" case which we still want to run portal flow on...
+	bool					isOriginOutsideVolumeMajor;
+	// light origin is inside void, but light still works because it was hackily assigned to area with entity origin
+	// BAD: cannot use light portal flow for such lights
+	bool					isOriginInVoidButActive;
+
+	// information
 	areaReference_t 		*references;			// each area the light is present in will have a lightRef
 	lightPortalFlow_t		lightPortalFlow;		// stgatilov #5172: info about how light reaches areas
 
-	idInteraction 			*firstInteraction;		// doubly linked list
-	idInteraction 			*lastInteraction;
+
 	// stgatilov #5172: list of areas where world geometry should give additional shadows
 	// this can be non-empty when "portal flow" code is used for normal "references".
-	idList<int>				areasForAdditionalWorldShadows;	
+	idList<int>				areasForAdditionalWorldShadows;
 
 	struct doublePortal_s 	*foggedPortals;
 };

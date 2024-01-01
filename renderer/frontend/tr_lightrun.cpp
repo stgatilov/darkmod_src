@@ -723,17 +723,7 @@ void R_DeriveLightData( idRenderLightLocal *light ) {
 R_CreateLightRefs
 =================
 */
-#define	MAX_LIGHT_VERTS	40
 void R_CreateLightRefs( idRenderLightLocal *light ) {
-	// determine the areaNum for the light origin, which may let us
-	// cull the light if it is behind a closed door
-	// it is debatable if we want to use the entity origin or the center offset origin,
-	// but we definitely don't want to use a parallel offset origin
-	light->areaNum = light->world->GetAreaAtPoint( light->globalLightOrigin );
-	if ( light->areaNum == -1 ) {
-		light->areaNum = light->world->GetAreaAtPoint( light->parms.origin );
-	}
-
 	light->world->AddLightToAreas( light );
 }
 

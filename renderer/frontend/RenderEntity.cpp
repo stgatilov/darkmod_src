@@ -79,12 +79,13 @@ idRenderLightLocal::idRenderLightLocal() {
 	lightHasMoved			= false;
 	world					= NULL;
 	index					= 0;
-	areaNum					= 0;
 	lastModifiedFrameNum	= 0;
 	archived				= false;
 	lightShader				= NULL;
 	falloffImage			= NULL;
 	globalLightOrigin		= vec3_zero;
+	globalLightBounds.Zero();
+	shadows					= LS_NONE;
 	frustumTris				= NULL;
 	numShadowFrustums		= 0;
 	viewCount				= 0;
@@ -93,11 +94,16 @@ idRenderLightLocal::idRenderLightLocal() {
 	foggedPortals			= NULL;
 	firstInteraction		= NULL;
 	lastInteraction			= NULL;
+	foggedPortals			= NULL;
 
 	//anon begin
 	baseLightProject.Zero();
 	inverseBaseLightProject.Zero();
 	//anon end
+
+	isOriginOutsideVolume = false;
+	isOriginOutsideVolumeMajor = false;
+	isOriginInVoidButActive = false;
 }
 
 void idRenderLightLocal::FreeRenderLight() {

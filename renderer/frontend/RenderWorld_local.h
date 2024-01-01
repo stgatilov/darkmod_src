@@ -257,7 +257,7 @@ public:
 	void					FlowViewThroughPortals( const idVec3 origin, int numPlanes, const idPlane *planes );
 	struct FlowLightThroughPortalsContext;
 	void					FloodLightThroughArea_r( FlowLightThroughPortalsContext &context, int areaNum, const struct portalStack_s *ps ) const;
-	void					FlowLightThroughPortals( idRenderLightLocal *light, AreaList *areaIds, lightPortalFlow_t *portalFlow ) const;
+	void					FlowLightThroughPortals( const idRenderLightLocal *light, const AreaList &startingAreaIds, AreaList *areaIds, lightPortalFlow_t *portalFlow ) const;
 	bool					CullEntityByPortals( const idRenderEntityLocal *entity, const struct portalStack_s *ps );
 	void					AddAreaEntityRefs( int areaNum, const struct portalStack_s *ps );
 	bool					CullLightByPortals( const idRenderLightLocal *light, const struct portalStack_s *ps );
@@ -327,7 +327,11 @@ public:
 	void					GetFrustumCoveredAreas_r(FrustumCoveredContext &context, int nodeNum) const;
 	void					GetFrustumCoveredAreas(idRenderEntityLocal* def, AreaList &areaIds) const;
 	void					GetFrustumCoveredAreas(idRenderLightLocal* light, AreaList &areaIds) const;
-	void					GetParallelLightEnteringAreas(idRenderLightLocal* light, AreaList &areaIds) const;
+	void					GetAreasOfLightFrustumEnterFaces(idRenderLightLocal* light, AreaList &areaIds) const;
+
+	void					AddLightRefToArea( idRenderLightLocal *def, int areaIdx );
+	void					AddLightRefsToFrustumCoveredAreas( idRenderLightLocal *def );
+	void					AddLightRefsByPortalFlow( idRenderLightLocal *def, const AreaList &startingAreas );
 
 	void					AddEntityToAreas(idRenderEntityLocal* def);
 	void					AddLightToAreas(idRenderLightLocal* def);

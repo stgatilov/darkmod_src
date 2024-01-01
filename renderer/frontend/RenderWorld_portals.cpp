@@ -314,7 +314,7 @@ void idRenderWorldLocal::FlowViewThroughPortals( const idVec3 origin, int numPla
 //==================================================================================================
 
 struct idRenderWorldLocal::FlowLightThroughPortalsContext {
-	idRenderLightLocal *light;
+	const idRenderLightLocal *light;
 	AreaList *resultAreaIds;
 	lightPortalFlow_t *resultPortalFlow;
 };
@@ -457,7 +457,7 @@ This can only be used for shadow casting lights that have a generated
 prelight, because shadows are cast from back side which may not be in visible areas.
 =======================
 */
-void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light, AreaList *areaIds, lightPortalFlow_t *portalFlow ) const {
+void idRenderWorldLocal::FlowLightThroughPortals( const idRenderLightLocal *light, const AreaList &startingAreaIds, AreaList *areaIds, lightPortalFlow_t *portalFlow ) const {
 	if ( areaIds )
 		areaIds->Clear();
 	if ( portalFlow )
@@ -478,20 +478,12 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light, Are
 		ps.portalPlanes[i] = -frustumPlanes[i];
 	}
 
-	if ( light->parms.parallelSky ) {
-		//stgatilov #5121: trace light rays from every area having portalSky
-		AreaList startingAreas;
-		GetParallelLightEnteringAreas( light, startingAreas );
-		for ( int i = 0; i < startingAreas.Num(); i++ ) {
-			int areaNum = startingAreas[i];
-			FloodLightThroughArea_r( context, areaNum, &ps );
-		}
-	}
-
 	// if the light origin areaNum is not in a valid area,
 	// the light won't have any area refs
-	if ( light->areaNum >= 0 )
-		FloodLightThroughArea_r( context, light->areaNum, &ps );
+	for ( int i = 0; i < startingAreaIds.Num(); i++ ) {
+		int areaNum = startingAreaIds[i];
+		FloodLightThroughArea_r( context, areaNum, &ps );
+	}
 
 	if ( portalFlow ) {
 		// sort area refs
@@ -857,7 +849,7 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 			continue;
         } 
           
-
+/*
 		// check for being closed off behind a door
 		// a light that doesn't cast shadows will still light even if it is behind a door
 		// stgatilov #6306: parallelSky light originates in many areas, so skip this check for it
@@ -867,6 +859,7 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 			light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum] ) {
 			continue;
 		}
+*/
 
 		// cull frustum
 		if ( CullLightByPortals( light, ps ) ) {
