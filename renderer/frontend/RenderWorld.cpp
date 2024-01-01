@@ -95,8 +95,7 @@ void R_ListRenderLightDefs_f( const idCmdArgs &args ) {
 
 		// which shadow implementation does it use?
 		idStr shadow;
-		if (ldef->viewCount < tr.viewCount - 10) {
-			// note: there are several views per frame, so this is approximate
+		if (ldef->viewCount < tr.viewCountAtFrameStart) {
 			shadow = "   ";	// not visible
 			if ( onlyVisible )
 				continue;
@@ -176,8 +175,7 @@ void R_ListRenderEntityDefs_f( const idCmdArgs &args ) {
 		flags += (mdef->lastModifiedFrameNum == tr.frameCount ? "d" : " ");
 
 		idStr visible;
-		if (mdef->viewCount < tr.viewCount - 10) {
-			// note: there are several views per frame, so this is approximate
+		if (mdef->viewCount < tr.viewCountAtFrameStart) {
 			visible = "   ";
 			if ( onlyVisible )
 				continue;

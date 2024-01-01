@@ -880,6 +880,7 @@ public:
 	int						frameCount;			// incremented every frame
 	int						viewCount;			// incremented every view (twice a scene if subviewed)
 												// and every R_MarkFragments call
+	int						viewCountAtFrameStart;	// stgatilov: current frame has views [viewCountAtFrameStart .. viewCount)
 
 	int						staticAllocCount;	// running total of bytes allocated
 
