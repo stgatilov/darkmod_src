@@ -255,6 +255,8 @@ public:
 	idRenderWorldLocal 		*world;
 	int						index;					// in world lightdefs
 
+	int						areaNum;				// if not -1, we may be able to cull all the light's
+													// interactions if !viewDef->connectedAreas[areaNum]
 	int						lastModifiedFrameNum;	// to determine if it is constantly changing,
 													// and should go in the dynamic frame memory, or kept
 													// in the cached memory

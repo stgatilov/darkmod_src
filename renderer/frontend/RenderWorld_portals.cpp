@@ -847,24 +847,22 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 		if ( r_singleLight.GetInteger() >= 0 && r_singleLight.GetInteger() != light->index ) {
 			continue;
 		}
-        
-        // nbohr1more: disable the player in void light optimization when light area culling is disabled
-        if ( r_useLightAreaCulling.GetInteger() ) {
-		    if ( tr.viewDef->areaNum < 0 && !light->lightShader->IsAmbientLight() )
-			continue;
-        } 
-          
-/*
+		
+		// nbohr1more: disable the player in void light optimization when light area culling is disabled
+		if ( r_useLightAreaCulling.GetInteger() ) {
+			if ( tr.viewDef->areaNum < 0 && !light->lightShader->IsAmbientLight() )
+				continue;
+		}
+
 		// check for being closed off behind a door
-		// a light that doesn't cast shadows will still light even if it is behind a door
-		// stgatilov #6306: parallelSky light originates in many areas, so skip this check for it
+		// stgatilov #5172: there are many conditions when this should not be done, we just set areaNum = -1 in bad cases
 		if ( r_useLightAreaCulling.GetInteger() &&
-			!light->parms.noShadows && light->lightShader->LightCastsShadows() && 
-			!light->parms.parallelSky && 
-			light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum] ) {
+			light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]
+		) {
+			// a light that doesn't cast shadows will still light even if it is behind a door
+			assert( !light->parms.noShadows && light->lightShader->LightCastsShadows() );
 			continue;
 		}
-*/
 
 		// cull frustum
 		if ( CullLightByPortals( light, ps ) ) {

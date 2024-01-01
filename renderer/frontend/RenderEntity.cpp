@@ -79,6 +79,7 @@ idRenderLightLocal::idRenderLightLocal() {
 	lightHasMoved			= false;
 	world					= NULL;
 	index					= 0;
+	areaNum					= -1;
 	lastModifiedFrameNum	= 0;
 	archived				= false;
 	lightShader				= NULL;

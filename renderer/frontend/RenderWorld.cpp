@@ -2086,9 +2086,16 @@ void idRenderWorldLocal::AddLightRefsByPortalFlow( idRenderLightLocal *def, cons
 		if ( !areasWithPresence.Find( coveredAreas[i] ) )
 			def->areasForAdditionalWorldShadows.AddGrow( coveredAreas[i] );
 	}
+
+	if ( startingAreas.Num() == 1 ) {
+		// we traced light rays starting from this single area
+		// so blocked portals can block all light in disconnected areas
+		def->areaNum = startingAreas[0];
+	}
 }
 
 void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
+	def->areaNum = -1;
 
 	if ( def->parms.areaLock != renderEntity_s::RAL_NONE && (r_useAreaLocks & 2) ) {
 		// 2.08 Dragofer's draw call optimization

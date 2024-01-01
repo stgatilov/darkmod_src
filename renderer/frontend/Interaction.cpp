@@ -1284,6 +1284,26 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 
 	shadowScissor = vLight->scissorRect;
 
+	// duzenko: cull away interaction if light and entity are in disconnected areas
+	// stgatilov #5172: there are many conditions when this should not be done, now we simply set areaNum = -1 in these cases
+	if ( lightDef->areaNum != -1 ) {
+		// note: this cannot be done for noshadows lights, since they light objects through closed doors!
+		assert( !lightDef->parms.noShadows && lightDef->lightShader->LightCastsShadows() );
+		// if no part of the model is in an area that is connected to
+		// the light center (it is behind a solid, closed door), we can ignore it
+		bool areasConnected = false;
+		for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->next ) {
+			if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->areaIdx, PS_BLOCK_VIEW ) ) {
+				areasConnected = true;
+				break;
+			}
+		}
+		if ( !areasConnected ) {
+			// can't possibly be lit
+			return false;
+		}
+	}
+
 	// do not waste time culling the interaction frustum if there will be no shadows
 	if ( !HasShadows() ) {
 		// nbohr1more: #4379 lightgem culling
@@ -1296,28 +1316,6 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 			return false;
 		return true;
 	}
-
-/*
-	// duzenko: cull away interaction if light and entity are in disconnected areas
-	// note: this cannot be done for noshadows lights, since they light objects through closed doors!
-	// stgatilov #5121: parallelSky light originates in many areas, so skip this check for it
-	assert(HasShadows());
-	if ( lightDef->areaNum != -1 && !lightDef->parms.parallelSky ) {
-		// if no part of the model is in an area that is connected to
-		// the light center (it is behind a solid, closed door), we can ignore it
-		bool areasConnected = false;
-		for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->next ) {
-			if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->areaIdx, PS_BLOCK_VIEW ) ) {
-				areasConnected = true;
-				break;
-			}
-		}
-		if ( areasConnected == false ) {
-			// can't possibly be lit
-			return false;
-		}
-	}
-*/
 
 	// sophisticated culling does not seem to be worth it for static world models
 	if ( entityDef->parms.hModel->IsStaticWorldModel() ) {
