@@ -103,6 +103,7 @@ idRenderLightLocal::idRenderLightLocal() {
 
 	isOriginOutsideVolume = false;
 	isOriginOutsideVolumeMajor = false;
+	isOriginInVoid = false;
 	isOriginInVoidButActive = false;
 }
 

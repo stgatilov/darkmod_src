@@ -29,22 +29,29 @@ R_ListRenderLightDefs_f
 ===================
 */
 void R_ListRenderLightDefs_f( const idCmdArgs &args ) {
-	int			i;
-	idRenderLightLocal	*ldef;
+	bool onlyVisible = false;
+	for ( int i = 1; i < args.Argc(); i++ ) {
+		if ( idStr::IcmpPrefix( args.Argv(i), "vis" ) == 0 )
+			onlyVisible = true;
+	}
 
 	if ( !tr.primaryWorld ) {
 		return;
 	}
 	int active = 0;
+	int totalVisible = 0;
 	int	totalRef = 0;
 	int	totalIntr = 0;
+	int totalMajorShadowRefs = 0;
 
-	for ( i = 0 ; i < tr.primaryWorld->lightDefs.Num() ; i++ ) {
-		ldef = tr.primaryWorld->lightDefs[i];
+	for ( int i = 0 ; i < tr.primaryWorld->lightDefs.Num() ; i++ ) {
+		const idRenderLightLocal *ldef = tr.primaryWorld->lightDefs[i];
 		if ( !ldef ) {
-			common->Printf( "%4i: FREED\n", i );
+			if ( !onlyVisible )
+				common->Printf( "%4i: FREED\n", i );
 			continue;
 		}
+		active++;
 
 		// count up the interactions
 		int	iCount = 0;
@@ -60,11 +67,66 @@ void R_ListRenderLightDefs_f( const idCmdArgs &args ) {
 		}
 		totalRef += rCount;
 
-		common->Printf( "%4i: %3i intr %2i refs %s\n", i, iCount, rCount, ldef->lightShader->GetName());
-		active++;
+		// #5172: also display "weak" area references
+		int msrCount = ldef->areasForAdditionalWorldShadows.Num();
+		totalMajorShadowRefs += msrCount;
+
+		// which kind of light it is?
+		idStr shapeType;
+		if (ldef->parms.parallelSky) {
+			shapeType = "Psky";
+		} else if (ldef->parms.parallel) {
+			shapeType = "Par ";
+		} else if (ldef->parms.pointLight) {
+			shapeType = "Pnt ";
+		} else {
+			shapeType = "Spot";
+		}
+
+		// #5172: display some signs of ill-defined light
+		idStr cullFlags;
+		cullFlags += (ldef->isOriginOutsideVolumeMajor ? "F" : (ldef->isOriginOutsideVolume ? "f" : " "));
+		cullFlags += (ldef->isOriginInVoidButActive ? "V" : (ldef->isOriginInVoid ? "u" : " "));
+		cullFlags += (ldef->parms.areaLock != renderEntity_s::RAL_NONE ? "L" : " ");
+
+		idStr otherFlags;
+		otherFlags += (ldef->lastModifiedFrameNum == tr.frameCount ? "d" : " ");
+		otherFlags += (ldef->parms.volumetricDust != 0.0f ? "v" : " ");
+
+		// which shadow implementation does it use?
+		idStr shadow;
+		if (ldef->viewCount < tr.viewCount - 10) {
+			// note: there are several views per frame, so this is approximate
+			shadow = "   ";	// not visible
+			if ( onlyVisible )
+				continue;
+		} else {
+			totalVisible++;
+			if (ldef->shadows == LS_STENCIL) {
+				shadow = "Stl";
+			} else if (ldef->shadows == LS_MAPS) {
+				shadow = "Map";
+			} else {
+				shadow = "Non";
+			}
+		}
+
+		idStr shaderName = ldef->lightShader->GetName();
+		idStr entityName = GetTraceLabel(ldef->parms);
+
+		common->Printf(
+			"%4i: %s %s %s %s : %3i intr %2i+%2i refs : %s : %s\n",
+			i,
+			shapeType.c_str(), shadow.c_str(), cullFlags.c_str(), otherFlags.c_str(),
+			iCount, rCount, msrCount,
+			entityName.c_str(), shaderName.c_str()
+		);
 	}
 
-	common->Printf( "%i lightDefs, %i interactions, %i areaRefs\n", active, totalIntr, totalRef );
+	common->Printf(
+		"%i lightDefs, %i visible, %i interactions, %i+%i areaRefs\n",
+		active, totalVisible, totalIntr, totalRef, totalMajorShadowRefs
+	);
 }
 
 /*
@@ -73,22 +135,28 @@ R_ListRenderEntityDefs_f
 ===================
 */
 void R_ListRenderEntityDefs_f( const idCmdArgs &args ) {
-	int			i;
-	idRenderEntityLocal	*mdef;
+	bool onlyVisible = false;
+	for ( int i = 1; i < args.Argc(); i++ ) {
+		if ( idStr::IcmpPrefix( args.Argv(i), "vis" ) == 0 )
+			onlyVisible = true;
+	}
 
 	if ( !tr.primaryWorld ) {
 		return;
 	}
 	int active = 0;
+	int totalVisible = 0;
 	int	totalRef = 0;
 	int	totalIntr = 0;
 
-	for ( i = 0 ; i < tr.primaryWorld->entityDefs.Num() ; i++ ) {
-		mdef = tr.primaryWorld->entityDefs[i];
+	for ( int i = 0 ; i < tr.primaryWorld->entityDefs.Num() ; i++ ) {
+		const idRenderEntityLocal *mdef = tr.primaryWorld->entityDefs[i];
 		if ( !mdef ) {
-			common->Printf( "%4i: FREED\n", i );
+			if ( !onlyVisible )
+				common->Printf( "%4i: FREED\n", i );
 			continue;
 		}
+		active++;
 
 		// count up the interactions
 		int	iCount = 0;
@@ -104,11 +172,36 @@ void R_ListRenderEntityDefs_f( const idCmdArgs &args ) {
 		}
 		totalRef += rCount;
 
-		common->Printf( "%4i: %3i intr %2i refs %s\n", i, iCount, rCount, mdef->parms.hModel->Name());
-		active++;
+		idStr flags;
+		flags += (mdef->lastModifiedFrameNum == tr.frameCount ? "d" : " ");
+
+		idStr visible;
+		if (mdef->viewCount < tr.viewCount - 10) {
+			// note: there are several views per frame, so this is approximate
+			visible = "   ";
+			if ( onlyVisible )
+				continue;
+		} else {
+			totalVisible++;
+			visible = "Vis";
+		}
+
+		idStr modelName = mdef->parms.hModel->Name();
+		idStr entityName = GetTraceLabel(mdef->parms);
+
+		common->Printf(
+			"%4i: %s %s : %3i intr %2i refs : %s : %s\n",
+			i,
+			visible.c_str(), flags.c_str(),
+			iCount, rCount,
+			entityName.c_str(), modelName.c_str()
+		);
 	}
 
-	common->Printf( "total active: %i\n", active );
+	common->Printf(
+		"%i entityDefs, %i visible\n",
+		active, totalVisible
+	);
 }
 
 /*
@@ -2024,6 +2117,7 @@ void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
 	// but we definitely don't want to use a parallel offset origin
 	int originAreaNum = GetAreaAtPoint( def->globalLightOrigin );
 	if ( originAreaNum == -1 ) {
+		def->isOriginInVoid = true;
 		originAreaNum = GetAreaAtPoint( def->parms.origin );
 		if ( originAreaNum != -1 ) {
 			// this is really bad, can't use any portal-based culling =)

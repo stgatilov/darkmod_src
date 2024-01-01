@@ -344,11 +344,10 @@ public:
 };
 
 
-//stgatilov: some informative labels suitable for tracing
+//stgatilov: some informative labels suitable for tracing/logging/debugging
 //ideally, it should match natvis definitions...
 
 ID_FORCE_INLINE const char *GetTraceLabel(const renderEntity_t &rEnt) {
-	assert( g_tracingEnabled );
 	if ( rEnt.entityNum != 0 ) {
 		return gameLocal.entities[rEnt.entityNum]->name.c_str();
 	} else if ( rEnt.hModel ) {
@@ -359,7 +358,6 @@ ID_FORCE_INLINE const char *GetTraceLabel(const renderEntity_t &rEnt) {
 }
 
 ID_FORCE_INLINE const char *GetTraceLabel(const renderLight_t &rLight) {
-	assert( g_tracingEnabled );
 	if ( rLight.entityNum != 0 ) {
 		return gameLocal.entities[rLight.entityNum]->name.c_str();
 	} else {

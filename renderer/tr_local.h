@@ -294,6 +294,8 @@ public:
 	// BAD: it is questionable where to start light portal flow, so better not use it
 	// note: spotlight is an important "origin outside volume" case which we still want to run portal flow on...
 	bool					isOriginOutsideVolumeMajor;
+	// light origin is inside void: it either is useless or is bad (see below)
+	bool					isOriginInVoid;
 	// light origin is inside void, but light still works because it was hackily assigned to area with entity origin
 	// BAD: cannot use light portal flow for such lights
 	bool					isOriginInVoidButActive;
