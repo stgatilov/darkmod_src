@@ -468,14 +468,11 @@ void idRenderWorldLocal::FlowLightThroughPortals( const idRenderLightLocal *ligh
 	context.resultAreaIds = areaIds;
 	context.resultPortalFlow = portalFlow;
 
-	idPlane frustumPlanes[6];
-	idRenderMatrix::GetFrustumPlanes( frustumPlanes, light->baseLightProject, true, true );
-
 	portalStack_t ps;
 	memset( &ps, 0, sizeof( ps ) );
 	ps.numPortalPlanes = 6;
 	for ( int i = 0; i < 6; i++ ) {
-		ps.portalPlanes[i] = -frustumPlanes[i];
+		ps.portalPlanes[i] = light->frustum[i];
 	}
 
 	// if the light origin areaNum is not in a valid area,
@@ -761,7 +758,15 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 	if ( r_useLightPortalCulling.GetInteger() == 1 ) {
 
 		ALIGNTYPE16 frustumCorners_t corners;
-		idRenderMatrix::GetFrustumCorners( corners, light->inverseBaseLightProject, bounds_zeroOneCube );
+		//idRenderMatrix::GetFrustumCorners( corners, light->inverseBaseLightProject, bounds_zeroOneCube );
+		// by construction, see R_PolytopeSurfaceFrustumLike
+		assert( light->frustumTris && light->frustumTris->numVerts == 8 );
+		for ( int v = 0; v < 8; v++ ) {
+			idVec3 pos = light->frustumTris->verts[v].xyz;
+			corners.x[v] = pos.x;
+			corners.y[v] = pos.y;
+			corners.z[v] = pos.z;
+		}
 		for ( int i = 0; i < ps->numPortalPlanes; i++ ) {
 			if ( idRenderMatrix::CullFrustumCornersToPlane( corners, ps->portalPlanes[i] ) == FRUSTUM_CULL_FRONT ) {
 				return true;
