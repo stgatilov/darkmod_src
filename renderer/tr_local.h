@@ -1006,6 +1006,7 @@ extern idCVar r_useDepthBoundsTest;     // use depth bounds test to reduce shado
 extern idCVar r_skipPostProcess;		// skip all post-process renderings
 extern idCVar r_skipSuppress;			// ignore the per-view suppressions
 extern idCVar r_skipInteractions;		// skip all light/surface interaction drawing
+extern idCVar r_skipEntities;			// skip non-world geometry
 extern idCVar r_skipFrontEnd;			// bypasses all front end work, but 2D gui rendering still draws
 extern idCVar r_skipBackEnd;			// don't draw anything
 extern idCVar r_skipCopyTexture;		// do all rendering, but don't actually copyTexSubImage2D

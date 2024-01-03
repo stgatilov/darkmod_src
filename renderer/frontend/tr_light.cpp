@@ -1581,6 +1581,10 @@ void R_AddSingleModel( viewEntity_t *vEntity ) {
 		return;
 	}
 
+	if ( r_skipEntities.GetBool() && !def.parms.hModel->IsStaticWorldModel() ) {
+		return;
+	}
+
 	if ( r_useEntityScissors.GetBool() ) {
 		// calculate the screen area covered by the entity
 		idScreenRect scissorRect = R_CalcEntityScissorRectangle( vEntity );
