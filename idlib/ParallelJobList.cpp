@@ -932,7 +932,7 @@ private:
 
 	unsigned int				threadNum;
 
-	virtual int					Run();
+	virtual int					Run() override;
 };
 
 /*
@@ -1106,21 +1106,21 @@ idCVar jobs_numThreads( "jobs_numThreads", "2", CVAR_INTEGER | CVAR_NOCHEAT | CV
 
 class idParallelJobManagerLocal : public idParallelJobManager {
 public:
-	virtual						~idParallelJobManagerLocal() {}
+	virtual						~idParallelJobManagerLocal() override {}
 
-	virtual void				Init();
-	virtual void				Shutdown();
+	virtual void				Init() override;
+	virtual void				Shutdown() override;
 
-	virtual idParallelJobList *	AllocJobList( jobListId_t id, jobListPriority_t priority, unsigned int maxJobs, unsigned int maxSyncs, const idColor * color );
-	virtual void				FreeJobList( idParallelJobList * jobList );
+	virtual idParallelJobList *	AllocJobList( jobListId_t id, jobListPriority_t priority, unsigned int maxJobs, unsigned int maxSyncs, const idColor * color ) override;
+	virtual void				FreeJobList( idParallelJobList * jobList ) override;
 
-	virtual int					GetNumJobLists() const;
-	virtual int					GetNumFreeJobLists() const;
-	virtual idParallelJobList *	GetJobList( int index );
+	virtual int					GetNumJobLists() const override;
+	virtual int					GetNumFreeJobLists() const override;
+	virtual idParallelJobList *	GetJobList( int index ) override;
 
-	virtual int					GetNumProcessingUnits();
+	virtual int					GetNumProcessingUnits() override;
 
-	virtual void				WaitForAllJobLists();
+	virtual void				WaitForAllJobLists() override;
 
 	void						Submit( idParallelJobList_Threads * jobList, int parallelism );
 

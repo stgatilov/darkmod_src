@@ -45,16 +45,16 @@ public:
 	virtual float			GetCompressionRatio( void ) const = 0;
 
 							// common idFile interface
-	virtual const char *	GetName( void ) = 0;
-	virtual const char *	GetFullPath( void ) = 0;
-	virtual int				Read( void *outData, int outLength ) = 0;
-	virtual int				Write( const void *inData, int inLength ) = 0;
-	virtual int				Length( void ) = 0;
-	virtual ID_TIME_T			Timestamp( void ) = 0;
-	virtual int				Tell( void ) = 0;
-	virtual void			ForceFlush( void ) = 0;
-	virtual void			Flush( void ) = 0;
-	virtual int				Seek( long offset, fsOrigin_t origin ) = 0;
+	virtual const char *	GetName( void ) override = 0;
+	virtual const char *	GetFullPath( void ) override = 0;
+	virtual int				Read( void *outData, int outLength ) override = 0;
+	virtual int				Write( const void *inData, int inLength ) override = 0;
+	virtual int				Length( void ) override = 0;
+	virtual ID_TIME_T		Timestamp( void ) override = 0;
+	virtual int				Tell( void ) override = 0;
+	virtual void			ForceFlush( void ) override = 0;
+	virtual void			Flush( void ) override = 0;
+	virtual int				Seek( long offset, fsOrigin_t origin ) override = 0;
 };
 
 #endif /* !__COMPRESSOR_H__ */

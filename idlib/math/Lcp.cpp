@@ -33,7 +33,7 @@ const float LCP_DELTA_FORCE_EPSILON		= 1e-9f;
 
 class idLCP_Square : public idLCP {
 public:
-	virtual bool	Solve( const idMatX &o_m, idVecX &o_x, const idVecX &o_b, const idVecX &o_lo, const idVecX &o_hi, const int *o_boxIndex );
+	virtual bool	Solve( const idMatX &o_m, idVecX &o_x, const idVecX &o_b, const idVecX &o_lo, const idVecX &o_hi, const int *o_boxIndex ) override;
 
 private:
 	idMatX			m;					// original matrix
@@ -791,7 +791,7 @@ bool idLCP_Square::Solve( const idMatX &o_m, idVecX &o_x, const idVecX &o_b, con
 
 class idLCP_Symmetric : public idLCP {
 public:
-	virtual bool	Solve( const idMatX &o_m, idVecX &o_x, const idVecX &o_b, const idVecX &o_lo, const idVecX &o_hi, const int *o_boxIndex );
+	virtual bool	Solve( const idMatX &o_m, idVecX &o_x, const idVecX &o_b, const idVecX &o_lo, const idVecX &o_hi, const int *o_boxIndex ) override;
 
 private:
 	idMatX			m;					// original matrix

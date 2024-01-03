@@ -158,49 +158,49 @@ class idCommonLocal : public idCommon {
 public:
 								idCommonLocal( void );
 
-	virtual void				Init( int argc, const char **argv, const char *cmdline );
-	virtual void				Shutdown( void );
-	virtual void				Quit( void );
-	virtual bool				IsInitialized( void ) const;
-	virtual void				Frame( void );
-	virtual void				GUIFrame( bool execCmd, bool network );
-	virtual void				Async( void );
-	virtual void				StartupVariable( const char *match, bool once );
-	virtual void				InitTool( const toolFlag_t tool, const idDict *dict );
-	virtual void				ActivateTool( bool active );
-    virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_savepath", const eConfigExport configexport = eConfigExport_all);
-	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd );
-	virtual void				BeginRedirect( char *buffer, int buffersize, void (*flush)( const char * ) );
-	virtual void				EndRedirect( void );
-	virtual void				SetRefreshOnPrint( bool set );
-	virtual void				Printf( const char *fmt, ... ) id_attribute((format(printf,2,3)));
-	virtual void				VPrintf( const char *fmt, va_list arg );
-	virtual void				DPrintf( const char *fmt, ... ) id_attribute((format(printf,2,3)));
-	virtual void				PrintCallStack();
-	virtual void				Warning( const char *fmt, ... ) id_attribute((format(printf,2,3)));
-	virtual void				DWarning( const char *fmt, ...) id_attribute((format(printf,2,3)));
-	virtual void				PrintWarnings( void );
-	virtual void				ClearWarnings( const char *reason );
-	virtual void				PacifierUpdate( loadkey_t key, int count ); // grayman #3763
-	virtual void				Error( const char *fmt, ... ) id_attribute((format(printf,2,3)));
-	virtual void				DoError( const char *msg, int code );
-	virtual void				FatalError( const char *fmt, ... ) id_attribute( ( format( printf, 2, 3 ) ) );
-	virtual void				DoFatalError( const char *msg, int code );
-	virtual void				SetErrorIndirection( bool enable );
-	virtual const char*			Translate( const char* str );
-	virtual bool                WindowAvailable(void); // Agent Jones #3766
+	virtual void				Init( int argc, const char **argv, const char *cmdline ) override;
+	virtual void				Shutdown( void ) override;
+	virtual void				Quit( void ) override;
+	virtual bool				IsInitialized( void ) const override;
+	virtual void				Frame( void ) override;
+	virtual void				GUIFrame( bool execCmd, bool network ) override;
+	virtual void				Async( void ) override;
+	virtual void				StartupVariable( const char *match, bool once ) override;
+	virtual void				InitTool( const toolFlag_t tool, const idDict *dict ) override;
+	virtual void				ActivateTool( bool active ) override;
+    virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_savepath", const eConfigExport configexport = eConfigExport_all) override;
+	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd ) override;
+	virtual void				BeginRedirect( char *buffer, int buffersize, void (*flush)( const char * ) ) override;
+	virtual void				EndRedirect( void ) override;
+	virtual void				SetRefreshOnPrint( bool set ) override;
+	virtual void				Printf( const char *fmt, ... ) override id_attribute((format(printf,2,3)));
+	virtual void				VPrintf( const char *fmt, va_list arg ) override;
+	virtual void				DPrintf( const char *fmt, ... ) override id_attribute((format(printf,2,3)));
+	virtual void				PrintCallStack() override;
+	virtual void				Warning( const char *fmt, ... ) override id_attribute((format(printf,2,3)));
+	virtual void				DWarning( const char *fmt, ...) override id_attribute((format(printf,2,3)));
+	virtual void				PrintWarnings( void ) override;
+	virtual void				ClearWarnings( const char *reason ) override;
+	virtual void				PacifierUpdate( loadkey_t key, int count ) override; // grayman #3763
+	virtual void				Error( const char *fmt, ... ) override id_attribute((format(printf,2,3)));
+	virtual void				DoError( const char *msg, int code ) override;
+	virtual void				FatalError( const char *fmt, ... ) override id_attribute( ( format( printf, 2, 3 ) ) );
+	virtual void				DoFatalError( const char *msg, int code ) override;
+	virtual void				SetErrorIndirection( bool enable ) override;
+	virtual const char*			Translate( const char* str ) override;
+	virtual bool                WindowAvailable(void) override; // Agent Jones #3766
 
-	virtual I18N*				GetI18N();
+	virtual I18N*				GetI18N() override;
 
-	virtual const char *		KeysFromBinding( const char *bind );
-	virtual const char *		BindingFromKey( const char *key );
+	virtual const char *		KeysFromBinding( const char *bind ) override;
+	virtual const char *		BindingFromKey( const char *key ) override;
 
-	virtual int					ButtonState( int key );
-	virtual int					KeyState( int key );
+	virtual int					ButtonState( int key ) override;
+	virtual int					KeyState( int key ) override;
 
 	//stgatilov: for automation
-	virtual int					GetConsoleMarker();
-	virtual idStr				GetConsoleContents(int begin, int end);
+	virtual int					GetConsoleMarker() override;
+	virtual idStr				GetConsoleContents(int begin, int end) override;
 
 	void						InitGame( void );
 	void						ShutdownGame( bool reloading );

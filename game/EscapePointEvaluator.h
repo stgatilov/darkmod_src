@@ -67,7 +67,7 @@ public:
 	 *
 	 * @returns: an ID of -1 is returned if no point was found to be suitable.
 	 */
-	virtual inline int GetBestEscapePoint()
+	virtual int GetBestEscapePoint()
 	{
 		return _bestId;
 	}
@@ -121,7 +121,7 @@ private:
 public:
 	AnyEscapePointFinder(const EscapeConditions& conditions);
 
-	virtual bool Evaluate(EscapePoint& escapePoint);
+	virtual bool Evaluate(EscapePoint& escapePoint) override;
 };
 
 /**
@@ -138,7 +138,7 @@ private:
 public:
 	GuardedEscapePointFinder(const EscapeConditions& conditions);
 
-	virtual bool Evaluate(EscapePoint& escapePoint);
+	virtual bool Evaluate(EscapePoint& escapePoint) override;
 };
 
 /**
@@ -158,7 +158,7 @@ private:
 public:
 	FriendlyEscapePointFinder(const EscapeConditions& conditions);
 
-	virtual bool Evaluate(EscapePoint& escapePoint);
+	virtual bool Evaluate(EscapePoint& escapePoint) override;
 };
 
 /**
@@ -178,7 +178,7 @@ private:
 public:
 	FriendlyGuardedEscapePointFinder(const EscapeConditions& conditions);
 
-	virtual bool Evaluate(EscapePoint& escapePoint);
+	virtual bool Evaluate(EscapePoint& escapePoint) override;
 };
 
 #endif /* ESCAPE_POINT_EVALUATOR__H */

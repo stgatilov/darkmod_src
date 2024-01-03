@@ -28,17 +28,17 @@ class IdleState :
 {
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init(idAI* owner);
+	virtual void Init(idAI* owner) override;
 
 	// Gets called each time the mind is thinking
-	virtual void Think(idAI* owner);
+	virtual void Think(idAI* owner) override;
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	static StatePtr CreateInstance();
 
@@ -46,19 +46,17 @@ public:
 	* ishtvan: Called when targets are changed
 	* Re-initializes to catch new path corners
 	**/
-	virtual void OnChangeTarget(idAI *owner);
+	virtual void OnChangeTarget(idAI *owner) override;
 
 	// grayman #3154 - forget you were sitting or sleeping at map start
-
-	virtual void ForgetSittingSleeping() { _startSitting = _startSleeping = false; };
+	virtual void ForgetSittingSleeping() override { _startSitting = _startSleeping = false; };
 
 protected:
 
 	bool _startSitting;
 	bool _startSleeping;
 
-	// Override base class method
-	virtual bool CheckAlertLevel(idAI* owner);
+	virtual bool CheckAlertLevel(idAI* owner) override;
 
 	// Returns the initial idle bark sound, depending on the alert level 
 	// and the current state of mind

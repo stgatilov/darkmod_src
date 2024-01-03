@@ -36,12 +36,12 @@ public:
 	CLASS_PROTOTYPE( CMeleeWeapon );
 
 							CMeleeWeapon( void );
-							virtual ~CMeleeWeapon( void );
+	virtual					~CMeleeWeapon( void ) override;
 
 	/**
 	* Think loop calls idMoveable::Think, then checks collisions for attacks with bound weapons
 	**/
-	virtual void			Think( void );
+	virtual void			Think( void ) override;
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );

@@ -79,11 +79,11 @@ It prototypes variables used in class instanciation and type checking.
 Use this on single inheritance concrete classes only.
 ================
 */
-#define CLASS_PROTOTYPE( nameofclass )									\
-public:																	\
-	static	idTypeInfo						Type;						\
-	static	idClass							*CreateInstance( void );	\
-	virtual	idTypeInfo						*GetType( void ) const;		\
+#define CLASS_PROTOTYPE( nameofclass )												\
+public:																				\
+	static	idTypeInfo						Type;									\
+	static	idClass							*CreateInstance( void );				\
+	virtual	idTypeInfo						*GetType( void ) const override;		\
 	static	idEventFunc<nameofclass>		eventCallbacks[]
 
 /*
@@ -125,11 +125,11 @@ It prototypes variables used in class instanciation and type checking.
 Use this on single inheritance abstract classes only.
 ================
 */
-#define ABSTRACT_PROTOTYPE( nameofclass )								\
-public:																	\
-	static	idTypeInfo						Type;						\
-	static	idClass							*CreateInstance( void );	\
-	virtual	idTypeInfo						*GetType( void ) const;		\
+#define ABSTRACT_PROTOTYPE( nameofclass )										\
+public:																			\
+	static	idTypeInfo						Type;								\
+	static	idClass							*CreateInstance( void );			\
+	virtual	idTypeInfo						*GetType( void ) const override;	\
 	static	idEventFunc<nameofclass>		eventCallbacks[]
 
 /*
@@ -163,7 +163,11 @@ class idRestoreGame;
 
 class idClass {
 public:
-	ABSTRACT_PROTOTYPE( idClass );
+	// note: these are contents of ABSTRACT_PROTOTYPE(idClass) except for override on GetType
+	static	idTypeInfo						Type;
+	static	idClass							*CreateInstance( void );
+	virtual	idTypeInfo						*GetType( void ) const;
+	static	idEventFunc<idClass>			eventCallbacks[];
 
 #if defined(ID_DEBUG_MEMORY) && defined(ID_REDIRECT_NEWDELETE)
 #undef new

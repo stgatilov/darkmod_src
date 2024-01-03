@@ -34,6 +34,7 @@ CStim::CStim(idEntity *e, StimType type, int uniqueId) :
 	m_bScriptBased = false;
 	m_bScriptFired = false;
 	m_ScriptRadiusOverride = -1.0f;
+	m_ScriptPositionOverride = vec3_zero;
 	m_TimeInterleave = 0;
 	m_TimeInterleaveStamp = 0;
 	m_Radius = 0.0f;
@@ -112,6 +113,7 @@ void CStim::Restore(idRestoreGame *savefile)
 	// Don't restore collision ents (probably not required)
 	m_CollisionEnts.Clear();
 	m_ScriptRadiusOverride = -1.0f;
+	m_ScriptPositionOverride = vec3_zero;
 	
 	savefile->ReadInt(m_TimeInterleave);
 	savefile->ReadInt(m_TimeInterleaveStamp);

@@ -30,7 +30,7 @@ public:
 	CLASS_PROTOTYPE( idForce_Constant );
 
 						idForce_Constant( void );
-	virtual				~idForce_Constant( void );
+	virtual				~idForce_Constant( void ) override;
 
 
 	void				Save( idSaveGame *savefile ) const;
@@ -44,8 +44,8 @@ public:
 	void				SetPhysics( idPhysics *physics );
 
 public: // common force interface
-	virtual void		Evaluate( int time );
-	virtual void		RemovePhysics( const idPhysics *phys );
+	virtual void		Evaluate( int time ) override;
+	virtual void		RemovePhysics( const idPhysics *phys ) override;
 
 private:
 	// force properties

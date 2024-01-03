@@ -295,7 +295,7 @@ public:
 					explicit idFixedWinding( const idPlane &plane );
 					explicit idFixedWinding( const idWinding &winding );
 					explicit idFixedWinding( const idFixedWinding &winding );
-	virtual			~idFixedWinding( void );
+	virtual			~idFixedWinding( void ) override;
 
 	idFixedWinding &operator=( const idWinding &winding );
 
@@ -308,7 +308,7 @@ public:
 protected:
 	idVec5			data[MAX_POINTS_ON_WINDING];	// point data
 
-	virtual bool	ReAllocate( int n, bool keep = false );
+	virtual bool	ReAllocate( int n, bool keep = false ) override;
 };
 
 ID_INLINE idFixedWinding::idFixedWinding( void ) {

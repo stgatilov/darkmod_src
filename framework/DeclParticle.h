@@ -84,10 +84,10 @@ public:
 class idDeclParticle : public idDecl {
 public:
 
-	virtual size_t			Size( void ) const;
-	virtual const char *	DefaultDefinition( void ) const;
-	virtual bool			Parse( const char *text, const int textLength );
-	virtual void			FreeData( void );
+	virtual size_t			Size( void ) const override;
+	virtual const char *	DefaultDefinition( void ) const override;
+	virtual bool			Parse( const char *text, const int textLength ) override;
+	virtual void			FreeData( void ) override;
 
 	//note: bounds are returned in entity space
 	//they are correct when particle origin/axis are trivial

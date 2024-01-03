@@ -23,7 +23,7 @@ class idListener : public idEntity
 public:
 	CLASS_PROTOTYPE(idListener);
 
-	virtual ~idListener(void);
+	virtual ~idListener(void) override;
 
 	int		mode;	// 1 (default) = hear what's at the Listener plus what's around the player
 					// 2 = hear only what's at the Listener

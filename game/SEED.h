@@ -229,13 +229,13 @@ public:
 	CLASS_PROTOTYPE( Seed );
 
 						Seed( void );
-	virtual				~Seed( void );
+	virtual				~Seed( void ) override;
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
 	void				Spawn( void );
-	virtual void		Think( void );
+	virtual void		Think( void ) override;
 
 	/**
 	* Clear the m_Classes list and also free any allocated models.

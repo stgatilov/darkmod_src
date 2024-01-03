@@ -79,7 +79,7 @@ public:
 public:
 
 	CRelations();
-	~CRelations();
+	virtual ~CRelations() override;
 
 	void Clear();
 

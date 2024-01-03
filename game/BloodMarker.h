@@ -45,7 +45,7 @@ public:
 	 * greebo: Overrides the OnStim method of the base class to check
 	 * for water stims.
 	 */
-	void					OnStim(const CStimPtr& stim, idEntity* stimSource);
+	virtual void			OnStim(const CStimPtr& stim, idEntity* stimSource) override;
 
 	/**
 	 * grayman #3075: get the AI that spilled this blood

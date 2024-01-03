@@ -34,26 +34,26 @@ public:
 	CLASS_PROTOTYPE( idLight );
 
 	idLight();
-	virtual ~idLight();
+	virtual ~idLight() override;
 
 	void			Spawn( void );
 
 	void			Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void			Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
-	virtual void	UpdateChangeableSpawnArgs( const idDict *source );
-	virtual void	Think( void );
-	virtual void	FreeLightDef( void );
-	virtual bool	GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
-	void			Present( void );
-	virtual void	Hide( void );
-	virtual void	Show( void );
+	virtual void	UpdateChangeableSpawnArgs( const idDict *source ) override;
+	virtual void	Think( void ) override;
+	virtual void	FreeLightDef( void ) override;
+	virtual bool	GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis ) override;
+	virtual void	Present( void ) override;
+	virtual void	Hide( void ) override;
+	virtual void	Show( void ) override;
 
 	void			SaveState( idDict *args );
-	virtual void	SetColor( const float red, const float green, const float blue );
-	virtual void	SetColor( const idVec4 &color );
-	virtual void	GetColor( idVec3 &out ) const;
-	virtual void	GetColor( idVec4 &out ) const;
+	virtual void	SetColor( const idVec3 &color ) override;
+	virtual void	SetColor( const idVec4 &color ) override;
+	virtual void	GetColor( idVec3 &out ) const override;
+	virtual void	GetColor( idVec4 &out ) const override;
 
 	/**
 	* Tels: idLight::GetLightOrigin returns the origin of the light in the world. This
@@ -73,7 +73,7 @@ public:
 	void			FadeOut( float time );
 	void			FadeIn( float time );
 	void			FadeTo( idVec3 color, float time );
-	void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) override;
 	void			BecomeBroken( idEntity *activator );
 	qhandle_t		GetLightDefHandle( void ) const { return lightDefHandle; }
 	void			SetLightParent( idEntity *lparent ) { lightParent = lparent; }
@@ -90,17 +90,17 @@ public:
 	void			GetRadius( idVec3 &out ) const;
 	idVec3			GetRadius( void ) const { return idVec3(renderLight.lightRadius[0], renderLight.lightRadius[1], renderLight.lightRadius[2] ); }
 
-	virtual void	ShowEditingDialog( void );
+	virtual void	ShowEditingDialog( void ) override;
 
 	enum {
 		EVENT_BECOMEBROKEN = idEntity::EVENT_MAXEVENTS,
 		EVENT_MAXEVENTS
 	};
 
-	virtual void	ClientPredictionThink( void );
-	virtual void	WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void	ReadFromSnapshot( const idBitMsgDelta &msg );
-	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual void	ClientPredictionThink( void ) override;
+	virtual void	WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void	ReadFromSnapshot( const idBitMsgDelta &msg ) override;
+	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 
 	/**	Returns a bounding box surrounding the light.
 	 */

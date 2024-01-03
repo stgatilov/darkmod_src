@@ -30,48 +30,48 @@ public:
 	static idRenderModel *		Alloc();
 
 								idRenderModelStatic();
-	virtual						~idRenderModelStatic();
+	virtual						~idRenderModelStatic() override;
 
-	virtual void				InitFromFile( const char *fileName );
-	virtual void				PartialInitFromFile( const char *fileName );
-	virtual void				PurgeModel();
-	virtual void				Reset() {};
-	virtual void				LoadModel();
-	virtual bool				IsLoaded() const;
-	virtual void				SetLevelLoadReferenced( bool referenced );
-	virtual bool				IsLevelLoadReferenced();
-	virtual void				TouchData();
-	virtual void				InitEmpty( const char *name );
-	virtual void				AddSurface( modelSurface_t surface );
-	virtual void				FinishSurfaces();
-	virtual void				FreeVertexCache();
-	virtual const char *		Name() const;
-	virtual void				Print() const;
-	virtual void				List() const;
-	virtual int					Memory() const;
-	virtual ID_TIME_T			Timestamp() const;
-	virtual int					NumSurfaces() const;
-	virtual int					NumBaseSurfaces() const;
-	virtual const modelSurface_t *Surface( int surfaceNum ) const;
-	virtual srfTriangles_t *	AllocSurfaceTriangles( int numVerts, int numIndexes ) const;
-	virtual void				FreeSurfaceTriangles( srfTriangles_t *tris ) const;
-	virtual srfTriangles_t *	ShadowHull() const;
-	virtual bool				IsStaticWorldModel() const;
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual bool				IsDefaultModel() const;
-	virtual bool				IsReloadable() const;
-	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual int					NumJoints( void ) const;
-	virtual const idMD5Joint *	GetJoints( void ) const;
-	virtual jointHandle_t		GetJointHandle( const char *name ) const;
-	virtual const char *		GetJointName( jointHandle_t handle ) const;
-	virtual const idJointQuat *	GetDefaultPose( void ) const;
-	virtual int					NearestJoint( int surfaceNum, int a, int b, int c ) const;
-	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
-	virtual const idBounds *	JointBounds() const;
-	virtual void				ReadFromDemoFile( class idDemoFile *f );
-	virtual void				WriteToDemoFile( class idDemoFile *f );
-	virtual float				DepthHack() const;
+	virtual void				InitFromFile( const char *fileName ) override;
+	virtual void				PartialInitFromFile( const char *fileName ) override;
+	virtual void				PurgeModel() override;
+	virtual void				Reset() override {};
+	virtual void				LoadModel() override;
+	virtual bool				IsLoaded() const override;
+	virtual void				SetLevelLoadReferenced( bool referenced ) override;
+	virtual bool				IsLevelLoadReferenced() override;
+	virtual void				TouchData() override;
+	virtual void				InitEmpty( const char *name ) override;
+	virtual void				AddSurface( modelSurface_t surface ) override;
+	virtual void				FinishSurfaces() override;
+	virtual void				FreeVertexCache() override;
+	virtual const char *		Name() const override;
+	virtual void				Print() const override;
+	virtual void				List() const override;
+	virtual int					Memory() const override;
+	virtual ID_TIME_T			Timestamp() const override;
+	virtual int					NumSurfaces() const override;
+	virtual int					NumBaseSurfaces() const override;
+	virtual const modelSurface_t *Surface( int surfaceNum ) const override;
+	virtual srfTriangles_t *	AllocSurfaceTriangles( int numVerts, int numIndexes ) const override;
+	virtual void				FreeSurfaceTriangles( srfTriangles_t *tris ) const override;
+	virtual srfTriangles_t *	ShadowHull() const override;
+	virtual bool				IsStaticWorldModel() const override;
+	virtual dynamicModel_t		IsDynamicModel() const override;
+	virtual bool				IsDefaultModel() const override;
+	virtual bool				IsReloadable() const override;
+	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual int					NumJoints( void ) const override;
+	virtual const idMD5Joint *	GetJoints( void ) const override;
+	virtual jointHandle_t		GetJointHandle( const char *name ) const override;
+	virtual const char *		GetJointName( jointHandle_t handle ) const override;
+	virtual const idJointQuat *	GetDefaultPose( void ) const override;
+	virtual int					NearestJoint( int surfaceNum, int a, int b, int c ) const override;
+	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const override;
+	virtual const idBounds *	JointBounds() const override;
+	virtual void				ReadFromDemoFile( class idDemoFile *f ) override;
+	virtual void				WriteToDemoFile( class idDemoFile *f ) override;
+	virtual float				DepthHack() const override;
 
 	void						MakeDefaultModel();
 	
@@ -158,23 +158,23 @@ private:
 
 class idRenderModelMD5 : public idRenderModelStatic {
 public:
-	virtual void				InitFromFile( const char *fileName );
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
-	virtual const idBounds *	JointBounds() const;
-	virtual void				Print() const;
-	virtual void				List() const;
-	virtual void				TouchData();
-	virtual void				PurgeModel();
-	virtual void				LoadModel();
-	virtual int					Memory() const;
-	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual int					NumJoints( void ) const;
-	virtual const idMD5Joint *	GetJoints( void ) const;
-	virtual jointHandle_t		GetJointHandle( const char *name ) const;
-	virtual const char *		GetJointName( jointHandle_t handle ) const;
-	virtual const idJointQuat *	GetDefaultPose( void ) const;
-	virtual int					NearestJoint( int surfaceNum, int a, int b, int c ) const;
+	virtual void				InitFromFile( const char *fileName ) override;
+	virtual dynamicModel_t		IsDynamicModel() const override;
+	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const override;
+	virtual const idBounds *	JointBounds() const override;
+	virtual void				Print() const override;
+	virtual void				List() const override;
+	virtual void				TouchData() override;
+	virtual void				PurgeModel() override;
+	virtual void				LoadModel() override;
+	virtual int					Memory() const override;
+	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual int					NumJoints( void ) const override;
+	virtual const idMD5Joint *	GetJoints( void ) const override;
+	virtual jointHandle_t		GetJointHandle( const char *name ) const override;
+	virtual const char *		GetJointName( jointHandle_t handle ) const override;
+	virtual const idJointQuat *	GetDefaultPose( void ) const override;
+	virtual int					NearestJoint( int surfaceNum, int a, int b, int c ) const override;
 
 private:
 	idList<idMD5Joint>			joints;
@@ -201,10 +201,10 @@ struct md3Surface_s;
 class idRenderModelMD3 : public idRenderModelStatic {
 public:
 	idRenderModelMD3() : md3( nullptr ) {}
-	virtual void				InitFromFile( const char *fileName );
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
+	virtual void				InitFromFile( const char *fileName ) override;
+	virtual dynamicModel_t		IsDynamicModel() const override;
+	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const override;
 
 private:
 	int							index;			// model = tr.models[model->index]
@@ -227,12 +227,12 @@ class idRenderModelLiquid : public idRenderModelStatic {
 public:
 								idRenderModelLiquid();
 
-	virtual void				InitFromFile( const char *fileName );
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
+	virtual void				InitFromFile( const char *fileName ) override;
+	virtual dynamicModel_t		IsDynamicModel() const override;
+	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const override;
 
-	virtual void				Reset();
+	virtual void				Reset() override;
 	void						IntersectBounds( const idBounds &bounds, float displacement );
 
 private:
@@ -284,18 +284,18 @@ class idRenderModelPrt : public idRenderModelStatic {
 public:
 								idRenderModelPrt();
 
-	virtual void				InitFromFile( const char *fileName );
-	virtual void				TouchData();
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
-	virtual float				DepthHack() const;
-	virtual int					Memory() const;
+	virtual void				InitFromFile( const char *fileName ) override;
+	virtual void				TouchData() override;
+	virtual dynamicModel_t		IsDynamicModel() const override;
+	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const override;
+	virtual float				DepthHack() const override;
+	virtual int					Memory() const override;
 	
 public:																	
 	float						SofteningRadius( const int stage ) const;	// #3878 soft particles
 private:
-	virtual void				SetSofteningRadii();
+	void						SetSofteningRadii();
 
 private:
 	const idDeclParticle *		particleSystem;
@@ -312,10 +312,10 @@ private:
 
 class idRenderModelBeam : public idRenderModelStatic {
 public:
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual bool				IsLoaded() const;
-	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
+	virtual dynamicModel_t		IsDynamicModel() const override;
+	virtual bool				IsLoaded() const override;
+	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const override;
 };
 
 /*
@@ -343,10 +343,10 @@ class idRenderModelTrail : public idRenderModelStatic {
 public:
 								idRenderModelTrail();
 
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual bool				IsLoaded() const;
-	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
+	virtual dynamicModel_t		IsDynamicModel() const override;
+	virtual bool				IsLoaded() const override;
+	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const override;
 
 	int							NewTrail( idVec3 pt, int duration );
 	void						UpdateTrail( int index, idVec3 pt );
@@ -363,10 +363,10 @@ public:
 
 class idRenderModelLightning : public idRenderModelStatic {
 public:
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual bool				IsLoaded() const;
-	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
+	virtual dynamicModel_t		IsDynamicModel() const override;
+	virtual bool				IsLoaded() const override;
+	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const override;
 };
 
 /*
@@ -378,10 +378,10 @@ public:
 */
 class idRenderModelSprite : public idRenderModelStatic {
 public:
-	virtual	dynamicModel_t	IsDynamicModel() const;
-	virtual	bool			IsLoaded() const;
-	virtual	idRenderModel *	InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
-	virtual	idBounds		Bounds( const struct renderEntity_s *ent ) const;
+	virtual	dynamicModel_t	IsDynamicModel() const override;
+	virtual	bool			IsLoaded() const override;
+	virtual	idRenderModel *	InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
+	virtual	idBounds		Bounds( const struct renderEntity_s *ent ) const override;
 };
 
 #endif /* !__MODEL_LOCAL_H__ */

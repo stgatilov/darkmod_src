@@ -314,7 +314,7 @@ void idRenderWorldLocal::FlowViewThroughPortals( const idVec3 origin, int numPla
 //==================================================================================================
 
 struct idRenderWorldLocal::FlowLightThroughPortalsContext {
-	idRenderLightLocal *light;
+	const idRenderLightLocal *light;
 	AreaList *resultAreaIds;
 	lightPortalFlow_t *resultPortalFlow;
 };
@@ -457,7 +457,7 @@ This can only be used for shadow casting lights that have a generated
 prelight, because shadows are cast from back side which may not be in visible areas.
 =======================
 */
-void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light, AreaList *areaIds, lightPortalFlow_t *portalFlow ) const {
+void idRenderWorldLocal::FlowLightThroughPortals( const idRenderLightLocal *light, const AreaList &startingAreaIds, AreaList *areaIds, lightPortalFlow_t *portalFlow ) const {
 	if ( areaIds )
 		areaIds->Clear();
 	if ( portalFlow )
@@ -468,30 +468,19 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light, Are
 	context.resultAreaIds = areaIds;
 	context.resultPortalFlow = portalFlow;
 
-	idPlane frustumPlanes[6];
-	idRenderMatrix::GetFrustumPlanes( frustumPlanes, light->baseLightProject, true, true );
-
 	portalStack_t ps;
 	memset( &ps, 0, sizeof( ps ) );
 	ps.numPortalPlanes = 6;
 	for ( int i = 0; i < 6; i++ ) {
-		ps.portalPlanes[i] = -frustumPlanes[i];
-	}
-
-	if ( light->parms.parallelSky ) {
-		//stgatilov #5121: trace light rays from every area having portalSky
-		AreaList startingAreas;
-		GetParallelLightEnteringAreas( light, startingAreas );
-		for ( int i = 0; i < startingAreas.Num(); i++ ) {
-			int areaNum = startingAreas[i];
-			FloodLightThroughArea_r( context, areaNum, &ps );
-		}
+		ps.portalPlanes[i] = light->frustum[i];
 	}
 
 	// if the light origin areaNum is not in a valid area,
 	// the light won't have any area refs
-	if ( light->areaNum >= 0 )
-		FloodLightThroughArea_r( context, light->areaNum, &ps );
+	for ( int i = 0; i < startingAreaIds.Num(); i++ ) {
+		int areaNum = startingAreaIds[i];
+		FloodLightThroughArea_r( context, areaNum, &ps );
+	}
 
 	if ( portalFlow ) {
 		// sort area refs
@@ -769,7 +758,15 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 	if ( r_useLightPortalCulling.GetInteger() == 1 ) {
 
 		ALIGNTYPE16 frustumCorners_t corners;
-		idRenderMatrix::GetFrustumCorners( corners, light->inverseBaseLightProject, bounds_zeroOneCube );
+		//idRenderMatrix::GetFrustumCorners( corners, light->inverseBaseLightProject, bounds_zeroOneCube );
+		// by construction, see R_PolytopeSurfaceFrustumLike
+		assert( light->frustumTris && light->frustumTris->numVerts == 8 );
+		for ( int v = 0; v < 8; v++ ) {
+			idVec3 pos = light->frustumTris->verts[v].xyz;
+			corners.x[v] = pos.x;
+			corners.y[v] = pos.y;
+			corners.z[v] = pos.z;
+		}
 		for ( int i = 0; i < ps->numPortalPlanes; i++ ) {
 			if ( idRenderMatrix::CullFrustumCornersToPlane( corners, ps->portalPlanes[i] ) == FRUSTUM_CULL_FRONT ) {
 				return true;
@@ -850,21 +847,20 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 		if ( r_singleLight.GetInteger() >= 0 && r_singleLight.GetInteger() != light->index ) {
 			continue;
 		}
-        
-        // nbohr1more: disable the player in void light optimization when light area culling is disabled
-        if ( r_useLightAreaCulling.GetInteger() ) {
-		    if ( tr.viewDef->areaNum < 0 && !light->lightShader->IsAmbientLight() )
-			continue;
-        } 
-          
+		
+		// nbohr1more: disable the player in void light optimization when light area culling is disabled
+		if ( r_useLightAreaCulling.GetInteger() ) {
+			if ( tr.viewDef->areaNum < 0 && !light->lightShader->IsAmbientLight() )
+				continue;
+		}
 
 		// check for being closed off behind a door
-		// a light that doesn't cast shadows will still light even if it is behind a door
-		// stgatilov #6306: parallelSky light originates in many areas, so skip this check for it
+		// stgatilov #5172: there are many conditions when this should not be done, we just set areaNum = -1 in bad cases
 		if ( r_useLightAreaCulling.GetInteger() &&
-			!light->parms.noShadows && light->lightShader->LightCastsShadows() && 
-			!light->parms.parallelSky && 
-			light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum] ) {
+			light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]
+		) {
+			// a light that doesn't cast shadows will still light even if it is behind a door
+			assert( !light->parms.noShadows && light->lightShader->LightCastsShadows() );
 			continue;
 		}
 

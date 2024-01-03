@@ -35,7 +35,7 @@ public:
 		int   team // grayman #3548
 	);
 
-	virtual bool		TestArea(const idAAS *aas, int areaNum);
+	virtual bool		TestArea(const idAAS *aas, int areaNum) override;
 
 	// Returns the best escape goal found
 	inline aasGoal_t&	GetEscapeGoal() { return _goal; };

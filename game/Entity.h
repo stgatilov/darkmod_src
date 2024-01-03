@@ -472,7 +472,7 @@ public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
 	idEntity();
-	virtual ~idEntity();
+	virtual					~idEntity() override;
 
 	void					Spawn( void );
 
@@ -535,7 +535,7 @@ public:
 													// refreshed to update surface properties after a skin change. CM will be regenerated 
 													// from the original model file with the new skin. -- SteveL #4232
 	void					SetShaderParm( int parmnum, float value );
-	virtual void			SetColor( const float red, const float green, const float blue );
+	void					SetColor( const float red, const float green, const float blue ) { SetColor( idVec3(red, green, blue) ); }
 	virtual void			SetColor( const idVec3 &color );
 	virtual void			GetColor( idVec3 &out ) const;
 	virtual void			SetColor( const idVec4 &color );
@@ -705,7 +705,7 @@ public:
 							// callback function for when another entity recieved damage from this entity.  damage can be adjusted and returned to the caller.
 	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
 							// notifies this entity that it is in pain
-	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef );
 							// notifies this entity that is has been killed
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
@@ -847,7 +847,7 @@ public:
 	 *
 	 * @isFrobUse: This is true if the Use action originated from a frob button hit.
 	 */
-	virtual bool CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse);
+	virtual bool CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse);
 
 	/**
 	 * greebo: Returns TRUE if the given entity matches this entity, i.e.
@@ -859,7 +859,7 @@ public:
 	 * The standard entity returns FALSE, this method needs to be overridden 
 	 * by the subclasses.
 	 */
-	virtual bool CanBeUsedBy(idEntity* entity, const bool isFrobUse);
+	virtual bool CanBeUsedByEntity(idEntity* entity, const bool isFrobUse);
 
 	/**
 	 * greebo: Uses this entity by the given inventory item. The button state
@@ -868,7 +868,7 @@ public:
 	 *
 	 * @returns: TRUE if the item could be used, FALSE otherwise.
 	 */
-	virtual bool UseBy(EImpulseState nState, const CInventoryItemPtr& item);
+	virtual bool UseByItem(EImpulseState nState, const CInventoryItemPtr& item);
 
 	/**
 	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::PerformFrobCheck
@@ -1037,7 +1037,7 @@ public:
 	/**
 	* Reattach to a predefined attach position, otherwise same as above
 	**/
-	virtual void ReAttachToPos( const char *AttName, const char *PosName  );
+	virtual void ReAttachToPos( const char *AttName, const char *PosName );
 
 	/**
 	* Show or hide an attachment, by name or by attachment array index.
@@ -1742,6 +1742,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_StimEnable(int stimType, int state);
 	void					Event_StimClearIgnoreList(int stimType);
 	void					Event_StimEmit(int stimType, float radius, idVec3& stimOrigin);
+	void					Event_StimSetScriptBased(int stimType, bool state);
 	void					Event_ResponseAdd(int stimType);
 	void					Event_ResponseRemove(int stimType);
 	void					Event_ResponseEnable(int stimType, int State);
@@ -1833,24 +1834,24 @@ public:
 
 	void					Spawn( void ); //TDM: added so that we can cache anim rates
 
-	virtual void			ClientPredictionThink( void );
-	virtual void			Think( void );
+	virtual void			ClientPredictionThink( void ) override;
+	virtual void			Think( void ) override;
 
 	void					UpdateAnimation( void );
 
-	virtual idAnimator *	GetAnimator( void );
-	virtual void			SetModel( const char *modelname );
-	virtual void			SwapLODModel( const char *modelname ); // SteveL #3770
+	virtual idAnimator *	GetAnimator( void ) override;
+	virtual void			SetModel( const char *modelname ) override;
+	virtual void			SwapLODModel( const char *modelname ) override; // SteveL #3770
 
 	bool					GetJointWorldTransform( jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis );
 	bool					GetJointTransformForAnim( jointHandle_t jointHandle, int animNum, int currentTime, idVec3 &offset, idMat3 &axis ) const;
 
 	virtual int				GetDefaultSurfaceType( void ) const;
-	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
+	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) override;
 	void					AddLocalDamageEffect( jointHandle_t jointNum, const idVec3 &localPoint, const idVec3 &localNormal, const idVec3 &localDir, const idDeclEntityDef *def, const idMaterial *collisionMaterial );
 	void					UpdateDamageEffects( void );
 
-	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
 
 	/**
 	* Overloads idEntity::Attach to bind to a joint
@@ -1858,7 +1859,7 @@ public:
 	* Ent is the entity being attached
 	* PosName is the optional position name to attach to.
 	**/
-	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL ) override;
 
 	/**
 	* Reattach an existing attachment
@@ -1867,7 +1868,7 @@ public:
 	* offset from that joint, and a (pitch, yaw, roll) angle vector that defines the 
 	* rotation of the attachment relative to the joint's orientation.
 	**/
-	virtual void			ReAttachToCoords( const char *AttName, idStr jointName, idVec3 offset, idAngles angles );
+	virtual void			ReAttachToCoordsOfJoint( const char *AttName, idStr jointName, idVec3 offset, idAngles angles );
 
 	/**
 	* Cache the animation rates from spawnargs
@@ -1916,7 +1917,7 @@ protected:
 	* Replace decal overlays after LOD switch, hiding, shouldering, save game loading. SteveL #3817
 	**/
 protected:
-	virtual void ReapplyDecals();			  // Internal method, called at end of Think() 
+	virtual void ReapplyDecals() override;			  // Internal method, called at end of Think() 
 
 protected:
 	idAnimator				animator;

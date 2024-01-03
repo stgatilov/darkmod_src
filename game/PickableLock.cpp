@@ -203,7 +203,11 @@ void PickableLock::OnUnlock()
 
 void PickableLock::OnFrobbedStatusChange(bool val)
 {
-	if (val == false)
+	// stgatilov: this code interrupts lockpicking when frobbed entity switches between door and its handle
+	//   https://forums.thedarkmod.com/index.php?/topic/22270-lockpicking-fails-when-handle-crosses-in-front-of-crosshair/
+	// we interrupt lockpicking on timeout anyway due to #4968, so this is not necessary
+
+	/*if (val == false)
 	{
 		// Reset the lockpick fail counter when entity is losing frob focus
 		m_FailedLockpickRounds = 0;
@@ -215,7 +219,7 @@ void PickableLock::OnFrobbedStatusChange(bool val)
 			// Also return lock to initial state
 			Event_LockpickSoundFinished(LOCKED);
 		}
-	}
+	}*/
 }
 
 void PickableLock::OnLockpickPinSuccess()

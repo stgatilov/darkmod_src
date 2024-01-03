@@ -54,7 +54,7 @@ public:
 							// Get the full file path.
 	virtual const char *	GetFullPath( void );
 							// Checks if the file is compressed (i.e. compressed file inside PK4)
-	virtual bool IsCompressed( void );
+	virtual bool			IsCompressed( void );
 							// Read data from the file to the buffer.
 	virtual int				Read( void *buffer, int len );
 							// Write data from the buffer to the file.
@@ -123,18 +123,18 @@ public:
 							idFile_Memory( void );	// file for writing without name
 							idFile_Memory( const char *name );	// file for writing
 							idFile_Memory( const char *name, const char *data, int length, bool owned = false );	// file for reading
-	virtual					~idFile_Memory( void );
+	virtual					~idFile_Memory( void ) override;
 
-	virtual const char *	GetName( void ) { return name.c_str(); }
-	virtual const char *	GetFullPath( void ) { return name.c_str(); }
-	virtual int				Read( void *buffer, int len );
-	virtual int				Write( const void *buffer, int len );
-	virtual int				Length( void );
-	virtual ID_TIME_T		Timestamp( void );
-	virtual int				Tell( void );
-	virtual void			ForceFlush( void );
-	virtual void			Flush( void );
-	virtual int				Seek( long offset, fsOrigin_t origin );
+	virtual const char *	GetName( void ) override { return name.c_str(); }
+	virtual const char *	GetFullPath( void ) override { return name.c_str(); }
+	virtual int				Read( void *buffer, int len ) override;
+	virtual int				Write( const void *buffer, int len ) override;
+	virtual int				Length( void ) override;
+	virtual ID_TIME_T		Timestamp( void ) override;
+	virtual int				Tell( void ) override;
+	virtual void			ForceFlush( void ) override;
+	virtual void			Flush( void ) override;
+	virtual int				Seek( long offset, fsOrigin_t origin ) override;
 
 							// returns const pointer to the memory buffer
 	const char *			GetDataPtr( void ) const { return filePtr; }
@@ -161,18 +161,18 @@ class idFile_BitMsg : public idFile {
 public:
 							idFile_BitMsg( idBitMsg &msg );
 							idFile_BitMsg( const idBitMsg &msg );
-	virtual					~idFile_BitMsg( void );
+	virtual					~idFile_BitMsg( void ) override;
 
-	virtual const char *	GetName( void ) { return name.c_str(); }
-	virtual const char *	GetFullPath( void ) { return name.c_str(); }
-	virtual int				Read( void *buffer, int len );
-	virtual int				Write( const void *buffer, int len );
-	virtual int				Length( void );
-	virtual ID_TIME_T		Timestamp( void );
-	virtual int				Tell( void );
-	virtual void			ForceFlush( void );
-	virtual void			Flush( void );
-	virtual int				Seek( long offset, fsOrigin_t origin );
+	virtual const char *	GetName( void ) override { return name.c_str(); }
+	virtual const char *	GetFullPath( void ) override { return name.c_str(); }
+	virtual int				Read( void *buffer, int len ) override;
+	virtual int				Write( const void *buffer, int len ) override;
+	virtual int				Length( void ) override;
+	virtual ID_TIME_T		Timestamp( void ) override;
+	virtual int				Tell( void ) override;
+	virtual void			ForceFlush( void ) override;
+	virtual void			Flush( void ) override;
+	virtual int				Seek( long offset, fsOrigin_t origin ) override;
 
 private:
 	idStr					name;			// name of the file
@@ -186,19 +186,19 @@ class idFile_Permanent : public idFile {
 
 public:
 							idFile_Permanent( void );
-	virtual					~idFile_Permanent( void );
+	virtual					~idFile_Permanent( void ) override;
 
-	virtual const char *	GetName( void ) { return name.c_str(); }
-	virtual const char *	GetFullPath( void ) { return fullPath.c_str(); }
-	virtual int				Read( void *buffer, int len );
-	virtual int				Write( const void *buffer, int len );
-	virtual int				Length( void );
-	virtual ID_TIME_T		Timestamp( void );
+	virtual const char *	GetName( void ) override { return name.c_str(); }
+	virtual const char *	GetFullPath( void ) override { return fullPath.c_str(); }
+	virtual int				Read( void *buffer, int len ) override;
+	virtual int				Write( const void *buffer, int len ) override;
+	virtual int				Length( void ) override;
+	virtual ID_TIME_T		Timestamp( void ) override;
 	virtual domainStatus_t	GetDomain() const override;
-	virtual int				Tell( void );
-	virtual void			ForceFlush( void );
-	virtual void			Flush( void );
-	virtual int				Seek( long offset, fsOrigin_t origin );
+	virtual int				Tell( void ) override;
+	virtual void			ForceFlush( void ) override;
+	virtual void			Flush( void ) override;
+	virtual int				Seek( long offset, fsOrigin_t origin ) override;
 
 	// returns file pointer
 	FILE *					GetFilePtr( void ) { return o; }
@@ -219,20 +219,20 @@ class idFile_InZip : public idFile {
 
 public:
 							idFile_InZip( void );
-	virtual					~idFile_InZip( void );
+	virtual					~idFile_InZip( void ) override;
 
-	virtual const char *	GetName( void ) { return name.c_str(); }
-	virtual const char *	GetFullPath( void ) { return fullPath.c_str(); }
-	virtual int				Read( void *buffer, int len );
-	virtual int				Write( const void *buffer, int len );
-	virtual int				Length( void );
-	virtual ID_TIME_T		Timestamp( void );
+	virtual const char *	GetName( void ) override { return name.c_str(); }
+	virtual const char *	GetFullPath( void ) override { return fullPath.c_str(); }
+	virtual int				Read( void *buffer, int len ) override;
+	virtual int				Write( const void *buffer, int len ) override;
+	virtual int				Length( void ) override;
+	virtual ID_TIME_T		Timestamp( void ) override;
 	virtual domainStatus_t	GetDomain() const override;
-	virtual int				Tell( void );
-	virtual void			ForceFlush( void );
-	virtual void			Flush( void );
-	virtual int				Seek( long offset, fsOrigin_t origin );
-	virtual bool IsCompressed( void );
+	virtual int				Tell( void ) override;
+	virtual void			ForceFlush( void ) override;
+	virtual void			Flush( void ) override;
+	virtual int				Seek( long offset, fsOrigin_t origin ) override;
+	virtual bool			IsCompressed( void ) override;
 
 private:
 	idStr					name;			// name of the file in the pak

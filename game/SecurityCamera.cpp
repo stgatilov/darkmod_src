@@ -1852,7 +1852,7 @@ void idSecurityCamera::Damage(idEntity *inflictor, idEntity *attacker, const idV
 		}
 		else
 		{
-			Pain(inflictor, attacker, damage, dir, location);
+			Pain(inflictor, attacker, damage, dir, location, damageDef);
 		}
 	}
 }
@@ -1984,7 +1984,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 idSecurityCamera::Pain
 ============
 */
-bool idSecurityCamera::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+bool idSecurityCamera::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict *damageDef ) {
 	idStr fx;
 
 	if ( powerOn ) {

@@ -52,7 +52,7 @@ public:
 	CLASS_PROTOTYPE( idPhysics_Parametric );
 
 							idPhysics_Parametric( void );
-							~idPhysics_Parametric( void );
+	virtual					~idPhysics_Parametric( void ) override;
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -84,62 +84,62 @@ public:
 	void					GetAngles( idAngles &curAngles ) const;
 
 public:	// common physics interface
-	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
-	idClipModel *			GetClipModel( int id = 0 ) const;
-	int						GetNumClipModels( void ) const;
+	virtual void			SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true ) override;
+	virtual idClipModel *	GetClipModel( int id = 0 ) const override;
+	virtual int				GetNumClipModels( void ) const override;
 
-	void					SetMass( float mass, int id = -1 );
-	float					GetMass( int id = -1 ) const;
+	virtual void			SetMass( float mass, int id = -1 ) override;
+	virtual float			GetMass( int id = -1 ) const override;
 
-	void					SetContents( int contents, int id = -1 );
-	int						GetContents( int id = -1 ) const;
+	virtual void			SetContents( int contents, int id = -1 ) override;
+	virtual int				GetContents( int id = -1 ) const override;
 
-	const idBounds &		GetBounds( int id = -1 ) const;
-	const idBounds &		GetAbsBounds( int id = -1 ) const;
+	virtual const idBounds &GetBounds( int id = -1 ) const override;
+	virtual const idBounds &GetAbsBounds( int id = -1 ) const override;
 
-	bool					Evaluate( int timeStepMSec, int endTimeMSec );
-	void					UpdateTime( int endTimeMSec );
-	int						GetTime( void ) const;
+	virtual bool			Evaluate( int timeStepMSec, int endTimeMSec ) override;
+	virtual void			UpdateTime( int endTimeMSec ) override;
+	virtual int				GetTime( void ) const override;
 
-	void					Activate( void );
-	bool					IsAtRest( void ) const;
-	int						GetRestStartTime( void ) const;
-	bool					IsPushable( void ) const;
+	virtual void			Activate( void ) override;
+	virtual bool			IsAtRest( void ) const override;
+	virtual int				GetRestStartTime( void ) const override;
+	virtual bool			IsPushable( void ) const override;
 
-	void					SaveState( void );
-	void					RestoreState( void );
+	virtual void			SaveState( void ) override;
+	virtual void			RestoreState( void ) override;
 
-	void					SetOrigin( const idVec3 &newOrigin, int id = -1 );
-	void					SetAxis( const idMat3 &newAxis, int id = -1 );
+	virtual void			SetOrigin( const idVec3 &newOrigin, int id = -1 ) override;
+	virtual void			SetAxis( const idMat3 &newAxis, int id = -1 ) override;
 
-	void					Translate( const idVec3 &translation, int id = -1 );
-	void					Rotate( const idRotation &rotation, int id = -1 );
+	virtual void			Translate( const idVec3 &translation, int id = -1 ) override;
+	virtual void			Rotate( const idRotation &rotation, int id = -1 ) override;
 
-	const idVec3 &			GetOrigin( int id = 0 ) const;
-	const idMat3 &			GetAxis( int id = 0 ) const;
+	virtual const idVec3 &	GetOrigin( int id = 0 ) const override;
+	virtual const idMat3 &	GetAxis( int id = 0 ) const override;
 
-	void					SetLinearVelocity( const idVec3 &newLinearVelocity, int id = 0 );
-	void					SetAngularVelocity( const idVec3 &newAngularVelocity, int id = 0 );
+	virtual void			SetLinearVelocity( const idVec3 &newLinearVelocity, int id = 0 ) override;
+	virtual void			SetAngularVelocity( const idVec3 &newAngularVelocity, int id = 0 ) override;
 
-	const idVec3 &			GetLinearVelocity( int id = 0 ) const;
-	const idVec3 &			GetAngularVelocity( int id = 0 ) const;
+	virtual const idVec3 &	GetLinearVelocity( int id = 0 ) const override;
+	virtual const idVec3 &	GetAngularVelocity( int id = 0 ) const override;
 
-	void					DisableClip( void );
-	void					EnableClip( void );
+	virtual void			DisableClip( void ) override;
+	virtual void			EnableClip( void ) override;
 
-	void					UnlinkClip( void );
-	void					LinkClip( void );
+	virtual void			UnlinkClip( void ) override;
+	virtual void			LinkClip( void ) override;
 
-	void					SetMaster( idEntity *master, const bool orientated = true );
+	virtual void			SetMaster( idEntity *master, const bool orientated = true ) override;
 
-	const trace_t *			GetBlockingInfo( void ) const;
-	idEntity *				GetBlockingEntity( void ) const;
+	virtual const trace_t *	GetBlockingInfo( void ) const override;
+	virtual idEntity *		GetBlockingEntity( void ) const override;
 
-	int						GetLinearEndTime( void ) const;
-	int						GetAngularEndTime( void ) const;
+	virtual int				GetLinearEndTime( void ) const override;
+	virtual int				GetAngularEndTime( void ) const override;
 
-	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
-	void					ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 	// SteveL #3712
 	bool					pushFlagOverride( int flag, bool forcedValue ); // return old state of flag

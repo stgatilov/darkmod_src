@@ -46,13 +46,13 @@ public:
 	CLASS_PROTOTYPE( idWeapon );
 
 							idWeapon();
-	virtual					~idWeapon();
+	virtual					~idWeapon() override;
 
 	// Init
 	void					Spawn( void );
 	void					SetOwner( idPlayer *owner );
 	idPlayer*				GetOwner( void );
-	virtual bool			ShouldConstructScriptObjectAtSpawn( void ) const;
+	virtual bool			ShouldConstructScriptObjectAtSpawn( void ) const override;
 
 	static void				CacheWeapon( const char *weaponName );
 
@@ -70,13 +70,13 @@ public:
 	const char *			Icon( void ) const;
 	void					UpdateGUI( void );
 
-	virtual void			SetModel( const char *modelname );
+	virtual void			SetModel( const char *modelname ) override;
 	bool					GetGlobalJointTransform( bool viewModel, const jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis );
 	void					SetPushVelocity( const idVec3 &pushVelocity );
 	bool					UpdateSkin( void );
 
 	// State control/player interface
-	void					Think( void );
+	virtual void			Think( void ) override;
 	void					Raise( void );
 	void					PutAway( void );
 	void					Reload( void );
@@ -107,8 +107,8 @@ public:
 	float					getKOBoxSize(void);
 
 	// Script state management
-	virtual idThread *		ConstructScriptObject( void );
-	virtual void			DeconstructScriptObject( void );
+	virtual idThread *		ConstructScriptObject( void ) override;
+	virtual void			DeconstructScriptObject( void ) override;
 	void					SetState( const char *statename, int blendFrames );
 	void					UpdateScript( void );
 	void					EnterCinematic( void );
@@ -132,14 +132,14 @@ public:
 	int						LowAmmo( void ) const;
 	int						AmmoRequired( void ) const;
 
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 	/**
 	* TDM: Attach an entity to the weapon's AF.  Different than plain entity attachment
 	* Does not use position name for now
 	**/
-	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL ) override;
 
 	enum {
 		EVENT_RELOAD = idEntity::EVENT_MAXEVENTS,
@@ -147,9 +147,8 @@ public:
 		EVENT_CHANGESKIN,
 		EVENT_MAXEVENTS
 	};
-	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
-
-	virtual void			ClientPredictionThink( void );
+	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg ) override;
+	virtual void			ClientPredictionThink( void ) override;
 	
 	/**
 	* TDM: Return true if this is a ranged weapon
@@ -163,7 +162,7 @@ protected:
 	* for attaching to a particular joint.
 	* Overloaded to call GetJointGlobalTransform on idWeapon entities.
 	**/
-	virtual void GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis );
+	virtual void GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis ) override;
 
 private:
 	// script control

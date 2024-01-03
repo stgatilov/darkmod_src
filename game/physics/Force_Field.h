@@ -45,7 +45,7 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 						idForce_Field( void );
-	virtual				~idForce_Field( void );
+	virtual				~idForce_Field( void ) override;
 						// uniform constant force
 	void				Uniform( const idVec3 &force );
 						// explosion from clip model origin
@@ -68,7 +68,7 @@ public:
 	void				SetScale( bool newScale ) { scaleImpulse = newScale; }
 
 public: // common force interface
-	virtual void		Evaluate( int time );
+	virtual void		Evaluate( int time ) override;
 
 private:
 	// force properties

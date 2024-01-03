@@ -27,10 +27,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idDeclTable : public idDecl {
 public:
-	virtual size_t			Size( void ) const;
-	virtual const char *	DefaultDefinition( void ) const;
-	virtual bool			Parse( const char *text, const int textLength );
-	virtual void			FreeData( void );
+	virtual size_t			Size( void ) const override;
+	virtual const char *	DefaultDefinition( void ) const override;
+	virtual bool			Parse( const char *text, const int textLength ) override;
+	virtual void			FreeData( void ) override;
 
 	float					TableLookup( float index ) const;
 

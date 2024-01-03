@@ -298,7 +298,7 @@ public:
 
 class SoundFX_Lowpass : public SoundFX {
 public:
-	virtual void		ProcessSample( float* in, float* out );
+	virtual void		ProcessSample( float* in, float* out ) override;
 };
 
 class SoundFX_LowpassFast : public SoundFX {
@@ -308,7 +308,7 @@ class SoundFX_LowpassFast : public SoundFX {
 	float				b1, b2;
 
 public:
-	virtual void		ProcessSample( float* in, float* out );
+	virtual void		ProcessSample( float* in, float* out ) override;
 	void				SetParms( float p1 = 0, float p2 = 0, float p3 = 0 );
 };
 
@@ -316,8 +316,8 @@ class SoundFX_Comb : public SoundFX {
 	int					currentTime;
 
 public:
-	virtual void		Initialize();
-	virtual void		ProcessSample( float* in, float* out );
+	virtual void		Initialize() override;
+	virtual void		ProcessSample( float* in, float* out ) override;
 };
 
 class FracTime {
@@ -414,7 +414,7 @@ class idSoundEmitterLocal : public idSoundEmitter {
 public:
 
 						idSoundEmitterLocal( void );
-	virtual				~idSoundEmitterLocal( void );
+	virtual				~idSoundEmitterLocal( void ) override;
 
 	//----------------------------------------------
 
@@ -422,29 +422,29 @@ public:
 	// return deterministic values regardless of async buffer scheduling
 
 	// a non-immediate free will let all currently playing sounds complete
-	virtual void		Free( bool immediate );
+	virtual void		Free( bool immediate ) override;
 
 	// the parms specified will be the default overrides for all sounds started on this emitter.
 	// NULL is acceptable for parms
-	virtual void		UpdateEmitter( const idVec3 &origin, int listenerId, const soundShaderParms_t *parms );
+	virtual void		UpdateEmitter( const idVec3 &origin, int listenerId, const soundShaderParms_t *parms ) override;
 
 	// returns the length of the started sound in msec
-	virtual int			StartSound( const idSoundShader *shader, const s_channelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ );
+	virtual int			StartSound( const idSoundShader *shader, const s_channelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ ) override;
 
 	float				GetEffectiveVolume(idVec3 spatializedOrigin, float distance, float volumeLoss); // grayman #4882
 	
 	// can pass SCHANNEL_ANY
-	virtual void		ModifySound( const s_channelType channel, const soundShaderParms_t *parms );
-	virtual void		StopSound( const s_channelType channel );
-	virtual void		FadeSound( const s_channelType channel, float to, float over );
+	virtual void		ModifySound( const s_channelType channel, const soundShaderParms_t *parms ) override;
+	virtual void		StopSound( const s_channelType channel ) override;
+	virtual void		FadeSound( const s_channelType channel, float to, float over ) override;
 
-	virtual bool		CurrentlyPlaying( void ) const;
+	virtual bool		CurrentlyPlaying( void ) const override;
 
 	// can pass SCHANNEL_ANY
-	virtual	float		CurrentAmplitude( void );
+	virtual	float		CurrentAmplitude( void ) override;
 
 	// used for save games
-	virtual	int			Index( void ) const;
+	virtual	int			Index( void ) const override;
 
 	//----------------------------------------------
 
@@ -529,60 +529,60 @@ typedef struct soundPortalTrace_s {
 
 class idSoundWorldLocal : public idSoundWorld {
 public:
-	virtual					~idSoundWorldLocal( void );
+	virtual					~idSoundWorldLocal( void ) override;
 
 	// call at each map start
-	virtual void			ClearAllSoundEmitters( void );
-	virtual void			StopAllSounds( void );
+	virtual void			ClearAllSoundEmitters( void ) override;
+	virtual void			StopAllSounds( void ) override;
 
 	// get a new emitter that can play sounds in this world
-	virtual idSoundEmitter *AllocSoundEmitter(idVec3 loc); // grayman #4882
+	virtual idSoundEmitter *AllocSoundEmitter(idVec3 loc) override; // grayman #4882
 
 	// for load games
-	virtual idSoundEmitter *EmitterForIndex( int index );
+	virtual idSoundEmitter *EmitterForIndex( int index ) override;
 
 	// query data from all emitters in the world
-	virtual float			CurrentShakeAmplitudeForPosition( const int time, const idVec3 &listererPosition );
+	virtual float			CurrentShakeAmplitudeForPosition( const int time, const idVec3 &listererPosition ) override;
 
 	// where is the camera/microphone
 	// listenerId allows listener-private sounds to be added
-	virtual void			PlaceListener( const idVec3 &origin, const idMat3 &axis, const int listenerId, const int gameTime, const idStr& areaName );
+	virtual void			PlaceListener( const idVec3 &origin, const idMat3 &axis, const int listenerId, const int gameTime, const idStr& areaName ) override;
 
 	// fade all sounds in the world with a given shader soundClass
 	// to is in Db (sigh), over is in seconds
-	virtual void			FadeSoundClasses( const int soundClass, const float to, const float over );
+	virtual void			FadeSoundClasses( const int soundClass, const float to, const float over ) override;
 
 	// dumps the current state and begins archiving commands
-	virtual void			StartWritingDemo( idDemoFile *demo );
-	virtual void			StopWritingDemo( void );
+	virtual void			StartWritingDemo( idDemoFile *demo ) override;
+	virtual void			StopWritingDemo( void ) override;
 
 	// read a sound command from a demo file
-	virtual void			ProcessDemoCommand( idDemoFile *readDemo );
+	virtual void			ProcessDemoCommand( idDemoFile *readDemo ) override;
 
 	// background music
-	virtual void			PlayShaderDirectly( const char *name, int channel = -1 );
+	virtual void			PlayShaderDirectly( const char *name, int channel = -1 ) override;
 
 	// pause and unpause the sound world
-	virtual void			Pause( void );
-	virtual void			UnPause( void );
-	virtual bool			IsPaused( void );
+	virtual void			Pause( void ) override;
+	virtual void			UnPause( void ) override;
+	virtual bool			IsPaused( void ) override;
 
 	// avidump
-	virtual void			AVIOpen( const char *path, const char *name );
-	virtual void			AVIClose( void );
+	virtual void			AVIOpen( const char *path, const char *name ) override;
+	virtual void			AVIClose( void ) override;
 
 	// SaveGame Support
-	virtual void			WriteToSaveGame( idFile *savefile );
-	virtual void			ReadFromSaveGame( idFile *savefile );
+	virtual void			WriteToSaveGame( idFile *savefile ) override;
+	virtual void			ReadFromSaveGame( idFile *savefile ) override;
 	
-	virtual void			ReadFromSaveGameSoundChannel( idFile *saveGame, idSoundChannel *ch );
-	virtual void			ReadFromSaveGameSoundShaderParams( idFile *saveGame, soundShaderParms_t *params );
-	virtual void			WriteToSaveGameSoundChannel( idFile *saveGame, idSoundChannel *ch );
-	virtual void			WriteToSaveGameSoundShaderParams( idFile *saveGame, soundShaderParms_t *params );
+	void					ReadFromSaveGameSoundChannel( idFile *saveGame, idSoundChannel *ch );
+	void					ReadFromSaveGameSoundShaderParams( idFile *saveGame, soundShaderParms_t *params );
+	void					WriteToSaveGameSoundChannel( idFile *saveGame, idSoundChannel *ch );
+	void					WriteToSaveGameSoundShaderParams( idFile *saveGame, soundShaderParms_t *params );
 	
-	virtual void			SetSlowmo( bool active );
-	virtual void			SetSlowmoSpeed( float speed );
-	virtual void			SetEnviroSuit( bool active );
+	virtual void			SetSlowmo( bool active ) override;
+	virtual void			SetSlowmoSpeed( float speed ) override;
+	virtual void			SetEnviroSuit( bool active ) override;
 
 	//=======================================
 
@@ -677,44 +677,44 @@ public:
 	}
 
 	// all non-hardware initialization
-	virtual void			Init( void );
+	virtual void			Init( void ) override;
 
 	// shutdown routine
-	virtual	void			Shutdown( void );
+	virtual	void			Shutdown( void ) override;
 
 	// sound is attached to the window, and must be recreated when the window is changed
-	virtual bool			ShutdownHW( void );
-	virtual bool			InitHW( void );
+	virtual bool			ShutdownHW( void ) override;
+	virtual bool			InitHW( void ) override;
 
 	// async loop, called at 60Hz
-	virtual int				AsyncUpdate( int time );
+	virtual int				AsyncUpdate( int time ) override;
 	// async loop, when the sound driver uses a write strategy
-	virtual int				AsyncUpdateWrite( int time );
+	virtual int				AsyncUpdateWrite( int time ) override;
 	// direct mixing called from the sound driver thread for OSes that support it
-	virtual int				AsyncMix( int soundTime, float *mixBuffer );
+	virtual int				AsyncMix( int soundTime, float *mixBuffer ) override;
 
-	virtual void			SetMute( bool mute );
+	virtual void			SetMute( bool mute ) override;
 
-	virtual cinData_t		ImageForTime( const int milliseconds, const bool waveform );
+	virtual cinData_t		ImageForTime( const int milliseconds, const bool waveform ) override;
 
-	int						GetSoundDecoderInfo( int index, soundDecoderInfo_t &decoderInfo );
+	int						GetSoundDecoderInfo( int index, soundDecoderInfo_t &decoderInfo ) override;
 
 	// if rw == NULL, no portal occlusion or rendered debugging is available
-	virtual idSoundWorld	*AllocSoundWorld( idRenderWorld *rw );
+	virtual idSoundWorld	*AllocSoundWorld( idRenderWorld *rw ) override;
 
 	// specifying NULL will cause silence to be played
-	virtual void			SetPlayingSoundWorld( idSoundWorld *soundWorld );
+	virtual void			SetPlayingSoundWorld( idSoundWorld *soundWorld ) override;
 
 	// some tools, like the sound dialog, may be used in both the game and the editor
 	// This can return NULL, so check!
-	virtual idSoundWorld	*GetPlayingSoundWorld( void );
+	virtual idSoundWorld	*GetPlayingSoundWorld( void ) override;
 
-	virtual	void			BeginLevelLoad( void );
-	virtual	void			EndLevelLoad( const char *mapString );
+	virtual	void			BeginLevelLoad( void ) override;
+	virtual	void			EndLevelLoad( const char *mapString ) override;
 
-	virtual void			PrintMemInfo( MemInfo_t *mi );
+	virtual void			PrintMemInfo( MemInfo_t *mi ) override;
 
-	virtual int				IsEFXAvailable(void);
+	virtual int				IsEFXAvailable(void) override;
 
 	//-------------------------
 

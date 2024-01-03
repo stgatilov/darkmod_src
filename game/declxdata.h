@@ -112,12 +112,12 @@ class tdmDeclXData : public idDecl
 {
 public:
 	tdmDeclXData();
-	~tdmDeclXData();
+	virtual ~tdmDeclXData() override;
 
-	virtual size_t			Size( void ) const;
-	virtual const char *	DefaultDefinition( void ) const;
-	virtual void			FreeData( void );
-	virtual bool			Parse( const char *text, const int textLength );
+	virtual size_t			Size( void ) const override;
+	virtual const char *	DefaultDefinition( void ) const override;
+	virtual void			FreeData( void ) override;
+	virtual bool			Parse( const char *text, const int textLength ) override;
 
 	/// Key/value data parsed from the xdata decl.
 	idDict					m_data;

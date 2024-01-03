@@ -32,7 +32,7 @@ class CForce_Grab : public idForce
 		CLASS_PROTOTYPE( CForce_Grab );
 
 							CForce_Grab( void );
-		virtual				~CForce_Grab( void );
+		virtual				~CForce_Grab( void ) override;
 							// initialize the drag force
 		void				Init( float damping );
 							// set physics object being dragged

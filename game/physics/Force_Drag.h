@@ -30,7 +30,7 @@ public:
 	CLASS_PROTOTYPE( idForce_Drag );
 
 						idForce_Drag( void );
-	virtual				~idForce_Drag( void );
+	virtual				~idForce_Drag( void ) override;
 						// initialize the drag force
 	void				Init( float damping );
 						// set physics object being dragged
@@ -43,8 +43,8 @@ public:
 	const idVec3		GetDraggedPosition( void ) const;
 
 public: // common force interface
-	virtual void		Evaluate( int time );
-	virtual void		RemovePhysics( const idPhysics *phys );
+	virtual void		Evaluate( int time ) override;
+	virtual void		RemovePhysics( const idPhysics *phys ) override;
 
 private:
 

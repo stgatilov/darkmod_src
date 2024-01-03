@@ -83,58 +83,58 @@ class idAASLocal :
 
 public:
 								idAASLocal( void );
-	virtual						~idAASLocal( void );
-	virtual bool				Init( const idStr &mapName, const unsigned int mapFileCRC );
-	virtual void				Shutdown( void );
+	virtual						~idAASLocal( void ) override;
+	virtual bool				Init( const idStr &mapName, const unsigned int mapFileCRC ) override;
+	void						Shutdown( void );
 
-	virtual void				Stats( void ) const;
-	virtual void				Test( const idVec3 &origin );
-	virtual const idAASSettings *GetSettings( void ) const;
-	virtual int					PointAreaNum( const idVec3 &origin ) const;
-	virtual int					PointReachableAreaNum( const idVec3 &origin, const idBounds &searchBounds, const int areaFlags ) const;
-	virtual int					BoundsReachableAreaNum( const idBounds &bounds, const int areaFlags ) const;
-	virtual void				PushPointIntoAreaNum( int areaNum, idVec3 &origin ) const;
-	virtual idVec3				AreaCenter( int areaNum ) const;
-	virtual int					AreaFlags( int areaNum ) const;
-	virtual int					AreaTravelFlags( int areaNum ) const;
-	virtual bool				Trace( aasTrace_t &trace, const idVec3 &start, const idVec3 &end ) const;
-	virtual const idPlane &		GetPlane( int planeNum ) const;
-	virtual int					GetWallEdges( int areaNum, const idBounds &bounds, int travelFlags, int *edges, int maxEdges ) const;
-	virtual void				SortWallEdges( int *edges, int numEdges ) const;
-	virtual void				GetEdgeVertexNumbers( int edgeNum, int verts[2] ) const;
-	virtual void				GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const;
-	virtual bool				SetAreaState( const idBounds &bounds, const int areaContents, bool disabled );
-	virtual aasHandle_t			AddObstacle( const idBounds &bounds );
-	virtual void				RemoveObstacle( const aasHandle_t handle );
-	virtual void				RemoveAllObstacles( void );
-	virtual int					TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goalAreaNum, int travelFlags, idActor* actor ) const;
-	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, CFrobDoor** firstDoor, idActor* actor ) const;
-	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, int &travelTime, idActor* actor ); // grayman #3548
-	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, idActor* actor) const;
-	virtual bool				FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor ) const; // grayman #4412
-//	virtual void				PrintReachability(int index,idReachability *reach) const;
-	virtual bool				FlyPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const;
-	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin );
-	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, idActor* actor ) const; // grayman #4412
-	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback, unsigned short maxTravelCost=0 ) const;
-	virtual bool				FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const;
+	virtual void				Stats( void ) const override;
+	virtual void				Test( const idVec3 &origin ) override;
+	virtual const idAASSettings *GetSettings( void ) const override;
+	virtual int					PointAreaNum( const idVec3 &origin ) const override;
+	virtual int					PointReachableAreaNum( const idVec3 &origin, const idBounds &searchBounds, const int areaFlags ) const override;
+	virtual int					BoundsReachableAreaNum( const idBounds &bounds, const int areaFlags ) const override;
+	virtual void				PushPointIntoAreaNum( int areaNum, idVec3 &origin ) const override;
+	virtual idVec3				AreaCenter( int areaNum ) const override;
+	virtual int					AreaFlags( int areaNum ) const override;
+	virtual int					AreaTravelFlags( int areaNum ) const override;
+	virtual bool				Trace( aasTrace_t &trace, const idVec3 &start, const idVec3 &end ) const override;
+	virtual const idPlane &		GetPlane( int planeNum ) const override;
+	virtual int					GetWallEdges( int areaNum, const idBounds &bounds, int travelFlags, int *edges, int maxEdges ) const override;
+	virtual void				SortWallEdges( int *edges, int numEdges ) const override;
+	virtual void				GetEdgeVertexNumbers( int edgeNum, int verts[2] ) const override;
+	virtual void				GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const override;
+	virtual bool				SetAreaState( const idBounds &bounds, const int areaContents, bool disabled ) override;
+	virtual aasHandle_t			AddObstacle( const idBounds &bounds ) override;
+	virtual void				RemoveObstacle( const aasHandle_t handle ) override;
+	virtual void				RemoveAllObstacles( void ) override;
+	virtual int					TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goalAreaNum, int travelFlags, idActor* actor ) const override;
+	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, CFrobDoor** firstDoor, idActor* actor ) const override;
+	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, int &travelTime, idActor* actor ) override; // grayman #3548
+	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, idActor* actor) const override;
+	virtual bool				FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor ) const override; // grayman #4412
+//	virtual void				PrintReachability(int index,idReachability *reach) const override;
+	virtual bool				FlyPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const override;
+	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) override;
+	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, idActor* actor ) const override; // grayman #4412
+	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback, unsigned short maxTravelCost=0 ) const override;
+	virtual bool				FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const override;
 
 	// Added for DarkMod by SophisticatedZombie(DMH)
-	virtual idBounds			GetAreaBounds (int areaNum) const;
-	virtual int					GetNumAreas() const;
-	virtual idReachability*		GetAreaFirstReachability(int areaNum) const;
+	virtual idBounds			GetAreaBounds (int areaNum) const override;
+	virtual int					GetNumAreas() const override;
+	virtual idReachability*		GetAreaFirstReachability(int areaNum) const override;
 
-	virtual void				SetAreaTravelFlag( int index, int flag );
+	virtual void				SetAreaTravelFlag( int index, int flag ) override;
 
-	virtual void				RemoveAreaTravelFlag( int index, int flag );
+	virtual void				RemoveAreaTravelFlag( int index, int flag ) override;
 
 	// angua: this returns the cluster number of this area
-	virtual int					GetClusterNum(int areaNum);
+	int							GetClusterNum(int areaNum);
 
-	virtual void				ReferenceDoor(CFrobDoor* door, int areaNum);
-	virtual void				DeReferenceDoor(CFrobDoor* door, int areaNum);
+	virtual void				ReferenceDoor(CFrobDoor* door, int areaNum) override;
+	virtual void				DeReferenceDoor(CFrobDoor* door, int areaNum) override;
 
-	CFrobDoor*					GetDoor(int areaNum) const;
+	virtual CFrobDoor*			GetDoor(int areaNum) const override;
 
 	/*!
 	* See base class for interface definition
@@ -143,7 +143,7 @@ public:
 	(
 		TReachabilityTrackingList& inout_reachabilityList,
 		idBounds impactBounds
-	) const ;
+	) const override;
 
 	/*!
 	* See base class for interface definition
@@ -153,35 +153,35 @@ public:
 		idReachability* p_reachability,
 		int areaIndex,
 		idBounds barrierBounds
-	) const;
+	) const override;
 
 	/**
 	 * greebo: Adds the given elevator to this AAS class. This will add
 	 * additional routing possibilities for AI between clusters.
 	 */
-	virtual void AddElevator(CMultiStateMover* mover);
+	void AddElevator(CMultiStateMover* mover);
 
 	/**
 	 * grayman #3763 - retrieve cluster size
 	 */
-	virtual int GetClusterSize();
+	int GetClusterSize();
 
 	/**
 	 * grayman #3857 - retrieve a list of portals around areaNum
 	 */
-	virtual void GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits, idAI* ai); // grayman #4238
+	void GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits, idAI* ai); // grayman #4238
 
 	/**
 	 * greebo: Assembles the elevator routing information.
 	 */
-	virtual void CompileEAS();
+	void CompileEAS();
 
 	// Accessor function for the EAS
-	virtual eas::tdmEAS* GetEAS() { return elevatorSystem; }
+	virtual eas::tdmEAS* GetEAS() override { return elevatorSystem; }
 
 	// Save/Restore routines
-	void Save(idSaveGame* savefile) const;
-	void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 private:
 	idAASFile *					file;
@@ -234,8 +234,8 @@ private:	// routing
 	void						RemoveRoutingCacheUsingArea( int areaNum );
 
 public:
-	void						DisableArea( int areaNum );
-	void						EnableArea( int areaNum );
+	virtual void				DisableArea( int areaNum ) override;
+	virtual void				EnableArea( int areaNum ) override;
 
 private:
 	bool						SetAreaState_r( int nodeNum, const idBounds &bounds, const int areaContents, bool disabled );

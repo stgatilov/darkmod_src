@@ -8525,7 +8525,7 @@ idVec3 idPhysics_AF::NearestBodyOrig( idVec3 point, int *bodyID )
 	return returnVec;
 }
 
-bool idPhysics_AF::HasGroundContacts( int id )
+bool idPhysics_AF::HasGroundContactsAtJoint( int id )
 {
 	int numContacts;
 	idAFConstraint_Contact *contacts[5];

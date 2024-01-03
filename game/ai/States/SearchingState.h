@@ -47,27 +47,27 @@ class SearchingState :
 {
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init(idAI* owner);
+	virtual void Init(idAI* owner) override;
 
 	// Gets called each time the mind is thinking
-	virtual void Think(idAI* owner);
+	virtual void Think(idAI* owner) override;
 
 	bool FindRadialSpot(idAI* owner, idVec3 origin, float radius, idVec3 &spot); // grayman #3857
 
 	// Incoming events issued by the Subsystems
-	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
+	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem) override;
 
 	// greebo: Gets called when the AI is alerted by a suspicious sound (override)
-	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman #3857
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) override; // grayman #3847 // grayman #3857
 
 	static StatePtr CreateInstance();
 
 protected:
 	// Override base class method
-	virtual bool CheckAlertLevel(idAI* owner);
+	virtual bool CheckAlertLevel(idAI* owner) override;
 
 	/**
 	 * This method is used to start a new hiding spot search. Any existing search in progress is replaced.

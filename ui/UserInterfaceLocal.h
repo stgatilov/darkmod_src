@@ -19,46 +19,46 @@ class idUserInterfaceLocal : public idUserInterface {
 	friend class idUserInterfaceManagerLocal;
 public:
 								idUserInterfaceLocal();
-	virtual						~idUserInterfaceLocal();
+	virtual						~idUserInterfaceLocal() override;
 
-	virtual const char *		Name() const;
-	virtual const char *		Comment() const;
-	virtual bool				IsInteractive() const;
+	virtual const char *		Name() const override;
+	virtual const char *		Comment() const override;
+	virtual bool				IsInteractive() const override;
 	virtual bool				InitFromFile( const char *qpath, bool rebuild = true ) override;
-	virtual const char *		HandleEvent( const sysEvent_t *event, int time, bool *updateVisuals );
-	virtual void				HandleNamedEvent( const char* namedEvent );
-	virtual void				Redraw( int time );
-	virtual void				DrawCursor();
-	virtual const idDict &		State() const;
-	virtual void				DeleteStateVar( const char *varName );
-	virtual void				SetStateString( const char *varName, const char *value );
-	virtual void				SetStateBool( const char *varName, const bool value );
-	virtual void				SetStateInt( const char *varName, const int value );
-	virtual void				SetStateFloat( const char *varName, const float value );
+	virtual const char *		HandleEvent( const sysEvent_t *event, int time, bool *updateVisuals ) override;
+	virtual void				HandleNamedEvent( const char* namedEvent ) override;
+	virtual void				Redraw( int time ) override;
+	virtual void				DrawCursor() override;
+	virtual const idDict &		State() const override;
+	virtual void				DeleteStateVar( const char *varName ) override;
+	virtual void				SetStateString( const char *varName, const char *value ) override;
+	virtual void				SetStateBool( const char *varName, const bool value ) override;
+	virtual void				SetStateInt( const char *varName, const int value ) override;
+	virtual void				SetStateFloat( const char *varName, const float value ) override;
 
 	// Gets a gui state variable
-	virtual const char*			GetStateString( const char *varName, const char* defaultString = "" ) const;
-	virtual bool				GetStateBool( const char *varName, const char* defaultString = "0" ) const;
-	virtual int					GetStateInt( const char *varName, const char* defaultString = "0" ) const;
-	virtual float				GetStateFloat( const char *varName, const char* defaultString = "0" ) const;
+	virtual const char*			GetStateString( const char *varName, const char* defaultString = "" ) const override;
+	virtual bool				GetStateBool( const char *varName, const char* defaultString = "0" ) const override;
+	virtual int					GetStateInt( const char *varName, const char* defaultString = "0" ) const override;
+	virtual float				GetStateFloat( const char *varName, const char* defaultString = "0" ) const override;
 
-	virtual void				StateChanged( int time, bool redraw );
-	virtual const char *		Activate( bool activate, int time );
-	virtual void				Trigger( int time );
-	virtual void				ReadFromDemoFile( class idDemoFile *f );
-	virtual void				WriteToDemoFile( class idDemoFile *f );
-	virtual bool				WriteToSaveGame( idFile *savefile ) const;
-	virtual bool				ReadFromSaveGame( idFile *savefile );
-	virtual void				SetKeyBindingNames( void );
-	virtual bool				IsUniqued() const { return uniqued; };
-	virtual void				SetUniqued( bool b ) { uniqued = b; };
-	virtual void				SetCursor( float x, float y );
+	virtual void				StateChanged( int time, bool redraw ) override;
+	virtual const char *		Activate( bool activate, int time ) override;
+	virtual void				Trigger( int time ) override;
+	virtual void				ReadFromDemoFile( class idDemoFile *f ) override;
+	virtual void				WriteToDemoFile( class idDemoFile *f ) override;
+	virtual bool				WriteToSaveGame( idFile *savefile ) const override;
+	virtual bool				ReadFromSaveGame( idFile *savefile ) override;
+	virtual void				SetKeyBindingNames( void ) override;
+	virtual bool				IsUniqued() const override { return uniqued; };
+	virtual void				SetUniqued( bool b ) override { uniqued = b; };
+	virtual void				SetCursor( float x, float y ) override;
 
-	virtual float				CursorX() { return cursorX; }
-	virtual float				CursorY() { return cursorY; }
-	virtual const char*			RunGuiScript(const char *windowName, int scriptNum);
-	virtual bool				ResetWindowTime(const char *windowName, int startTime = 0);
-	virtual void				UpdateSubtitles();
+	virtual float				CursorX() override { return cursorX; }
+	virtual float				CursorY() override { return cursorY; }
+	virtual const char*			RunGuiScript(const char *windowName, int scriptNum) override;
+	virtual bool				ResetWindowTime(const char *windowName, int startTime = 0) override;
+	virtual void				UpdateSubtitles() override;
 
 	size_t						Size();
 
@@ -116,22 +116,22 @@ class idUserInterfaceManagerLocal : public idUserInterfaceManager {
 	friend class idUserInterfaceLocal;
 
 public:
-	virtual void				Init();
-	virtual void				Shutdown();
-	virtual void				Touch( const char *name );
-	virtual void				WritePrecacheCommands( idFile *f );
-	virtual void				SetSize( float width, float height );
-	virtual void				BeginLevelLoad();
-	virtual void				EndLevelLoad();
-	virtual void				Reload( bool all );
-	virtual void				ListGuis() const;
-	virtual bool				CheckGui( const char *qpath ) const;
-	virtual idUserInterface *	Alloc( void ) const;
-	virtual void				DeAlloc( idUserInterface *gui );
+	virtual void				Init() override;
+	virtual void				Shutdown() override;
+	virtual void				Touch( const char *name ) override;
+	virtual void				WritePrecacheCommands( idFile *f ) override;
+	virtual void				SetSize( float width, float height ) override;
+	virtual void				BeginLevelLoad() override;
+	virtual void				EndLevelLoad() override;
+	virtual void				Reload( bool all ) override;
+	virtual void				ListGuis() const override;
+	virtual bool				CheckGui( const char *qpath ) const override;
+	virtual idUserInterface *	Alloc( void ) const override;
+	virtual void				DeAlloc( idUserInterface *gui ) override;
 	virtual idUserInterface *	FindGui( const char *qpath, bool autoLoad = false, bool needInteractive = false, bool forceUnique = false, idDict presetDefines = {} ) override;
-	virtual idUserInterface *	FindDemoGui( const char *qpath );
-	virtual	idListGUI *			AllocListGUI( void ) const;
-	virtual void				FreeListGUI( idListGUI *listgui );
+	virtual idUserInterface *	FindDemoGui( const char *qpath ) override;
+	virtual	idListGUI *			AllocListGUI( void ) const override;
+	virtual void				FreeListGUI( idListGUI *listgui ) override;
 	virtual bool				IsBindHandlerActive() const override;
 
 private:

@@ -282,57 +282,57 @@ typedef struct cm_procNode_s {
 class idCollisionModelManagerLocal : public idCollisionModelManager {
 public:
 	// load collision models from a map file
-	void			LoadMap( const idMapFile *mapFile );
+	virtual void		LoadMap( const idMapFile *mapFile ) override;
 	// frees all the collision models
-	void			FreeMap( void );
+	virtual void		FreeMap( void ) override;
 
 	// get clip handle for model
-	cmHandle_t		LoadModel( const char *modelName, const bool precache, const idDeclSkin* skin = NULL ); // skin added #4232 SteveL
+	virtual cmHandle_t	LoadModel( const char *modelName, const bool precache, const idDeclSkin* skin = NULL ) override; // skin added #4232 SteveL
 	// sets up a trace model for collision with other trace models
-	cmHandle_t		SetupTrmModel( const idTraceModel &trm, const idMaterial *material );
+	virtual cmHandle_t	SetupTrmModel( const idTraceModel &trm, const idMaterial *material ) override;
 	// create trace model from a collision model, returns true if succesfull
-	bool			TrmFromModel( const char *modelName, idTraceModel &trm );
+	virtual bool		TrmFromModel( const char *modelName, idTraceModel &trm ) override;
 
 	// name of the model
-	const char *	GetModelName( cmHandle_t model ) const;  // NB will include ~skin_name if model is skinned #4232 SteveL
+	virtual const char *GetModelName( cmHandle_t model ) const override;  // NB will include ~skin_name if model is skinned #4232 SteveL
 	// bounds of the model
-	bool			GetModelBounds( cmHandle_t model, idBounds &bounds ) const;
+	virtual bool		GetModelBounds( cmHandle_t model, idBounds &bounds ) const override;
 	// all contents flags of brushes and polygons ored together
-	bool			GetModelContents( cmHandle_t model, int &contents ) const;
+	virtual bool		GetModelContents( cmHandle_t model, int &contents ) const override;
 	// get the vertex of a model
-	bool			GetModelVertex( cmHandle_t model, int vertexNum, idVec3 &vertex ) const;
+	virtual bool		GetModelVertex( cmHandle_t model, int vertexNum, idVec3 &vertex ) const override;
 	// get the edge of a model
-	bool			GetModelEdge( cmHandle_t model, int edgeNum, idVec3 &start, idVec3 &end ) const;
+	virtual bool		GetModelEdge( cmHandle_t model, int edgeNum, idVec3 &start, idVec3 &end ) const override;
 	// get the polygon of a model
-	bool			GetModelPolygon( cmHandle_t model, int polygonNum, idFixedWinding &winding ) const;
+	virtual bool		GetModelPolygon( cmHandle_t model, int polygonNum, idFixedWinding &winding ) const override;
 
 	// translates a trm and reports the first collision if any
-	void			Translation( trace_t *results, const idVec3 &start, const idVec3 &end,
+	virtual void		Translation( trace_t *results, const idVec3 &start, const idVec3 &end,
 								const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
-								cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis );
+								cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) override;
 	// rotates a trm and reports the first collision if any
-	void			Rotation( trace_t *results, const idVec3 &start, const idRotation &rotation,
+	virtual void		Rotation( trace_t *results, const idVec3 &start, const idRotation &rotation,
 								const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
-								cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis );
+								cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) override;
 	// returns the contents the trm is stuck in or 0 if the trm is in free space
-	int				Contents( const idVec3 &start,
+	virtual int			Contents( const idVec3 &start,
 								const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
-								cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis );
+								cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) override;
 	// stores all contact points of the trm with the model, returns the number of contacts
-	int				Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec6 &dir, const float depth,
+	virtual int			Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec6 &dir, const float depth,
 								const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
-								cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis );
+								cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) override;
 	// test collision detection
-	void			DebugOutput( const idVec3 &origin );
+	virtual void		DebugOutput( const idVec3 &origin ) override;
 	// draw a model
-	void			DrawModel( cmHandle_t model, const idVec3 &origin, const idMat3 &axis,
-											const idVec3 &viewOrigin, const float radius );
+	virtual void		DrawModel( cmHandle_t model, const idVec3 &origin, const idMat3 &axis,
+											const idVec3 &viewOrigin, const float radius ) override;
 	// print model information, use -1 handle for accumulated model info
-	void			ModelInfo( cmHandle_t model );
+	virtual void		ModelInfo( cmHandle_t model ) override;
 	// list all loaded models
-	void			ListModels( void );
+	virtual void		ListModels( void ) override;
 	// write a collision model file for the map entity
-	bool			WriteCollisionModelForMapEntity( const idMapEntity *mapEnt, const char *filename, const bool testTraceModel = true );
+	virtual bool		WriteCollisionModelForMapEntity( const idMapEntity *mapEnt, const char *filename, const bool testTraceModel = true ) override;
 
 private:			// CollisionMap_translate.cpp
 	int				TranslateEdgeThroughEdge( idVec3 &cross, idPluecker &l1, idPluecker &l2, float *fraction );

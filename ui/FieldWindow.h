@@ -22,12 +22,12 @@ class idFieldWindow : public idWindow {
 public:
 	idFieldWindow(idUserInterfaceLocal *gui);
 	idFieldWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual ~idFieldWindow();
+	virtual ~idFieldWindow() override;
 
-	virtual void Draw(int time, float x, float y);
+	virtual void Draw(int time, float x, float y) override;
 	
 private:
-	virtual bool ParseInternalVar(const char *name, idParser *src);
+	virtual bool ParseInternalVar(const char *name, idParser *src) override;
 	void CommonInit();
 	void CalcPaintOffset(int len);
 	int cursorPos;

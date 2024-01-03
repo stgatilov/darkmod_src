@@ -42,7 +42,7 @@ public:
 
 
 								CGrabber( void );
-								~CGrabber( void );
+		virtual					~CGrabber( void ) override;
 
 		void					Clear( void );
 

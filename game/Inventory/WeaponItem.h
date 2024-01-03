@@ -59,8 +59,8 @@ public:
 
 	CInventoryWeaponItem(const idStr& weaponDefName, idEntity* owner);
 
-	virtual void	Save( idSaveGame *savefile ) const;
-	virtual void	Restore(idRestoreGame *savefile);
+	virtual void	Save( idSaveGame *savefile ) const override;
+	virtual void	Restore(idRestoreGame *savefile) override;
 
 	// TRUE if this weapon is enabled
 	bool IsEnabled() const;
@@ -122,10 +122,10 @@ public:
 	const idStr& GetWeaponDefName() const;
 
 	// Override CInventoryItem::SaveItemEntityDict(), as weapons don't have entities behind them but still need to have a dict
-	virtual void SaveItemEntityDict();
+	virtual void SaveItemEntityDict() override;
 
 	// Override CInventoryItem::RestoreItemEntityFromDict, don't do anything but clear the saved dict
-	virtual void RestoreItemEntityFromDict(const idVec3& entPosition);
+	virtual void RestoreItemEntityFromDict(const idVec3& entPosition) override;
 };
 typedef std::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 

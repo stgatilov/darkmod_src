@@ -63,11 +63,11 @@ public:
 	void AddSilence(int duration);
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Returns some debug text for console or renderworld display
-	virtual idStr GetDebugInfo();
+	virtual idStr GetDebugInfo() override;
 
 protected:
 	// Priority difference is "new snd prio - current snd prio"

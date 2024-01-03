@@ -339,14 +339,14 @@ class idSoundEmitter;
 class idMaterial : public idDecl {
 public:
 						idMaterial();
-	virtual				~idMaterial();
+	virtual				~idMaterial() override;
 
-	virtual size_t		Size( void ) const;
-	virtual bool		SetDefaultText( void );
-	virtual const char *DefaultDefinition( void ) const;
-	virtual bool		Parse( const char *text, const int textLength );
-	virtual void		FreeData( void );
-	virtual void		Print( void ) const;
+	virtual size_t		Size( void ) const override;
+	virtual bool		SetDefaultText( void ) override;
+	virtual const char *DefaultDefinition( void ) const override;
+	virtual bool		Parse( const char *text, const int textLength ) override;
+	virtual void		FreeData( void ) override;
+	virtual void		Print( void ) const override;
 
 	//BSM Nerve: Added for material editor
 	bool				Save( const char *fileName = NULL );
@@ -354,7 +354,7 @@ public:
 						// returns the internal image name for stage 0, which can be used
 						// for the renderer CaptureRenderToImage() call
 						// I'm not really sure why this needs to be virtual...
-	virtual const char	*ImageName( void ) const;
+	const char *		ImageName( void ) const;
 
 	void				ReloadImages( bool force ) const;
 

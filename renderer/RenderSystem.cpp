@@ -620,6 +620,7 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 
 	// this is the ONLY place this is modified
 	frameCount++;
+	viewCountAtFrameStart = viewCount;
 
 	// just in case we did a common->Error while this
 	// was set

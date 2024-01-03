@@ -682,12 +682,12 @@ void idLight::GetColor( idVec4 &out ) const {
 idLight::SetColor
 ================
 */
-void idLight::SetColor( const float red, const float green, const float blue )
+void idLight::SetColor( const idVec3 &color )
 {
 	// Tels: If the light is currently fading, stop this:
 	fadeEnd = 0;
 	BecomeInactive( TH_THINK );
-	baseColor.Set( red, green, blue );
+	baseColor = color;
 	SetLightLevel();
 }
 

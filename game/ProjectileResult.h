@@ -34,7 +34,7 @@ public:
 	CLASS_PROTOTYPE( CProjectileResult );
 
 	CProjectileResult(void);
-	~CProjectileResult(void);
+	virtual ~CProjectileResult(void) override;
 
 /**
 * Initialize the projectile result, called by the projectile

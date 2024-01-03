@@ -43,7 +43,7 @@ public:
 	CLASS_PROTOTYPE( idFuncEmitter );
 
 						idFuncEmitter( void );
-						~idFuncEmitter( void );
+	virtual				~idFuncEmitter( void ) override;
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
@@ -55,14 +55,14 @@ public:
 	void				Event_On( void );
 	void				Event_Off( void );
 
-	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const override;
+	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
-	virtual void		Think( void );
-	virtual void		Present( void );
+	virtual void		Think( void ) override;
+	virtual void		Present( void ) override;
 
 	// switch to a new model
-	virtual void		SetModel( const char *modelname );
+	virtual void		SetModel( const char *modelname ) override;
 
 	// public events
 	void				Event_EmitterGetNumModels( void ) const;

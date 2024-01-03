@@ -48,7 +48,7 @@ public:
 	CLASS_PROTOTYPE( CStaticMulti );
 
 						CStaticMulti( void );
-						virtual ~CStaticMulti();
+	virtual				~CStaticMulti() override;
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
@@ -57,12 +57,12 @@ public:
 
 	void				SetLODData( const idVec3 &origin, const unsigned int lodHandle, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clip);
 
-//	virtual void		Hide( void );
-//	virtual void		Show( void );
-	virtual void		Think( void );
+//	virtual void		Hide( void ) override;
+//	virtual void		Show( void ) override;
+	virtual void		Think( void ) override;
 
-//	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
-//	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
+//	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const override;
+//	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg ) override;
 
 private:
 	void						Event_Activate( idEntity *activator );

@@ -30,23 +30,23 @@ class idAASFileLocal : public idAASFile {
 	friend class idAASCluster;
 public:
 								idAASFileLocal( void );
-	virtual 					~idAASFileLocal( void );
+	virtual 					~idAASFileLocal( void ) override;
 
 public:
-	virtual idVec3				EdgeCenter( int edgeNum ) const;
-	virtual idVec3				FaceCenter( int faceNum ) const;
-	virtual idVec3				AreaCenter( int areaNum ) const;
+	virtual idVec3				EdgeCenter( int edgeNum ) const override;
+	virtual idVec3				FaceCenter( int faceNum ) const override;
+	virtual idVec3				AreaCenter( int areaNum ) const override;
 
-	virtual idBounds			EdgeBounds( int edgeNum ) const;
-	virtual idBounds			FaceBounds( int faceNum ) const;
-	virtual idBounds			AreaBounds( int areaNum ) const;
+	virtual idBounds			EdgeBounds( int edgeNum ) const override;
+	virtual idBounds			FaceBounds( int faceNum ) const override;
+	virtual idBounds			AreaBounds( int areaNum ) const override;
 
-	virtual int					PointAreaNum( const idVec3 &origin ) const;
-	virtual int					PointReachableAreaNum( const idVec3 &origin, const idBounds &searchBounds, const int areaFlags, const int excludeTravelFlags ) const;
-	virtual int					BoundsReachableAreaNum( const idBounds &bounds, const int areaFlags, const int excludeTravelFlags ) const;
-	virtual void				PushPointIntoAreaNum( int areaNum, idVec3 &point ) const;
-	virtual bool				Trace( aasTrace_t &trace, const idVec3 &start, const idVec3 &end ) const;
-	virtual void				PrintInfo( void ) const;
+	virtual int					PointAreaNum( const idVec3 &origin ) const override;
+	virtual int					PointReachableAreaNum( const idVec3 &origin, const idBounds &searchBounds, const int areaFlags, const int excludeTravelFlags ) const override;
+	virtual int					BoundsReachableAreaNum( const idBounds &bounds, const int areaFlags, const int excludeTravelFlags ) const override;
+	virtual void				PushPointIntoAreaNum( int areaNum, idVec3 &point ) const override;
+	virtual bool				Trace( aasTrace_t &trace, const idVec3 &start, const idVec3 &end ) const override;
+	virtual void				PrintInfo( void ) const override;
 
 public:
 	bool						Load( const idStr &fileName, const unsigned int mapFileCRC );

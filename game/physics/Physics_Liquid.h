@@ -42,7 +42,7 @@ public:
 	CLASS_PROTOTYPE( idPhysics_Liquid );
 
 						idPhysics_Liquid( void );
-						~idPhysics_Liquid( void );
+	virtual				~idPhysics_Liquid( void ) override;
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );

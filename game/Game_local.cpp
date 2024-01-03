@@ -7607,8 +7607,6 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 	}
 
 	int n;
-	idBounds bounds;
-
 	idClip_EntityList srEntities;
 
 	// Now check the rest of the stims.
@@ -7624,7 +7622,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 		CStimResponseCollection* srColl = entity->GetStimResponseCollection();
 		assert(srColl != NULL);
 
-		idVec3 origin(entity->GetPhysics()->GetOrigin());
+		idVec3 entityOrigin = entity->GetPhysics()->GetOrigin();
 
 		int numStims = srColl->GetNumStims();
 
@@ -7672,6 +7670,12 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 				stim->m_MaxFireCount--;
 			}
 
+			idVec3 origin = entityOrigin;
+			if (stim->m_bScriptBased && stim->m_ScriptPositionOverride != vec3_zero) {
+				// stgatilov: script-based stim with overriden position
+				origin = stim->m_ScriptPositionOverride;
+			}
+
 			// Check if a stim velocity has been specified
 			if (stim->m_Velocity != idVec3(0,0,0)) {
 				// The velocity mutliplied by the time gives the translation
@@ -7710,6 +7714,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 			{
 				int numResponses = 0;
 
+				idBounds bounds;
 				// Check if we have fixed bounds to work with (sr_bounds_mins & maxs set)
 				if (stim->m_Bounds.GetVolume() > 0) {
 					bounds = idBounds(stim->m_Bounds[0] + origin, stim->m_Bounds[1] + origin);
@@ -7750,13 +7755,6 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 					// Radius based stims
 					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities);
 					//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Entities touching bounds: %d\r", n);
-
-					if (stim->m_bScriptBased)
-					{
-						// stgatilov: clear fired state of script-driven stim
-						stim->m_bScriptFired = false;
-						stim->m_ScriptRadiusOverride = -1.0f;
-					}
 				}
 				
 				if (n > 0)
@@ -7776,6 +7774,15 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 
 				// The stim has fired, let it do any post-firing activity it may have
 				stim->PostFired(numResponses);
+
+				if (stim->m_bScriptBased)
+				{
+					// stgatilov: clear fired state of script-driven stim
+					// this should be done AFTER stim is processed, since overrides are during response processing
+					stim->m_bScriptFired = false;
+					stim->m_ScriptRadiusOverride = -1.0f;
+					stim->m_ScriptPositionOverride = vec3_zero;
+				}
 			}
 		}
 	}

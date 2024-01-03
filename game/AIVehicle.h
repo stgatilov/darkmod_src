@@ -44,13 +44,13 @@ public:
 	CLASS_PROTOTYPE( CAIVehicle );
 
 							CAIVehicle( void );
-							~CAIVehicle( void );
+	virtual					~CAIVehicle( void ) override;
 	void					Spawn( void );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	void					Think( void );
+	virtual void			Think( void ) override;
 
 	/**
 	* Updates the facing angle
@@ -94,7 +94,7 @@ public:
 	void					Event_GetMoveAnim( void );
 
 	/** Overload idAI::LinkScriptVariables to link new variables **/
-	virtual void			LinkScriptVariables( void );
+	virtual void			LinkScriptVariables( void ) override;
 
 public:
 	/** Tell scripts we are under player control **/

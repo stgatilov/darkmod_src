@@ -728,7 +728,7 @@ void CBinaryFrobMover::Close(bool bMaster)
 
 // grayman #3643 - Allow keys and lockpicks to be used on buttons/levers (door controllers)
 
-bool CBinaryFrobMover::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+bool CBinaryFrobMover::UseByItem(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	if (item == NULL)
 	{
@@ -738,13 +738,13 @@ bool CBinaryFrobMover::UseBy(EImpulseState impulseState, const CInventoryItemPtr
 	// Pass the call on to the master, if we have one
 	if (GetFrobMaster() != NULL) 
 	{
-		return GetFrobMaster()->UseBy(impulseState, item);
+		return GetFrobMaster()->UseByItem(impulseState, item);
 	}
 
 	// Call the used_action_script via the generic idEntity method, if desired by the mapper
 	if ( spawnArgs.GetBool("call_used_action_script", "0") )
 	{
-		idEntity::UseBy(impulseState, item);
+		idEntity::UseByItem(impulseState, item);
 	}
 
 	assert(item->Category() != NULL);
@@ -831,17 +831,17 @@ bool CBinaryFrobMover::UseBy(EImpulseState impulseState, const CInventoryItemPtr
 	}
 
 	// grayman #3643 - if you get here, pass to the default method
-	return idEntity::UseBy(impulseState, item);
+	return idEntity::UseByItem(impulseState, item);
 }
 
 // grayman #3643 - Allow keys and lockpicks to be used on buttons/levers (door controllers)
 
-bool CBinaryFrobMover::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
+bool CBinaryFrobMover::CanBeUsedByItem(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
 	// First, check if the frob master can be used
 	// If this doesn't succeed, perform additional checks
 	idEntity* master = GetFrobMaster();
-	if ( master != NULL && master->CanBeUsedBy(item, isFrobUse) )
+	if ( master != NULL && master->CanBeUsedByItem(item, isFrobUse) )
 	{
 		return true;
 	}
@@ -875,7 +875,7 @@ bool CBinaryFrobMover::CanBeUsedBy(const CInventoryItemPtr& item, const bool isF
 	}
 
 	// grayman #3643 - if you get here, pass to the default method
-	return idEntity::CanBeUsedBy(item, isFrobUse);
+	return idEntity::CanBeUsedByItem(item, isFrobUse);
 }
 
 void CBinaryFrobMover::ToggleOpen()

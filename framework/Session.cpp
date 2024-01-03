@@ -842,7 +842,7 @@ void idSessionLocal::StopPlayingRenderDemo() {
 			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
 		} else {
 			soundSystem->SetMute( true );
-			MessageBox( MSG_OK, message, "Time Demo Results", true );
+			ShowMessageBox( MSG_OK, message, "Time Demo Results", true );
 			soundSystem->SetMute( false );
 		}
 		timeDemo = TD_NO;
@@ -1889,7 +1889,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 
 	if ( game->GetPersistentPlayerInfo( 0 ).GetInt( "health" ) <= 0 ) {
 		// "Must be alive" and "Unable to save"
-		MessageBox( MSG_OK, common->Translate ( "#str_02012" ), common->Translate ( "#str_02013" ), true );
+		ShowMessageBox( MSG_OK, common->Translate ( "#str_02012" ), common->Translate ( "#str_02013" ), true );
 		common->Printf( "You must be alive to save the game\n" );
 		return false;
 	}
@@ -1919,7 +1919,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	}
 	if ( Sys_GetDriveFreeSpace( cvarSystem->GetCVarString( "fs_savepath" ) ) < 25 ) {
 		// "Not enough space" and "Unable to save"
-		MessageBox( MSG_OK, common->Translate ( "#str_02014" ), common->Translate ( "#str_02013" ), true );
+		ShowMessageBox( MSG_OK, common->Translate ( "#str_02014" ), common->Translate ( "#str_02013" ), true );
 		common->Printf( "Not enough drive space to save the game\n" );
 		return false;
 	}

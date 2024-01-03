@@ -20,11 +20,11 @@ class idRenderWindow : public idWindow {
 public:
 	idRenderWindow(idUserInterfaceLocal *gui);
 	idRenderWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual ~idRenderWindow();
+	virtual ~idRenderWindow() override;
 
-	virtual void PostParse();
-	virtual void Draw(int time, float x, float y);
-	virtual size_t Allocated(){return idWindow::Allocated();};
+	virtual void PostParse() override;
+	virtual void Draw(int time, float x, float y) override;
+	virtual size_t Allocated() override{ return idWindow::Allocated(); }
 // 
 //  
 	virtual idWinVar *GetThisWinVarByName(const char *varname) override;
@@ -32,7 +32,7 @@ public:
 	
 private:
 	void CommonInit();
-	virtual bool ParseInternalVar(const char *name, idParser *src);
+	virtual bool ParseInternalVar(const char *name, idParser *src) override;
 	void Render(int time);
 	void PreRender();
 	void BuildAnimation(int time);

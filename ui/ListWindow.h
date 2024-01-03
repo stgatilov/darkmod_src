@@ -37,19 +37,19 @@ public:
 	idListWindow(idUserInterfaceLocal *gui);
 	idListWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
 
-	virtual const char*	HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual void		PostParse();
-	virtual void		Draw(int time, float x, float y);
-	virtual void		Activate(bool activate, idStr &act);
-	virtual void		HandleBuddyUpdate(idWindow *buddy);
-	virtual void		StateChanged( bool redraw = false );
-	virtual size_t		Allocated(){return idWindow::Allocated();};
+	virtual const char*	HandleEvent(const sysEvent_t *event, bool *updateVisuals) override;
+	virtual void		PostParse() override;
+	virtual void		Draw(int time, float x, float y) override;
+	virtual void		Activate(bool activate, idStr &act) override;
+	virtual void		HandleBuddyUpdate(idWindow *buddy) override;
+	virtual void		StateChanged( bool redraw = false ) override;
+	virtual size_t		Allocated() override { return idWindow::Allocated(); }
 	virtual idWinVar*	GetThisWinVarByName(const char *varname) override;
 
 	void				UpdateList();
 	
 private:
-	virtual bool		ParseInternalVar(const char *name, idParser *src);
+	virtual bool		ParseInternalVar(const char *name, idParser *src) override;
 	void				CommonInit();
 	void				InitScroller( bool horizontal );
 	void				SetCurrentSel( int sel );

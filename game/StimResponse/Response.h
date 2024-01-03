@@ -30,8 +30,8 @@ protected:
 public:
 	virtual ~CResponse();
 
-	virtual void Save(idSaveGame *savefile) const;
-	virtual void Restore(idRestoreGame *savefile);
+	virtual void Save(idSaveGame *savefile) const override;
+	virtual void Restore(idRestoreGame *savefile) override;
 
 	/**
 	* This method is called when the response should

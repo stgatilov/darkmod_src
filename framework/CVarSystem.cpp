@@ -34,7 +34,7 @@ public:
 							idInternalCVar( void ) = default;
 							idInternalCVar( const char *newName, const char *newValue, int newFlags );
 							idInternalCVar( const idCVar *cvar );
-	virtual					~idInternalCVar( void );
+	virtual					~idInternalCVar( void ) override;
 
 	const char **			CopyValueStrings( const char **strings );
 	void					Update( const idCVar *cvar );
@@ -48,11 +48,11 @@ private:
 	idStr					valueString;			// value
 	idStr					descriptionString;		// description
 
-	virtual void			InternalSetString( const char *newValue );
+	virtual void			InternalSetString( const char *newValue ) override;
 	virtual void			InternalServerSetString( const char *newValue );
-	virtual void			InternalSetBool( const bool newValue );
-	virtual void			InternalSetInteger( const int newValue );
-	virtual void			InternalSetFloat( const float newValue );
+	virtual void			InternalSetBool( const bool newValue ) override;
+	virtual void			InternalSetInteger( const int newValue ) override;
+	virtual void			InternalSetFloat( const float newValue ) override;
 };
 
 /*
@@ -361,41 +361,41 @@ class idCVarSystemLocal : public idCVarSystem {
 public:
 							idCVarSystemLocal( void );
 
-	virtual					~idCVarSystemLocal( void ) {}
+	virtual					~idCVarSystemLocal( void ) override {}
 
-	virtual void			Init( void );
-	virtual void			Shutdown( void );
-	virtual bool			IsInitialized( void ) const;
+	virtual void			Init( void ) override;
+	virtual void			Shutdown( void ) override;
+	virtual bool			IsInitialized( void ) const override;
 
-	virtual void			Register( idCVar *cvar );
+	virtual void			Register( idCVar *cvar ) override;
 
-	virtual idCVar *		Find( const char *name );
+	virtual idCVar *		Find( const char *name ) override;
 
-	virtual void			SetCVarString( const char *name, const char *value, int flags = 0 );
-	virtual void			SetCVarBool( const char *name, const bool value, int flags = 0 );
-	virtual void			SetCVarInteger( const char *name, const int value, int flags = 0 );
-	virtual void			SetCVarFloat( const char *name, const float value, int flags = 0 );
+	virtual void			SetCVarString( const char *name, const char *value, int flags = 0 ) override;
+	virtual void			SetCVarBool( const char *name, const bool value, int flags = 0 ) override;
+	virtual void			SetCVarInteger( const char *name, const int value, int flags = 0 ) override;
+	virtual void			SetCVarFloat( const char *name, const float value, int flags = 0 ) override;
 
-	virtual const char *	GetCVarString( const char *name ) const;
-	virtual bool			GetCVarBool( const char *name ) const;
-	virtual int				GetCVarInteger( const char *name ) const;
-	virtual float			GetCVarFloat( const char *name ) const;
+	virtual const char *	GetCVarString( const char *name ) const override;
+	virtual bool			GetCVarBool( const char *name ) const override;
+	virtual int				GetCVarInteger( const char *name ) const override;
+	virtual float			GetCVarFloat( const char *name ) const override;
 
-	virtual bool			Command( const idCmdArgs &args );
+	virtual bool			Command( const idCmdArgs &args ) override;
 
-	virtual void			CommandCompletion( void(*callback)( const char *s ) );
-	virtual void			ArgCompletion( const char *cmdString, void(*callback)( const char *s ) );
+	virtual void			CommandCompletion( void(*callback)( const char *s ) ) override;
+	virtual void			ArgCompletion( const char *cmdString, void(*callback)( const char *s ) ) override;
 
-	virtual void			SetModifiedFlags( int flags );
-	virtual int				GetModifiedFlags( void ) const;
-	virtual void			ClearModifiedFlags( int flags );
+	virtual void			SetModifiedFlags( int flags ) override;
+	virtual int				GetModifiedFlags( void ) const override;
+	virtual void			ClearModifiedFlags( int flags ) override;
 
-	virtual void			ResetFlaggedVariables( int flags );
-	virtual void			RemoveFlaggedAutoCompletion( int flags );
-	virtual void			WriteFlaggedVariables( int flags, const char *setCmd, idFile *f ) const;
+	virtual void			ResetFlaggedVariables( int flags ) override;
+	virtual void			RemoveFlaggedAutoCompletion( int flags ) override;
+	virtual void			WriteFlaggedVariables( int flags, const char *setCmd, idFile *f ) const override;
 
-	virtual const idDict *	MoveCVarsToDict( int flags ) const;
-	virtual void			SetCVarsFromDict( const idDict &dict );
+	virtual const idDict *	MoveCVarsToDict( int flags ) const override;
+	virtual void			SetCVarsFromDict( const idDict &dict ) override;
 
 	void					RegisterInternal( idCVar *cvar );
 	idInternalCVar *		FindInternal( const char *name ) const;

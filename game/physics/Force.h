@@ -35,7 +35,7 @@ public:
 	CLASS_PROTOTYPE( idForce );
 
 						idForce( void );
-	virtual				~idForce( void );
+	virtual				~idForce( void ) override;
 	static void			DeletePhysics( const idPhysics *phys );
 	static void			ClearForceList( void );
 

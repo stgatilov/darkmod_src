@@ -53,16 +53,16 @@ private:
 
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init(idAI* owner);
+	virtual void Init(idAI* owner) override;
 
 	// Gets called each time the mind is thinking
-	virtual void Think(idAI* owner);
+	virtual void Think(idAI* owner) override;
 
 	// Incoming events issued by the Subsystems
-	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
+	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem) override;
 
 	// Sets the conversation this state should handle
 	void SetConversation(int index);
@@ -84,14 +84,14 @@ public:
 	ConversationState::ExecutionState GetExecutionState();
 
 	// This is called when a State is destroyed
-	virtual void Cleanup(idAI* owner); // grayman #3559
+	virtual void Cleanup(idAI* owner) override; // grayman #3559
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Override base class method
-	virtual bool CheckAlertLevel(idAI* owner);
+	virtual bool CheckAlertLevel(idAI* owner) override;
 
 	static StatePtr CreateInstance();
 
@@ -108,7 +108,7 @@ private:
 	// Private helper for debug output
 	void DrawDebugOutput(idAI* owner);
 
-	void OnActorEncounter(idEntity* stimSource, idAI* owner);
+	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner) override;
 
 	void Wrapup(idAI* owner);
 };

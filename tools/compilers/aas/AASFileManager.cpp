@@ -31,10 +31,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idAASFileManagerLocal : public idAASFileManager {
 public:
-	virtual						~idAASFileManagerLocal( void ) {}
+	virtual						~idAASFileManagerLocal( void ) override {}
 
-	virtual idAASFile *			LoadAAS( const char *fileName, const unsigned int mapFileCRC );
-	virtual void				FreeAAS( idAASFile *file );
+	virtual idAASFile *			LoadAAS( const char *fileName, const unsigned int mapFileCRC ) override;
+	virtual void				FreeAAS( idAASFile *file ) override;
 };
 
 idAASFileManagerLocal			AASFileManagerLocal;

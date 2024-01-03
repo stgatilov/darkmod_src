@@ -45,16 +45,16 @@ public:
 	GreetingBarkTask(const idStr& soundName, idActor* greetingTarget, bool isInitialGreeting); // grayman #3415
 
 	// Get the name of this task
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
-	virtual void Init(idAI* owner, Subsystem& subsystem);
-	virtual bool Perform(Subsystem& subsystem);
+	virtual void Init(idAI* owner, Subsystem& subsystem) override;
+	virtual bool Perform(Subsystem& subsystem) override;
 
-	virtual void OnFinish(idAI* owner);
+	virtual void OnFinish(idAI* owner) override;
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	// Creates a new Instance of this task
 	static GreetingBarkTaskPtr CreateInstance();

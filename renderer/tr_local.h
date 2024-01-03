@@ -244,10 +244,11 @@ public:
 	void			ForceUpdate();
 	int				GetIndex();
 
+
 	renderLight_t			parms;					// specification
 
 	bool					lightHasMoved;			// the light has changed its position since it was
-	// first added, so the prelight model is not valid
+													// first added, so the prelight model is not valid
 
 	float					modelMatrix[16];		// this is just a rearrangement of parms.axis and parms.origin
 
@@ -255,13 +256,11 @@ public:
 	int						index;					// in world lightdefs
 
 	int						areaNum;				// if not -1, we may be able to cull all the light's
-	// interactions if !viewDef->connectedAreas[areaNum]
-
+													// interactions if !viewDef->connectedAreas[areaNum]
 	int						lastModifiedFrameNum;	// to determine if it is constantly changing,
-	// and should go in the dynamic frame memory, or kept
-	// in the cached memory
+													// and should go in the dynamic frame memory, or kept
+													// in the cached memory
 	bool					archived;				// for demo writing
-
 
 	// derived information
 	idPlane					lightProject[4];
@@ -287,14 +286,30 @@ public:
 	int						viewCount;				// if == tr.viewCount, the light is on the viewDef->viewLights list
 	struct viewLight_s 		*viewLight;
 
+	idInteraction 			*firstInteraction;		// doubly linked list
+	idInteraction 			*lastInteraction;
+
+	// light origin is outside light volume
+	// BAD: objects between origin and volume don't cast shadows, or can cast culling-dependent partial shadows
+	bool					isOriginOutsideVolume;
+	// light origin and entering faces of light volume cover different sets of areas
+	// BAD: it is questionable where to start light portal flow, so better not use it
+	// note: spotlight is an important "origin outside volume" case which we still want to run portal flow on...
+	bool					isOriginOutsideVolumeMajor;
+	// light origin is inside void: it either is useless or is bad (see below)
+	bool					isOriginInVoid;
+	// light origin is inside void, but light still works because it was hackily assigned to area with entity origin
+	// BAD: cannot use light portal flow for such lights
+	bool					isOriginInVoidButActive;
+
+	// information
 	areaReference_t 		*references;			// each area the light is present in will have a lightRef
 	lightPortalFlow_t		lightPortalFlow;		// stgatilov #5172: info about how light reaches areas
 
-	idInteraction 			*firstInteraction;		// doubly linked list
-	idInteraction 			*lastInteraction;
+
 	// stgatilov #5172: list of areas where world geometry should give additional shadows
 	// this can be non-empty when "portal flow" code is used for normal "references".
-	idList<int>				areasForAdditionalWorldShadows;	
+	idList<int>				areasForAdditionalWorldShadows;
 
 	struct doublePortal_s 	*foggedPortals;
 };
@@ -812,50 +827,50 @@ static const int	MAX_RENDER_CROPS = 8;
 class idRenderSystemLocal : public idRenderSystem {
 public:
 	// external functions
-	virtual void			Init( void );
-	virtual void			Shutdown( void );
-	virtual void			InitOpenGL( void );
-	virtual void			ShutdownOpenGL( void );
-	virtual bool			IsOpenGLRunning( void ) const;
-	virtual bool			IsFullScreen( void ) const;
-	virtual int				GetScreenWidth( void ) const;
-	virtual int				GetScreenHeight( void ) const;
-	virtual idRenderWorld 	*AllocRenderWorld( void );
-	virtual void			FreeRenderWorld( idRenderWorld *rw );
-	virtual void			BeginLevelLoad( void );
-	virtual void			EndLevelLoad( void );
+	virtual void			Init( void ) override;
+	virtual void			Shutdown( void ) override;
+	virtual void			InitOpenGL( void ) override;
+	virtual void			ShutdownOpenGL( void ) override;
+	virtual bool			IsOpenGLRunning( void ) const override;
+	virtual bool			IsFullScreen( void ) const override;
+	virtual int				GetScreenWidth( void ) const override;
+	virtual int				GetScreenHeight( void ) const override;
+	virtual idRenderWorld 	*AllocRenderWorld( void ) override;
+	virtual void			FreeRenderWorld( idRenderWorld *rw ) override;
+	virtual void			BeginLevelLoad( void ) override;
+	virtual void			EndLevelLoad( void ) override;
 	virtual bool			RegisterFont( const char *fontName, const fontParameters_t &params, fontInfoEx_t &font ) override;
-	virtual void			SetColor( const idVec4 &rgba );
-	virtual void			SetColor4( float r, float g, float b, float a );
+	virtual void			SetColor( const idVec4 &rgba ) override;
+	virtual void			SetColor4( float r, float g, float b, float a ) override;
 	virtual void			DrawStretchPic( const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *material,
-											bool clip = true, float x = 0.0f, float y = 0.0f, float w = 640.0f, float h = 0.0f );
-	virtual void			DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material );
+											bool clip = true, float x = 0.0f, float y = 0.0f, float w = 640.0f, float h = 0.0f ) override;
+	virtual void			DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material ) override;
 
-	virtual void			DrawStretchTri( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material );
-	virtual void			GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
-	virtual void			GetGLSettings( int &width, int &height );
-	virtual void			PrintMemInfo( MemInfo_t *mi );
+	virtual void			DrawStretchTri( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material ) override;
+	virtual void			GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) override;
+	virtual void			GetGLSettings( int &width, int &height ) override;
+	virtual void			PrintMemInfo( MemInfo_t *mi ) override;
 
-	virtual void			DrawSmallChar( int x, int y, int ch, const idMaterial *material );
-	virtual void			DrawSmallStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material );
-	virtual void			DrawBigChar( int x, int y, int ch, const idMaterial *material );
-	virtual void			DrawBigStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material );
-	virtual void			WriteDemoPics();
-	virtual void			DrawDemoPics();
-	virtual void			BeginFrame( int windowWidth, int windowHeight );
-	virtual void			EndFrame( int *frontEndMsec, int *backEndMsec );
-	virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref, bool envshot = false );
-	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false );
-	virtual void			GetCurrentRenderCropSize( int &width, int &height );
+	virtual void			DrawSmallChar( int x, int y, int ch, const idMaterial *material ) override;
+	virtual void			DrawSmallStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material ) override;
+	virtual void			DrawBigChar( int x, int y, int ch, const idMaterial *material ) override;
+	virtual void			DrawBigStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material ) override;
+	virtual void			WriteDemoPics() override;
+	virtual void			DrawDemoPics() override;
+	virtual void			BeginFrame( int windowWidth, int windowHeight ) override;
+	virtual void			EndFrame( int *frontEndMsec, int *backEndMsec ) override;
+	virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref, bool envshot = false ) override;
+	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false ) override;
+	virtual void			GetCurrentRenderCropSize( int &width, int &height ) override;
 	virtual void			CaptureRenderToImage( idImageScratch &image ) override;
-	virtual void			CaptureRenderToBuffer( unsigned char *buffer, bool usePbo = false );
-	virtual void			PostProcess();
-	virtual void			UnCrop();
+	virtual void			CaptureRenderToBuffer( unsigned char *buffer, bool usePbo = false ) override;
+	virtual void			PostProcess() override;
+	virtual void			UnCrop() override;
 
 public:
 	// internal functions
-	idRenderSystemLocal() { Clear(); }
-	~idRenderSystemLocal() {}
+							idRenderSystemLocal() { Clear(); }
+	virtual					~idRenderSystemLocal() override {}
 
 	void					Clear( void );
 	void					RenderViewToViewport( const renderView_t &renderView, idScreenRect &viewport );
@@ -867,6 +882,7 @@ public:
 	int						frameCount;			// incremented every frame
 	int						viewCount;			// incremented every view (twice a scene if subviewed)
 												// and every R_MarkFragments call
+	int						viewCountAtFrameStart;	// stgatilov: current frame has views [viewCountAtFrameStart .. viewCount)
 
 	int						staticAllocCount;	// running total of bytes allocated
 
@@ -990,6 +1006,7 @@ extern idCVar r_useDepthBoundsTest;     // use depth bounds test to reduce shado
 extern idCVar r_skipPostProcess;		// skip all post-process renderings
 extern idCVar r_skipSuppress;			// ignore the per-view suppressions
 extern idCVar r_skipInteractions;		// skip all light/surface interaction drawing
+extern idCVar r_skipEntities;			// skip non-world geometry
 extern idCVar r_skipFrontEnd;			// bypasses all front end work, but 2D gui rendering still draws
 extern idCVar r_skipBackEnd;			// don't draw anything
 extern idCVar r_skipCopyTexture;		// do all rendering, but don't actually copyTexSubImage2D

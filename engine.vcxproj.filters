@@ -1639,6 +1639,9 @@
     <ClInclude Include="renderer\backend\stages\VolumetricStage.h">
       <Filter>Renderer\Backend\Stages</Filter>
     </ClInclude>
+    <ClInclude Include="ui\GameWindow.h">
+      <Filter>Ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3609,6 +3612,9 @@
     </ClCompile>
     <ClCompile Include="game\Turret.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\GameWindow.cpp">
+      <Filter>Ui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -76,33 +76,33 @@ const int		SOUND_MAX_CLASSES		= 4;
 class idSoundShader : public idDecl {
 public:
 							idSoundShader( void );
-	virtual					~idSoundShader( void );
+	virtual					~idSoundShader( void ) override;
 
-	virtual size_t			Size( void ) const;
-	virtual bool			SetDefaultText( void );
-	virtual const char *	DefaultDefinition( void ) const;
-	virtual bool			Parse( const char *text, const int textLength );
-	virtual void			FreeData( void );
-	virtual void			List( void ) const;
+	virtual size_t			Size( void ) const override;
+	virtual bool			SetDefaultText( void ) override;
+	virtual const char *	DefaultDefinition( void ) const override;
+	virtual bool			Parse( const char *text, const int textLength ) override;
+	virtual void			FreeData( void ) override;
+	virtual void			List( void ) const override;
 
-	virtual const char *	GetDescription() const;
+	const char *			GetDescription() const;
 
 	// so the editor can draw correct default sound spheres
 	// this is currently defined as meters, which sucks, IMHO.
-	virtual float			GetMinDistance() const;		// FIXME: replace this with a GetSoundShaderParms()
-	virtual float			GetMaxDistance() const;
+	float					GetMinDistance() const;		// FIXME: replace this with a GetSoundShaderParms()
+	float					GetMaxDistance() const;
 
 	// returns NULL if an AltSound isn't defined in the shader.
 	// we use this for pairing a specific broken light sound with a normal light sound
-	virtual const idSoundShader *GetAltSound() const;
+	const idSoundShader *	GetAltSound() const;
 
-	virtual bool			HasDefaultSound() const;
+	bool					HasDefaultSound() const;
 
-	virtual const soundShaderParms_t *GetParms() const;
-	virtual int				GetNumSounds() const;
-	virtual const char *	GetSound( int index ) const;
+	const soundShaderParms_t *GetParms() const;
+	int						GetNumSounds() const;
+	const char *			GetSound( int index ) const;
 
-	virtual bool			CheckShakesAndOgg( void ) const;
+	bool					CheckShakesAndOgg( void ) const;
 
 private:
 	friend class idSoundWorldLocal;

@@ -33,34 +33,34 @@ private:
 
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const override;
 
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init(idAI* owner);
+	virtual void Init(idAI* owner) override;
 
 	// Gets called each time the mind is thinking
-	virtual void Think(idAI* owner);
+	virtual void Think(idAI* owner) override;
 
 	void WrapUp(idAI* owner); // grayman #3848
 
-	void OnActorEncounter(idEntity* stimSource, idAI* owner);
+	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner) override;
 
 	// grayman #3848 - reactions when fleeing
-	virtual void OnVisualStimWeapon(idEntity* stimSource, idAI* owner);
-	virtual void OnVisualStimSuspicious(idEntity* stimSource, idAI* owner);
-	virtual void OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource );
-	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner);
-	virtual void OnVisualStimLightSource(idEntity* stimSource, idAI* owner);
-	virtual void OnVisualStimMissingItem(idEntity* stimSource, idAI* owner);
-	virtual void OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner);
-	virtual void OnVisualStimDoor(idEntity* stimSource, idAI* owner);
-	virtual void OnHitByMoveable(idAI* owner, idEntity* tactEnt);
+	virtual void OnVisualStimWeapon(idEntity* stimSource, idAI* owner) override;
+	virtual void OnVisualStimSuspicious(idEntity* stimSource, idAI* owner) override;
+	virtual void OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource ) override;
+	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner) override;
+	virtual void OnVisualStimLightSource(idEntity* stimSource, idAI* owner) override;
+	virtual void OnVisualStimMissingItem(idEntity* stimSource, idAI* owner) override;
+	virtual void OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner) override;
+	virtual void OnVisualStimDoor(idEntity* stimSource, idAI* owner) override;
+	virtual void OnHitByMoveable(idAI* owner, idEntity* tactEnt) override;
 
-	virtual bool CheckAlertLevel(idAI* owner);
+	virtual bool CheckAlertLevel(idAI* owner) override;
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile) const override;
+	virtual void Restore(idRestoreGame* savefile) override;
 
 	static StatePtr CreateInstance();
 };

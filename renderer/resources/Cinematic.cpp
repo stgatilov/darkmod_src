@@ -140,7 +140,7 @@ void idCinematic::Close() {
 idSndWindow::InitFromFile
 ==============
 */
-bool idSndWindow::InitFromFile( const char *qpath, bool looping ) {
+bool idSndWindow::InitFromFile( const char *qpath, bool looping, bool withAudio ) {
 	idStr fname = qpath;
 
 	fname.ToLower();
