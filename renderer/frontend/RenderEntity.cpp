@@ -90,6 +90,7 @@ idRenderLightLocal::idRenderLightLocal() {
 	frustumTris				= NULL;
 	numShadowFrustums		= 0;
 	viewCount				= 0;
+	viewCountGenBackendSurfs = 0;
 	viewLight				= NULL;
 	references				= NULL;
 	foggedPortals			= NULL;

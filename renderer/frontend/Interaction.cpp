@@ -651,6 +651,8 @@ idInteraction::idInteraction( void ) {
 	entityPrev				= NULL;
 	dynamicModelFrameCount	= 0;
 	frustumState			= FRUSTUM_UNINITIALIZED;
+	viewCountGenLightSurfs	= 0;
+	viewCountGenShadowSurfs	= 0;
 }
 
 /*
@@ -1362,6 +1364,13 @@ void idInteraction::LinkPreparedSurfaces() {
 	for (int i = 0; i < MAX_LOCATIONS; ++i) {
 		if (surfsToLink[i] == nullptr) {
 			continue;
+		}
+
+		// stgatilov: memorize for debug tools that this interaction generated backend surfaces in this view
+		if (i == SHADOW_LOCAL || i == SHADOW_GLOBAL) {
+			viewCountGenShadowSurfs = tr.viewCount;
+		} else {
+			viewCountGenLightSurfs = tr.viewCount;
 		}
 
 		drawSurf_t **link = nullptr;

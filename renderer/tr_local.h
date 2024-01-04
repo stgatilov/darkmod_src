@@ -284,6 +284,7 @@ public:
 	shadowFrustum_t			shadowFrustums[6];
 
 	int						viewCount;				// if == tr.viewCount, the light is on the viewDef->viewLights list
+	int						viewCountGenBackendSurfs;	// stgatilov: it == tr.viewCount, some drawsurfs has been passed from this light to backend
 	struct viewLight_s 		*viewLight;
 
 	idInteraction 			*firstInteraction;		// doubly linked list

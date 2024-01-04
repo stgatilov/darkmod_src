@@ -1732,10 +1732,14 @@ void R_RemoveUnecessaryViewLights( void ) {
 		// if the light didn't have any lit surfaces visible, there is no need to
 		// draw any of the shadows.  We still keep the vLight for debugging
 		// draws
-		if ( r_singleLight.GetInteger() < 0 ) // duzenko 2018: I need a way to override this for debugging 
 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) {
 			vLight->localShadows = NULL;
 			vLight->globalShadows = NULL;
+		}
+		else
+		{
+			// stgatilov: at least some drawsurfs remain, and they are passed to backend
+			vLight->lightDef->viewCountGenBackendSurfs = tr.viewCount;
 		}
 	}
 
