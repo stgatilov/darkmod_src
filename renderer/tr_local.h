@@ -805,10 +805,6 @@ typedef struct {
 	// with post processing to get the desired total light level.
 	// A high dynamic range card will have this set to 1.0.
 
-	// Test if lightDepthBounds should be enabled or not
-	/*bool				useLightDepthBounds;
-	bool				lightDepthBoundsDisabled;*/
-
 	// our OpenGL state deltas
 	glstate_t			glState;
 } backEndState_t;

@@ -529,9 +529,8 @@ bool R_Lightgem_Render() {
 	parms = *tr.viewDef;
 	parms.isSubview = true;
 
-	auto &m_LightgemSurface = gameLocal.m_lightGem.m_LightgemSurface;
 	// Get position for lg
-	idEntity* lg = m_LightgemSurface.GetEntity();
+	idEntity* lg = gameLocal.m_lightGem.m_LightgemSurface.GetEntity();
 	// duzenko #4408 - this happens at map start if no game tics ran in background yet
 	if ( !lg || lg->GetModelDefHandle() == -1 )
 		return false;
@@ -546,10 +545,11 @@ bool R_Lightgem_Render() {
 	const idVec3& Cam = player->GetEyePosition();
 	idVec3 LGPos = player->GetPhysics()->GetOrigin();// Set the lightgem position to that of the player
 
-	LGPos.x += (Cam.x - LGPos.x) * 0.3f + cv_lg_oxoffs.GetFloat(); // Move the lightgem out a fraction along the leaning x vector
-	LGPos.y += (Cam.y - LGPos.y) * 0.3f + cv_lg_oyoffs.GetFloat(); // Move the lightgem out a fraction along the leaning y vector
+	// Move the lightgem out a fraction along the leaning vector
+	LGPos.x += (Cam.x - LGPos.x) * 0.3f + cv_lg_oxoffs.GetFloat(); 
+	LGPos.y += (Cam.y - LGPos.y) * 0.3f + cv_lg_oyoffs.GetFloat();
 
-																   // Prevent lightgem from clipping into the floor while crouching
+	// Prevent lightgem from clipping into the floor while crouching
 	if ( player->GetPlayerPhysics()->IsCrouching() ) {
 		LGPos.z += 50.0f + cv_lg_ozoffs.GetFloat();
 	} else {
@@ -629,13 +629,18 @@ bool R_Lightgem_Render() {
 	parms.superView = tr.viewDef;
 
 	// generate render commands for it
+	emptyCommand_t *lastCmd = frameData->cmdTail;
 	R_RenderView( parms );
+	drawSurfsCommand_t *noppedCmd = (drawSurfsCommand_t *)frameData->cmdTail;
+	assert(noppedCmd->commandId == RC_DRAW_VIEW);
+	assert(lastCmd->next == noppedCmd);
+
 	// hack: we replace the drawview command with our own lightgem draw command
-	drawSurfsCommand_t *cmd = (drawSurfsCommand_t *)frameData->cmdTail;
-	cmd->commandId = RC_NOP;
+	//noppedCmd->commandId = RC_NOP;
+	frameData->cmdTail = lastCmd;
 	drawLightgemCommand_t *newCmd = (drawLightgemCommand_t *)R_GetCommandBuffer( sizeof(drawLightgemCommand_t) );
 	newCmd->commandId = RC_DRAW_LIGHTGEM;
-	newCmd->viewDef = cmd->viewDef;
+	newCmd->viewDef = noppedCmd->viewDef;
 	// the frontend buffer has already been analyzed this frame and will become the backend buffer in the next frame
 	newCmd->dataBuffer = gameLocal.m_lightGem.m_LightgemImgBufferFrontend;
 
