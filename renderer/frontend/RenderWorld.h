@@ -252,6 +252,7 @@ typedef struct renderView_s {
 
 	bool					cramZNear;			// for cinematics, we want to set ZNear much lower
 	bool					forceUpdate;		// for an update 
+	bool					isOverlay;			// stgatilov: rendered on top of previous color contents, don't clear
 
 	// time in milliseconds for shader effects and other time dependent rendering issues
 	int						time;

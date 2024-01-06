@@ -133,8 +133,6 @@ void FrameBufferManager::EnterPrimary() {
 	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
 	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
 	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
-
-	qglClear( GL_COLOR_BUFFER_BIT ); // otherwise transparent skybox blends with previous frame
 }
 
 idCVar r_fboScaling( "r_fboScaling", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "nearest/linear FBO scaling" );

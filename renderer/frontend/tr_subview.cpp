@@ -459,6 +459,10 @@ void R_PortalRender( textureStage_t *stage, idScreenRect& scissor ) {
 
 	if ( g_enablePortalSky.GetInteger() == 1 ) {
 		tr.CaptureRenderToImage( *globalImages->currentRenderImage );
+	} else {
+		// stgatilov: in this mode, next view should be rendered on top of skybox
+		// thus don't clear color buffer when rendering the next view
+		parms->outputColorIsBackground = true;
 	}
 }
 

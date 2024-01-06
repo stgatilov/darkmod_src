@@ -557,24 +557,7 @@ static void	RB_SetBuffer( const void *data ) {
 	qglDrawBuffer( r_frontBuffer.GetBool() ? GL_FRONT : GL_BACK );
 	qglReadBuffer( r_frontBuffer.GetBool() ? GL_FRONT : GL_BACK );
 
-	// clear screen for debugging
-	// automatically enable this with several other debug tools
-	// that might leave unrendered portions of the screen
-	if ( r_clear.GetFloat() || idStr::Length( r_clear.GetString() ) != 1 || r_lockSurfaces.GetBool() || r_singleArea.GetBool() || r_showOverDraw.GetBool() ) {
-		float c[3];
-		if ( sscanf( r_clear.GetString(), "%f %f %f", &c[0], &c[1], &c[2] ) == 3 ) {
-			qglClearColor( c[0], c[1], c[2], 1 );
-		} else if ( r_clear.GetInteger() == 2 ) {
-			qglClearColor( 0.0f, 0.0f,  0.0f, 1.0f );
-		} else if ( r_showOverDraw.GetBool() ) {
-			qglClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
-		} else {
-			qglClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
-		}
-		if ( !game->PlayerReady() ) {
-			qglClear( GL_COLOR_BUFFER_BIT );
-		}
-	}
+	// note: clear was moved to RB_BeginDrawingView
 }
 
 /*
@@ -806,7 +789,11 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	// needed for editor rendering
 	RB_SetDefaultGLState();
 
-	bool isv3d = false, fboOff = false; // needs to be declared outside of switch case
+	// true: we currently render views to "primary framebuffer", which can be e.g. multisampled
+	// false: we finished main rendering and now render to GUI framebuffer (or to default one directly)
+	bool drawToPrimary = true;
+	// if true, then the color output of the last view render should NOT be cleared at the start of the next view render
+	bool outputColorIsBackground = false;
 
 	while ( cmds ) {
 		switch ( cmds->commandId ) {
@@ -814,18 +801,19 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_DRAW_VIEW: {
 			backEnd.viewDef = ( ( const drawSurfsCommand_t * )cmds )->viewDef;
-			isv3d = ( backEnd.viewDef->viewEntitys != nullptr );	// view is 2d or 3d
-			if ( !fboOff ) {									// don't switch to FBO if bloom or some 2d has happened
+			bool isv3d = ( backEnd.viewDef->viewEntitys != nullptr );	// view is 2d or 3d
+			if ( drawToPrimary ) {									// don't switch to FBO if bloom or some 2d has happened
 				if ( isv3d ) {
 					frameBuffers->EnterPrimary();
 				} else {
 					frameBuffers->LeavePrimary();	// switch to GUI or default FBO to render UI elements at native resolution
 					FB_DebugShowContents();
-					fboOff = true;
+					drawToPrimary = false;
 				}
 			}
-			renderBackend->DrawView( backEnd.viewDef );
+			renderBackend->DrawView( backEnd.viewDef, outputColorIsBackground );
 			GL_CheckErrors();
+			outputColorIsBackground = backEnd.viewDef->outputColorIsBackground;
 			if ( isv3d ) {
 				c_draw3d++;
 			} else {
@@ -846,7 +834,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 				c_drawBloom++;
 				FB_DebugShowContents();
 				frameBuffers->LeavePrimary();
-				fboOff = true;
+				drawToPrimary = false;
 			}
 			break;
 		case RC_COPY_RENDER:

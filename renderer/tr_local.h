@@ -519,6 +519,11 @@ typedef struct viewDef_s {
 	xrayEntityMask_t	xrayEntityMask;
 	bool				hasXraySubview;
 
+	// stgatilov: the color output of this view should become background for the next view rendering
+	// for this reason, do NOT clear color buffer at the beginning of the NEXT view render
+	// example: portalsky is rendered before superview with no clear in between (at least some implementation)
+	bool				outputColorIsBackground;
+
 	bool				isEditor;
 
 	idPlane				*clipPlane;			// in world space, the positive side, mirrors will often use a single clip plane
@@ -1473,7 +1478,7 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const shaderStage_t* pStage );
 void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
 
-void RB_BeginDrawingView( void );
+void RB_BeginDrawingView( bool colorIsBackground );
 
 /*
 ============================================================

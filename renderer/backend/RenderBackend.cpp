@@ -77,7 +77,7 @@ void RenderBackend::Shutdown() {
 	depthStage.Shutdown();
 }
 
-void RenderBackend::DrawView( const viewDef_t *viewDef ) {
+void RenderBackend::DrawView( const viewDef_t *viewDef, bool colorIsBackground ) {
 	TRACE_GL_SCOPE( "DrawView" );
 
 	// skip render bypasses everything that has models, assuming
@@ -101,8 +101,8 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 
 	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
 
-	// clear the z buffer, set the projection matrix, etc
-	RB_BeginDrawingView();
+	// clear the framebuffer, set the projection matrix, etc
+	RB_BeginDrawingView( colorIsBackground );
 
 	backEnd.lightScale = r_lightScale.GetFloat();
 	backEnd.overBright = 1.0f;
@@ -204,7 +204,7 @@ void RenderBackend::DrawLightgem( const viewDef_t *viewDef, byte *lightgemData )
 	frameBuffers->currentRenderFbo = lightgemFbo;
 	lightgemFbo->Bind();
 	
-	DrawView( viewDef );
+	DrawView( viewDef, false );
 
 	// asynchronously copy contents of the lightgem framebuffer to a pixel buffer
 	qglBindBuffer( GL_PIXEL_PACK_BUFFER, lightgemPbos[currentLightgemPbo] );
