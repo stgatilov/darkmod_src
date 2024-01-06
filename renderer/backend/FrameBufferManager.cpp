@@ -299,12 +299,14 @@ void FrameBufferManager::CreateGui( FrameBuffer *gui ) {
 	gui->AddColorRenderTexture( 0, globalImages->guiRenderImage );
 }
 
-void FrameBufferManager::EnsureScratchImagesCreated( idImageScratch *image ) {
-	// normally, scratch images are generated as FBO attachments when FBO is generated
+bool FrameBufferManager::EnsureScratchImageCreated( idImageScratch *image, int width, int height ) {
+	// #6300: normally, scratch images are generated as FBO attachments when FBO is generated
 	// however, some images (_scratch) is never attached to FBO, it is filled with texture copy command instead
 	// so we need to generate these images when we first fill them --- and CopyRender method is the only method which fills them
-	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) {
-		image->GenerateAttachment( renderWidth, renderHeight, colorFormat, GL_LINEAR );
+	// #6424: changing r_fboResolution also changes their resolution, in which case we need to recreate them
+	if ( image->texnum == idImage::TEXTURE_NOT_LOADED || image->uploadWidth != width || image->uploadHeight != height ) {
+		image->PurgeImage();
+		image->GenerateAttachment( width, height, colorFormat, GL_LINEAR, GL_CLAMP_TO_EDGE );
 		image->Bind();
 
 		// framebuffer has alpha channel (and some materials seemingly use it for interpass communication)
@@ -314,16 +316,15 @@ void FrameBufferManager::EnsureScratchImagesCreated( idImageScratch *image ) {
 		GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
 		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask );
 	}
+
+	if ( image->texnum == idImage::TEXTURE_NOT_LOADED || image->uploadWidth != width || image->uploadHeight != height ) {
+		return false;	// should not happen
+	} else {
+		return true;
+	}
 }
 
 void FrameBufferManager::CopyRender( idImageScratch* image, int x, int y, int imageWidth, int imageHeight ) {
-	// if copying into _scratch or _xray, then make sure it is generated
-	EnsureScratchImagesCreated( image );
-	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) {
-		assert(false);
-		return;	// should not happen
-	}
-	image->Bind();
 	if ( activeFbo == primaryFbo || activeFbo == resolveFbo ) {
 		x *= r_fboResolution.GetFloat();
 		y *= r_fboResolution.GetFloat();
@@ -331,23 +332,17 @@ void FrameBufferManager::CopyRender( idImageScratch* image, int x, int y, int im
 		imageHeight *= r_fboResolution.GetFloat();
 	}
 
-	if ( image->uploadWidth != imageWidth || image->uploadHeight != imageHeight ) {
-		// TODO #6300: I'd like to remove this case completely
-		// it redefines image dimensions pretty arbitrarily, and even more importantly, changes its image format
-		common->Warning( "FrameBufferManager::CopyRender resolution mismatch: %d %d %d %d != %d %d", x, y, imageWidth, imageHeight, image->uploadWidth, image->uploadHeight );
-		image->uploadWidth = imageWidth;
-		image->uploadHeight = imageHeight;
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
-	} else {
-		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
-		// it and don't try and do a texture compression or some other silliness
-		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
+	// if copying into _scratch or _xray, then make sure it is generated and has proper size
+	if ( !EnsureScratchImageCreated( image, imageWidth, imageHeight ) ) {
+		common->Warning( "FrameBufferManager::CopyRender failed to create texture" );
+		assert(false);
+		return;
 	}
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	image->Bind();
 
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	// otherwise, just subimage upload it so that drivers can tell we are going to be changing
+	// it and don't try and do a texture compression or some other silliness
+	qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 }
 
 void FrameBufferManager::CopyRender( unsigned char *buffer, int x, int y, int imageWidth, int imageHeight, bool usePBO ) {
