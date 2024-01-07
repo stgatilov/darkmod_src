@@ -17,6 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "LodComponent.h"
 
+static const float MIN_LOD_BIAS_DEFAULT = -1e+10f;
+static const float MAX_LOD_BIAS_DEFAULT = 1e+10f;
 
 LodComponent::LodComponent()
 {
@@ -27,9 +29,9 @@ LodComponent::LodComponent()
 	m_LODHandle = 0;
 	m_DistCheckTimeStamp = NOLOD;
 
-	// by default active
-	m_MinLODBias = 0.0f;
-	m_MaxLODBias = 10.0f;
+	// by default disabled
+	m_MinLODBias = MIN_LOD_BIAS_DEFAULT;
+	m_MaxLODBias = MAX_LOD_BIAS_DEFAULT;
 
 	m_LODLevel = m_ModelLODCur = m_SkinLODCur = 0xDEAFBEEF;	//to be set
 	m_OffsetLODCur.Zero();
@@ -97,14 +99,12 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 	}
 
 	float fHideDistance = dict->GetFloat( "hide_distance", "-1" );
-	if( fHideDistance < 0.1f ) // 2.10: for mapper convenience do not require explicit dist_check_period
-		if ( !dict->MatchPrefix( "lod_" ) ) {
-			return m_LODHandle;
-		}
 
-	// by default these are always used
-	m_MinLODBias = dict->GetFloat( "min_lod_bias", "0" );
-	m_MaxLODBias = dict->GetFloat( "max_lod_bias", "10" );
+	// by default these are at "ignored" values
+	if ( !dict->GetFloat( "min_lod_bias", "", m_MinLODBias ) )
+		m_MinLODBias = MIN_LOD_BIAS_DEFAULT;
+	if ( !dict->GetFloat( "max_lod_bias", "", m_MaxLODBias ) )
+		m_MaxLODBias = MAX_LOD_BIAS_DEFAULT;
 
 	/* stgatilov TODO: for some reason, this code was in idEntity::Spawn BEFORE calling ParseLODSpawnargs
 	* so it had no effect...
@@ -339,6 +339,19 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 	// make sure they all run on the first frame though
 	m_DistCheckTimeStamp = gameLocal.time - (int) (m_LOD->DistCheckInterval * gameLocal.random.RandomFloat());
 
+	// stgatilov #6359: drop LOD component if there are no settings which may affect anything at runtime
+	bool lodProcessingNeeded = false;
+	if (m_MinLODBias != MIN_LOD_BIAS_DEFAULT || m_MaxLODBias != MAX_LOD_BIAS_DEFAULT)
+		lodProcessingNeeded = true;
+	if (m_LOD->fLODFadeInRange != 0.0f || m_LOD->fLODFadeOutRange != 0.0f)
+		lodProcessingNeeded = true;
+	for (int i = 0; i < LOD_LEVELS; i++)
+		if (m_LOD->DistLODSq[i] > 0.0f)
+			lodProcessingNeeded = true;
+
+	if (!lodProcessingNeeded)
+		return m_LODHandle;	// disable LOD processing
+
 	// register the data with the ModelGenerator and return the handle
 	lod_handle h = gameLocal.m_ModelGenerator->RegisterLODData( m_LOD );
 
@@ -503,7 +516,7 @@ float LodComponent::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq 
 	//nbohr1more: #4372: Allow lod_bias args for func_emitter entities
 	float lodbias = cv_lod_bias.GetFloat();
 
-	if ( ( m_MinLODBias > 0 || m_MaxLODBias < 10 ) && ( lodbias < m_MinLODBias || lodbias > m_MaxLODBias ) ) {
+	if ( lodbias < m_MinLODBias || lodbias > m_MaxLODBias ) {
 		return 0;
 	}
 
