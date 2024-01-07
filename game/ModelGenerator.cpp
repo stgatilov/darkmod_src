@@ -262,7 +262,7 @@ bool CModelGenerator::CompareLODData( const lod_data_t *mLOD, const lod_data_t *
 * Presents the ModelManager with the LOD data for this entity, and returns
 * a handle (handle >= 0) with that the entity can later access this data. 
 */
-lod_handle	CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
+lod_handle CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
 
 	int n = m_LODList.Num();
 	int smallestFree = n;						// default is no free entries at all

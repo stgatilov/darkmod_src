@@ -86,8 +86,6 @@ is set, and should be between 0 and 1.0.
 */
 lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict, const float fRandom )
 {
-	lod_data_t *m_LOD = NULL;
-
 	m_LODHandle = 0;
 	m_DistCheckTimeStamp = NOLOD;
 
@@ -126,8 +124,8 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 	// Disable LOD if the LOD settings came with the entity def but the mapper has overridden the model 
 	// without updating any LOD models #3912
+	if ( const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString("classname"), false ) )
 	{
-		const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString("classname"), false );
 		const bool inherited_model = *entDef->GetString("model") != '\0';
 		const bool inherited_lod = entDef->GetFloat("dist_check_period") != 0.0f || entDef->GetFloat("hide_distance") >= 0.1f;
 		const bool model_overriden = idStr::Icmp( dict->GetString("model"), entDef->GetString("model") ) != 0;
@@ -148,8 +146,8 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 	}
 
 	// distance dependent LOD from this point on:
-	// allocate new memory
-	m_LOD = new lod_data_t;
+	lod_data_t lodData;
+	lod_data_t *m_LOD = &lodData;	// don't want to edit all the code...
 
 	// if interval not set, use twice per second
 	m_LOD->DistCheckInterval = int( 1000.0f * dict->GetFloat( "dist_check_period", "0.5" ) );
@@ -189,22 +187,28 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 	// setup level 0 (aka "The one and only original")
 	m_LOD->ModelLOD[0] = dict->GetString( "model", "" );
 
-	// For func_statics where name == model, use "" so they can share the same LOD data
-	// even tho they all have different "models". (Their model spawnarg is never used.)
-	if ( entity->IsType( idStaticEntity::Type ) && m_LOD->ModelLOD[0] == entity->GetName() )
+	idStr entityName = "[unknown]";
+	if (entity)
 	{
-		m_LOD->ModelLOD[0] = "";
-	}
+		entityName = entity->GetName();
 
-	// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
-	const renderEntity_t *rent = const_cast<idEntity*>(entity)->GetRenderEntity();
-	if ( rent->customSkin )
-	{
-		m_LOD->SkinLOD[0] = rent->customSkin->GetName(); 
-	}
-	else
-	{
-		m_LOD->SkinLOD[0] = "";
+		// For func_statics where name == model, use "" so they can share the same LOD data
+		// even tho they all have different "models". (Their model spawnarg is never used.)
+		if (entity->IsType( idStaticEntity::Type ) && m_LOD->ModelLOD[0] == entity->GetName() )
+		{
+			m_LOD->ModelLOD[0] = "";
+		}
+
+		// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
+		const renderEntity_t *rent = const_cast<idEntity*>(entity)->GetRenderEntity();
+		if ( rent->customSkin )
+		{
+			m_LOD->SkinLOD[0] = rent->customSkin->GetName(); 
+		}
+		else
+		{
+			m_LOD->SkinLOD[0] = "";
+		}
 	}
 
 	// start at 1, since 0 is "the original level" setup already above
@@ -247,7 +251,7 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 			if (m_LOD->fLODFadeOutRange < 0)
 			{
-				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.", entity->GetName(), m_LOD->fLODFadeOutRange);
+				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.", entityName, m_LOD->fLODFadeOutRange);
 				m_LOD->fLODFadeOutRange = 0.0f;
 			}
 			else
@@ -261,12 +265,12 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 			if (m_LOD->fLODFadeInRange < 0)
 			{
-				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.", entity->GetName(), m_LOD->fLODFadeInRange);
+				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.", entityName, m_LOD->fLODFadeInRange);
 				m_LOD->fLODFadeInRange = 0.0f;
 			}
 			else if (m_LOD->fLODFadeInRange > 0 && m_LOD->fLODFadeInRange > m_LOD->DistLODSq[1])
 			{
-				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.", entity->GetName(), m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
+				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.", entityName, m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
 				m_LOD->fLODFadeOutRange = 0.0f;
 			}
 			else
@@ -283,7 +287,7 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 		if (i > 0 && m_LOD->DistLODSq[i] > 0 && (m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i]) < m_LOD->DistLODSq[i-1])
 		{
 			gameLocal.Warning (" %s: LOD %i m_DistLODSq %f < LOD %i m_DistLODSq=%f (this will not work!)\n",
-				entity->GetName(), i, m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i], i-1, m_LOD->DistLODSq[i-1]); 
+				entityName, i, m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i], i-1, m_LOD->DistLODSq[i-1]); 
 		}
 		// -1 should stay -1 to signal "don't use this level"
 		if (m_LOD->DistLODSq[i] > 0)
@@ -337,9 +341,6 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 	// register the data with the ModelGenerator and return the handle
 	lod_handle h = gameLocal.m_ModelGenerator->RegisterLODData( m_LOD );
-
-	// free memory
-	delete m_LOD;
 
 	m_entity = entity;
 	m_LODHandle = h;
