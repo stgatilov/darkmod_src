@@ -218,5 +218,8 @@ void StencilShadowStage::FillStencilShadowMipmaps( const viewDef_t *viewDef, con
 		int h = lightScissor.GetHeight() * newProps.renderHeight / glConfig.vidHeight;
 
 		stencilShadowMipmap.FillFrom( globalImages->shadowDepthFbo, x, y, w, h );
+		// restore current viewport and scissor
+		FB_ApplyViewport();
+		FB_ApplyScissor();
 	}
 }

@@ -43,6 +43,7 @@ public:
 	// x, y, w, h define scissor rectangle to process (default: full image)
 	// only pixels within scissor are fetched from source texture
 	// if tile is partially outside scissor/image, then out-of-bounds values are obtained in GL_CLAMP_TO_EDGE style
+	// note: changes viewport and scissor --- must be reset after call
 	void FillFrom(idImage *image, int x = 0, int y = 0, int w = 1000000000, int h = 1000000000);
 
 	bool IsFilled() const;
