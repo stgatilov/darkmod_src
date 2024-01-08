@@ -151,6 +151,9 @@ void idRenderWindow::Draw(int time, float x, float y) {
 	refdef.height = drawRect.h;
 	refdef.fov_x = 90;
 	refdef.fov_y = 2 * atan((float)drawRect.h / drawRect.w) * idMath::M_RAD2DEG;
+	// stgatilov: don't clear color buffer, render this on top of previous contents
+	// note that right now only compass is rendered this way
+	refdef.isOverlay = true;
 
 	refdef.time = time;
 	world->RenderScene(refdef);

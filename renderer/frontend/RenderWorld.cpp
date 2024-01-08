@@ -30,19 +30,34 @@ R_ListRenderLightDefs_f
 */
 void R_ListRenderLightDefs_f( const idCmdArgs &args ) {
 	bool onlyVisible = false;
+	bool withInteractions = false;
 	for ( int i = 1; i < args.Argc(); i++ ) {
 		if ( idStr::IcmpPrefix( args.Argv(i), "vis" ) == 0 )
 			onlyVisible = true;
+		if ( idStr::IcmpPrefix( args.Argv(i), "inter" ) == 0 )
+			withInteractions = true;
 	}
 
 	if ( !tr.primaryWorld ) {
 		return;
 	}
-	int active = 0;
+	int totalActive = 0;
 	int totalVisible = 0;
-	int	totalRef = 0;
-	int	totalIntr = 0;
+	int totalRefs = 0;
+	int totalInteractions = 0;
+	int totalInteractionsLight = 0;
+	int totalInteractionsShadow = 0;
 	int totalMajorShadowRefs = 0;
+
+	// note: object was used on last frame iff:
+	//   tr.viewCountAtFrameStart < object.viewCount <= tr.viewCount
+
+	// idInteraction stores 2-byte viewCount-s (not 100% reliable)
+	auto IsInteractionUsed = [](word viewCount) -> bool {
+		word diff = word(tr.viewCount - viewCount);
+		word range = word(tr.viewCount - tr.viewCountAtFrameStart);
+		return diff < range;
+	};
 
 	for ( int i = 0 ; i < tr.primaryWorld->lightDefs.Num() ; i++ ) {
 		const idRenderLightLocal *ldef = tr.primaryWorld->lightDefs[i];
@@ -51,25 +66,31 @@ void R_ListRenderLightDefs_f( const idCmdArgs &args ) {
 				common->Printf( "%4i: FREED\n", i );
 			continue;
 		}
-		active++;
+		totalActive++;
 
 		// count up the interactions
-		int	iCount = 0;
+		int interCount = 0;
+		int interLightCount = 0;
+		int interShadowCount = 0;
 		for ( idInteraction *inter = ldef->firstInteraction; inter != NULL; inter = inter->lightNext ) {
-			iCount++;
+			interCount++;
+			interLightCount += IsInteractionUsed(inter->viewCountGenLightSurfs);
+			interShadowCount += IsInteractionUsed(inter->viewCountGenShadowSurfs);
 		}
-		totalIntr += iCount;
+		totalInteractions += interCount;
+		totalInteractionsLight += interLightCount;
+		totalInteractionsShadow += interShadowCount;
 
 		// count up the references
-		int	rCount = 0;
+		int	refCount = 0;
 		for ( areaReference_t *ref = ldef->references ; ref ; ref = ref->next ) {
-			rCount++;
+			refCount++;
 		}
-		totalRef += rCount;
+		totalRefs += refCount;
 
 		// #5172: also display "weak" area references
-		int msrCount = ldef->areasForAdditionalWorldShadows.Num();
-		totalMajorShadowRefs += msrCount;
+		int majorShadowRefCount = ldef->areasForAdditionalWorldShadows.Num();
+		totalMajorShadowRefs += majorShadowRefCount;
 
 		// which kind of light it is?
 		idStr shapeType;
@@ -95,10 +116,12 @@ void R_ListRenderLightDefs_f( const idCmdArgs &args ) {
 
 		// which shadow implementation does it use?
 		idStr shadow;
-		if (ldef->viewCount < tr.viewCountAtFrameStart) {
+		if (ldef->viewCount <= tr.viewCountAtFrameStart) {
 			shadow = "   ";	// not visible
 			if ( onlyVisible )
 				continue;
+		} else if (ldef->viewCountGenBackendSurfs <= tr.viewCountAtFrameStart) {
+			shadow = "---";	// visible, but no backend rendering
 		} else {
 			totalVisible++;
 			if (ldef->shadows == LS_STENCIL) {
@@ -114,17 +137,37 @@ void R_ListRenderLightDefs_f( const idCmdArgs &args ) {
 		idStr entityName = GetTraceLabel(ldef->parms);
 
 		common->Printf(
-			"%4i: %s %s %s %s : %3i intr %2i+%2i refs : %s : %s\n",
+			"#%3i: %s %s %s %s : %3i/%2i/%2i inter %2i+%2i refs : %s : %s\n",
 			i,
 			shapeType.c_str(), shadow.c_str(), cullFlags.c_str(), otherFlags.c_str(),
-			iCount, rCount, msrCount,
+			interCount, interLightCount, interShadowCount, refCount, majorShadowRefCount,
 			entityName.c_str(), shaderName.c_str()
 		);
+
+		if (withInteractions) {
+			// print out interactions
+			for ( idInteraction *inter = ldef->firstInteraction; inter != NULL; inter = inter->lightNext ) {
+				bool hasLightSurfs = IsInteractionUsed(inter->viewCountGenLightSurfs);
+				bool hasShadowSurfs = IsInteractionUsed(inter->viewCountGenShadowSurfs);
+				if (onlyVisible && !hasLightSurfs && !hasShadowSurfs)
+					continue;
+
+				idStr entityName = GetTraceLabel(inter->entityDef->parms);
+				common->Printf(
+					"    %c%c : #%4i : %s\n",
+					(hasLightSurfs ? 'l' : ' '),
+					(hasShadowSurfs ? 's' : ' '),
+					inter->entityDef->index, entityName.c_str()
+				);
+			}
+		}
 	}
 
 	common->Printf(
-		"%i lightDefs, %i visible, %i interactions, %i+%i areaRefs\n",
-		active, totalVisible, totalIntr, totalRef, totalMajorShadowRefs
+		"%i lightDefs, %i visible, %i/%i/%i interactions, %i+%i areaRefs\n",
+		totalActive, totalVisible,
+		totalInteractions, totalInteractionsLight, totalInteractionsShadow,
+		totalRefs, totalMajorShadowRefs
 	);
 }
 
@@ -143,10 +186,9 @@ void R_ListRenderEntityDefs_f( const idCmdArgs &args ) {
 	if ( !tr.primaryWorld ) {
 		return;
 	}
-	int active = 0;
+	int totalActive = 0;
 	int totalVisible = 0;
-	int	totalRef = 0;
-	int	totalIntr = 0;
+	int totalShadowOnly = 0;
 
 	for ( int i = 0 ; i < tr.primaryWorld->entityDefs.Num() ; i++ ) {
 		const idRenderEntityLocal *mdef = tr.primaryWorld->entityDefs[i];
@@ -155,50 +197,51 @@ void R_ListRenderEntityDefs_f( const idCmdArgs &args ) {
 				common->Printf( "%4i: FREED\n", i );
 			continue;
 		}
-		active++;
+		totalActive++;
 
 		// count up the interactions
-		int	iCount = 0;
+		int	interCount = 0;
 		for ( idInteraction *inter = mdef->firstInteraction; inter != NULL; inter = inter->entityNext ) {
-			iCount++;
+			interCount++;
 		}
-		totalIntr += iCount;
 
 		// count up the references
-		int	rCount = 0;
+		int	refCount = 0;
 		for ( areaReference_t *ref = mdef->entityRefs ; ref ; ref = ref->next ) {
-			rCount++;
+			refCount++;
 		}
-		totalRef += rCount;
 
 		idStr flags;
 		flags += (mdef->lastModifiedFrameNum == tr.frameCount ? "d" : " ");
 
 		idStr visible;
-		if (mdef->viewCount < tr.viewCountAtFrameStart) {
+		if (mdef->viewCount <= tr.viewCountAtFrameStart) {
 			visible = "   ";
 			if ( onlyVisible )
 				continue;
+		} if (mdef->visibleCount <= tr.viewCountAtFrameStart) {
+			visible = "Shw";	// only used for shadow surfaces
+			totalShadowOnly++;
 		} else {
 			totalVisible++;
-			visible = "Vis";
+			visible = "Vis";	// rendered as ambient surfaces
 		}
 
 		idStr modelName = mdef->parms.hModel->Name();
 		idStr entityName = GetTraceLabel(mdef->parms);
 
 		common->Printf(
-			"%4i: %s %s : %3i intr %2i refs : %s : %s\n",
+			"#%4i: %s %s : %3i inter %2i refs : %s : %s\n",
 			i,
 			visible.c_str(), flags.c_str(),
-			iCount, rCount,
+			interCount, refCount,
 			entityName.c_str(), modelName.c_str()
 		);
 	}
 
 	common->Printf(
-		"%i entityDefs, %i visible\n",
-		active, totalVisible
+		"%i entityDefs, %i visible, %i shadows\n",
+		totalActive, totalVisible, totalShadowOnly
 	);
 }
 

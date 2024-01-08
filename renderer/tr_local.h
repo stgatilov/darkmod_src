@@ -284,6 +284,7 @@ public:
 	shadowFrustum_t			shadowFrustums[6];
 
 	int						viewCount;				// if == tr.viewCount, the light is on the viewDef->viewLights list
+	int						viewCountGenBackendSurfs;	// stgatilov: it == tr.viewCount, some drawsurfs has been passed from this light to backend
 	struct viewLight_s 		*viewLight;
 
 	idInteraction 			*firstInteraction;		// doubly linked list
@@ -517,6 +518,11 @@ typedef struct viewDef_s {
 	bool				isMirror;				// the portal is a mirror, invert the face culling
 	xrayEntityMask_t	xrayEntityMask;
 	bool				hasXraySubview;
+
+	// stgatilov: the color output of this view should become background for the next view rendering
+	// for this reason, do NOT clear color buffer at the beginning of the NEXT view render
+	// example: portalsky is rendered before superview with no clear in between (at least some implementation)
+	bool				outputColorIsBackground;
 
 	bool				isEditor;
 
@@ -803,10 +809,6 @@ typedef struct {
 	float				overBright;			// The amount that all light interactions must be multiplied by
 	// with post processing to get the desired total light level.
 	// A high dynamic range card will have this set to 1.0.
-
-	// Test if lightDepthBounds should be enabled or not
-	/*bool				useLightDepthBounds;
-	bool				lightDepthBoundsDisabled;*/
 
 	// our OpenGL state deltas
 	glstate_t			glState;
@@ -1476,7 +1478,7 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const shaderStage_t* pStage );
 void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
 
-void RB_BeginDrawingView( void );
+void RB_BeginDrawingView( bool colorIsBackground );
 
 /*
 ============================================================

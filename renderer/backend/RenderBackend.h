@@ -34,7 +34,7 @@ public:
 	void Init();
 	void Shutdown();
 
-	void DrawView( const viewDef_t *viewDef );
+	void DrawView( const viewDef_t *viewDef, bool colorIsBackground );
 	void DrawLightgem( const viewDef_t *viewDef, byte *lightgemData );
 
 	void EndFrame();

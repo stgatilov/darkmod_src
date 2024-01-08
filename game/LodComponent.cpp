@@ -17,6 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "LodComponent.h"
 
+static const float MIN_LOD_BIAS_DEFAULT = -1e+10f;
+static const float MAX_LOD_BIAS_DEFAULT = 1e+10f;
 
 LodComponent::LodComponent()
 {
@@ -27,9 +29,9 @@ LodComponent::LodComponent()
 	m_LODHandle = 0;
 	m_DistCheckTimeStamp = NOLOD;
 
-	// by default active
-	m_MinLODBias = 0.0f;
-	m_MaxLODBias = 10.0f;
+	// by default disabled
+	m_MinLODBias = MIN_LOD_BIAS_DEFAULT;
+	m_MaxLODBias = MAX_LOD_BIAS_DEFAULT;
 
 	m_LODLevel = m_ModelLODCur = m_SkinLODCur = 0xDEAFBEEF;	//to be set
 	m_OffsetLODCur.Zero();
@@ -86,8 +88,6 @@ is set, and should be between 0 and 1.0.
 */
 lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict, const float fRandom )
 {
-	lod_data_t *m_LOD = NULL;
-
 	m_LODHandle = 0;
 	m_DistCheckTimeStamp = NOLOD;
 
@@ -99,14 +99,12 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 	}
 
 	float fHideDistance = dict->GetFloat( "hide_distance", "-1" );
-	if( fHideDistance < 0.1f ) // 2.10: for mapper convenience do not require explicit dist_check_period
-		if ( !dict->MatchPrefix( "lod_" ) ) {
-			return m_LODHandle;
-		}
 
-	// by default these are always used
-	m_MinLODBias = dict->GetFloat( "min_lod_bias", "0" );
-	m_MaxLODBias = dict->GetFloat( "max_lod_bias", "10" );
+	// by default these are at "ignored" values
+	if ( !dict->GetFloat( "min_lod_bias", "", m_MinLODBias ) )
+		m_MinLODBias = MIN_LOD_BIAS_DEFAULT;
+	if ( !dict->GetFloat( "max_lod_bias", "", m_MaxLODBias ) )
+		m_MaxLODBias = MAX_LOD_BIAS_DEFAULT;
 
 	/* stgatilov TODO: for some reason, this code was in idEntity::Spawn BEFORE calling ParseLODSpawnargs
 	* so it had no effect...
@@ -126,8 +124,8 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 	// Disable LOD if the LOD settings came with the entity def but the mapper has overridden the model 
 	// without updating any LOD models #3912
+	if ( const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString("classname"), false ) )
 	{
-		const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString("classname"), false );
 		const bool inherited_model = *entDef->GetString("model") != '\0';
 		const bool inherited_lod = entDef->GetFloat("dist_check_period") != 0.0f || entDef->GetFloat("hide_distance") >= 0.1f;
 		const bool model_overriden = idStr::Icmp( dict->GetString("model"), entDef->GetString("model") ) != 0;
@@ -148,8 +146,8 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 	}
 
 	// distance dependent LOD from this point on:
-	// allocate new memory
-	m_LOD = new lod_data_t;
+	lod_data_t lodData;
+	lod_data_t *m_LOD = &lodData;	// don't want to edit all the code...
 
 	// if interval not set, use twice per second
 	m_LOD->DistCheckInterval = int( 1000.0f * dict->GetFloat( "dist_check_period", "0.5" ) );
@@ -189,22 +187,28 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 	// setup level 0 (aka "The one and only original")
 	m_LOD->ModelLOD[0] = dict->GetString( "model", "" );
 
-	// For func_statics where name == model, use "" so they can share the same LOD data
-	// even tho they all have different "models". (Their model spawnarg is never used.)
-	if ( entity->IsType( idStaticEntity::Type ) && m_LOD->ModelLOD[0] == entity->GetName() )
+	idStr entityName = "[unknown]";
+	if (entity)
 	{
-		m_LOD->ModelLOD[0] = "";
-	}
+		entityName = entity->GetName();
 
-	// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
-	const renderEntity_t *rent = const_cast<idEntity*>(entity)->GetRenderEntity();
-	if ( rent->customSkin )
-	{
-		m_LOD->SkinLOD[0] = rent->customSkin->GetName(); 
-	}
-	else
-	{
-		m_LOD->SkinLOD[0] = "";
+		// For func_statics where name == model, use "" so they can share the same LOD data
+		// even tho they all have different "models". (Their model spawnarg is never used.)
+		if (entity->IsType( idStaticEntity::Type ) && m_LOD->ModelLOD[0] == entity->GetName() )
+		{
+			m_LOD->ModelLOD[0] = "";
+		}
+
+		// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
+		const renderEntity_t *rent = const_cast<idEntity*>(entity)->GetRenderEntity();
+		if ( rent->customSkin )
+		{
+			m_LOD->SkinLOD[0] = rent->customSkin->GetName(); 
+		}
+		else
+		{
+			m_LOD->SkinLOD[0] = "";
+		}
 	}
 
 	// start at 1, since 0 is "the original level" setup already above
@@ -247,7 +251,7 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 			if (m_LOD->fLODFadeOutRange < 0)
 			{
-				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.", entity->GetName(), m_LOD->fLODFadeOutRange);
+				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.", entityName, m_LOD->fLODFadeOutRange);
 				m_LOD->fLODFadeOutRange = 0.0f;
 			}
 			else
@@ -261,12 +265,12 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 			if (m_LOD->fLODFadeInRange < 0)
 			{
-				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.", entity->GetName(), m_LOD->fLODFadeInRange);
+				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.", entityName, m_LOD->fLODFadeInRange);
 				m_LOD->fLODFadeInRange = 0.0f;
 			}
 			else if (m_LOD->fLODFadeInRange > 0 && m_LOD->fLODFadeInRange > m_LOD->DistLODSq[1])
 			{
-				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.", entity->GetName(), m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
+				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.", entityName, m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
 				m_LOD->fLODFadeOutRange = 0.0f;
 			}
 			else
@@ -283,7 +287,7 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 		if (i > 0 && m_LOD->DistLODSq[i] > 0 && (m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i]) < m_LOD->DistLODSq[i-1])
 		{
 			gameLocal.Warning (" %s: LOD %i m_DistLODSq %f < LOD %i m_DistLODSq=%f (this will not work!)\n",
-				entity->GetName(), i, m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i], i-1, m_LOD->DistLODSq[i-1]); 
+				entityName, i, m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i], i-1, m_LOD->DistLODSq[i-1]); 
 		}
 		// -1 should stay -1 to signal "don't use this level"
 		if (m_LOD->DistLODSq[i] > 0)
@@ -335,11 +339,21 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 	// make sure they all run on the first frame though
 	m_DistCheckTimeStamp = gameLocal.time - (int) (m_LOD->DistCheckInterval * gameLocal.random.RandomFloat());
 
+	// stgatilov #6359: drop LOD component if there are no settings which may affect anything at runtime
+	bool lodProcessingNeeded = false;
+	if (m_MinLODBias != MIN_LOD_BIAS_DEFAULT || m_MaxLODBias != MAX_LOD_BIAS_DEFAULT)
+		lodProcessingNeeded = true;
+	if (m_LOD->fLODFadeInRange != 0.0f || m_LOD->fLODFadeOutRange != 0.0f)
+		lodProcessingNeeded = true;
+	for (int i = 0; i < LOD_LEVELS; i++)
+		if (m_LOD->DistLODSq[i] > 0.0f)
+			lodProcessingNeeded = true;
+
+	if (!lodProcessingNeeded)
+		return m_LODHandle;	// disable LOD processing
+
 	// register the data with the ModelGenerator and return the handle
 	lod_handle h = gameLocal.m_ModelGenerator->RegisterLODData( m_LOD );
-
-	// free memory
-	delete m_LOD;
 
 	m_entity = entity;
 	m_LODHandle = h;
@@ -502,7 +516,7 @@ float LodComponent::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq 
 	//nbohr1more: #4372: Allow lod_bias args for func_emitter entities
 	float lodbias = cv_lod_bias.GetFloat();
 
-	if ( ( m_MinLODBias > 0 || m_MaxLODBias < 10 ) && ( lodbias < m_MinLODBias || lodbias > m_MaxLODBias ) ) {
+	if ( lodbias < m_MinLODBias || lodbias > m_MaxLODBias ) {
 		return 0;
 	}
 

@@ -220,6 +220,8 @@ void idGuiModel::EmitFullScreen( void ) {
 		return;
 	}
 	viewDef = (viewDef_t *)R_ClearedFrameAlloc( sizeof( *viewDef ) );
+	// don't clear color buffer, so that e.g. we can use game render as background for HUD
+	viewDef->renderView.isOverlay = true;
 
 	// for gui editor
 	if ( !tr.viewDef || !tr.viewDef->isEditor ) {

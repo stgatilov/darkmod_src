@@ -398,23 +398,16 @@ Any mirrored or portaled views have already been drawn, so prepare
 to actually render the visible surfaces for this view
 =================
 */
-void RB_BeginDrawingView( void ) {
+void RB_BeginDrawingView( bool colorIsBackground ) {
 	auto& viewDef = backEnd.viewDef;
 	// set the modelview matrix for the viewer
 	GL_SetProjection( (float *)backEnd.viewDef->projectionMatrix );
 
 	// set the window clipping
-	GL_ViewportVidSize( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
-	             tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
-	             backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
-	             backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
-
+	FB_ApplyViewport();
 	// the scissor may be smaller than the viewport for subviews
-	GL_ScissorVidSize( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
-	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
-	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
-	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
 	backEnd.currentScissor = backEnd.viewDef->scissor;
+	FB_ApplyScissor();
 
 	// ensures that depth writes are enabled for the depth clear
 	GL_State( GLS_DEFAULT );
@@ -431,10 +424,26 @@ void RB_BeginDrawingView( void ) {
 		qglDisable( GL_DEPTH_TEST );
 		qglDisable( GL_STENCIL_TEST );
 	}
-	if ( viewDef && ( viewDef->xrayEntityMask || viewDef->superView && viewDef->superView->hasXraySubview ) ) {
-		qglClearColor( 0, 0, 0, 0 );
-		qglClear( GL_COLOR_BUFFER_BIT );
-	} // else allow alpha blending with background
+
+	if ( !colorIsBackground && !backEnd.viewDef->renderView.isOverlay ) {
+		// clear screen for debugging and to ensure well-defined behavior
+		// automatically enable this with several other debug tools
+		// that might leave unrendered portions of the screen
+		if ( r_clear.GetFloat() || idStr::Length( r_clear.GetString() ) != 1 || r_lockSurfaces.GetBool() || r_singleArea.GetBool() || r_showOverDraw.GetBool() ) {
+			float c[3];
+			if ( sscanf( r_clear.GetString(), "%f %f %f", &c[0], &c[1], &c[2] ) == 3 ) {
+				qglClearColor( c[0], c[1], c[2], 1 );
+			} else if ( r_clear.GetInteger() == 2 ) {
+				qglClearColor( 0.0f, 0.0f,  0.0f, 1.0f );
+			} else if ( r_showOverDraw.GetBool() ) {
+				qglClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
+			} else {
+				qglClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
+			}
+			qglClear( GL_COLOR_BUFFER_BIT );
+		}
+	}
+
 	backEnd.glState.faceCulling = -1;		// force face culling to set next time
 
 	GL_Cull( CT_FRONT_SIDED );

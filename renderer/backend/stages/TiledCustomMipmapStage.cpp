@@ -142,6 +142,10 @@ void TiledCustomMipmapStage::FillFrom(idImage *image, int x, int y, int w, int h
 	GL_SelectTexture(1);
 	image->Bind();
 
+	// full viewport even if we render subview in reduced viewport
+	// note that we take scissor into account explicitly
+	GL_ViewportRelative( 0, 0, 1, 1 );
+
 	for (int level = skipLevels; level <= maxLevel; level++) {
 		// we are going to fill current level
 		mipmapFBO[level]->BindDraw();
@@ -179,8 +183,6 @@ void TiledCustomMipmapStage::FillFrom(idImage *image, int x, int y, int w, int h
 	}
 
 	frameBuffers->currentRenderFbo->Bind();
-	GL_ViewportRelative( 0, 0, 1, 1 );
-	GL_ScissorRelative( 0, 0, 1, 1 );
 }
 
 idScreenRect TiledCustomMipmapStage::GetScissorAtLevel(int lodLevel) const {

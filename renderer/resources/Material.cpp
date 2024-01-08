@@ -1646,7 +1646,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 	assert( !ts->image );
 	if ( imageName[0] ) {
 		if ( idImage *existingImg = globalImages->GetImage( imageName ) ) {
-			// allow using scartch textures (e.g. _currentRender)
+			// allow using scratch textures (e.g. _currentRender)
 			if ( existingImg->GetType() == IT_SCRATCH )
 				ts->image = existingImg;
 		}

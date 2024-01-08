@@ -78,4 +78,5 @@ extern idCVar r_fboResolution;
 extern idCVarBool r_tonemap;
 
 void FB_DebugShowContents();
+void FB_ApplyViewport();
 void FB_ApplyScissor();

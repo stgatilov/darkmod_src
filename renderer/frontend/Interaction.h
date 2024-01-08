@@ -80,6 +80,12 @@ public:
 	// -1 = an untested interaction
 	int						numSurfaces;
 
+	// stgatilov: it == tr.viewCount, then we have generated light / shadow surfaces in current view
+	// note that we only use 16 bits per value to avoid increasing sizeof, so this is unreliable
+	// it is only used for debug tools
+	word					viewCountGenLightSurfs;
+	word					viewCountGenShadowSurfs;
+
 	// if there is a whole-entity optimized shadow hull, it will
 	// be present as a surfaceInteraction_t with a NULL ambientTris, but
 	// possibly having a shader to specify the shadow sorting order

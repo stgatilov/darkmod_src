@@ -243,11 +243,20 @@ void FrameBuffer::AddRenderTexture( idImage *texture, GLenum attachment, int mip
 
 idCVar r_fboResolution( "r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor" );
 
+void FB_ApplyViewport() {
+	GL_ViewportVidSize(
+		tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
+		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
+		backEnd.viewDef->viewport.GetWidth(),
+		backEnd.viewDef->viewport.GetHeight()
+	);
+}
+
 void FB_ApplyScissor() {
 	if ( r_useScissor.GetBool() ) {
 		GL_ScissorVidSize(
-			backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+			tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+			tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 			backEnd.currentScissor.GetWidth(),
 			backEnd.currentScissor.GetHeight()
 		);
