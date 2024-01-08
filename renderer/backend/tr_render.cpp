@@ -404,17 +404,10 @@ void RB_BeginDrawingView( bool colorIsBackground ) {
 	GL_SetProjection( (float *)backEnd.viewDef->projectionMatrix );
 
 	// set the window clipping
-	GL_ViewportVidSize( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
-	             tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
-	             backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
-	             backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
-
+	FB_ApplyViewport();
 	// the scissor may be smaller than the viewport for subviews
-	GL_ScissorVidSize( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
-	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
-	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
-	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
 	backEnd.currentScissor = backEnd.viewDef->scissor;
+	FB_ApplyScissor();
 
 	// ensures that depth writes are enabled for the depth clear
 	GL_State( GLS_DEFAULT );

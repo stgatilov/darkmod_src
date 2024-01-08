@@ -71,7 +71,6 @@ typedef enum {
 typedef enum {
 	DI_STATIC,
 	DI_SCRATCH,		// video, screen wipe, etc
-	DI_CUBE_RENDER,
 	DI_MIRROR_RENDER,
 	DI_XRAY_RENDER,
 	DI_REMOTE_RENDER,
