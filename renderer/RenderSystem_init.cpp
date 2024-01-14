@@ -1245,13 +1245,13 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	renderView_t ref;
 	viewDef_t primary;
 	int	blends, size;
-	bool playerView = false;
+	int playerView = 0;
 
 	if ( !tr.primaryView ) {
 		common->Printf( "No primary view.\n" );
 		return;
 	} else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
-		common->Printf( "USAGE: envshot <basename> [size] [blends|playerView]\n" );
+		common->Printf( "USAGE: envshot <basename> [size] [blends|playerView|playerBackView]\n" );
 		return;
 	}
 	primary = *tr.primaryView;
@@ -1260,8 +1260,10 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	blends = 1;
 	if ( args.Argc() == 4 ) {
 		size = atoi( args.Argv( 2 ) );
-		if( !idStr::Icmp(args.Argv( 3 ), "playerView") )
-			playerView = true;
+		if ( !idStr::Icmp( args.Argv( 3 ), "playerView" ) )
+			playerView = 1;
+		else if ( !idStr::Icmp( args.Argv( 3 ), "playerBackView" ) )
+			playerView = -1;
 		else
 			blends = atoi( args.Argv( 3 ) );
 	} else if ( args.Argc() == 3 ) {
@@ -1278,41 +1280,48 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	axis[0][0][0] = 1;
 	axis[0][1][1] = 1;
 	axis[0][2][2] = 1;
-	// left = north
-	axis[1][0][1] = 1;
-	axis[1][1][0] = -1;
-	axis[1][2][2] = 1;
-	// right = south
-	axis[2][0][1] = -1;
-	axis[2][1][0] = 1;
-	axis[2][2][2] = 1;
 	// back = west
-	axis[3][0][0] = -1;
-	axis[3][1][1] = -1;
+	axis[1][0][0] = -1;
+	axis[1][1][1] = -1;
+	axis[1][2][2] = 1;
+	// left = north
+	axis[2][0][1] = 1;
+	axis[2][1][0] = -1;
+	axis[2][2][2] = 1;
+	// right = south
+	axis[3][0][1] = -1;
+	axis[3][1][0] = 1;
 	axis[3][2][2] = 1;
-	// down, while facing forward
-	axis[4][0][2] = -1;
-	axis[4][1][1] = 1;
-	axis[4][2][0] = 1;
 	// up, while facing forward
-	axis[5][0][2] = 1;
+	axis[4][0][2] = 1;
+	axis[4][1][1] = 1;
+	axis[4][2][0] = -1;
+	// down, while facing forward
+	axis[5][0][2] = -1;
 	axis[5][1][1] = 1;
-	axis[5][2][0] = -1;
+	axis[5][2][0] = 1;
 
-	for ( int i = 0 ; i < 6 ; i++ ) {
+	for ( int i = 0; i < 6; i++ ) {
 		ref = primary.renderView;
 		ref.x = ref.y = 0;
 		ref.fov_x = ref.fov_y = 90;
-		ref.width = SCREEN_WIDTH;// glConfig.vidWidth;
-		ref.height = SCREEN_HEIGHT;// glConfig.vidHeight;
+		ref.width = SCREEN_WIDTH;
+		ref.height = SCREEN_HEIGHT;
 		ref.viewaxis = axis[i];
 		if ( playerView ) {
-			ref.viewaxis = /*axis[1] **/ ref.viewaxis * gameLocal.GetLocalPlayer()->renderView->viewaxis;
+			if ( playerView < 0 ) {
+				ref.viewaxis *= axis[1];
+			}
+			ref.viewaxis = ref.viewaxis * gameLocal.GetLocalPlayer()->renderView->viewaxis;
 		}
 		sprintf( fullname, "env/%s%s", baseName, cubemapFaceNamesCamera[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
 	}
-	common->Printf( "Wrote %s, etc\n", fullname.c_str() );
+	common->Printf( "Wrote %s, etc. Reloading the texture...\n", fullname.c_str() );
+	sprintf( fullname, "env/%s", baseName );
+	if ( idImage* image = globalImages->GetImage(fullname) ) {
+		image->AsAsset()->Reload( false, false );
+	}
 }
 
 //============================================================================
