@@ -251,7 +251,7 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 			if (m_LOD->fLODFadeOutRange < 0)
 			{
-				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.", entityName, m_LOD->fLODFadeOutRange);
+				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.", entityName.c_str(), m_LOD->fLODFadeOutRange);
 				m_LOD->fLODFadeOutRange = 0.0f;
 			}
 			else
@@ -265,12 +265,12 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 
 			if (m_LOD->fLODFadeInRange < 0)
 			{
-				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.", entityName, m_LOD->fLODFadeInRange);
+				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.", entityName.c_str(), m_LOD->fLODFadeInRange);
 				m_LOD->fLODFadeInRange = 0.0f;
 			}
 			else if (m_LOD->fLODFadeInRange > 0 && m_LOD->fLODFadeInRange > m_LOD->DistLODSq[1])
 			{
-				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.", entityName, m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
+				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.", entityName.c_str(), m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
 				m_LOD->fLODFadeOutRange = 0.0f;
 			}
 			else
@@ -287,7 +287,7 @@ lod_handle LodComponent::ParseLODSpawnargs( idEntity* entity, const idDict* dict
 		if (i > 0 && m_LOD->DistLODSq[i] > 0 && (m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i]) < m_LOD->DistLODSq[i-1])
 		{
 			gameLocal.Warning (" %s: LOD %i m_DistLODSq %f < LOD %i m_DistLODSq=%f (this will not work!)\n",
-				entityName, i, m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i], i-1, m_LOD->DistLODSq[i-1]); 
+				entityName.c_str(), i, m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i], i-1, m_LOD->DistLODSq[i-1]); 
 		}
 		// -1 should stay -1 to signal "don't use this level"
 		if (m_LOD->DistLODSq[i] > 0)
