@@ -131,7 +131,9 @@ public:
 	bool					HasSteppedUp( void ) const;
 	float					GetStepUp( void ) const;
 	bool					IsCrouching( void ) const;
-	bool					IsForceCrouchingRestrictedMantle( void ) const;
+	bool					IsForcedCrouchHangMantle( void ) const;
+	bool					IsForcedCrouchPullMantle( void ) const;
+	idVec3					GetMantlePullDeltaPos( void ) const;
 	int						GetLastJumpTime() const; // SteveL #3716
 
 	/**
@@ -519,6 +521,7 @@ protected:
 	*/
 	idVec3 m_mantlePullStartPos;
 	idVec3 m_mantlePullEndPos;
+	idVec3 m_mantlePullDeltaPos;
 	idVec3 m_mantlePushEndPos;
 	
 	/*!

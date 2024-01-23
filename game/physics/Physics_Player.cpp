@@ -2985,15 +2985,33 @@ bool idPhysics_Player::IsCrouching( void ) const {
 
 /*
 ================
-idPhysics_Player::IsForceCrouchingRestrictedMantle
+idPhysics_Player::IsForcedCrouchHangMantle
 ================
 */
-bool idPhysics_Player::IsForceCrouchingRestrictedMantle( void ) const {
+bool idPhysics_Player::IsForcedCrouchHangMantle( void ) const {
 	return IsCrouching()
 		&& m_mantleEndsInForcedCrouch
-		&& (m_mantlePhase == hang_DarkModMantlePhase
-			|| m_mantlePhase == pull_DarkModMantlePhase
-			|| m_mantlePhase == shiftHands_DarkModMantlePhase);
+		&& (m_mantlePhase == hang_DarkModMantlePhase);
+}
+
+/*
+================
+idPhysics_Player::IsForcedCrouchPullMantle
+================
+*/
+bool idPhysics_Player::IsForcedCrouchPullMantle( void ) const {
+	return IsCrouching()
+		&& m_mantleEndsInForcedCrouch
+		&& (m_mantlePhase == pull_DarkModMantlePhase);
+}
+
+/*
+================
+idPhysics_Player::GetMantlePullDeltaPos
+================
+*/
+idVec3 idPhysics_Player::GetMantlePullDeltaPos( void ) const {
+	return m_mantlePullDeltaPos;
 }
 
 /*
@@ -3054,6 +3072,7 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_bSwimSoundStarted(false)
 	, m_mantlePullStartPos(vec3_zero)
 	, m_mantlePullEndPos(vec3_zero)
+	, m_mantlePullDeltaPos(vec3_zero)
 	, m_mantlePushEndPos(vec3_zero)
 	, m_mantleCancelStartRoll(0.0f)
 	, m_fmantleCancelDist(0.0f)
@@ -3254,6 +3273,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_mantleEndsInForcedCrouch);
 	savefile->WriteVec3(m_mantlePullStartPos);
 	savefile->WriteVec3(m_mantlePullEndPos);
+	savefile->WriteVec3(m_mantlePullDeltaPos);
 	savefile->WriteVec3(m_mantlePushEndPos);
 	savefile->WriteObject(m_p_mantledEntity);
 	savefile->WriteInt(m_mantledEntityID);
@@ -3379,6 +3399,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_mantleEndsInForcedCrouch);
 	savefile->ReadVec3(m_mantlePullStartPos);
 	savefile->ReadVec3(m_mantlePullEndPos);
+	savefile->ReadVec3(m_mantlePullDeltaPos);
 	savefile->ReadVec3(m_mantlePushEndPos);
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_p_mantledEntity));
 	savefile->ReadInt(m_mantledEntityID);
@@ -3986,7 +4007,8 @@ void idPhysics_Player::MantleMove()
 		// Player pulls themself up to shoulder even with the surface
 		totalMove = m_mantlePullEndPos - m_mantlePullStartPos;
 		float factor = 0.5f * ( 1.0f + idMath::Sin( (timeRatio * 2.0f - 1.0f) * idMath::PI/2 ) );
-		newPosition = m_mantlePullStartPos + (totalMove * factor);
+		m_mantlePullDeltaPos = totalMove * factor;
+		newPosition = m_mantlePullStartPos + m_mantlePullDeltaPos;
 	}
 	else if (m_mantlePhase == shiftHands_DarkModMantlePhase)
 	{
@@ -4446,6 +4468,9 @@ void idPhysics_Player::StartMantle
 
 	// Set end position
 	m_mantlePushEndPos = endPos;
+
+	// Init pull delta position
+	m_mantlePullDeltaPos.Zero();
 
 	if (	initialMantlePhase == pull_DarkModMantlePhase 
 		||	initialMantlePhase == hang_DarkModMantlePhase )

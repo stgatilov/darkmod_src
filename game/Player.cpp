@@ -6899,11 +6899,21 @@ void idPlayer::Move( void )
 		newEyeOffset = 0.0f;
 	} else if ( health <= 0 ) {
 		newEyeOffset = pm_deadviewheight.GetFloat();
-	} else if ( physicsObj.IsForceCrouchingRestrictedMantle() ) {
-		// When forcing the player into the crouch position due to a low ceiling,
+	} else if ( physicsObj.IsForcedCrouchHangMantle() ) {
+		// When the player is forced into the crouch position due to a low ceiling,
 		// do not show the crouch animation at the beginning of an overhead mantle.
-		// Instead, postpone the crouch animation until the last phase (push phase).
+		// Instead, postpone the crouch animation until the pull mantle phase.
 		newEyeOffset = pm_normalviewheight.GetFloat();
+	} else if ( physicsObj.IsForcedCrouchPullMantle() ) {
+		// During a pull mantle, change to the crouch view height at increments
+		// that roughly match the pull position change. This creates a continuous
+		// upwards view motion without a dip, and it will not cause the player
+		// view to clip into the ceiling, exposing the skybox.
+		const float pullDistance = physicsObj.GetMantlePullDeltaPos().z;
+		const float crouchDistance = pm_normalviewheight.GetFloat() - pm_crouchviewheight.GetFloat();
+		newEyeOffset = pullDistance >= crouchDistance
+			? pm_crouchviewheight.GetFloat()
+			: pm_normalviewheight.GetFloat() - pullDistance;
 	} else if ( physicsObj.IsCrouching() ) {
 		newEyeOffset = pm_crouchviewheight.GetFloat();
 	} else if ( GetBindMaster() && GetBindMaster()->IsType( idAFEntity_Vehicle::Type ) ) {
