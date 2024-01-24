@@ -8947,14 +8947,27 @@ float idPlayer::HoldFrobViewDistance( void )
 
 /*
 ================
-idPlayer::IsAdditionalHoldFrobGrabbableType
+idPlayer::IsAdditionalHoldFrobDraggableType
 ================
 */
-bool idPlayer::IsAdditionalHoldFrobGrabbableType(idEntity* target)
+bool idPlayer::IsAdditionalHoldFrobDraggableType(idEntity* target)
+{
+	if (!cv_holdfrob_drag_all_entities.GetBool())
+		return false;
+
+	return IsUsedItemOrJunk(target);
+}
+
+/*
+================
+idPlayer::IsUsedItemOrJunk
+================
+*/
+bool idPlayer::IsUsedItemOrJunk(idEntity* target)
 {
 	// Precondition: target must be moveable type
 
-	if (target == nullptr || !cv_holdfrob_drag_all_entities.GetBool() || !IsHoldFrobEnabled())
+	if (target == nullptr || !IsHoldFrobEnabled())
 		return false;
 
 	{
@@ -8967,7 +8980,7 @@ bool idPlayer::IsAdditionalHoldFrobGrabbableType(idEntity* target)
 		const bool isJunk = !target->spawnArgs.GetBool("equippable", "0");
 		if (isJunk)
 			return true;
-	}	
+	}
 
 	{
 		auto IsExtinguishedCandle = [](idEntity* target) -> bool
@@ -8985,7 +8998,7 @@ bool idPlayer::IsAdditionalHoldFrobGrabbableType(idEntity* target)
 		{
 			const bool isCandleHolderWithoutCandle = target->spawnArgs.GetBool("extinguished", "0"); // Works only if target is not lantern
 			if (isCandleHolderWithoutCandle)
-				return true; 
+				return true;
 		}
 
 		{
@@ -11769,20 +11782,19 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		? static_cast<idAFAttachment*>(target)->GetBindMaster()
 		: target;
 
-
-	
 	const bool holdFrobBodyType = bodyType
 		&& bodyTarget
 		&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
 		&& IsHoldFrobEnabled();
 
-	bool holdFrobGrabableType = holdFrobBodyType;
-	if (!holdFrobGrabableType && moveableType)
-		holdFrobGrabableType = IsAdditionalHoldFrobGrabbableType(target);
+	bool holdFrobDraggableType = holdFrobBodyType;
+	if (!holdFrobDraggableType && moveableType)
+		holdFrobDraggableType = IsAdditionalHoldFrobDraggableType(target);
 
 	const bool holdFrobUsableType = moveableType
 		&& target->spawnArgs.GetBool("equippable", "0")
-		&& IsHoldFrobEnabled();
+		&& IsHoldFrobEnabled()
+		&& !IsUsedItemOrJunk(target);
 
 	// Do not pick up live, conscious AI
 	if (target->IsType(idAI::Type))
@@ -11816,7 +11828,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 	if (impulseState == EPressed)
 	{
-		if (holdFrobGrabableType || holdFrobUsableType)
+		if (holdFrobUsableType || holdFrobDraggableType)
 		{
 			// Store frobbed entity and start time tracking.
 			holdFrobEntity = highlightedEntity;
@@ -11829,15 +11841,15 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 	if (impulseState == ERepeat && holdFrobEntity.GetEntity() == highlightedEntity)
 	{
-		if (holdFrobGrabableType)
+		if (holdFrobDraggableType)
 		{
-			// Drag body if enough time has passed or view has moved outside of bounds.
+			// Drag entity if enough time has passed or view has moved outside of bounds.
 			if (CanHoldFrobAction()
 			    || (HoldFrobViewDistance() > cv_holdfrob_bounds.GetFloat()))
 			{
 				gameLocal.m_Grabber->Update(this, false, true);
 				holdFrobEntity = NULL;
-				// Store grabber entity of dragged body, so the body can be released later.
+				// Store grabber entity of what is dragged, so the entity can be released later.
 				holdFrobDraggedEntity = gameLocal.m_Grabber->GetSelected();
 				return;
 			}
@@ -11859,13 +11871,13 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	{
 		if (holdFrobBodyType)
 		{
-			// Shoulder/pick up body
+			// Pick up (shoulder) body
 			gameLocal.m_Grabber->EquipFrobEntity(this);
 			holdFrobEntity = NULL;
 			return;
 		}
 
-		if (holdFrobUsableType || holdFrobGrabableType)
+		if (holdFrobUsableType || holdFrobDraggableType)
 		{
 			// Pick up, since it was not equipped/used (or toggled on/off).
 			gameLocal.m_Grabber->Update(this, false, true);
@@ -11903,7 +11915,8 @@ void idPlayer::PerformFrob()
 	// equip/use or drop.
 	if (IsHoldFrobEnabled()
 	    && grabberEnt
-	    && grabberEnt->spawnArgs.GetBool("equippable", "0"))
+	    && grabberEnt->spawnArgs.GetBool("equippable", "0")
+	    && !IsUsedItemOrJunk(grabberEnt))
 	{
 		holdFrobEntity = grabberEnt;
 		holdFrobStartTime = gameLocal.time;

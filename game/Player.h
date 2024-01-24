@@ -831,7 +831,8 @@ public:
 	bool					CanHoldFrobAction( void );
 	void					SetHoldFrobView( void );
 	float					HoldFrobViewDistance( void );
-	bool					IsAdditionalHoldFrobGrabbableType(idEntity* target);
+	bool					IsAdditionalHoldFrobDraggableType(idEntity* target);
+	bool					IsUsedItemOrJunk(idEntity* target);
 
 	virtual bool			OnLadder( void ) const override;
 	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const override;
