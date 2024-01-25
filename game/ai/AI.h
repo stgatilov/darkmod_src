@@ -1185,9 +1185,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_bCanOperateDoors;
 
 	/**
-	 * Daft Mugi #6460: Is set to TRUE if the AI is unable to close doors at all.
+	 * Daft Mugi #6460: Is set to TRUE if the AI is able to close doors.
 	 */
-	bool					m_bCannotCloseDoors;
+	bool					m_bCanCloseDoors;
 
 	/**
 	 * angua: is set true while the AI is handling the door.

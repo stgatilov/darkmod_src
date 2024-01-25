@@ -2503,7 +2503,7 @@ bool HandleDoorTask::AllowedToClose(idAI* owner)
 {
 	idEntity* backDHPosition = _backDHPosition.GetEntity();
 
-	if (owner->m_bCannotCloseDoors || (backDHPosition && backDHPosition->spawnArgs.GetBool("ai_no_close")))
+	if (!owner->m_bCanCloseDoors || (backDHPosition && backDHPosition->spawnArgs.GetBool("ai_no_close")))
 	{
 		// AI is not allowed to close the door from this side
 		return false;

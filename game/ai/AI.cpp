@@ -598,7 +598,7 @@ idAI::idAI()
 	m_ignorePlayer = false;		// grayman #3063
 
 	m_bCanOperateDoors = false;
-	m_bCannotCloseDoors = false;
+	m_bCanCloseDoors = true;
 
 	m_lipSyncActive		= false;
 	m_lipSyncAnim		= -1;
@@ -1039,7 +1039,7 @@ void idAI::Save(idSaveGame *savefile) const {
 	savefile->WriteBool(m_bMeleePredictProximity);
 
 	savefile->WriteBool(m_bCanOperateDoors);
-	savefile->WriteBool(m_bCannotCloseDoors);
+	savefile->WriteBool(m_bCanCloseDoors);
 	savefile->WriteBool(m_HandlingDoor);
 	savefile->WriteBool(m_HandlingElevator);
 	savefile->WriteBool(m_DoorQueued);		// grayman #3647
@@ -1530,7 +1530,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bMeleePredictProximity);
 
 	savefile->ReadBool(m_bCanOperateDoors);
-	savefile->ReadBool(m_bCannotCloseDoors);
+	savefile->ReadBool(m_bCanCloseDoors);
 	savefile->ReadBool(m_HandlingDoor);
 	savefile->ReadBool(m_HandlingElevator);
 	savefile->ReadBool(m_DoorQueued);		// grayman #3647
@@ -2103,7 +2103,7 @@ void idAI::Spawn( void )
 	}
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
-	m_bCannotCloseDoors = spawnArgs.GetBool("cannotCloseDoors", "0");
+	m_bCanCloseDoors = spawnArgs.GetBool("canCloseDoors", "1");
 	m_HandlingDoor = false;
 	m_DoorQueued = false;		// grayman #3647
 	m_ElevatorQueued = false;	// grayman #3647
