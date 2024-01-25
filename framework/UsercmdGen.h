@@ -280,6 +280,9 @@ public:
 	// Directly sample a keystate.
 	virtual int			KeyState( int key ) = 0;
 
+	virtual int 		GetToggledRunState( void ) = 0;
+	virtual void		SetToggledRunState( int on ) = 0;
+
 	// Directly sample a usercmd.
 	virtual usercmd_t	GetDirectUsercmd( void ) = 0;
 

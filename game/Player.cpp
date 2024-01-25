@@ -2342,6 +2342,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_CrouchIntent );
 
 	savefile->WriteBool( m_CreepIntent );
+	savefile->WriteInt( usercmdGen->GetToggledRunState() );
 
 	savefile->WriteInt(m_InventoryOverlay);
 
@@ -2700,6 +2701,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	m_CrouchToggleBypassed = false;
 
 	savefile->ReadBool( m_CreepIntent );
+
+	int toggledRunState = 0;
+	savefile->ReadInt(toggledRunState);
+	usercmdGen->SetToggledRunState(toggledRunState);
 
 	savefile->ReadInt(m_InventoryOverlay);
 

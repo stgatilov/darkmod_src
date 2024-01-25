@@ -368,6 +368,9 @@ public:
 	virtual int		ButtonState( int key ) override;
 	virtual int		KeyState( int key ) override;
 
+	virtual int 	GetToggledRunState( void ) override;
+	virtual void	SetToggledRunState( int on ) override;
+
 	virtual usercmd_t	GetDirectUsercmd( void ) override;
 	virtual int&	hack_Flags() override;
 
@@ -517,6 +520,23 @@ int	idUsercmdGenLocal::KeyState( int key ) {
 	return ( keyState[key] ) ? 1 : 0;
 }
 
+/*
+================
+idUsercmdGenLocal::GetToggledRunState
+================
+*/
+int idUsercmdGenLocal::GetToggledRunState( void ) {
+	return toggled_run.on;
+}
+
+/*
+================
+idUsercmdGenLocal::SetToggledRunState
+================
+*/
+void idUsercmdGenLocal::SetToggledRunState( int on ) {
+	toggled_run.on = idMath::ClampInt(0, 1, on);
+}
 
 //=====================================================================
 
