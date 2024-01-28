@@ -1034,10 +1034,12 @@ void R_ScreenShotWithViewpos_f( const idCmdArgs &args ) {
 		return;
 	}
 
+	// NOTE: Use multiple "wait" commands to ensure that the viewpos
+	// is displayed during the "screenshot" command.
 	sprintf(
 		cmdString,
 		"tdm_show_viewpos %i; r_ambientGamma %s;"
-		"wait; screenshot;"
+		"wait; wait; wait; screenshot;"
 		"tdm_show_viewpos %i; r_ambientGamma %s;",
 		cyanColor, ambientGamma.c_str(),
 		setColor, setAmbientGamma.c_str()

@@ -1827,23 +1827,23 @@ void idImageManager::EndLevelLoad() {
 	// slight improvements with additional threads, but the difference is small. On HDDs, the additional thread does not offer
 	// any advantages, but it should also not overload the disk, so that 2 threads is an acceptable compromise for all disk types.
 	const int BATCH_SIZE = 16;
-	idParallelJobList *imageLoadJobs = nullptr;
-	if ( image_levelLoadParallel.GetBool() ) {
-		imageLoadJobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, BATCH_SIZE, 0, nullptr );
-	}
+	idParallelJobList *imageLoadJobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, BATCH_SIZE, 0, nullptr );
 
-	for ( int curBatch = 0; curBatch < imagesToLoad.Num(); curBatch += BATCH_SIZE ) {
-		if ( image_levelLoadParallel.GetBool() ) {
-			for ( int i = curBatch + BATCH_SIZE; i < imagesToLoad.Num() && i < curBatch + 2*BATCH_SIZE; ++i ) {
-				idImageAsset *image = imagesToLoad[i];
-				imageLoadJobs->AddJob((jobRun_t)R_LoadSingleImage, image);
-			}
-			imageLoadJobs->Submit( nullptr, 2 );
+	for ( int curBatch = -BATCH_SIZE; curBatch < imagesToLoad.Num(); curBatch += BATCH_SIZE ) {
+		for ( int i = curBatch + BATCH_SIZE; i < imagesToLoad.Num() && i < curBatch + 2 * BATCH_SIZE; ++i ) {
+			idImageAsset *image = imagesToLoad[i];
+			imageLoadJobs->AddJob((jobRun_t)R_LoadSingleImage, image);
 		}
 
-		for ( int i = curBatch; i < imagesToLoad.Num() && i < curBatch + BATCH_SIZE; ++i ) {
+		int parallelism = 2;
+		if ( !image_levelLoadParallel.GetBool() ) {
+			parallelism = 0;
+		}
+		imageLoadJobs->Submit( nullptr, parallelism );
+
+		for ( int i = idMath::Imax(curBatch, 0); i < imagesToLoad.Num() && i < curBatch + BATCH_SIZE; ++i ) {
 			idImageAsset *image = imagesToLoad[i];
-			image->ActuallyLoadImage();
+			R_UploadImageData( *image );
 
 			// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
 			if ( ( i % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
@@ -1851,14 +1851,10 @@ void idImageManager::EndLevelLoad() {
 			}
 		}
 
-		if ( image_levelLoadParallel.GetBool() ) {
-			imageLoadJobs->Wait();
-		}
+		imageLoadJobs->Wait();
 	}
 
-	if ( image_levelLoadParallel.GetBool() ) {
-		parallelJobManager->FreeJobList( imageLoadJobs );
-	}
+	parallelJobManager->FreeJobList( imageLoadJobs );
 
 	const int end = Sys_Milliseconds();
 	common->Printf( "%5i purged from previous\n", purgeCount );
