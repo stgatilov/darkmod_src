@@ -548,6 +548,7 @@ void R_LoadCompressedImage( const char *name, imageCompressedData_t **pic, ID_TI
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
 void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular, const char *name );
 void R_LoadImageData( idImageAsset &image );
+void R_UploadImageData( idImageAsset& image );
 
 /*
 ====================================================================
