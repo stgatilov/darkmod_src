@@ -664,6 +664,10 @@ void idPhysics_Player::Friction( const idVec3 &wishdir, const float forceFrictio
 		vel -= (vel * gravityNormal) * gravityNormal;
 	}
 
+	/*
+	 * stgatilov: this does not allow to start walking sometimes:
+	 *   https://forums.thedarkmod.com/index.php?/topic/22294-beta-testing-212/&do=findComment&comment=491835
+	 * (all these snapping-like tweaks are bad in general, so nothing to lose here)
 	float speed = vel.Length();
 	if ( speed < 1.0f ) {
 		// remove all movement orthogonal to gravity, allows for sinking underwater
@@ -678,6 +682,7 @@ void idPhysics_Player::Friction( const idVec3 &wishdir, const float forceFrictio
 		current.velocity.z *= cv_pm_water_z_friction.GetFloat();
 		return;
 	}
+	*/
 
 	// float drop = 0;
 	float friction = 0.0f;
