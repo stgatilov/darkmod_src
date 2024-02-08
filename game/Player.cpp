@@ -9001,8 +9001,9 @@ bool idPlayer::IsUsedItemOrJunk(idEntity* target)
 			return true;
 
 		{
+			const bool notCandle = target->spawnArgs.GetString("skin_unlit", nullptr) == nullptr;    // Make sure it is not a candle
 			const bool isCandleHolderWithoutCandle = target->spawnArgs.GetBool("extinguished", "0"); // Works only if target is not lantern
-			if (isCandleHolderWithoutCandle)
+			if (notCandle && isCandleHolderWithoutCandle)
 				return true;
 		}
 
