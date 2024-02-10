@@ -330,6 +330,8 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 	WriteInt( renderEntity.suppressShadowInLightID );
 	WriteInt( renderEntity.allowSurfaceInViewID );
 
+	WriteBool( renderEntity.forceShadowBehindOpaque );
+
 	WriteVec3( renderEntity.origin );
 	WriteMat3( renderEntity.axis );
 
@@ -930,6 +932,8 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 	ReadInt( renderEntity.suppressShadowInViewID );
 	ReadInt( renderEntity.suppressShadowInLightID );
 	ReadInt( renderEntity.allowSurfaceInViewID );
+
+	ReadBool( renderEntity.forceShadowBehindOpaque );
 
 	ReadVec3( renderEntity.origin );
 	ReadMat3( renderEntity.axis );
