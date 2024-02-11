@@ -399,6 +399,13 @@ void idMover::Spawn( void )
 
 	// see if we are on an areaportal
 	areaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
+	if ( areaPortal ) {
+		// stgatilov #5172: consider doors to be world geometry like brushes, since they can also block light in area graph
+		// imagine objects on line in this order: light, wall, unreachable area, wall with door, player;
+		// player will see light leak through the door, unless some backface casts a shadow
+		// wall backface does not cast shadow since it is in fully closed area, so the door should
+		renderEntity.forceShadowBehindOpaque = true;
+	}
 
 	if ( spawnArgs.MatchPrefix( "guiTarget" ) ) {
 		if ( gameLocal.GameState() == GAMESTATE_STARTUP ) {
