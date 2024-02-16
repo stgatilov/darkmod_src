@@ -722,6 +722,12 @@ void idTraceModel::SetupPolygon( const idVec3 *v, const int count ) {
 		numVerts = MAX_TRACEMODEL_EDGES / 3;
 	}
 
+	polys[0].normal = ( v[1] - v[0] ).Cross( v[2] - v[0] );
+	polys[0].normal.Normalize();
+	polys[0].dist = polys[0].normal * v[0];
+	polys[1].normal = -polys[0].normal;
+	polys[1].dist = -polys[0].dist;
+
 	numEdges = numVerts;
 	numPolys = 2;
 	// setup verts, edges and polygons
@@ -744,13 +750,8 @@ void idTraceModel::SetupPolygon( const idVec3 *v, const int count ) {
 	}
 	polys[1].bounds = polys[0].bounds;
 
-	SetPolygon(*this, 0, euFaces[0]);
-	SetPolygon(*this, 1, euFaces[1]);
-	polys[0].normal = ( v[1] - v[0] ).Cross( v[2] - v[0] );
-	polys[0].normal.Normalize();
-	polys[0].dist = polys[0].normal * v[0];
-	polys[1].normal = -polys[0].normal;
-	polys[1].dist = -polys[0].dist;
+	SetPolygon(*this, 0, euFaces[0], polys[0].normal);
+	SetPolygon(*this, 1, euFaces[1], polys[1].normal);
 
 	// offset to center
 	offset = mid * (1.0f / numVerts);
