@@ -592,6 +592,10 @@ protected:
 
 	// The team number of the player, needed for the statistics GUI
 	int			m_PlayerTeam;
+
+	// stgatilov #6489: this flag is set to true when mission ends in either way
+	// it allows us to avoid double-win or double-loss of a mission
+	bool		m_hasMissionEnded;
 }; // CMissionData
 typedef std::shared_ptr<CMissionData> CMissionDataPtr;
 
