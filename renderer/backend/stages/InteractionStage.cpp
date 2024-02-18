@@ -24,6 +24,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/FrameBufferManager.h"
 #include "renderer/backend/stages/AmbientOcclusionStage.h"
 
+idCVar r_shadowMapOnTranslucent(
+	"r_shadowMapOnTranslucent", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
+	"Are shadows cast on translucent surfaces?\n"
+	"Note: stencil shadows cannot work on translucent objects."
+);
+
+
 struct InteractionStage::Uniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( Uniforms )
 
@@ -324,7 +331,12 @@ void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool
 	uniforms->minLevel.Set( r_ambientMinLevel.GetFloat() );
 	uniforms->ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() ? 1 : 0 );
 
-	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 
+	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows();
+	// stgatilov #6490: stencil shadows cannot properly cast shadows on translucent objects
+	// so we force-disable all shadows for stencil, and normally do the same for shadow maps too
+	if ( translucent && !( r_shadowMapOnTranslucent.GetBool() && vLight->shadowMapPage.width > 0 ) )
+		doShadows = false;
+
 	if ( doShadows && vLight->shadows == LS_MAPS ) {
 		// FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
 		doShadows = vLight->globalInteractions != NULL;
@@ -343,7 +355,7 @@ void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool
 	extern idCVarBool r_shadowMapCullFront;
 	uniforms->shadowMapCullFront.Set( r_shadowMapCullFront );
 
-	if ( !translucent && ( vLight->globalShadows || vLight->localShadows ) && !viewDef->IsLightGem() ) {
+	if ( doShadows && ( vLight->globalShadows || vLight->localShadows ) && !viewDef->IsLightGem() ) {
 		uniforms->softShadowsQuality.Set( r_softShadowsQuality.GetInteger() );
 	} else {
 		uniforms->softShadowsQuality.Set( 0 );
