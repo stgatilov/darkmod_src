@@ -724,6 +724,9 @@ idPlayer::idPlayer() :
 	m_CrouchIntent			= false;
 	m_CrouchToggleBypassed	= false;
 
+	m_prevMantleOrigin        = vec3_zero;
+	m_bMantleViewAtCrouchView = false;
+
 	m_CreepIntent			= false;
 
 	m_LeanButtonTimeStamp	= 0;
@@ -2341,6 +2344,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_IdealCrouchState );
 	savefile->WriteBool( m_CrouchIntent );
 
+	savefile->WriteVec3( m_prevMantleOrigin );
+	savefile->WriteBool( m_bMantleViewAtCrouchView );
+
 	savefile->WriteBool( m_CreepIntent );
 	savefile->WriteInt( usercmdGen->GetToggledRunState() );
 
@@ -2699,6 +2705,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_CrouchIntent );
 	// stgatilov: no need to save it, but better reset it on load
 	m_CrouchToggleBypassed = false;
+
+	savefile->ReadVec3( m_prevMantleOrigin );
+	savefile->ReadBool( m_bMantleViewAtCrouchView );
 
 	savefile->ReadBool( m_CreepIntent );
 
@@ -6904,21 +6913,29 @@ void idPlayer::Move( void )
 		newEyeOffset = 0.0f;
 	} else if ( health <= 0 ) {
 		newEyeOffset = pm_deadviewheight.GetFloat();
-	} else if ( physicsObj.IsForcedCrouchHangMantle() ) {
+	} else if ( IsForcedCrouch() && physicsObj.IsHangMantle() ) {
 		// When the player is forced into the crouch position due to a low ceiling,
 		// do not show the crouch animation at the beginning of an overhead mantle.
 		// Instead, postpone the crouch animation until the pull mantle phase.
 		newEyeOffset = pm_normalviewheight.GetFloat();
-	} else if ( physicsObj.IsForcedCrouchPullMantle() ) {
+	} else if ( IsForcedCrouch() && physicsObj.IsPullMantle() ) {
 		// During a pull mantle, change to the crouch view height at increments
 		// that roughly match the pull position change. This creates a continuous
 		// upwards view motion without a dip, and it will not cause the player
 		// view to clip into the ceiling, exposing the skybox.
-		const float pullDistance = physicsObj.GetMantlePullDeltaPos().z;
-		const float crouchDistance = pm_normalviewheight.GetFloat() - pm_crouchviewheight.GetFloat();
-		newEyeOffset = pullDistance >= crouchDistance
-			? pm_crouchviewheight.GetFloat()
-			: pm_normalviewheight.GetFloat() - pullDistance;
+
+		// NOTE: m_prevMantleOrigin is reset at the start of a mantle.
+		const float delta = Max(0.0f, physicsObj.GetOrigin().z - m_prevMantleOrigin.z);
+		newEyeOffset = EyeHeight() - (delta * 5);
+		m_prevMantleOrigin = physicsObj.GetOrigin();
+
+		// Ensure the view height does not fall below the crouch view height.
+		// Ensure the view height does not rise after reaching the crouch view height.
+		// NOTE: m_bMantleViewAtCrouchView is reset at the start of a mantle.
+		if (m_bMantleViewAtCrouchView || newEyeOffset <= pm_crouchviewheight.GetFloat()) {
+			newEyeOffset = pm_crouchviewheight.GetFloat();
+			m_bMantleViewAtCrouchView = true;
+		}
 	} else if ( physicsObj.IsCrouching() ) {
 		newEyeOffset = pm_crouchviewheight.GetFloat();
 	} else if ( GetBindMaster() && GetBindMaster()->IsType( idAFEntity_Vehicle::Type ) ) {
@@ -8898,6 +8915,25 @@ idPlayer::SetInfluenceFov
 */
 void idPlayer::SetInfluenceFov( float fov ) {
 	influenceFov = fov;
+}
+
+/*
+=============
+idPlayer::IsForcedCrouch
+=============
+*/
+bool idPlayer::IsForcedCrouch( void ) {
+	return !m_CrouchIntent && physicsObj.IsCrouching();
+}
+
+/*
+=============
+idPlayer::ResetForcedCrouchMantle
+=============
+*/
+void idPlayer::ResetForcedCrouchMantle( void ) {
+	m_prevMantleOrigin = physicsObj.GetOrigin();
+	m_bMantleViewAtCrouchView = false;
 }
 
 /*
