@@ -71,7 +71,6 @@ private:
 	int						state;
 	bool					intact;
 	bool					flinderized;
-	idPhysics_RigidBody		physicsObj;
 	bool					m_bPower;
 	bool					m_bManualModeEnemy;
 	bool					m_bManualModePosition;
