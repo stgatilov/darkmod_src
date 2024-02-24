@@ -396,6 +396,11 @@ public:
 	// player has pressed toggle crouch while on a rope or ladder/vine.
 	bool					m_CrouchToggleBypassed;
 
+	// Daft Mugi: Keep track of forced-crouch mantle state. This is needed
+	// to ensure the player view does not clip through the ceiling.
+	idVec3					m_prevMantleOrigin;
+	bool					m_bMantleViewAtCrouchView;
+
 	// Daft Mugi: For new toggle creep, this is set to true when the
 	// player is holding the creep button or toggle creep is active.
 	bool					m_CreepIntent;
@@ -825,6 +830,9 @@ public:
 	void					UpdateSkinSetup( bool restart );
 
 	bool					IsShoulderingBody( void ) { return m_bShoulderingBody; };
+
+	bool					IsForcedCrouch( void );
+	void					ResetForcedCrouchMantle( void );
 
 	// Daft Mugi #6316: Hold Frob for alternate interaction
 	bool					IsHoldFrobEnabled( void );

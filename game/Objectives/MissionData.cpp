@@ -112,6 +112,8 @@ void CMissionData::Clear( void )
 
 	m_PlayerTeam = 0;
 
+	m_hasMissionEnded = false;
+
 	if (m_mapFile != NULL)
 	{
 		delete m_mapFile;
@@ -134,6 +136,8 @@ void CMissionData::Save(idSaveGame* savefile) const
 
 	savefile->WriteString(m_SuccessLogicStr);
 	savefile->WriteString(m_FailureLogicStr);
+
+	savefile->WriteBool(m_hasMissionEnded);
 }
 
 void CMissionData::Restore(idRestoreGame* savefile)
@@ -171,6 +175,8 @@ void CMissionData::Restore(idRestoreGame* savefile)
 
 	savefile->ReadString(m_SuccessLogicStr);
 	savefile->ReadString(m_FailureLogicStr);
+
+	savefile->ReadBool(m_hasMissionEnded);
 
 	// re-parse the logic strings
 	ParseLogicStrs();
@@ -854,6 +860,11 @@ void CMissionData::Event_MissionComplete()
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETED.\r");
 	gameLocal.Printf("MISSION COMPLETED\n");
 
+	// stgatilov #6489: block winning twice, since it often causes crash
+	if (m_hasMissionEnded)
+		return;
+	m_hasMissionEnded = true;
+
 	// Fire the general mission end event
 	Event_MissionEnd();
 
@@ -900,6 +911,11 @@ void CMissionData::Event_MissionFailed( void )
 {
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION FAILED. \r");
 	gameLocal.Printf("MISSION FAILED\n");
+
+	// stgatilov #6489: block losing twice, since it often causes crash
+	if (m_hasMissionEnded)
+		return;
+	m_hasMissionEnded = true;
 
 	// Fire the general mission end event
 	Event_MissionEnd();

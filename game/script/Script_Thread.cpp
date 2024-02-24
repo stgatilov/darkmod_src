@@ -78,6 +78,7 @@ const idEventDef EV_Thread_GetTDMVersion( "getTDMVersion", EventArgs(), 'd',
 	"Get the current TDM version as integer. The value will be 108\n" \
 	"for v1.08, 109 for v1.09 and 200 for v2.00 etc." );
 
+const idEventDef EV_Thread_AngRotate( "angRotate", EventArgs('v', "angles1", "", 'v', "angles2", ""), 'v', "Rotates the given Euler angles by each other.");
 const idEventDef EV_Thread_AngToForward( "angToForward", EventArgs('v', "angles", ""), 'v', "Returns a forward vector for the given Euler angles.");
 const idEventDef EV_Thread_AngToRight( "angToRight", EventArgs('v', "angles", ""), 'v', "Returns a right vector for the given Euler angles.");
 const idEventDef EV_Thread_AngToUp( "angToUp", EventArgs('v', "angles", ""), 'v', "Returns an up vector for the given Euler angles.");
@@ -346,6 +347,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetCurrentMissionNum,	idThread::Event_GetCurrentMissionNum )
 	EVENT( EV_Thread_GetTDMVersion,			idThread::Event_GetTDMVersion )
 
+	EVENT( EV_Thread_AngRotate,				idThread::Event_AngRotate )
 	EVENT( EV_Thread_AngToForward,			idThread::Event_AngToForward )
 	EVENT( EV_Thread_AngToRight,			idThread::Event_AngToRight )
 	EVENT( EV_Thread_AngToUp,				idThread::Event_AngToUp )
@@ -1554,6 +1556,16 @@ void idThread::Event_GetTDMVersion() const
 {
 	// Tels: #3232 Return version as 108, 109 etc.
 	ReturnInt( GAME_API_VERSION );
+}
+
+/*
+================
+idThread::Event_AngRotate
+================
+*/
+void idThread::Event_AngRotate( idAngles &ang1, idAngles& ang2 ) {
+	idAngles ang3 = (ang1.ToMat3() * ang2.ToMat3()).ToAngles();
+	ReturnVector(idVec3(ang3[0], ang3[1], ang3[2]));
 }
 
 /*

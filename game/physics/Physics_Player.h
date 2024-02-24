@@ -131,9 +131,8 @@ public:
 	bool					HasSteppedUp( void ) const;
 	float					GetStepUp( void ) const;
 	bool					IsCrouching( void ) const;
-	bool					IsForcedCrouchHangMantle( void ) const;
-	bool					IsForcedCrouchPullMantle( void ) const;
-	idVec3					GetMantlePullDeltaPos( void ) const;
+	bool					IsHangMantle( void ) const;
+	bool					IsPullMantle( void ) const;
 	int						GetLastJumpTime() const; // SteveL #3716
 
 	/**
@@ -512,16 +511,11 @@ protected:
 	 */
 	bool m_mantleStartPossible;
 
-	// When true, the player is being forced into the crouch position
-	// due to a low ceiling during a mantle.
-	bool m_mantleEndsInForcedCrouch;
-
 	/*!
 	* Points along the mantle path
 	*/
 	idVec3 m_mantlePullStartPos;
 	idVec3 m_mantlePullEndPos;
-	idVec3 m_mantlePullDeltaPos;
 	idVec3 m_mantlePushEndPos;
 	
 	/*!

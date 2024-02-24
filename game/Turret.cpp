@@ -88,7 +88,6 @@ void idTurret::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(sparksPeriodic);
 	savefile->WriteFloat(sparksInterval);
 	savefile->WriteFloat(sparksIntervalRand);
-	savefile->WriteStaticObject(physicsObj);
 	enemy.Save(savefile);
 	cameraDisplay.Save(savefile);
 	sparks.Save(savefile);
@@ -129,8 +128,6 @@ void idTurret::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(sparksPeriodic);
 	savefile->ReadFloat(sparksInterval);
 	savefile->ReadFloat(sparksIntervalRand);
-	savefile->ReadStaticObject(physicsObj);
-	RestorePhysics(&physicsObj);
 
 	enemy.Restore(savefile);
 	cameraDisplay.Restore(savefile);

@@ -2753,7 +2753,6 @@ void idPhysics_Player::MovePlayer( int msec ) {
 			// greebo: Jump button is released and no mantle phase is active, 
 			// we can allow the next mantling process.
 			m_mantleStartPossible = true;
-			m_mantleEndsInForcedCrouch = false;
 		}
 	}
 
@@ -2990,33 +2989,20 @@ bool idPhysics_Player::IsCrouching( void ) const {
 
 /*
 ================
-idPhysics_Player::IsForcedCrouchHangMantle
+idPhysics_Player::IsHangMantle
 ================
 */
-bool idPhysics_Player::IsForcedCrouchHangMantle( void ) const {
-	return IsCrouching()
-		&& m_mantleEndsInForcedCrouch
-		&& (m_mantlePhase == hang_DarkModMantlePhase);
+bool idPhysics_Player::IsHangMantle( void ) const {
+	return m_mantlePhase == hang_DarkModMantlePhase;
 }
 
 /*
 ================
-idPhysics_Player::IsForcedCrouchPullMantle
+idPhysics_Player::IsPullMantle
 ================
 */
-bool idPhysics_Player::IsForcedCrouchPullMantle( void ) const {
-	return IsCrouching()
-		&& m_mantleEndsInForcedCrouch
-		&& (m_mantlePhase == pull_DarkModMantlePhase);
-}
-
-/*
-================
-idPhysics_Player::GetMantlePullDeltaPos
-================
-*/
-idVec3 idPhysics_Player::GetMantlePullDeltaPos( void ) const {
-	return m_mantlePullDeltaPos;
+bool idPhysics_Player::IsPullMantle( void ) const {
+	return m_mantlePhase == pull_DarkModMantlePhase;
 }
 
 /*
@@ -3077,7 +3063,6 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_bSwimSoundStarted(false)
 	, m_mantlePullStartPos(vec3_zero)
 	, m_mantlePullEndPos(vec3_zero)
-	, m_mantlePullDeltaPos(vec3_zero)
 	, m_mantlePushEndPos(vec3_zero)
 	, m_mantleCancelStartRoll(0.0f)
 	, m_fmantleCancelDist(0.0f)
@@ -3152,7 +3137,6 @@ idPhysics_Player::idPhysics_Player( void )
 	m_mantledEntityID = 0;
 	m_jumpHeldDownTime = 0.0;
 	m_mantleStartPossible = true;
-	m_mantleEndsInForcedCrouch = false;
 
 	// Leaning Mod
 	m_leanYawAngleDegrees = 0.0;
@@ -3275,10 +3259,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	// Mantle mod
 	savefile->WriteInt(m_mantlePhase);
 	savefile->WriteBool(m_mantleStartPossible);
-	savefile->WriteBool(m_mantleEndsInForcedCrouch);
 	savefile->WriteVec3(m_mantlePullStartPos);
 	savefile->WriteVec3(m_mantlePullEndPos);
-	savefile->WriteVec3(m_mantlePullDeltaPos);
 	savefile->WriteVec3(m_mantlePushEndPos);
 	savefile->WriteObject(m_p_mantledEntity);
 	savefile->WriteInt(m_mantledEntityID);
@@ -3401,10 +3383,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadBool(m_mantleStartPossible);
-	savefile->ReadBool(m_mantleEndsInForcedCrouch);
 	savefile->ReadVec3(m_mantlePullStartPos);
 	savefile->ReadVec3(m_mantlePullEndPos);
-	savefile->ReadVec3(m_mantlePullDeltaPos);
 	savefile->ReadVec3(m_mantlePushEndPos);
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_p_mantledEntity));
 	savefile->ReadInt(m_mantledEntityID);
@@ -4012,8 +3992,7 @@ void idPhysics_Player::MantleMove()
 		// Player pulls themself up to shoulder even with the surface
 		totalMove = m_mantlePullEndPos - m_mantlePullStartPos;
 		float factor = 0.5f * ( 1.0f + idMath::Sin( (timeRatio * 2.0f - 1.0f) * idMath::PI/2 ) );
-		m_mantlePullDeltaPos = totalMove * factor;
-		newPosition = m_mantlePullStartPos + m_mantlePullDeltaPos;
+		newPosition = m_mantlePullStartPos + (totalMove * factor);
 	}
 	else if (m_mantlePhase == shiftHands_DarkModMantlePhase)
 	{
@@ -4154,7 +4133,6 @@ const bool idPhysics_Player::IsMantleEndPosClipping(idPhysics* pPhysicsMantledEn
 			// We will clip standing up. Go to ducked state and retry
 			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("MantleMod: Clipping into world. Going to crouched state\r");
 			current.movementFlags |= PMF_DUCKED;
-			m_mantleEndsInForcedCrouch = true;
 			return IsMantleEndPosClipping(pPhysicsMantledEntity);
 		}
 
@@ -4379,6 +4357,9 @@ void idPhysics_Player::StartMantle
 
 	idPlayer* player = static_cast<idPlayer*>(self); // grayman #3010
 
+	// Init forced-crouch mantle handling
+	player->ResetForcedCrouchMantle();
+
 	// Log starting phase
 	if (initialMantlePhase == hang_DarkModMantlePhase)
 	{
@@ -4473,9 +4454,6 @@ void idPhysics_Player::StartMantle
 
 	// Set end position
 	m_mantlePushEndPos = endPos;
-
-	// Init pull delta position
-	m_mantlePullDeltaPos.Zero();
 
 	if (	initialMantlePhase == pull_DarkModMantlePhase 
 		||	initialMantlePhase == hang_DarkModMantlePhase )

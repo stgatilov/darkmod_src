@@ -93,6 +93,7 @@ private:
 	void						Event_GetCurrentMissionNum();
 	void						Event_GetTDMVersion() const;
 
+	void						Event_AngRotate( idAngles &ang1, idAngles& ang2 );
 	void						Event_AngToForward( idAngles &ang );
 	void						Event_AngToRight( idAngles &ang );
 	void						Event_AngToUp( idAngles &ang );
