@@ -320,6 +320,8 @@ void Dmap( const idCmdArgs &args ) {
 		extern idCVar dmap_tjunctionsAlgorithm;
 		dmap_aasExpandBrushUseEdgesOnce.SetBool(version >= 211);
 		dmap_tjunctionsAlgorithm.SetBool(version >= 211);
+		//new in 2.13
+		dmap_outputNoSnap.SetBool(version >= 213);
 	}
 
 	if ( args.Argc() < 2 ) {
