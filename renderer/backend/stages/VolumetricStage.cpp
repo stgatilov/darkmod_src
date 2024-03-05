@@ -279,13 +279,17 @@ void VolumetricStage::SetScissor() {
 	rect.y1 = idMath::Imax( rect.y1 - margin, 0 );
 	rect.x2 = idMath::Imin( rect.x2 + margin, w - 1 );
 	rect.y2 = idMath::Imin( rect.y2 + margin, h - 1 );
-	// apply blur in real FBO pixels
-	GL_ScissorAbsolute(
-		rect.x1,
-		rect.y1,
-		rect.x2 - rect.x1 + 1,
-		rect.y2 - rect.y1 + 1
-	);
+	if ( r_useScissor.GetBool() ) {
+		// apply blur in real FBO pixels
+		GL_ScissorAbsolute(
+			rect.x1,
+			rect.y1,
+			rect.x2 - rect.x1 + 1,
+			rect.y2 - rect.y1 + 1
+		);
+	} else {
+		GL_ScissorRelative(0, 0, 1, 1);
+	}
 }
 
 void VolumetricStage::RenderFrustum(GLSLProgram *shader) {

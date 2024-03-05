@@ -97,9 +97,8 @@ void ShadowMapStage::DrawLight( const viewLight_t *vLight, const DrawMask &mask 
 
 	const renderCrop_t &page = vLight->shadowMapPage;
 	qglViewport( page.x, page.y, 6*page.width, page.width );
-	if ( r_useScissor.GetBool() ) {
-		qglScissor( page.x, page.y, 6*page.width, page.width );
-	}
+	// note: scissor must be always applied for correctness, also it is not view-dependent
+	qglScissor( page.x, page.y, 6*page.width, page.width );
 
 	if ( mask.clear )
 		qglClear( GL_DEPTH_BUFFER_BIT );

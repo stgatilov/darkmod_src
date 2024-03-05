@@ -234,9 +234,12 @@ void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *
 
 	uniforms->modelViewMatrix.Set( surf->space->modelViewMatrix );
 
+	// TODO #6349: Fix FB_ApplyScissor and use it here
 	uint32_t scissor[4];
 	CalcScissorParam( scissor, surf->scissorRect );
-	qglScissor( scissor[0], scissor[1], scissor[2], scissor[3] );
+	if (r_useScissor.GetBool()) {
+		qglScissor( scissor[0], scissor[1], scissor[2], scissor[3] );
+	}
 
 	idVec4 color;
 	if ( surf->material->GetSort() == SS_SUBVIEW ) {

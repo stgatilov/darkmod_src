@@ -74,9 +74,7 @@ void RB_SetDefaultGLState( void ) {
 	assert( backEnd.glState.currenttmu == 0 );
 	qglActiveTexture( GL_TEXTURE0 );
 
-	if ( r_useScissor.GetBool() ) {
-		GL_ScissorRelative( 0, 0, 1, 1 );
-	}
+	GL_ScissorRelative( 0, 0, 1, 1 );
 
 	GL_CheckErrors();
 }
@@ -522,9 +520,7 @@ This is not used by the normal game paths, just by some tools
 void RB_SetGL2D( void ) {
 	// set 2D virtual screen size
 	GL_ViewportVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	if ( r_useScissor.GetBool() ) {
-		GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	}
+	GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglMatrixMode( GL_PROJECTION );
 	qglLoadIdentity();
 	qglOrtho( 0, 640, 480, 0, 0, 1 );		// always assume 640x480 virtual coordinates

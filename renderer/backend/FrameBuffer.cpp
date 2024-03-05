@@ -260,6 +260,10 @@ void FB_ApplyScissor() {
 			backEnd.currentScissor.GetWidth(),
 			backEnd.currentScissor.GetHeight()
 		);
+	} else {
+		// can't apply view-dependent scissors (e.g. r_lockSurfaces)
+		// so reset scissor to full
+		GL_ScissorRelative( 0, 0, 1, 1 );
 	}
 }
 
