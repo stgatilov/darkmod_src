@@ -57,14 +57,23 @@ Sys_GetTimeMicroseconds
 ================
 */
 uint64_t Sys_GetTimeMicroseconds( void ) {
+	static HMODULE hKernel32Dll = LoadLibrary("Kernel32.dll");
+	static auto GetSystemTimePreciseAsFileTime = (void(*)(LPFILETIME))GetProcAddress(hKernel32Dll, "GetSystemTimePreciseAsFileTime");
+
 	FILETIME ft = {0};
-	//note: returns number of 100-nanosec intervals since January 1, 1601 (UTC)
-	GetSystemTimeAsFileTime(&ft);
+	// note: both functions return number of 100-nanosec intervals since January 1, 1601 (UTC)
+	if (GetSystemTimePreciseAsFileTime) {
+		// < 1 us precision, but requires Windows 8+
+		GetSystemTimePreciseAsFileTime(&ft);
+	} else {
+		// seems to provide 1 ms precision only
+		GetSystemTimeAsFileTime(&ft);
+	}
 	ULARGE_INTEGER num;
 	num.HighPart = ft.dwHighDateTime;
 	num.LowPart = ft.dwLowDateTime;
 
-	//difference between 1970-Jan-01 & 1601-Jan-01 in 100-nanosecond intervals
+	// difference between 1970-Jan-01 & 1601-Jan-01 in 100-nanosecond intervals
 	const uint64_t shift = 116444736000000000ULL; // (27111902 << 32) + 3577643008
 	uint64_t res = (num.QuadPart - shift) / 10;
 	return res;	//in microsecs now
