@@ -496,7 +496,8 @@ typedef struct viewDef_s {
 	renderView_t		renderView;
 
 	float				projectionMatrix[16];
-	idRenderMatrix		projectionRenderMatrix;	// tech5 version of projectionMatrix
+	idRenderMatrix		projectionRenderMatrix;
+	idRenderMatrix		viewRenderMatrix;
 
 	viewEntity_t		worldSpace;
 
@@ -1371,6 +1372,8 @@ void R_TransformClipToDevice( const idPlane &clip, const viewDef_t *view, idVec3
 void R_TransposeGLMatrix( const float in[16], float out[16] );
 
 void R_SetViewMatrix( viewDef_t &viewDef );
+void R_SetupViewFrustum( viewDef_t &viewDef );
+void R_SetupProjection( viewDef_t &viewDef );
 
 // corrected this one.
 // note: "out" transform is equivalent to first applying transform "a", then transform "b"
