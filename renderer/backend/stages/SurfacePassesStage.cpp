@@ -47,6 +47,7 @@ struct EnvironmentUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( mat4, modelMatrix )
 	DEFINE_UNIFORM( sampler, environmentMap )
 	DEFINE_UNIFORM( sampler, normalMap )
+	DEFINE_UNIFORM( mat4, bumpMatrix )
 	DEFINE_UNIFORM( int, RGTC )
 	DEFINE_UNIFORM( vec4, constant )
 	DEFINE_UNIFORM( vec4, fresnel )
@@ -378,10 +379,13 @@ void SurfacePassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shad
 	// see if there is also a bump map specified
 	const shaderStage_t *bumpStage = drawSurf->material->GetBumpStage();
 	idImage *bumpMap = nullptr;
+	idMat4 bumpMatrix;
 	if ( bumpStage ) {
 		bumpMap = bumpStage->texture.image;
+		bumpMatrix = drawSurf->GetTextureMatrix( bumpStage );
 	} else {
 		bumpMap = globalImages->flatNormalMap;
+		bumpMatrix = mat4_identity;
 	}
 
 	// set textures
@@ -389,6 +393,7 @@ void SurfacePassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shad
 	GL_SelectTexture( 0 );
 	bumpMap->Bind();
 	uniforms->RGTC.Set( bumpMap->internalFormat == GL_COMPRESSED_RG_RGTC2 );
+	uniforms->bumpMatrix.Set( bumpMatrix );
 
 	uniforms->environmentMap.Set( 1 );
 	GL_SelectTexture( 1 );
