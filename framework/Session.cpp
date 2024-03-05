@@ -43,7 +43,7 @@ idCVar	idSessionLocal::com_useMinorTics("com_useMinorTics", "1", CVAR_SYSTEM | C
 	"If several game tics are modelled in one frame, all tics except the first one are declared \"minor\". "
 	"Minor tics can enable various optimizations, f.i. alive AIs don't think in minor tics.",
 1, 1000);
-idCVar	idSessionLocal::com_maxFPS( "com_maxFPS", "300", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "define the maximum FPS cap", 2, 1000 );
+idCVar	idSessionLocal::com_maxFPS( "com_maxFPS", "300", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "define the maximum FPS cap", 2, 1000 );
 idCVar	idSessionLocal::com_showDemo("com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "");
 idCVar	idSessionLocal::com_skipGameDraw( "com_skipGameDraw", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_aviDemoSamples( "com_aviDemoSamples", "16", CVAR_SYSTEM, "" );

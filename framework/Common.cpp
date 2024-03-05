@@ -2500,7 +2500,7 @@ void idCommonLocal::Frame( void ) {
 		static int64_t lastFrameAstroTime = Sys_Microseconds();
 		if (sessLocal.com_fixedTic.GetBool()) {
 			//stgatilov #4865: impose artificial FPS limit
-			int64_t minDeltaTime = 1000000 / sessLocal.com_maxFPS.GetInteger();
+			int64_t minDeltaTime = int64_t(1000000 / sessLocal.com_maxFPS.GetFloat());
 			int64_t currFrameAstroTime;
 			while (1) {
 				currFrameAstroTime = Sys_Microseconds();
