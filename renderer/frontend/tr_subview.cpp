@@ -208,6 +208,7 @@ static viewDef_t *R_MirrorViewBySurface( drawSurf_t *drawSurf ) {
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.viewDef;
 	parms->renderView.viewID = VID_SUBVIEW;	// clear to allow player bodies to show up, and suppress view weapons
+	parms->unlockedRenderView = nullptr;
 
 	parms->isSubview = true;
 	parms->isMirror = true;
@@ -260,6 +261,7 @@ static viewDef_t *R_XrayViewBySurface( drawSurf_t *drawSurf ) {
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.viewDef;
 	parms->renderView.viewID = VID_PLAYER_VIEW;	// clear to allow player bodies to show up, and suppress view weapons
+	parms->unlockedRenderView = nullptr;
 
 	parms->isSubview = true;
 	parms->xrayEntityMask = XR_ONLY;
@@ -285,6 +287,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	// copy the viewport size from the original
 	viewDef_t* parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.viewDef;
+	parms->unlockedRenderView = nullptr;
 
 	parms->isSubview = true;
 	parms->isMirror = false;
@@ -384,6 +387,8 @@ void R_PortalRender( textureStage_t *stage, idScreenRect& scissor ) {
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.primaryView;
 	parms->renderView.viewID = VID_SUBVIEW;
+	parms->unlockedRenderView = nullptr;
+
 	parms->clipPlane = nullptr;
 	parms->superView = tr.viewDef;
 	parms->subviewSurface = nullptr;
@@ -531,6 +536,7 @@ bool R_Lightgem_Render() {
 	// copy the viewport size from the original
 	auto &parms = *(viewDef_t *)R_FrameAlloc( sizeof( viewDef_t ) );
 	parms = *tr.viewDef;
+	parms.unlockedRenderView = nullptr;
 	parms.isSubview = true;
 
 	// Get position for lg

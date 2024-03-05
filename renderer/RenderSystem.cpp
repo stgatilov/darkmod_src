@@ -246,6 +246,8 @@ void	R_AddDrawViewCmd( viewDef_t &parms ) {
 		lockSurfView = *cmd->viewDef;
 		lockFrameReserve = frameData->frameMemoryAllocated;
 	}
+	R_LockView_BackendTransfer( parms );
+
 	tr.pc.c_numViews++;
 
 	R_ViewStatistics( parms );
@@ -264,11 +266,12 @@ without changing the composition of the scene, including
 culling.  The only thing that is modified is the
 view position and axis, no front end work is done at all
 
-
 Add the stored off command again, so the new rendering will use EXACTLY
 the same surfaces, including all the culling, even though the transformation
 matricies have been changed.  This allow the culling tightness to be
 evaluated interactively.
+
+stgatilov: use r_lockView instead, see functions just below
 ======================
 */
 void R_LockSurfaceScene( viewDef_t &parms ) {
@@ -291,6 +294,96 @@ void R_LockSurfaceScene( viewDef_t &parms ) {
 		myGlMultMatrix( vModel->modelMatrix,
 			cmd->viewDef->worldSpace.modelViewMatrix,
 		    vModel->modelViewMatrix );
+	}
+}
+
+/*
+======================
+R_LockView_FrontendStart
+
+Checks for changes in r_lockView cvar.
+Saves the current view if it has been locked just now,
+or the overrides the current view with the previously locked one.
+======================
+*/
+void R_LockView_FrontendStart( viewDef_t &viewDef ) {
+	renderView_t currentRenderView = viewDef.renderView;
+	assert( currentRenderView.viewID == VID_PLAYER_VIEW );
+
+	// process modifications of cvar
+	if ( r_lockView.IsModified() ) {
+		r_lockView.ClearModified();
+
+		if ( r_lockView.GetInteger() == 0 ) {
+			// drop previous lock
+			tr.lockedViewAvailable = false;
+			// #6349 hack: enable scissors back (considering it as default)
+			r_useScissor.SetBool( true );
+			r_useDepthBoundsTest.SetBool( true );
+		}
+		else if ( r_lockView.GetInteger() > 0 && !tr.lockedViewAvailable ) {
+			// not yet locked, so lock view of the current frame
+			tr.lockedViewAvailable = true;
+			tr.lockedViewData = currentRenderView;
+			tr.lockedViewSinceFrame = tr.frameCount;
+			// #6349: disable view-dependent scissor optimizations
+			r_useScissor.SetBool( false );
+			r_useDepthBoundsTest.SetBool( false );
+		}
+	}
+
+	if ( tr.lockedViewAvailable && tr.lockedViewData.viewID == currentRenderView.viewID ) {
+		// this view was locked previously
+		const renderView_t &frozenView = tr.lockedViewData;
+
+		if ( r_lockView.GetInteger() > 0 ) {
+			// override view parameters with old ones
+			viewDef.renderView = frozenView;
+			// but retain current time: this makes particle effects dynamic
+			viewDef.renderView.time = currentRenderView.time;
+
+			if ( r_lockView.GetInteger() == 1 ) {
+				// save original parameters in order to restore them later for backend (allow flying camera around)
+				viewDef.unlockedRenderView = (renderView_t*)R_ClearedFrameAlloc( sizeof( renderView_t ) );
+				*viewDef.unlockedRenderView = currentRenderView;
+			}
+		}
+
+		if ( r_lockView.GetInteger() == 1 || r_lockView.GetInteger() == -1 ) {
+			// compute view frustum and draw it
+			viewDef_t temp;
+			memset( &temp, 0, sizeof(temp) );
+			temp.renderView = frozenView;
+			R_SetViewMatrix( temp );
+			R_SetupViewFrustum( temp );
+			gameRenderWorld->DebugFrustum( idVec4( 1, 0.3f, 0.8f, 1 ), temp.viewFrustum );
+
+			// also show where view direction goes from current position
+			idVec3 vector = ( currentRenderView.vieworg - frozenView.vieworg ).Normalized();
+			gameRenderWorld->DebugCircle( idVec4( 1, 0.8f, 0.3f, 1 ), currentRenderView.vieworg + vector * 100.0f, vector, 1.0f, 10 );
+		}
+	}
+}
+
+/*
+======================
+R_LockView_BackendTransfer
+
+Restores back original view parameters for backend so that player's current camera is used for drawing.
+======================
+*/
+void R_LockView_BackendTransfer( viewDef_t &viewDef ) {
+	if ( viewDef.unlockedRenderView ) {
+		// replace root view matrices with the override ones
+		viewDef.renderView = *viewDef.unlockedRenderView;
+
+		// rebuild view and projection matrices
+		R_SetViewMatrix( viewDef );
+		R_SetupProjection( viewDef );
+
+		// update the view origin and axis, and all the entity matricies
+		for ( viewEntity_t *vModel = viewDef.viewEntitys ; vModel ; vModel = vModel->next )
+			myGlMultMatrix( vModel->modelMatrix, viewDef.worldSpace.modelViewMatrix, vModel->modelViewMatrix );
 	}
 }
 

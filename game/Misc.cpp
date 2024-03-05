@@ -3268,6 +3268,10 @@ void idFuncPortal::Think( void )
 	if( (gameLocal.time - m_TimeStamp) < m_Interval )
 		goto Quit;
 
+	extern idCVar r_lockView;
+	if ( r_lockView.GetInteger() != 0 )
+		goto Quit;
+
 	m_TimeStamp = gameLocal.time;
 	bWithinDist = false;
 

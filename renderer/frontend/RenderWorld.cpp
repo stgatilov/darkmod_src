@@ -792,13 +792,9 @@ to handle mirrors,
 ====================
 */
 void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
-	//renderView_t	copy;
-
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
-
-	//copy = *renderView;
 
 	// skip front end rendering work, which will result
 	// in only gui drawing
@@ -821,6 +817,8 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 	viewDef_t		*parms = (viewDef_t *)R_ClearedFrameAlloc( sizeof( *parms ) );
 	parms->renderView = renderView;
 
+	R_LockView_FrontendStart( *parms );
+
 	if ( tr.takingScreenshot ) {
 		parms->renderView.forceUpdate = true;
 	}
@@ -838,7 +836,7 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 
 
 	parms->isSubview = false;
-	parms->initialViewAreaOrigin = renderView.vieworg;
+	parms->initialViewAreaOrigin = parms->renderView.vieworg;
 	parms->floatTime = parms->renderView.time * 0.001f;
 	parms->renderWorld = this;
 
@@ -869,7 +867,7 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 
 	// save this world for use by some console commands
 	tr.primaryWorld = this;
-	tr.primaryRenderView = renderView;
+	tr.primaryRenderView = parms->renderView;
 	tr.primaryView = parms;
 
 	// rendering this view may cause other views to be rendered
@@ -881,7 +879,7 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 	// now write delete commands for any modified-but-not-visible entities, and
 	// add the renderView command to the demo
 	if ( session->writeDemo ) {
-		WriteRenderView( renderView );
+		WriteRenderView( parms->renderView );
 	}
 
 	int endTime = Sys_Milliseconds();

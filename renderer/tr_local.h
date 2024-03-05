@@ -568,6 +568,8 @@ typedef struct viewDef_s {
 	// tools
 	char				*portalStates;
 
+	renderView_t 		*unlockedRenderView;	// NULL except when r_lockView is active
+
 	bool				IsLightGem() const {
 		return renderView.viewID < 0;
 	}
@@ -700,6 +702,9 @@ extern	frameData_t		*backendFrameData;
 void R_LockSurfaceScene( viewDef_t &parms );
 void R_ClearCommandChain( frameData_t *frameData );
 void R_AddDrawViewCmd( viewDef_t &parms );
+
+void R_LockView_FrontendStart( viewDef_t &parms );
+void R_LockView_BackendTransfer( viewDef_t &parms );
 
 void R_ReloadGuis_f( const idCmdArgs &args );
 void R_ListGuis_f( const idCmdArgs &args );
@@ -932,6 +937,10 @@ public:
 
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
 	idParallelJobList*		frontEndJobList;
+
+	bool					lockedViewAvailable = false;	// debug only: for r_lockView 
+	int						lockedViewSinceFrame = -1;		// ...
+	renderView_t			lockedViewData;					// ...
 };
 
 extern backEndState_t		backEnd;
@@ -1033,6 +1042,7 @@ extern idCVar r_skipOverlays;			// skip overlay surfaces
 extern idCVar r_skipROQ;
 extern idCVar r_skipDepthCapture;		// skip capture of early depth pass. revelator + SteveL #3877
 extern idCVar r_useSoftParticles;		// SteveL #3878
+extern idCVar r_lockView;
 
 extern idCVar r_ignoreGLErrors;
 
