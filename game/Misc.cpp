@@ -3259,6 +3259,7 @@ void idFuncPortal::OpenPortal( void )
 
 void idFuncPortal::Think( void )
 {
+	extern idCVar r_lockView;
 	idVec3 delta;
 	bool bWithinDist;
 
@@ -3268,7 +3269,6 @@ void idFuncPortal::Think( void )
 	if( (gameLocal.time - m_TimeStamp) < m_Interval )
 		goto Quit;
 
-	extern idCVar r_lockView;
 	if ( r_lockView.GetInteger() != 0 )
 		goto Quit;
 
