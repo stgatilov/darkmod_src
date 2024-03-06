@@ -78,7 +78,13 @@ idCVar r_ignoreGLErrors( "r_ignoreGLErrors",
 #endif
 	, CVAR_RENDERER | CVAR_BOOL, "ignore GL errors" );
 idCVar r_finish( "r_finish", "0", CVAR_RENDERER | CVAR_BOOL, "force a call to glFinish() every frame" );
-idCVarInt r_swapInterval( "r_swapInterval", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Enable Vsync? (changes wglSwapInterval)" );
+idCVar r_swapInterval(
+	"r_swapInterval", "1", CVAR_RENDERER | CVAR_ARCHIVE,
+	"Sets Vsync control mode (if supported):\n"
+	"  0 --- disable Vsync\n"
+	"  1 --- enable Vsync\n"
+	" -1 --- enable adaptive Vsync"
+);
 
 idCVar r_ambientMinLevel( "r_ambientMinLevel", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "specifies minimal level of ambient light brightness, making linear change in ambient color", 0.0f, 1.0f);
 idCVar r_ambientGamma( "r_ambientGamma", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "specifies power of gamma correction applied solely to ambient light", 0.1f, 3.0f);
@@ -1490,7 +1496,7 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	}
 
 #ifdef _WIN32
-	if ( r_swapInterval && qwglSwapIntervalEXT ) {
+	if ( r_swapInterval.GetInteger() && qwglSwapIntervalEXT ) {
 		common->Printf( "swapInterval forced (%i)\n", r_swapInterval.GetInteger() );
 	} else {
 		common->Printf( "swapInterval not forced\n" );
