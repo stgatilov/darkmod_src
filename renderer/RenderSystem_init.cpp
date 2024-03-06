@@ -78,7 +78,7 @@ idCVar r_ignoreGLErrors( "r_ignoreGLErrors",
 #endif
 	, CVAR_RENDERER | CVAR_BOOL, "ignore GL errors" );
 idCVar r_finish( "r_finish", "0", CVAR_RENDERER | CVAR_BOOL, "force a call to glFinish() every frame" );
-idCVarInt r_swapInterval( "r_swapInterval", "0", CVAR_RENDERER | CVAR_ARCHIVE, "changes wglSwapIntarval" );
+idCVarInt r_swapInterval( "r_swapInterval", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Enable Vsync? (changes wglSwapInterval)" );
 
 idCVar r_ambientMinLevel( "r_ambientMinLevel", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "specifies minimal level of ambient light brightness, making linear change in ambient color", 0.0f, 1.0f);
 idCVar r_ambientGamma( "r_ambientGamma", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "specifies power of gamma correction applied solely to ambient light", 0.1f, 3.0f);

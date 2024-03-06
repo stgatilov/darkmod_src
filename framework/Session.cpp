@@ -26,7 +26,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "0", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_showTics( "com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER,
+idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER,
 	" 0 -- game tics have fixed duration of 16 ms (stable physics but 60 FPS limit)\n"
 	" 1 -- game tics can have shorter duration (removes 60 FPS limit)",
 0, 1);
