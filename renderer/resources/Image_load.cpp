@@ -1616,6 +1616,26 @@ int idImage::StorageSize() const {
 
 /*
 ==================
+SizeOfCpuData
+
+stgatilov: only CPU-side data is reported.
+==================
+*/
+int idImageAsset::SizeOfCpuData() const {
+	int res = sizeof( *this );
+	if ( loadStack )
+		res += sizeof( *loadStack );
+	// note: some idStr-s are omitted --- don't care about it
+
+	res += cpuData.GetTotalSizeInBytes();
+	if ( compressedData )
+		res += compressedData->GetTotalSize();
+
+	return res;
+}
+
+/*
+==================
 Print
 ==================
 */

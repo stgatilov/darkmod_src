@@ -314,6 +314,9 @@ public:
 	static GLenum SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask = nullptr );
 	void ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
 
+	// total number of bytes allocated by this image on CPU right now
+	int SizeOfCpuData() const;
+
 public:
 	int					classification;			// just for resource profiling
 

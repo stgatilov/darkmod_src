@@ -538,6 +538,7 @@
     <ClInclude Include="idlib\containers\LinkList.h" />
     <ClInclude Include="idlib\containers\List.h" />
     <ClInclude Include="idlib\containers\PlaneSet.h" />
+    <ClInclude Include="idlib\containers\ProducerConsumerQueue.h" />
     <ClInclude Include="idlib\containers\Queue.h" />
     <ClInclude Include="idlib\containers\Stack.h" />
     <ClInclude Include="idlib\containers\StaticList.h" />

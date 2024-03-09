@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/tr_local.h"
 #include "framework/LoadStack.h"
 #include "renderer/backend/FrameBufferManager.h"
+#include "containers/ProducerConsumerQueue.h"
 
 #define	DEFAULT_SIZE		16
 #define	NORMAL_MAP_SIZE		32
@@ -1776,13 +1777,14 @@ preload low mip levels, background load remainder on demand
 ====================
 */
 
-static void R_LoadSingleImage( idImageAsset *image ) {
-	R_LoadImageData( *image );
-}
-REGISTER_PARALLEL_JOB( R_LoadSingleImage, "R_LoadSingleImage" );
-
-idCVar image_levelLoadParallel( "image_levelLoadParallel", "1", CVAR_BOOL|CVAR_ARCHIVE, "Parallelize texture creation during level load by fetching images from disk in the background" );
-idCVar image_levelLoadParallelBatch( "image_levelLoadParallelBatch", "128", CVAR_INTEGER, "How many images to process per parallel chunk", 1, 100000 );
+idCVar image_levelLoadParallel(
+	"image_levelLoadParallel", "1", CVAR_BOOL,
+	"Parallelize texture creation during level load by fetching images from disk in the background"
+);
+idCVar image_levelLoadParallelMemory(
+	"image_levelLoadParallelMemory", "300", CVAR_INTEGER,
+	"Limit on amount of RAM that can be used during parallel image loading (in MB)"
+);
 
 void idImageManager::EndLevelLoad() {
 	const int start = Sys_Milliseconds();
@@ -1821,37 +1823,56 @@ void idImageManager::EndLevelLoad() {
 		}
 	}
 
-	// Process images in batches. If parallel load is enabled, we give the upcoming batch to the job queue so that the image
-	// data is loaded and prepared in the background while we simultaneously upload the current batch to GPU memory.
-	int batchSize = image_levelLoadParallelBatch.GetInteger();
-	idParallelJobList *imageLoadJobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, batchSize, 0, nullptr );
+	if ( image_levelLoadParallel.GetBool() ) {
+		static idProducerConsumerQueue<idImageAsset**> queue;
+		queue.ClearFree();
+		// images are quite large, we don't want to keep them all in RAM
+		// without buffer limit, this could happen if loading jobs are faster than uploading
+		queue.SetBufferSize( image_levelLoadParallelMemory.GetInteger() << 20 );
 
-	for ( int curBatch = -batchSize; curBatch < imagesToLoad.Num(); curBatch += batchSize ) {
-		for ( int i = curBatch + batchSize; i < imagesToLoad.Num() && i < curBatch + 2 * batchSize; ++i ) {
-			idImageAsset *image = imagesToLoad[i];
-			imageLoadJobs->AddJob((jobRun_t)R_LoadSingleImage, image);
+		auto LoadImageJobFunc = []( void *param ) {
+			idImageAsset **ppImage = (idImageAsset **)param;
+			R_LoadImageData( **ppImage );
+			queue.Append( ppImage, (*ppImage)->SizeOfCpuData() );
+		};
+		RegisterJob( LoadImageJobFunc, "loadImage" );
+
+		int n = imagesToLoad.Num();
+		idParallelJobList *joblist = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, n, 0, nullptr );
+		for ( int i = 0; i < n; i++ ) {
+			joblist->AddJob( LoadImageJobFunc, &imagesToLoad[i] );
+		}
+		joblist->Submit( nullptr, JOBLIST_PARALLELISM_NONINTERACTIVE | JOBLIST_PARALLELISM_FLAG_DISK );
+
+		int finishedCount = 0;
+		while ( finishedCount < n ) {
+			idImageAsset **ppImage = queue.Pop();
+			R_UploadImageData( **ppImage );
+			// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
+			if ( ( finishedCount % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
+				common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, finishedCount );
+			}
+			finishedCount++;
 		}
 
-		int parallelism = JOBLIST_PARALLELISM_NONINTERACTIVE | JOBLIST_PARALLELISM_FLAG_DISK;
-		if ( !image_levelLoadParallel.GetBool() ) {
-			parallelism = JOBLIST_PARALLELISM_NONE;
-		}
-		imageLoadJobs->Submit( nullptr, parallelism );
-
-		for ( int i = idMath::Imax(curBatch, 0); i < imagesToLoad.Num() && i < curBatch + batchSize; ++i ) {
+		parallelJobManager->FreeJobList( joblist );
+		queue.ClearFree();
+	}
+	else {
+		for ( int i = 0; i < imagesToLoad.Num(); i++ ) {
 			idImageAsset *image = imagesToLoad[i];
+
+			R_LoadImageData( *image );
+
 			R_UploadImageData( *image );
-
 			// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
 			if ( ( i % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
 				common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, i );
 			}
 		}
-
-		imageLoadJobs->Wait();
 	}
 
-	parallelJobManager->FreeJobList( imageLoadJobs );
+	imagesToLoad.ClearFree();
 
 	const int end = Sys_Milliseconds();
 	common->Printf( "%5i purged from previous\n", purgeCount );
