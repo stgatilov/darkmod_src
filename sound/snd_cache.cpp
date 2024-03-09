@@ -240,7 +240,6 @@ Adds a sound object to the cache and returns a handle for it.
 */
 idSoundSample *idSoundCache::FindSound( const idStr& filename, bool loadOnDemandOnly ) {
 	idStr fname;
-
 	fname = filename;
 	fname.BackSlashesToSlashes();
 	fname.ToLower();
@@ -249,43 +248,41 @@ idSoundSample *idSoundCache::FindSound( const idStr& filename, bool loadOnDemand
 
 	// check to see if object is already in cache
 	int hash = cacheHash.GenerateKey( fname, true );
-	for ( int i = cacheHash.First( hash ); i != -1; i = cacheHash.Next( i ) ) {
-		idSoundSample *def = listCache[i];
-		assert( def );
-		if ( def->name == fname ) {
-			def->levelLoadReferenced = true;
-			if ( def->purged && !loadOnDemandOnly ) {
-				def->Load();
-			}
-			return def;
-		}
+	int index;
+	for ( index = cacheHash.First( hash ); index != -1; index = cacheHash.Next( index ) ) {
+		idSoundSample *def = listCache[index];
+		if ( def->name == fname )
+			break;		// already in cache
 	}
+
+	if ( index < 0 ) {	// missing in cache
 
 #if _DEBUG
-	// verify that hash index is correct and we don't miss sound
-	for( int i = 0; i < listCache.Num(); i++ ) {
-		idSoundSample *def = listCache[i];
-		assert( !( def && def->name == fname ) );
-	}
+		// verify that hash index is correct and we don't miss sound
+		for( int i = 0; i < listCache.Num(); i++ ) {
+			idSoundSample *def = listCache[i];
+			assert( !( def && def->name == fname ) );
+		}
 #endif
+		// create a new entry
+		idSoundSample *def = new idSoundSample;
 
-	// create a new entry
-	idSoundSample *def = new idSoundSample;
+		assert( listCache.FindNull() == -1 );
+		index = listCache.Append( def );
+		cacheHash.Add( hash, index );
 
-	assert( listCache.FindNull() == -1 );
-	int shandle = listCache.Append( def );
-	cacheHash.Add( hash, shandle );
+		def->name = fname;
+		def->onDemand = loadOnDemandOnly;
+		def->purged = true;
+	}
 
-	def->name = fname;
+	// continue loading (regardless of whether sound is new or not)
+	idSoundSample *def = listCache[index];
 	def->levelLoadReferenced = true;
-	def->onDemand = loadOnDemandOnly;
-	def->purged = true;
-
-	if ( !loadOnDemandOnly ) {
+	if ( def->purged && !loadOnDemandOnly ) {
 		// this may make it a default sound if it can't be loaded
 		def->Load();
 	}
-
 	return def;
 }
 
