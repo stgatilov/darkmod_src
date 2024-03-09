@@ -1782,6 +1782,7 @@ static void R_LoadSingleImage( idImageAsset *image ) {
 REGISTER_PARALLEL_JOB( R_LoadSingleImage, "R_LoadSingleImage" );
 
 idCVar image_levelLoadParallel( "image_levelLoadParallel", "1", CVAR_BOOL|CVAR_ARCHIVE, "Parallelize texture creation during level load by fetching images from disk in the background" );
+idCVar image_levelLoadParallelBatch( "image_levelLoadParallelBatch", "128", CVAR_INTEGER, "How many images to process per parallel chunk", 1, 100000 );
 
 void idImageManager::EndLevelLoad() {
 	const int start = Sys_Milliseconds();
@@ -1822,26 +1823,22 @@ void idImageManager::EndLevelLoad() {
 
 	// Process images in batches. If parallel load is enabled, we give the upcoming batch to the job queue so that the image
 	// data is loaded and prepared in the background while we simultaneously upload the current batch to GPU memory.
-	// Background loading is restricted to 2 threads. On SSDs and during hot loads, this has a considerable advantage over just
-	// a single background thread, since decompression and calculation of image functions do take some of the time. SSDs do see
-	// slight improvements with additional threads, but the difference is small. On HDDs, the additional thread does not offer
-	// any advantages, but it should also not overload the disk, so that 2 threads is an acceptable compromise for all disk types.
-	const int BATCH_SIZE = 16;
-	idParallelJobList *imageLoadJobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, BATCH_SIZE, 0, nullptr );
+	int batchSize = image_levelLoadParallelBatch.GetInteger();
+	idParallelJobList *imageLoadJobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, batchSize, 0, nullptr );
 
-	for ( int curBatch = -BATCH_SIZE; curBatch < imagesToLoad.Num(); curBatch += BATCH_SIZE ) {
-		for ( int i = curBatch + BATCH_SIZE; i < imagesToLoad.Num() && i < curBatch + 2 * BATCH_SIZE; ++i ) {
+	for ( int curBatch = -batchSize; curBatch < imagesToLoad.Num(); curBatch += batchSize ) {
+		for ( int i = curBatch + batchSize; i < imagesToLoad.Num() && i < curBatch + 2 * batchSize; ++i ) {
 			idImageAsset *image = imagesToLoad[i];
 			imageLoadJobs->AddJob((jobRun_t)R_LoadSingleImage, image);
 		}
 
-		int parallelism = 2;
+		int parallelism = JOBLIST_PARALLELISM_NONINTERACTIVE | JOBLIST_PARALLELISM_FLAG_DISK;
 		if ( !image_levelLoadParallel.GetBool() ) {
-			parallelism = 0;
+			parallelism = JOBLIST_PARALLELISM_NONE;
 		}
 		imageLoadJobs->Submit( nullptr, parallelism );
 
-		for ( int i = idMath::Imax(curBatch, 0); i < imagesToLoad.Num() && i < curBatch + BATCH_SIZE; ++i ) {
+		for ( int i = idMath::Imax(curBatch, 0); i < imagesToLoad.Num() && i < curBatch + batchSize; ++i ) {
 			idImageAsset *image = imagesToLoad[i];
 			R_UploadImageData( *image );
 

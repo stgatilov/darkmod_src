@@ -294,12 +294,14 @@ public:
 	std::condition_variable signalFrontendThread;
 	std::condition_variable signalMainThread;
 	std::mutex			signalMutex;
-	volatile bool		frontendActive;
+	volatile bool		frontendShouldBeActive;
+	volatile bool		frontendActiveNow;
 	volatile bool		shutdownFrontend;
 	std::shared_ptr<ErrorReportedException> frontendException;
 
 	void				FrontendThreadFunction();
 	virtual bool		IsFrontend() const override;
+	virtual bool		IsFrontendThreadUsed() const override;
 
 	//=====================================
 	void				Clear();

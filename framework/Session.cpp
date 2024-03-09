@@ -3147,7 +3147,7 @@ void idSessionLocal::FrontendThreadFunction() {
 			TRACE_CPU_SCOPE_COLOR( "Frontend::Wait", TRACE_COLOR_IDLE )
 			std::unique_lock< std::mutex > lock( signalMutex );
 			// wait for render thread
-			while( !frontendActive && !shutdownFrontend ) {
+			while( !frontendActiveNow && !shutdownFrontend ) {
 				signalFrontendThread.wait( lock );
 			}
 			if( shutdownFrontend ) {
@@ -3163,7 +3163,7 @@ void idSessionLocal::FrontendThreadFunction() {
 		
 		{ // lock scope - signal render thread
 			std::unique_lock< std::mutex > lock( signalMutex );
-			frontendActive = false;
+			frontendActiveNow = false;
 			signalMainThread.notify_one();
 		}
 	}
@@ -3181,6 +3181,10 @@ bool idSessionLocal::IsFrontend() const {
 #endif
 }
 
+bool idSessionLocal::IsFrontendThreadUsed() const {
+	return frontendShouldBeActive;
+}
+
 /*
 ===============
 idSessionLocal::ActivateFrontend
@@ -3190,9 +3194,11 @@ Activates game tic and frontend rendering on a separate thread.
 ===============
 */
 void idSessionLocal::ActivateFrontend() {
-	if( com_smp.GetBool() && !guiActive && !no_smp ) {
+	frontendShouldBeActive = ( com_smp.GetBool() && !guiActive && !no_smp );
+
+	if ( frontendShouldBeActive ) {
 		std::unique_lock<std::mutex> lock( signalMutex );
-		frontendActive = true;
+		frontendActiveNow = true;
 		signalFrontendThread.notify_one();
 	} else {
 		// run game tics and frontend drawing serially
@@ -3214,8 +3220,8 @@ void idSessionLocal::WaitForFrontendCompletion() {
 		TRACE_CPU_SCOPE_COLOR( "WaitForFrontend", TRACE_COLOR_IDLE );
 		std::unique_lock<std::mutex> lock( signalMutex );
 		if( r_showSmp.GetBool() )
-			backEnd.pc.waitedFor = frontendActive ? 'F' : '.';
-		while( frontendActive ) {
+			backEnd.pc.waitedFor = frontendActiveNow ? 'F' : '.';
+		while( frontendActiveNow ) {
 			signalMainThread.wait( lock );
 		}
 
@@ -3228,7 +3234,7 @@ void idSessionLocal::WaitForFrontendCompletion() {
 }
 
 void idSessionLocal::StartFrontendThread() {
-	frontendActive = shutdownFrontend = false;
+	frontendActiveNow = shutdownFrontend = false;
 	auto func = []( void *x ) -> unsigned int {
 		idSessionLocal* s = (idSessionLocal*)x;
 		s->FrontendThreadFunction();

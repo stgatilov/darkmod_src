@@ -500,6 +500,15 @@ int Sys_GetDriveFreeSpace( const char *path ) {
 }
 
 /*
+================
+Sys_IsFileOnHdd
+================
+*/
+bool Sys_IsFileOnHdd(const char *filePath) {
+	return false;   // TODO
+}
+
+/*
 ===============
 Posix_EarlyInit
 ===============
