@@ -44,7 +44,7 @@ public:
 	void SetBufferSize(int bound = -1) {
 		std::unique_lock<std::mutex> lock(mutex);
 
-		bounded = (bound < 0);
+		bounded = (bound >= 0);
 		maxWeight = bound;
 	}
 
@@ -58,7 +58,8 @@ public:
 	void Append(const T &data, int weight = 1) {
 		std::unique_lock<std::mutex> lock(mutex);
 
-		while (currWeight + weight >= maxWeight)
+		// note: never block additions to empty queue to avoid deadlock
+		while (bounded && (currWeight > 0 && currWeight + weight >= maxWeight))
 			notFullSignal.wait(lock);
 
 		items.AddGrow( {data, weight} );
