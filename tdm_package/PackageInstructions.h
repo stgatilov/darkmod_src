@@ -37,7 +37,6 @@ struct PackageInstruction
 	{
 		Exclude,	// EXCLUDE
 		Include,	// INCLUDE
-		Mission,	// FM
 		Ignore,		// everything else
 	};
 
@@ -71,8 +70,6 @@ struct PackageInstruction
  * # Comment
  * INCLUDE <regexp>
  * EXCLUDE <regexp>
- * FM <mapfile> - ignored for now
- * ordinary lines (e.g. "training_mission.map" or "prefabs/ \.pfb\z") - ignored for now
  */
 class PackageInstructions :
 	public std::list<PackageInstruction>

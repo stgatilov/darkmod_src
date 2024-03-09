@@ -87,5 +87,3 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 // Linux info
 #define LINUX_DEFAULT_PATH				"."	
-
-//#define CONFIG_SPEC					"config.spec"
