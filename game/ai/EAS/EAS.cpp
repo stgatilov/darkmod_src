@@ -655,7 +655,9 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 				int targetStationIndex = GetElevatorStationIndex(positionEnt);
 
-				int nextArea = GetAreaNumForPosition(positionEnt->GetPhysics()->GetOrigin());
+				//int nextArea = GetAreaNumForPosition(positionEnt->GetPhysics()->GetOrigin());
+				// take precomputed value (much faster)
+				int nextArea = (targetStationIndex >= 0 ? _elevatorStations[targetStationIndex]->areaNum : 0);
 
 				if (nextArea <= 0)
 				{
