@@ -1635,7 +1635,7 @@ void idSoundWorldLocal::ReadFromSaveGame( idFile *savefile ) {
 			savefile->ReadString( soundShader );
 			// load savegames with s_noSound 1
 			if ( soundSystemLocal.soundCache ) {
-				chan->leadinSample = soundSystemLocal.soundCache->FindSound( soundShader, false );
+				chan->leadinSample = soundSystemLocal.soundCache->FindSound( soundShader );
 			} else {
 				chan->leadinSample = NULL;
 			}

@@ -113,7 +113,6 @@ private:
 	// options from sound shader text
 	soundShaderParms_t		parms;						// can be overriden on a per-channel basis
 
-	bool					onDemand;					// only load when played, and free when finished
 	int						speakerMask;
 	const idSoundShader *	altSound;
 	idStr					desc;						// description

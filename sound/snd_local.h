@@ -854,7 +854,7 @@ public:
 							~idSoundSample();
 
 	idStr					name;						// name of the sample file
-	ID_TIME_T		 			timestamp;					// the most recent of all images used in creation, for reloadImages command
+	ID_TIME_T		 		timestamp;					// the most recent of all images used in creation, for reloadImages command
 
 	waveformatex_t			objectInfo;					// what are we caching
 	int						objectSize;					// size of waveform in samples, excludes the header
@@ -864,12 +864,12 @@ public:
 	ALuint					openalBuffer;				// openal buffer
 	bool					hardwareBuffer;
 	bool					defaultSound;
-	bool					onDemand;
 	bool					purged;
 	bool					levelLoadReferenced;		// so we can tell which samples aren't needed any more
 	idList<Subtitle>		subtitles;
 	int						subtitleTotalDuration;
 	SubtitleLevel			subtitlesVerbosity;
+	LoadStack *				loadStack;
 
 	int						LengthIn44kHzSamples() const;	// BEWARE: this is 2 x duration if stereo!
 	int						DurationIn44kHzSamples() const;	// stgatilov: duration multiplied by 44.1K
@@ -884,10 +884,15 @@ public:
 	int						FetchSubtitles( int offset, idList<SubtitleMatch> &matches );	//stgatilov #2454
 	bool					HaveSubtitlesFinished( int offset ) const;
 
+	idStr loadError;									// loading error from stage 1 --- should be defaulted if non-empty
+	void					Load_Stage1();				// can be done in parallel
+	void					Load_Stage2();				// done strictly sequentally
+
 	//stgatilov #4534: for playing sound from a video
 	idCinematic *cinematic;
 	void LoadFromCinematic(idCinematic *cin);
 	bool FetchFromCinematic(int sampleOffset, int *sampleSize, float *output);
+
 };
 
 
@@ -929,7 +934,7 @@ public:
 							idSoundCache();
 							~idSoundCache();
 
-	idSoundSample *			FindSound( const idStr &fname, bool loadOnDemandOnly );
+	idSoundSample *			FindSound( const idStr &fname );
 
 	const int				GetNumObjects( void ) { return listCache.Num(); }
 	const idSoundSample *	GetObject( const int index ) const;
@@ -940,10 +945,14 @@ public:
 	void					BeginLevelLoad();
 	void					EndLevelLoad();
 
+	byte*					AllocLocked( int bytes ) const;	// locks mutex if insideParallelLoading
+	void					FreeLocked( byte *ptr ) const;	// ...
+
 	void					PrintMemInfo( MemInfo_t *mi );
 
 private:
 	bool					insideLevelLoad;
+	bool					insideParallelLoading;
 	idList<idSoundSample*>	listCache;
 	idHashIndex				cacheHash;
 };

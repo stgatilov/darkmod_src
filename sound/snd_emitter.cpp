@@ -504,11 +504,7 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 					// free hardware resources
 					// stgatilov: this was NOT done in slowmo case?...
 					chan->ALStop();
-					
-					// if this was an onDemand sound, purge the sample now
-					if ( chan->leadinSample->onDemand ) {
-						chan->leadinSample->PurgeSoundSample();
-					}
+
 					continue;
 				}
 			}
@@ -937,12 +933,6 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 				}
 				
 				chan->Stop();
-
-				// if this was an onDemand sound, purge the sample now
-				if ( chan->leadinSample->onDemand ) {
-					chan->ALStop();
-					chan->leadinSample->PurgeSoundSample();
-				}
 				break;
 			}
 		}
@@ -1188,11 +1178,6 @@ void idSoundEmitterLocal::StopSound( const s_channelType channel ) {
 
 		// free hardware resources
 		chan->ALStop();
-
-		// if this was an onDemand sound, purge the sample now
-		if ( chan->leadinSample->onDemand ) {
-			chan->leadinSample->PurgeSoundSample();
-		}
 
 		chan->leadinSample = NULL;
 		chan->soundShader = NULL;
