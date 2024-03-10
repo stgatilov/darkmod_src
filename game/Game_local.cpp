@@ -214,8 +214,6 @@ void TestGameAPI( void ) {
 	testExport = *GetGameAPI( &testImport );
 }
 
-#define LOAD_KEY_ENTITY_GRANULARITY 10 // grayman #3763
-
 /*
 ===========
 idGameLocal::idGameLocal
@@ -1409,8 +1407,6 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	session->ResetMainMenu();
 
-	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
-
 	// clear the sound system
 	gameSoundWorld->ClearAllSoundEmitters();
 
@@ -1424,12 +1420,14 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 		if ( mapFile ) {
 			delete mapFile;
 		}
+		session->UpdateLoadingProgressBar( PROGRESS_STAGE_MAPFILE, 0.0f );
 		mapFile = new idMapFile;
 		if ( !mapFile->Parse( idStr( mapName ) + ".map" ) ) {
 			delete mapFile;
 			mapFile = NULL;
 			Error( "Couldn't load %s", mapName );
 		}
+		session->UpdateLoadingProgressBar( PROGRESS_STAGE_MAPFILE, 1.0f );
 	}
 	mapFileName = mapFile->GetName();
 
@@ -2076,6 +2074,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_lightGem.SpawnLightGemEntity( mapFile );
 
 	// precache any media specified in the map
+	session->UpdateLoadingProgressBar( PROGRESS_STAGE_ENTITIES, 0.0f );
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
 		idMapEntity *mapEnt = mapFile->GetEntity( i );
 		const char *entName = mapEnt->epairs.GetString("name");
@@ -2090,15 +2089,18 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 			}
 			declManager->EndEntityLoad(mapEnt);
 		}
+
+		session->UpdateLoadingProgressBar( PROGRESS_STAGE_ENTITIES, float(i + 1) / mapFile->GetNumEntities() );
 	}
+	session->UpdateLoadingProgressBar( PROGRESS_STAGE_ENTITIES, 1.0f );
 
 	savegame.ReadDict( &si );
 	SetServerInfo( si );
 
 	savegame.ReadInt( numClients );
-		savegame.ReadDict( &userInfo );
-		savegame.ReadUsercmd( usercmds );
-		savegame.ReadDict( &persistentPlayerInfo );
+	savegame.ReadDict( &userInfo );
+	savegame.ReadUsercmd( usercmds );
+	savegame.ReadDict( &persistentPlayerInfo );
 
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
 		savegame.ReadObject( reinterpret_cast<idClass *&>( entities[ i ] ) );
@@ -5407,7 +5409,7 @@ void idGameLocal::SetupEAS()
 		}
 	}
 
-	common->PacifierUpdate(LOAD_KEY_ROUTING_START,clusterCount); // grayman #3763
+	session->UpdateLoadingProgressBar(PROGRESS_STAGE_ROUTING, 0.0f);
 
 	for (int aasNum = 0; aasNum < NumAAS(); aasNum++)
 	{
@@ -5418,7 +5420,7 @@ void idGameLocal::SetupEAS()
 		}
 	}
 
-	common->PacifierUpdate(LOAD_KEY_ROUTING_DONE,0); // grayman #3763
+	session->UpdateLoadingProgressBar(PROGRESS_STAGE_ROUTING, 1.0f);
 }
 
 
@@ -5774,8 +5776,7 @@ void idGameLocal::SpawnMapEntities( void )
 	// Clear out the campaign info cache
 	campaignInfoEntities.Clear();
 
-	common->PacifierUpdate(LOAD_KEY_SPAWN_ENTITIES_START,numEntities/LOAD_KEY_ENTITY_GRANULARITY); // grayman #3763
-
+	session->UpdateLoadingProgressBar(PROGRESS_STAGE_ENTITIES, 0.0f);
 	for ( i = 1 ; i < numEntities ; i++ )
 	{
 		mapEnt = mapFile->GetEntity( i );
@@ -5816,12 +5817,9 @@ void idGameLocal::SpawnMapEntities( void )
 			inhibit++;
 		}
 
-		// grayman #3763 - update the loading bar every LOAD_KEY_ENTITY_GRANULARITY spawned entities
-		if ( (i % LOAD_KEY_ENTITY_GRANULARITY) == 0)
-		{
-			common->PacifierUpdate(LOAD_KEY_SPAWN_ENTITIES_INTERIM,i);
-		}
+		session->UpdateLoadingProgressBar(PROGRESS_STAGE_ENTITIES, float(i + 1) / numEntities);
 	}
+	session->UpdateLoadingProgressBar(PROGRESS_STAGE_ENTITIES, 1.0f);
 
 	m_lightGem.InitializeLightGemEntity();
 

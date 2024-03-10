@@ -370,6 +370,7 @@ void idSoundCache::EndLevelLoad() {
 	common->Printf( "----- idSoundCache::EndLevelLoad -----\n" );
 
 	insideLevelLoad = false;
+	session->UpdateLoadingProgressBar( PROGRESS_STAGE_SOUNDS, 0.0f );
 
 	// purge the ones we don't need
 	useCount = 0;
@@ -415,11 +416,8 @@ void idSoundCache::EndLevelLoad() {
 		while ( finishedCount < n ) {
 			idSoundSample **ppImage = queue.Pop();
 			(*ppImage)->Load_Stage2();
-			/*// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
-			if ( ( finishedCount % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
-				common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, finishedCount );
-			}*/
 			finishedCount++;
+			session->UpdateLoadingProgressBar( PROGRESS_STAGE_SOUNDS, float(finishedCount) / n );
 		}
 
 		parallelJobManager->FreeJobList( joblist );
@@ -439,6 +437,7 @@ void idSoundCache::EndLevelLoad() {
 	common->Printf( "%5ik referenced\n", useCount / 1024 );
 	common->Printf( "%5ik purged\n", purgeCount / 1024 );
 	common->Printf( "----------------------------------------\n" );
+	session->UpdateLoadingProgressBar( PROGRESS_STAGE_SOUNDS, 1.0f );
 }
 
 /*

@@ -30,8 +30,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define QUADRATIC_HEIGHT	4
 //#define BORDER_CLAMP_SIZE	32
 
-#define LOAD_KEY_IMAGE_GRANULARITY 10 // grayman #3763
-
 const char *imageFilter[] = {
 	"GL_LINEAR_MIPMAP_NEAREST",
 	"GL_LINEAR_MIPMAP_LINEAR",
@@ -1810,7 +1808,8 @@ void idImageManager::EndLevelLoad() {
 			keepCount++;
 		}
 	}
-	common->PacifierUpdate( LOAD_KEY_IMAGES_START, images.Num() / LOAD_KEY_IMAGE_GRANULARITY ); // grayman #3763
+
+	session->UpdateLoadingProgressBar( PROGRESS_STAGE_IMAGES, 0.0f );
 
 	// load the ones we do need, if we are preloading
 	idList<idImageAsset*> imagesToLoad;
@@ -1848,11 +1847,8 @@ void idImageManager::EndLevelLoad() {
 		while ( finishedCount < n ) {
 			idImageAsset **ppImage = queue.Pop();
 			R_UploadImageData( **ppImage );
-			// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
-			if ( ( finishedCount % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
-				common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, finishedCount );
-			}
 			finishedCount++;
+			session->UpdateLoadingProgressBar( PROGRESS_STAGE_IMAGES, float(finishedCount) / n );
 		}
 
 		parallelJobManager->FreeJobList( joblist );
@@ -1865,12 +1861,10 @@ void idImageManager::EndLevelLoad() {
 			R_LoadImageData( *image );
 
 			R_UploadImageData( *image );
-			// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
-			if ( ( i % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
-				common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, i );
-			}
+			session->UpdateLoadingProgressBar( PROGRESS_STAGE_IMAGES, float(i) / imagesToLoad.Num() );
 		}
 	}
+
 
 	imagesToLoad.ClearFree();
 
@@ -1879,8 +1873,9 @@ void idImageManager::EndLevelLoad() {
 	common->Printf( "%5i kept from previous\n", keepCount );
 	common->Printf( "%5i new loaded\n", loadCount );
 	common->Printf( "all images loaded in %5.1f seconds\n", ( end - start ) * 0.001f );
-	common->PacifierUpdate( LOAD_KEY_DONE, 0 ); // grayman #3763
 	common->Printf( "----------------------------------------\n" );
+
+	session->UpdateLoadingProgressBar( PROGRESS_STAGE_IMAGES, 1.0f );
 }
 
 /*

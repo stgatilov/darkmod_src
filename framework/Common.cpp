@@ -181,7 +181,6 @@ public:
 	virtual void				DWarning( const char *fmt, ...) override id_attribute((format(printf,2,3)));
 	virtual void				PrintWarnings( void ) override;
 	virtual void				ClearWarnings( const char *reason ) override;
-	virtual void				PacifierUpdate( loadkey_t key, int count ) override; // grayman #3763
 	virtual void				Error( const char *fmt, ... ) override id_attribute((format(printf,2,3)));
 	virtual void				DoError( const char *msg, int code ) override;
 	virtual void				FatalError( const char *fmt, ... ) override id_attribute( ( format( printf, 2, 3 ) ) );
@@ -684,17 +683,6 @@ void idCommonLocal::ClearWarnings( const char *reason ) {
 	warningCaption = reason;
 	warningList.ClearFree();
 }
-
-/*
-==================
-idCommonLocal::PacifierUpdate
-==================
-*/
-void idCommonLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
-{
-	session->PacifierUpdate(key, count);
-}
-
 
 /*
 ==================

@@ -76,15 +76,6 @@ const int PREVIEW_HEIGHT = 298;
 
 // grayman #3763 - loading bar progress at key points
 
-const float LOAD_KEY_START_PROGRESS = 0.02f;
-const float LOAD_KEY_COLLISION_START_PROGRESS = 0.03f;
-const float LOAD_KEY_COLLISION_DONE_PROGRESS = 0.04f;
-const float LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS = 0.05f;
-const float LOAD_KEY_ROUTING_START_PROGRESS = 0.36f;
-const float LOAD_KEY_ROUTING_DONE_PROGRESS = 0.43f;
-const float LOAD_KEY_IMAGES_START_PROGRESS = 0.45f;
-const float LOAD_KEY_DONE_PROGRESS = 1.00f;
-
 void RandomizeStack( void ) {
 	// attempt to force uninitialized stack memory bugs
 	int		bytes = 4000000;
@@ -295,14 +286,14 @@ void idSessionLocal::Clear() {
 	aviCaptureMode = false;
 	timeDemo = TD_NO;
 	waitingOnBind = false;
-	lastPacifierTime = 0;
+	lastUpdateProgressBarTime = 0;
+	lastUpdateProgressBarStage = PROGRESS_STAGE_COUNT;	// different from any valid
+	lastUpdateProgressBarRatio = 0.0f;
 	
 	msgRunning = false;
 	guiMsgRestore = NULL;
 	msgIgnoreButtons = false;
 	no_smp = false;
-
-	//bytesNeededForMapLoad = 0; // grayman #3763 - no longer used
 
 #if ID_CONSOLE_LOCK
 	emptyDrawCount = 0;
@@ -1423,35 +1414,6 @@ void idSessionLocal::LoadLoadingGui( const char *mapName ) {
 
 /*
 ===============
-idSessionLocal::SetBytesNeededForMapLoad
-===============
-*/
-void idSessionLocal::SetBytesNeededForMapLoad( const char *mapName, int bytesNeeded ) {
-	idDecl *mapDecl = const_cast<idDecl *>(declManager->FindType( DECL_MAPDEF, mapName, false ));
-	idDeclEntityDef *mapDef = static_cast<idDeclEntityDef *>( mapDecl );
-
-	if ( com_updateLoadSize.GetBool() && mapDef ) {
-		// we assume that if com_updateLoadSize is true then the file is writable
-
-		mapDef->dict.SetInt( "size0", bytesNeeded );
-
-		idStr declText = "\nmapDef ";
-		declText += mapDef->GetName();
-		declText += " {\n";
-		for (int i=0; i<mapDef->dict.GetNumKeyVals(); i++) {
-			const idKeyValue *kv = mapDef->dict.GetKeyVal( i );
-			if ( kv && (kv->GetKey().Cmp("classname") != 0 ) ) {
-				declText += "\t\"" + kv->GetKey() + "\"\t\t\"" + kv->GetValue() + "\"\n";
-			}
-		}
-		declText += "}";
-		mapDef->SetText( declText );
-		mapDef->ReplaceSourceFileText();
-	}
-}
-
-/*
-===============
 idSessionLocal::ExecuteMapChange
 
 Performs the initialization of a game based on mapSpawnData, used for both single
@@ -1533,17 +1495,6 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	// and draw the loading gui instead of game draws
 	insideExecuteMapChange = true;
 
-	/* grayman #3763 - no longer used
-	// if this works out we will probably want all the sizes in a def file although this solution will 
-	// work for new maps etc. after the first load. we can also drop the sizes into the default.cfg
-	fileSystem->ResetReadCount();
-	if ( !reloadingSameMap  ) {
-		bytesNeededForMapLoad = GetBytesNeededForMapLoad( mapString.c_str() );
-	} else {
-		bytesNeededForMapLoad = 30 * 1024 * 1024;
-	}
-	*/
-
 	ClearWipe();
 
 	// let the loading gui spin for 1 second to animate out
@@ -1566,9 +1517,11 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	common->Printf( "Map: %s\n", mapString.c_str() );
 
 	// let the renderSystem load all the geometry
+	session->UpdateLoadingProgressBar( PROGRESS_STAGE_PROCFILE, 0.0f );
 	if ( !rw->InitFromMap( fullMapName ) ) {
 		common->Error( "Couldn't load %s", fullMapName.c_str() );
 	}
+	session->UpdateLoadingProgressBar( PROGRESS_STAGE_PROCFILE, 1.0f );
 
 	// for the synchronous networking we needed to roll the angles over from
 	// level to level, but now we can just clear everything
@@ -1611,7 +1564,6 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 		renderSystem->EndLevelLoad();
 		soundSystem->EndLevelLoad( mapString.c_str() );
 		declManager->EndLevelLoad();
-		SetBytesNeededForMapLoad( mapString.c_str(), fileSystem->GetReadCount() );
 	}
 	uiManager->EndLevelLoad();
 
@@ -1632,7 +1584,7 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 
 	common->PrintWarnings();
 
-	if ( guiLoading /*&& bytesNeededForMapLoad*/ ) {
+	if ( guiLoading ) {
 		float pct = guiLoading->State().GetFloat( "map_loading" );
 		if ( pct < 0.0f ) {
 			pct = 0.0f;
@@ -2511,22 +2463,11 @@ void idSessionLocal::DrawCmdGraph() {
 
 /*
 ===============
-idSessionLocal::PacifierUpdate
+idSessionLocal::UpdateLoadingProgressBar
 ===============
 */
-void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
+void idSessionLocal::UpdateLoadingProgressBar( progressStage_t stage, float ratio )
 {
-	/* 'count' is used as follows:
-	  
-	   - for key points, it is either '0' (not used), or the
-	     total number of expected interim 'sub-key' points, which
-	     is used to determine the incremental amount to be added to
-	     the loading percentage as each 'sub-key' point is reported.
-	  
-	   - for 'sub-key' points, it is the number of objects processed,
-	     but it's not used
-	*/
-
 	if ( !insideExecuteMapChange )
 	{
 		return;
@@ -2539,106 +2480,59 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 		return;
 	}
 
-	if ( guiLoading /*&& bytesNeededForMapLoad*/ )
+	static float StageWeights[PROGRESS_STAGE_COUNT]; // which factor of global progress bar each stage takes
+	static bool WeightInitialized = false;
+	if ( !WeightInitialized ) {
+		WeightInitialized = true;
+
+		memset( StageWeights, -1, sizeof(StageWeights) );
+		StageWeights[PROGRESS_STAGE_PROCFILE]	= 0.03f;
+		StageWeights[PROGRESS_STAGE_MAPFILE]	= 0.02f;
+		StageWeights[PROGRESS_STAGE_COLLISION]	= 0.03f;
+		StageWeights[PROGRESS_STAGE_ENTITIES]	= 0.45f;
+		StageWeights[PROGRESS_STAGE_ROUTING]	= 0.02f;
+		StageWeights[PROGRESS_STAGE_IMAGES]		= 0.25f;
+		StageWeights[PROGRESS_STAGE_SOUNDS]		= 0.20f;
+
+		// make sure sum of weights is unit
+		float weightSum = 0.0f;
+		for ( int s = 0; s < PROGRESS_STAGE_COUNT; s++ )
+			weightSum += StageWeights[s];
+		assert( idMath::Fabs(weightSum - 1.0f) <= 1e-3f );
+	}
+
+	if ( guiLoading )
 	{
 		// grayman #3763 - new way
-		// 'bytesNeededForMapLoad' is a constant,
-		// so it can't reflect the varying amounts of data needed
-		// to load a map. Small maps will be more accurate, and
-		// large maps will be way off the mark, relegating most of
-		// the map load to the time after map_loading == 100%. The
-		// only accurate way to display the loading bar is to know
-		// ahead of time how many bytes will need to be read, but
-		// we can't know that until after the first time the map is loaded.
-		//
 		// Replaced with a method that determines average "% complete"
 		// settings at key loading points, and
 		// bump the loading bar to those settings as the load progresses.
-		//
-		// Leave a short time (~5s) after 100% is reached so that the loading
-		// messages that replace the bar can be displayed for a short time.
-		// This is done by reducing the number of textures that need to be
-		// loaded, which increases the amount of progress shown as each is
-		// loaded. Once pct reaches 1.00, the loading bar shows 100% and
-		// switches what's painted based on what the map author has the
-		// gui doing. Meanwhile, the extra textures continue to load in the
-		// background until all are loaded. At that point, it's only a few
-		// ms before the "Mission Loaded / Press Attack" screen is painted
-		// and the player can start the mission.
 
+		float globalRatio = 0.0f;
+		for ( int s = 0; s < stage; s++ )
+			globalRatio += StageWeights[s];
+		globalRatio += StageWeights[stage] * ratio;
+
+		TRACE_PLOT_FRACTION( "LoadingProgressBar", globalRatio );
+
+		if ( stage == lastUpdateProgressBarStage && ratio == lastUpdateProgressBarRatio )
+			return;	// exactly same as previous update
+		assert( stage >= 0 && stage < PROGRESS_STAGE_COUNT );
+		assert( ratio >= 0.0f && ratio <= 1.0f );
+		assert( stage != lastUpdateProgressBarStage || ratio > lastUpdateProgressBarRatio );	// monotonic
+
+		// don't waste time redrawing screen on every progress report
+		// only redraw when a) stage is exactly at start/end, b) predefined time has passed
 		int	time = eventLoop->Milliseconds();
+		if ( ratio > 0.0f && ratio < 1.0f && time - lastUpdateProgressBarTime < 200 )
+			return;
 
-		switch (key)
-		{
-		case LOAD_KEY_START: // Start loading map
-			pct = LOAD_KEY_START_PROGRESS;
-			break;
-		case LOAD_KEY_COLLISION_START: // Start loading collision data
-			pct = LOAD_KEY_COLLISION_START_PROGRESS;
-			break;
-		case LOAD_KEY_COLLISION_DONE: // Collision data loaded, start spawning player
-			pct = LOAD_KEY_COLLISION_DONE_PROGRESS;
-			break;
-		case LOAD_KEY_SPAWN_ENTITIES_START: // Player spawned, start spawning entities
-			pct = LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS;
-			pct_delta = (LOAD_KEY_ROUTING_START_PROGRESS - LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS) / idMath::Fmax(count, 1.0f);
-			break;
-		case LOAD_KEY_SPAWN_ENTITIES_INTERIM: // spawning entities (finer granularity)
-			pct += pct_delta;
-			if ( time - lastPacifierTime < 500 )
-			{
-				return;
-			}
-			break;
-		case LOAD_KEY_ROUTING_START: // entities spawned, start compiling routing data
-			pct = LOAD_KEY_ROUTING_START_PROGRESS;
-			pct_delta = (LOAD_KEY_ROUTING_DONE_PROGRESS - LOAD_KEY_ROUTING_START_PROGRESS) / idMath::Fmax(count, 1.0f);
-			break;
-		case LOAD_KEY_ROUTING_INTERIM: // compiling routing data (finer granularity)
-			pct += pct_delta;
-			if ( time - lastPacifierTime < 500 )
-			{
-				return;
-			}
-			break;
-		case LOAD_KEY_ROUTING_DONE: // routing data compiled, spawn player
-			pct = LOAD_KEY_ROUTING_DONE_PROGRESS;
-			break;
-		case LOAD_KEY_IMAGES_START: // player spawned, start loading textures
-			pct = LOAD_KEY_IMAGES_START_PROGRESS;
-			
-			// the -35 below guarantees there will be
-			// some time between the loading bar
-			// hitting 100% and the "Mission Loaded / Press Attack" screen
-			pct_delta = (LOAD_KEY_DONE_PROGRESS - LOAD_KEY_IMAGES_START_PROGRESS) / idMath::Fmax(idMath::Fmax(count - 35, count/2.0f), 1.0f);
-			break;
-		case LOAD_KEY_IMAGES_INTERIM: // loading textures (finer granularity)
-			pct += pct_delta;
-			if ( time - lastPacifierTime < 500 )
-			{
-				return;
-			}
-			break;
-		case LOAD_KEY_DONE: // textures loaded, mission done loading
-			// send the loading gui the final pct
-			break;
-		default:
-			break;
-		}
+		lastUpdateProgressBarTime = time;
+		lastUpdateProgressBarStage = stage;
+		lastUpdateProgressBarRatio = ratio;
 
-		lastPacifierTime = time;
-
-		guiLoading->SetStateFloat( "map_loading", pct );
+		guiLoading->SetStateFloat( "map_loading", globalRatio );
 		guiLoading->StateChanged( com_frameTime );
-		// end of new way
-
-		/* grayman #3763 - old way
-		float n = fileSystem->GetReadCount();
-		float pct = ( n / bytesNeededForMapLoad );
-		guiLoading->SetStateFloat( "map_loading", pct );
-		guiLoading->StateChanged( com_frameTime );
-		// end of old way
-		*/
 	}
 
 	Sys_GenerateEvents();

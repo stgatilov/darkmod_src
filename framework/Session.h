@@ -46,6 +46,18 @@ typedef enum {
 
 typedef const char * (*HandleGuiCommand_t)( const char * );
 
+// grayman #3763 - loading bar progress at key points,
+typedef enum {
+	PROGRESS_STAGE_PROCFILE,
+	PROGRESS_STAGE_MAPFILE,
+	PROGRESS_STAGE_COLLISION,
+	PROGRESS_STAGE_ENTITIES,
+	PROGRESS_STAGE_ROUTING,
+	PROGRESS_STAGE_IMAGES,
+	PROGRESS_STAGE_SOUNDS,
+	PROGRESS_STAGE_COUNT,	// auxilliary
+} progressStage_t;
+
 class idSession {
 public:
 	virtual			~idSession() {}
@@ -72,7 +84,7 @@ public:
 	virtual void	UpdateScreen( bool outOfSequence = true ) = 0;
 
 	// Called when it's time to update the Loading Bar progress.
-	virtual void	PacifierUpdate(loadkey_t key, int count) = 0; // grayman #3763
+	virtual void	UpdateLoadingProgressBar( progressStage_t key, float ratio ) = 0;
 
 	// Called every frame, possibly spinning in place if we are
 	// above maxFps, or we haven't advanced at least one demo frame.
