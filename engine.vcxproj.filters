@@ -3454,7 +3454,7 @@
     <ClCompile Include="renderer\frontend\tr_turboshadow.cpp">
       <Filter>Renderer\Frontend</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\backend\draw_glsl.cpp">
+    <ClCompile Include="renderer\backend\glsl.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="renderer\backend\FrameBuffer.cpp">
