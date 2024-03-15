@@ -47,8 +47,6 @@ public:
 
 	// global built-in shaders
 	GLSLProgram *oldStageShader;
-	GLSLProgram *gaussianBlurShader;
-	GLSLProgram *testImageCubeShader;
 
 	GLuint uboHandle;
 

@@ -1754,6 +1754,7 @@ void RB_ShowDestinationAlpha( void );
 void RB_ShowOverdraw( void );
 void R_Tools();
 void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs );
+void RB_InitDebugTools( void );
 void RB_ShutdownDebugTools( void );
 void RB_CopyDebugPrimitivesToBackend( void );
 

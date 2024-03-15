@@ -74,8 +74,6 @@ typedef struct debugPrimitives_s {
 
 debugPrimitives_t r_debug, rb_debug;
 
-static void RB_DrawText( ImmediateRendering &ir, const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align );
-
 
 template<class DebugObject, int MaxN> DebugObject *DebugObjectSet<DebugObject, MaxN>::Append(int lifeTime, idVec4 rgb, bool depthTest) {
 	if (num < MaxN) {
@@ -120,6 +118,33 @@ template<class DebugObject, int MaxN> void DebugObjectSet<DebugObject, MaxN>::Co
 		arr[i] = src.arr[i];
 }
 
+GLSLProgram *testImageCubeShader = nullptr;
+
+/*
+=================
+RB_InitDebugTools
+=================
+*/
+void RB_InitDebugTools( void ) {
+	testImageCubeShader = programManager->Load( "testImageCube" );
+}
+
+/*
+=================
+RB_ShutdownDebugTools
+=================
+*/
+void RB_ShutdownDebugTools( void ) {
+	r_debug.text.Clear(0);
+	r_debug.lines.Clear(0);
+	r_debug.polygons.Clear(0);
+	rb_debug.text.Clear(0);
+	rb_debug.lines.Clear(0);
+	rb_debug.polygons.Clear(0);
+
+	testImageCubeShader = nullptr;
+}
+
 /*
 ================
 RB_CopyDebugPrimitivesToBackend
@@ -130,6 +155,8 @@ void RB_CopyDebugPrimitivesToBackend( void ) {
 	rb_debug.polygons.CopyFrom(r_debug.polygons);
 	rb_debug.text.CopyFrom(r_debug.text);
 }
+
+static void RB_DrawText( ImmediateRendering &ir, const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align );
 
 /*
 ================
@@ -2348,6 +2375,8 @@ void RB_TestImage( void ) {
 			tr.testVideoFrame = NULL;
 			return;
 		}
+	} else if ( tr.testImage && tr.testImageIsCubemap ) {
+		image = tr.testImage;
 	} else if ( tr.testImage && !tr.testImageIsCubemap ) {
 		int max = idMath::Imax(tr.testImage->uploadWidth, tr.testImage->uploadHeight);
 
@@ -2380,8 +2409,8 @@ void RB_TestImage( void ) {
 			DEFINE_UNIFORM(mat4, projectionMatrix);
 			DEFINE_UNIFORM(sampler, texCube);
 		};
-		programManager->testImageCubeShader->Activate();
-		auto uniforms = programManager->testImageCubeShader->GetUniformGroup<TestImageCubeUniforms>();
+		testImageCubeShader->Activate();
+		auto uniforms = testImageCubeShader->GetUniformGroup<TestImageCubeUniforms>();
 		uniforms->texCube.Set( 0 );
 		uniforms->modelViewMatrix.Set( viewMatrix );
 		uniforms->projectionMatrix.Set( projectionMatrix );
@@ -2642,20 +2671,6 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		RB_TestGamma();
 		RB_TestGammaBias();
 	}
-}
-
-/*
-=================
-RB_ShutdownDebugTools
-=================
-*/
-void RB_ShutdownDebugTools( void ) {
-	r_debug.text.Clear(0);
-	r_debug.lines.Clear(0);
-	r_debug.polygons.Clear(0);
-	rb_debug.text.Clear(0);
-	rb_debug.lines.Clear(0);
-	rb_debug.polygons.Clear(0);
 }
 
 void R_Tools() {

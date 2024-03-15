@@ -151,8 +151,6 @@ namespace {
 
 void GLSLProgramManager::Init() {
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
-	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
-	testImageCubeShader = Load( "testImageCube" );
 }
 
 void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {

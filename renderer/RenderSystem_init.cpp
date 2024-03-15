@@ -1806,6 +1806,8 @@ void idRenderSystemLocal::Init( void ) {
 	frameBuffers->Init();
 	programManager->Init();
 
+	RB_InitDebugTools();
+
 	idCinematic::InitCinematic( );
 
 	// build brightness translation tables
@@ -1843,6 +1845,8 @@ void idRenderSystemLocal::Shutdown( void ) {
 
 	idCinematic::ShutdownCinematic( );
 
+	RB_ShutdownDebugTools();
+
 	frameBuffers->Shutdown();
 	globalImages->Shutdown();
 	programManager->Shutdown();
@@ -1861,8 +1865,6 @@ void idRenderSystemLocal::Shutdown( void ) {
 	vertexCache.Shutdown();
 
 	R_ShutdownTriSurfData();
-
-	RB_ShutdownDebugTools();
 
 	delete guiModel;
 	delete demoGuiModel;
