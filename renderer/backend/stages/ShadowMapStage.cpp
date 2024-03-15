@@ -30,7 +30,7 @@ idCVar r_shadowMapSinglePass(
 	"1 - render shadow maps for all lights in a single pass"
 );
 idCVar r_shadowMapAlphaTested(
-	"r_shadowMapAlphaTested", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
+	"r_shadowMapAlphaTested", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
 	"In case of alpha-tested material, apply alpha test to shadows too?\n"
 	"Note: stencil shadows cannot work with alpha test."
 );

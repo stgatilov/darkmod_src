@@ -25,7 +25,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/stages/AmbientOcclusionStage.h"
 
 idCVar r_shadowMapOnTranslucent(
-	"r_shadowMapOnTranslucent", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
+	"r_shadowMapOnTranslucent", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
 	"Are shadows cast on translucent surfaces?\n"
 	"Note: stencil shadows cannot work on translucent objects."
 );
