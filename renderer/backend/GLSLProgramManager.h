@@ -46,7 +46,7 @@ public:
 	void ReloadAllPrograms();
 
 	// global built-in shaders
-	GLSLProgram *oldStageShader;
+	GLSLProgram *renderToolsShader;
 
 	GLuint uboHandle;
 

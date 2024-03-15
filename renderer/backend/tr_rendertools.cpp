@@ -205,7 +205,7 @@ RB_SimpleSpaceSetup
 void RB_SimpleSpaceSetup( const viewEntity_t *space ) {
 	// change the matrix if needed
 	if ( space != backEnd.currentSpace ) {
-		Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+		Uniforms::Global* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Global>();
 		globalUniforms->Set( space );
 		backEnd.currentSpace = space;
 	}
@@ -235,7 +235,7 @@ RB_SimpleScreenSetup
 void RB_SimpleScreenSetup( void ) {
 	GL_CheckErrors();
 	backEnd.currentSpace = nullptr;
-	Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+	Uniforms::Global* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Global>();
 	globalUniforms->modelMatrix.Set( mat4_identity.ToFloatPtr() );			//not used, actually
 	globalUniforms->modelViewMatrix.Set( mat4_identity.ToFloatPtr() );
 	//specify coordinates in [0..1] x [0..1] instead of [-1..1] x [-1..1]
@@ -254,7 +254,7 @@ RB_SimpleWorldSetup
 void RB_SimpleWorldSetup( void ) {
 	GL_CheckErrors();
 	backEnd.currentSpace = &backEnd.viewDef->worldSpace;
-	Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+	Uniforms::Global* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Global>();
 	globalUniforms->Set( backEnd.currentSpace );
 
 	backEnd.currentScissor = backEnd.viewDef->scissor;
@@ -1693,12 +1693,7 @@ void RB_ShowLights( void ) {
 	if ( !r_showLights.GetInteger() ) {
 		return;
 	}
-	programManager->oldStageShader->Activate();
-	OldStageUniforms* oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
-	const float zero[4] = { 0, 0, 0, 0 };
-	static const float one[4] = { 1, 1, 1, 1 };
-	oldStageUniforms->colorMul.Set( one );
-	oldStageUniforms->colorAdd.Set( zero );
+	programManager->renderToolsShader->Activate();
 
 	// all volumes are expressed in world coordinates
 	GL_CheckErrors();
@@ -2460,7 +2455,7 @@ void RB_TestImage( void ) {
 		ir.glEnd();
 	}
 
-	programManager->oldStageShader->Activate();
+	programManager->renderToolsShader->Activate();
 }
 
 /*
@@ -2631,10 +2626,7 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-	programManager->oldStageShader->Activate();
-	OldStageUniforms* oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
-	oldStageUniforms->colorMul.Set( 1, 1, 1, 1 );
-	oldStageUniforms->colorAdd.Set( 0, 0, 0, 0 );
+	programManager->renderToolsShader->Activate();
 	GL_SelectTexture(0);
 	globalImages->whiteImage->Bind();
 

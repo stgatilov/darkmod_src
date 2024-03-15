@@ -106,11 +106,3 @@ namespace Uniforms {
 		void Set( const shaderStage_t *pStage, const drawSurf_t *surf );
 	};
 };
-
-struct OldStageUniforms : GLSLUniformGroup {
-	UNIFORM_GROUP_DEF( OldStageUniforms );
-
-	DEFINE_UNIFORM( float, screenTex );
-	DEFINE_UNIFORM( vec4, colorMul );
-	DEFINE_UNIFORM( vec4, colorAdd );
-};

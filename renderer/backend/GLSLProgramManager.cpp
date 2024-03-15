@@ -59,7 +59,7 @@ void GLSLProgramManager::Shutdown() {
 	}
 	programs.ClearFree();
 
-	oldStageShader = nullptr;
+	renderToolsShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idHashMapDict &defines ) {
@@ -136,23 +136,6 @@ void GLSLProgramManager::ReloadAllPrograms() {
 	}
 }
 
-
-// INITIALIZE BUILTIN PROGRAMS HERE
-
-namespace {
-	void InitOldStageShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, {}, "oldStage.vs", "oldStage.fs" );
-		program->Activate();
-		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
-		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
-		program->Validate();
-	}
-}
-
-void GLSLProgramManager::Init() {
-	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
-}
-
 void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 	common->Printf( "---------- R_ReloadGLSLPrograms_f -----------\n" );
 	const char *programName = args.Argc() > 1 ? args.Argv( 1 ) : nullptr;
@@ -162,4 +145,15 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 		programManager->ReloadAllPrograms();
 	}
 	common->Printf( "---------------------------------\n" );
+}
+
+// INITIALIZE BUILTIN PROGRAMS HERE
+
+void GLSLProgramManager::Init() {
+	renderToolsShader = LoadFromGenerator( "renderTools", []( GLSLProgram *program ) {
+		DefaultProgramInit( program, {}, "renderTools.vs", "renderTools.fs" );
+		program->Activate();
+		GLSLUniform_sampler( program, "u_texture" ).Set( 0 );
+		program->Validate();
+	} );
 }
