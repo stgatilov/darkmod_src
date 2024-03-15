@@ -46,13 +46,7 @@ public:
 	void ReloadAllPrograms();
 
 	// global built-in shaders
-	GLSLProgram *softParticleShader;
-	GLSLProgram *cubeMapShader;
-	GLSLProgram *environment;
-	GLSLProgram *bumpyEnvironment;
-	GLSLProgram *fogShader;
 	GLSLProgram *oldStageShader;
-	GLSLProgram *blendShader;
 	GLSLProgram *gaussianBlurShader;
 	GLSLProgram *testImageCubeShader;
 
@@ -60,7 +54,6 @@ public:
 
 private:
 	idList<GLSLProgram*> programs;
-	int legacyTangentsCvarCallback;
 };
 
 extern GLSLProgramManager *programManager;

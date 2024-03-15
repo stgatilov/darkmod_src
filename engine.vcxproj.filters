@@ -3454,9 +3454,6 @@
     <ClCompile Include="renderer\frontend\tr_turboshadow.cpp">
       <Filter>Renderer\Frontend</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\backend\draw_common.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
     <ClCompile Include="renderer\backend\draw_glsl.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>

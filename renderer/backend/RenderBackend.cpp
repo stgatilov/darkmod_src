@@ -23,11 +23,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/FrameBufferManager.h"
 #include "renderer/backend/FrameBuffer.h"
 
-idCVar r_useNewRenderPasses( "r_useNewRenderPasses", "2", CVAR_INTEGER | CVAR_ARCHIVE| CVAR_RENDERER,
-	"Use new refactored code for rendering surface/light material stages",
-	0, 2
-);
-
 RenderBackend renderBackendImpl;
 RenderBackend *renderBackend = &renderBackendImpl;
 
@@ -97,8 +92,6 @@ void RenderBackend::DrawView( const viewDef_t *viewDef, bool colorIsBackground )
 	RB_ShowOverdraw();
 
 
-	int processed;
-
 	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
 
 	// clear the framebuffer, set the projection matrix, etc
@@ -120,74 +113,35 @@ void RenderBackend::DrawView( const viewDef_t *viewDef, bool colorIsBackground )
 		DrawShadowsAndInteractions( viewDef );
 	}
 
-	if ( r_useNewRenderPasses.GetInteger() > 0 ) {
-		int beforePostproc = 0;
-		while ( beforePostproc < numDrawSurfs && drawSurfs[beforePostproc]->sort < SS_POST_PROCESS )
-			beforePostproc++;
-		const drawSurf_t **postprocSurfs = (const drawSurf_t **)drawSurfs + beforePostproc;
-		int postprocCount = numDrawSurfs - beforePostproc;
+	int beforePostproc = 0;
+	while ( beforePostproc < numDrawSurfs && drawSurfs[beforePostproc]->sort < SS_POST_PROCESS )
+		beforePostproc++;
+	const drawSurf_t **postprocSurfs = (const drawSurf_t **)drawSurfs + beforePostproc;
+	int postprocCount = numDrawSurfs - beforePostproc;
 
-		surfacePassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs, beforePostproc );
+	surfacePassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs, beforePostproc );
 
-		if ( (r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && !viewDef->IsLightGem() ) {
-			frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
-		}
-
-		if ( r_useNewRenderPasses.GetInteger() == 2 ) {
-			LightPassesStage::DrawMask mask;
-			mask.opaque = true;
-			mask.translucent = false;
-			lightPassesStage.DrawAllFogLights( viewDef, mask );
-
-			lightPassesStage.DrawAllBlendLights( viewDef );
-			volumetric->RenderAll( viewDef );
-
-			if ( surfacePassesStage.NeedCurrentRenderTexture( viewDef, postprocSurfs, postprocCount ) )
-				frameBuffers->UpdateCurrentRenderCopy();
-
-			surfacePassesStage.DrawSurfaces( viewDef, postprocSurfs, postprocCount );
-
-			// 2.08: second fog pass, translucent only
-			mask.opaque = false;
-			mask.translucent = true;
-			lightPassesStage.DrawAllFogLights( viewDef, mask );
-		}
-		else {
-			extern void RB_STD_FogAllLights( bool translucent );
-			RB_STD_FogAllLights( false );
-
-			if ( surfacePassesStage.NeedCurrentRenderTexture( viewDef, postprocSurfs, postprocCount ) )
-				frameBuffers->UpdateCurrentRenderCopy();
-
-			surfacePassesStage.DrawSurfaces( viewDef, postprocSurfs, postprocCount );
-
-			RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
-		}
+	if ( (r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && !viewDef->IsLightGem() ) {
+		frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
 	}
-	else {
 
-		// now draw any non-light dependent shading passes
-		int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs, bool postProcessing );
-		processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs, false );
+	LightPassesStage::DrawMask mask;
+	mask.opaque = true;
+	mask.translucent = false;
+	lightPassesStage.DrawAllFogLights( viewDef, mask );
 
-		if (
-			(r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && 
-			!viewDef->IsLightGem()
-		) {
-			frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
-		}
+	lightPassesStage.DrawAllBlendLights( viewDef );
+	volumetric->RenderAll( viewDef );
 
-		// fog and blend lights
-		extern void RB_STD_FogAllLights( bool translucent );
-		RB_STD_FogAllLights( false );
+	if ( surfacePassesStage.NeedCurrentRenderTexture( viewDef, postprocSurfs, postprocCount ) )
+		frameBuffers->UpdateCurrentRenderCopy();
 
-		// now draw any post-processing effects using _currentRender
-		if ( processed < numDrawSurfs ) {
-			RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed, true );
-		}
+	surfacePassesStage.DrawSurfaces( viewDef, postprocSurfs, postprocCount );
 
-		RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
-	}
+	// 2.08: second fog pass, translucent only
+	mask.opaque = false;
+	mask.translucent = true;
+	lightPassesStage.DrawAllFogLights( viewDef, mask );
 
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
 

@@ -59,10 +59,7 @@ void GLSLProgramManager::Shutdown() {
 	}
 	programs.ClearFree();
 
-	cubeMapShader = nullptr;
-	fogShader = nullptr;
 	oldStageShader = nullptr;
-	blendShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idHashMapDict &defines ) {
@@ -143,23 +140,6 @@ void GLSLProgramManager::ReloadAllPrograms() {
 // INITIALIZE BUILTIN PROGRAMS HERE
 
 namespace {
-	void InitInteractionShader( GLSLProgram *program ) {
-		idHashMapDict defines;
-		// TODO: set some defines based on cvars
-		defines.Set( "SOFT", "1" );
-		DefaultProgramInit( program, defines, "interaction.vs", "interaction.fs" );
-		program->Validate();
-	}
-
-	void InitFogShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, {}, "fog.vs", "fog.fs" );
-		program->Activate();
-		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
-		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
-		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
-		program->Validate();
-	}
-
 	void InitOldStageShader( GLSLProgram *program ) {
 		DefaultProgramInit( program, {}, "oldStage.vs", "oldStage.fs" );
 		program->Activate();
@@ -167,52 +147,10 @@ namespace {
 		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
 		program->Validate();
 	}
-
-	void InitBlendShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, {}, "blend.vs", "blend.fs" );
-		program->Activate();
-		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
-		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
-		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
-		program->Validate();
-	}
-
-	void InitSoftParticleShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, {}, program->GetName() + ".vs", program->GetName() + ".fs" );
-		program->Activate();
-		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
-		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
-		program->Validate();
-	}
-
-	void InitSamplerBindingsForBumpShaders( GLSLProgram *program ) {
-		GLSLUniform_sampler( program, "u_normalTexture" ).Set( 1 );
-		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
-}
-
-	GLSLProgram *LoadFromBaseNameWithCustomizer( const idStr &baseName, const std::function<void(GLSLProgram*)> customizer) {
-		return programManager->LoadFromGenerator( baseName, [=]( GLSLProgram *program ) {
-			idStr geometrySource = baseName + ".gs";
-			if( fileSystem->FindFile( idStr( "glprogs/" ) + baseName + ".gs" ) != FIND_NO ) {
-				DefaultProgramInit( program, {}, baseName + ".vs", baseName + ".fs", baseName + ".gs" );
-			} else {
-				DefaultProgramInit( program, {}, baseName + ".vs", baseName + ".fs", nullptr );
-			}
-			program->Activate();
-			customizer( program );
-			program->Validate();
-		});		
-	}
 }
 
 void GLSLProgramManager::Init() {
-	cubeMapShader = LoadFromBaseNameWithCustomizer( "cubeMap", InitSamplerBindingsForBumpShaders );
-	bumpyEnvironment = LoadFromBaseNameWithCustomizer( "bumpyEnvironment", InitSamplerBindingsForBumpShaders );
-	environment = Load( "environment" );
-	fogShader = LoadFromGenerator( "fog", InitFogShader );
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
-	blendShader = LoadFromGenerator( "blend", InitBlendShader );
-	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
 	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
 	testImageCubeShader = Load( "testImageCube" );
 }

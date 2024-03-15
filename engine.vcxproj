@@ -1227,7 +1227,6 @@
     <ClCompile Include="idlib\Thread.cpp" />
     <ClCompile Include="idlib\Timer.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
-    <ClCompile Include="renderer\backend\draw_common.cpp" />
     <ClCompile Include="renderer\backend\draw_glsl.cpp" />
     <ClCompile Include="renderer\backend\FrameBuffer.cpp" />
     <ClCompile Include="renderer\backend\FrameBufferManager.cpp" />
