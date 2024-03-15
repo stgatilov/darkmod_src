@@ -205,7 +205,7 @@ RB_SimpleSpaceSetup
 void RB_SimpleSpaceSetup( const viewEntity_t *space ) {
 	// change the matrix if needed
 	if ( space != backEnd.currentSpace ) {
-		Uniforms::Global* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Global>();
+		Uniforms::Transform* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Transform>();
 		globalUniforms->Set( space );
 		backEnd.currentSpace = space;
 	}
@@ -235,7 +235,7 @@ RB_SimpleScreenSetup
 void RB_SimpleScreenSetup( void ) {
 	GL_CheckErrors();
 	backEnd.currentSpace = nullptr;
-	Uniforms::Global* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Global>();
+	Uniforms::Transform* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Transform>();
 	globalUniforms->modelMatrix.Set( mat4_identity.ToFloatPtr() );			//not used, actually
 	globalUniforms->modelViewMatrix.Set( mat4_identity.ToFloatPtr() );
 	//specify coordinates in [0..1] x [0..1] instead of [-1..1] x [-1..1]
@@ -254,7 +254,7 @@ RB_SimpleWorldSetup
 void RB_SimpleWorldSetup( void ) {
 	GL_CheckErrors();
 	backEnd.currentSpace = &backEnd.viewDef->worldSpace;
-	Uniforms::Global* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Global>();
+	Uniforms::Transform* globalUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Transform>();
 	globalUniforms->Set( backEnd.currentSpace );
 
 	backEnd.currentScissor = backEnd.viewDef->scissor;

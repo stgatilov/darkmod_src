@@ -383,7 +383,7 @@ void FrobOutlineStage::DrawElements( idList<drawSurf_t *> &surfs, GLSLProgram  *
 
 	for ( drawSurf_t *surf : surfs ) {
 		GL_Cull( surf->material->GetCullType() );
-		shader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
+		shader->GetUniformGroup<Uniforms::Transform>()->Set( surf->space );
 		vertexCache.VertexPosition( surf->ambientCache );
 
 		//stgatilov: some transparent objects have no diffuse map

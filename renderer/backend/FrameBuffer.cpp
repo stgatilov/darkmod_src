@@ -283,7 +283,7 @@ void FB_DebugShowContents() {
 	GL_State( GLS_DEFAULT );
 
 	programManager->renderToolsShader->Activate();
-	Uniforms::Global* transformUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Global>();
+	Uniforms::Transform* transformUniforms = programManager->renderToolsShader->GetUniformGroup<Uniforms::Transform>();
 	idMat4 ninety = mat4_identity * .9f;
 	ninety[3][3] = 1;
 	transformUniforms->modelViewMatrix.Set( ninety );

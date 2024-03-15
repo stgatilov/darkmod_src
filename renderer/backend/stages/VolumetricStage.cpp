@@ -300,7 +300,7 @@ void VolumetricStage::RenderFrustum(GLSLProgram *shader) {
 	//   3) can use frustum exit distance for clamping depth texture
 
 	// set modelview / projection
-	shader->GetUniformGroup<Uniforms::Global>()->Set( &viewDef->worldSpace );
+	shader->GetUniformGroup<Uniforms::Transform>()->Set( &viewDef->worldSpace );
 
 	drawSurf_t ds = { 0 };
 	ds.space = &viewDef->worldSpace;
