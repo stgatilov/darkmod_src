@@ -33,7 +33,7 @@ namespace {
 		if( geometrySource != nullptr ) {
 			program->AttachGeometryShader( geometrySource, defines );
 		}
-		Attributes::Default::Bind( program );
+		Attributes::Regular::Bind( program );
 		program->Link();
 		program->Activate();
 		int mv = program->GetUniformLocation( "u_modelViewMatrix" );

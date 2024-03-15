@@ -17,18 +17,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "renderer/tr_local.h"
 #include "renderer/backend/glsl.h"
-#include "renderer/backend/FrameBuffer.h"
-#include "renderer/backend/GLSLProgram.h"
-#include "renderer/backend/GLSLProgramManager.h"
-#include "renderer/backend/stages/AmbientOcclusionStage.h"
-#include "renderer/backend/FrameBufferManager.h"
 
-//=============================================================================
-// Below goes the suggested new way of handling GLSL parameters.
-// TODO: move it to glsl.cpp
 
-void Attributes::Default::Bind(GLSLProgram *program) {
-	using namespace Attributes::Default;
+void Attributes::Regular::Bind(GLSLProgram *program) {
+	using namespace Attributes::Regular;
 	program->BindAttribLocation(Position, "attr_Position");
 	program->BindAttribLocation(Normal, "attr_Normal");
 	program->BindAttribLocation(Color, "attr_Color");
@@ -38,14 +30,13 @@ void Attributes::Default::Bind(GLSLProgram *program) {
 	program->BindAttribLocation(DrawId, "attr_DrawId");
 }
 
-void Uniforms::Global::Set(const viewEntity_t *space) {
+void Attributes::Shadow::Bind(GLSLProgram *program) {
+	using namespace Attributes::Shadow;
+	program->BindAttribLocation(Position, "attr_Position");
+}
+
+void Uniforms::Transform::Set( const viewEntity_t *space ) {
 	modelMatrix.Set( space->modelMatrix );
-	//projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
+	projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
 	modelViewMatrix.Set( space->modelViewMatrix );
-	if ( viewOriginLocal.IsPresent() ) {
-		idVec4 vol;
-		R_GlobalPointToLocal( space->modelMatrix, backEnd.viewDef->renderView.vieworg, vol.ToVec3() );
-		vol[3] = 1.0;
-		viewOriginLocal.Set( vol );
-	}
 }

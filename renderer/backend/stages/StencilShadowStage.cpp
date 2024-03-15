@@ -33,8 +33,7 @@ struct StencilShadowStage::Uniforms : GLSLUniformGroup {
 void StencilShadowStage::Init() {
 	stencilShadowShader = programManager->LoadFromFiles(
 		"stencil_shadow",
-		"stages/stencil/stencil_shadow.vert.glsl",
-		"stages/stencil/stencil_shadow.frag.glsl"
+		"stages/stencil/stencil_shadow.vert.glsl"
 	);
 }
 

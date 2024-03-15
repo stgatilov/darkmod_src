@@ -18,6 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma hdrstop
 
 #include "renderer/tr_local.h"
+#include "renderer/backend/glsl.h"
 
 const int32 MAX_VERTCACHE_SIZE = INT_MAX;
 
@@ -76,17 +77,17 @@ Unrelated to that, we now also enable all attributes once and not bother driver 
 */
 void BindAttributes( int pointer, attribBind_t attrib ) {
 	if ( attrib == attribBind_t::ATTRIB_REGULAR ) {
+		using namespace Attributes::Regular;
 		idDrawVert* ac = (idDrawVert*)(size_t)pointer;
-		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+		qglVertexAttribPointer( Position, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		qglVertexAttribPointer( Normal, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointer( Color, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
+		qglVertexAttribPointer( TexCoord, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+		qglVertexAttribPointer( Tangent, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		qglVertexAttribPointer( Bitangent, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 	} else {
-		const int attrib_indices[] = { 0,2,3,8,9,10 };
-		for ( auto attr_index : attrib_indices )
-			qglVertexAttribPointer( attr_index, 4, GL_FLOAT, false, sizeof( shadowCache_t ), (void*)(size_t)pointer );
+		using namespace Attributes::Shadow;
+		qglVertexAttribPointer( Position, 4, GL_FLOAT, false, sizeof( shadowCache_t ), (void*)(size_t)pointer );
 	}
 	currentAttribBinding = attrib;
 }
