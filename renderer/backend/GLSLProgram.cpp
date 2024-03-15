@@ -164,7 +164,7 @@ bool GLSLProgram::Validate() {
 void GLSLProgram::LoadFromFiles( const char *vertexFile, const char *fragmentFile, const idHashMapDict &defines ) {
 	AttachVertexShader( vertexFile, defines );
 	AttachFragmentShader( fragmentFile, defines );
-	Attributes::Regular::Bind( this );
+	Attributes::BindToProgram( this );
 	Link();
 }
 

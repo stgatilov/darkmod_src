@@ -22,6 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/RenderBackend.h"
 #include "renderer/backend/stages/BloomStage.h"
 #include "renderer/backend/FrameBufferManager.h"
+#include "renderer/backend/glsl.h"
 
 backEndState_t	backEnd;
 idCVarBool image_showBackgroundLoads( "image_showBackgroundLoads", "0", CVAR_RENDERER, "1 = print outstanding background loads" );
@@ -40,11 +41,6 @@ void RB_SetDefaultGLState( void ) {
 
 	qglClearDepth( 1.0f );
 	//GL_FloatColor( 1.0f, 1.0f, 1.0f, 1.0f );
-
-	// the vertex arrays are always enabled. FIXME: Not exactly a 'default GL state'
-	const int attrib_indices[] = { 0,2,3,8,9,10 };
-	for ( auto attr_index : attrib_indices )
-		qglEnableVertexAttribArray( attr_index );
 
 	// make sure our GL state vector is set correctly
 	memset( &backEnd.glState, 0, sizeof( backEnd.glState ) );
@@ -429,7 +425,7 @@ GLColorOverride::GLColorOverride( float r, float g, float b, float a ) {
 GLColorOverride::~GLColorOverride() {
 	if ( !enabled )
 		return;
-	qglEnableVertexAttribArray( 3 );
+	qglEnableVertexAttribArray( Attributes::Color );
 }
 
 void GLColorOverride::Enable( const float* color ) {
@@ -439,8 +435,8 @@ void GLColorOverride::Enable( const float* color ) {
 	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
 	parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
 	//qglColor4f( parm[0], parm[1], parm[2], parm[3] );
-	qglDisableVertexAttribArray( 3 );
-	qglVertexAttrib4fv( 3, parm );
+	qglDisableVertexAttribArray( Attributes::Color );
+	qglVertexAttrib4fv( Attributes::Color, parm );
 	enabled = true;
 }
 

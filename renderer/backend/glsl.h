@@ -21,26 +21,28 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 namespace Attributes {
-	// attributes used (almost) everywhere
-	namespace Regular {
-		enum Names {
-			Position  = 0,
-			Normal	  = 2,
-			Color	  = 3,
-			TexCoord  = 8,
-			Tangent	  = 9,
-			Bitangent = 10,
-			DrawId    = 15,
-		};
-		void Bind(GLSLProgram *program);
-	}
-	// attributes for stencil shadows
-	namespace Shadow {
-		enum Names {
-			Position  = 0,
-		};
-		void Bind(GLSLProgram *program);
-	}
+	// attribute indexes and GLSL names are the same for all shaders
+	enum Names {
+		Position  = 0,
+		Normal	  = 2,
+		Color	  = 3,
+		TexCoord  = 8,
+		Tangent	  = 9,
+		Bitangent = 10,
+		DrawId    = 15,
+	};
+	// connect GLSL program to attribute indexes
+	void BindToProgram(GLSLProgram *program);
+
+	// enable exactly the specified set of vertex attribute arrays
+	// and configure them to take data from corresponding vertex structure
+
+	// idDrawVert / ATTRIB_REGULAR
+	void EnableVertexRegular();
+	// shadowCache_t / ATTRIB_SHADOW
+	void EnableVertexShadow();
+	// ImmediateRendering::VertexData
+	void EnableVertexImmediate();
 };
 
 namespace Uniforms {

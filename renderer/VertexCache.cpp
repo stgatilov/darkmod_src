@@ -75,19 +75,13 @@ Vanilla D3 called VertexAttribPointer/Enable/DisableVertexAttribArray a few time
 The whole purpose of moving to a single VBO was to be able to set base attrib pointer for many calls
 Unrelated to that, we now also enable all attributes once and not bother driver with toggling them off and on all the time
 */
-void BindAttributes( int pointer, attribBind_t attrib ) {
+static void BindAttributes( attribBind_t attrib ) {
 	if ( attrib == attribBind_t::ATTRIB_REGULAR ) {
-		using namespace Attributes::Regular;
-		idDrawVert* ac = (idDrawVert*)(size_t)pointer;
-		qglVertexAttribPointer( Position, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-		qglVertexAttribPointer( Normal, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		qglVertexAttribPointer( Color, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-		qglVertexAttribPointer( TexCoord, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		qglVertexAttribPointer( Tangent, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-		qglVertexAttribPointer( Bitangent, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+		Attributes::EnableVertexRegular();
+	} else if ( attrib == attribBind_t::ATTRIB_SHADOW ) {
+		Attributes::EnableVertexShadow();
 	} else {
-		using namespace Attributes::Shadow;
-		qglVertexAttribPointer( Position, 4, GL_FLOAT, false, sizeof( shadowCache_t ), (void*)(size_t)pointer );
+		assert( false );
 	}
 	currentAttribBinding = attrib;
 }
@@ -113,11 +107,11 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 	if ( vbo != currentVertexBuffer ) {
 		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;
-		BindAttributes( 0, attrib );
+		BindAttributes( attrib );
 	} else {
 		// still need to switch to shadow attrib bindings when remain in the same VBO
 		if ( currentAttribBinding != attrib )
-			BindAttributes( 0, attrib );
+			BindAttributes( attrib );
 	}
 
 	if ( attrib == ATTRIB_REGULAR )  {

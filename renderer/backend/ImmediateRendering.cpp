@@ -20,6 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/ImmediateRendering.h"
 #include "renderer/backend/GLSLProgramManager.h"
 #include "renderer/backend/GLSLProgram.h"
+#include "renderer/backend/glsl.h"
 #include "renderer/tr_local.h"
 
 
@@ -96,12 +97,7 @@ void ImmediateRendering::FlushInternal() {
 		qglBufferData(GL_ARRAY_BUFFER, vertexList.Num() * sizeof(VertexData), vertexList.Ptr(), GL_STREAM_DRAW);
 
 		qglBindVertexArray(vao);
-		qglEnableVertexAttribArray(0);
-		qglEnableVertexAttribArray(3);
-		qglEnableVertexAttribArray(8);
-		qglVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, vertex));
-		qglVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexData), (void*)offsetof(VertexData, color));
-		qglVertexAttribPointer(8, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, texCoord));
+		Attributes::EnableVertexImmediate();
 
 		for (int i = 0; i < drawList.Num(); i++) {
 			auto draw = drawList[i];
