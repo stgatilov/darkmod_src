@@ -336,61 +336,6 @@ void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage
 }
 
 /*
-======================
-RB_LoadShaderTextureMatrix
-======================
-*/
-void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const shaderStage_t* pStage ) {
-	const auto *texture = &pStage->texture;
-	if ( !texture->hasMatrix )
-		return;
-
-	auto prog = GLSLProgram::GetCurrentProgram();
-	if ( !prog )
-		return;
-
-	if ( shaderRegisters ) {
-		float	matrix[16];
-		RB_GetShaderTextureMatrix( shaderRegisters, texture, matrix );
-		prog->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( matrix );
-	} else 
-		prog->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
-
-	/*qglMatrixMode( GL_TEXTURE );
-	qglLoadMatrixf( matrix );
-	qglMatrixMode( GL_MODELVIEW );*/
-}
-
-/*
-======================
-RB_BindVariableStageImage
-
-Handles generating a cinematic frame if needed
-======================
-*/
-void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters ) {
-	if ( texture->cinematic ) {
-		if ( r_skipDynamicTextures.GetBool() ) {
-			globalImages->defaultImage->Bind();
-			return;
-		}
-
-		// offset time by shaderParm[7] (FIXME: make the time offset a parameter of the shader?)
-		// We make no attempt to optimize for multiple identical cinematics being in view, or
-		// for cinematics going at a lower framerate than the renderer.
-		const cinData_t cin = texture->cinematic->ImageForTime( ( int )( 1000 * ( backEnd.viewDef->floatTime + backEnd.viewDef->renderView.shaderParms[11] ) ) );
-
-		if ( cin.image ) {
-			globalImages->cinematicImage->UploadScratch( cin.image, cin.imageWidth, cin.imageHeight );
-		} else {
-			globalImages->blackImage->Bind();
-		}
-	} else if ( texture->image ) {
-		texture->image->Bind();
-	}
-}
-
-/*
 =================
 RB_BeginDrawingView
 
