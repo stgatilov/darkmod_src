@@ -1102,17 +1102,22 @@ extern void Sys_CPUCount( int & logicalNum, int & coreNum, int & packageNum );
 								CORE_ANY, CORE_ANY, CORE_ANY, CORE_ANY }
 
 
-idCVar jobs_numThreads(
-	"jobs_numThreads", "-1", CVAR_INTEGER | CVAR_NOCHEAT | CVAR_ARCHIVE,
+idCVar jobs_numThreadsRealtime(
+	"jobs_numThreadsRealtime", "-1", CVAR_INTEGER | CVAR_NOCHEAT | CVAR_ARCHIVE,
 	"Number of threads used by job system during gameplay (REALTIME joblists). "
 	"-1 means it is determined automatically.",
 -1, MAX_JOB_THREADS );
-idCVar jobs_numThreadsOffset(
-	"jobs_numThreadsOffset", "0", CVAR_INTEGER | CVAR_NOCHEAT | CVAR_ARCHIVE,
+idCVar jobs_offsetThreadsRealtime(
+	"jobs_offsetThreadsRealtime", "0", CVAR_INTEGER | CVAR_NOCHEAT | CVAR_ARCHIVE,
 	"Added to automatically computed number of threads for jobs system during gameplay. "
-	"Only takes effect if jobs_numThreads is set to auto. "
+	"Only takes effect if jobs_numThreadsRealtime is set to auto. "
 	"For instance: set -1 if you want to leave one free thread for graphics driver.",
 -MAX_JOB_THREADS, MAX_JOB_THREADS );
+idCVar jobs_numThreadsNonInteractive(
+	"jobs_numThreadsNonInteractive", "-1", CVAR_INTEGER | CVAR_NOCHEAT | CVAR_ARCHIVE,
+	"Number of threads used by job system for non-interactive tasks (NONINTERACTIVE joblists). "
+	"-1 means it is determined automatically.",
+-1, MAX_JOB_THREADS );
 idCVar jobs_maxHddThreads(
 	"jobs_maxHddThreads", "1", CVAR_INTEGER | CVAR_NOCHEAT | CVAR_ARCHIVE,
 	"Maximum number of threads used for jobs that read from disk if game is on Hard Disk Drive. "
@@ -1323,13 +1328,16 @@ void idParallelJobManagerLocal::Submit( idParallelJobList_Threads * jobList, int
 		// we assume that calling thread will wait immediately and free its core for one of the worker threads
 		numThreads = numPhysicalCpuCores - dedicatedOccupiedThreads + 1;
 		// leave a few cores for OS background tasks, and maybe for OpenGL driver since they often do work in separate thread
-		numThreads += jobs_numThreadsOffset.GetInteger();
+		numThreads += jobs_offsetThreadsRealtime.GetInteger();
 
-		if ( jobs_numThreads.GetInteger() >= 0 )
-			numThreads = jobs_numThreads.GetInteger();
+		if ( jobs_numThreadsRealtime.GetInteger() >= 0 )
+			numThreads = jobs_numThreadsRealtime.GetInteger();
 	}
 	else if ( parallelism == JOBLIST_PARALLELISM_NONINTERACTIVE ) {
 		numThreads = numLogicalCpuCores;
+
+		if ( jobs_numThreadsNonInteractive.GetInteger() >= 0 )
+			numThreads = jobs_numThreadsNonInteractive.GetInteger();
 	}
 	else if ( parallelism == JOBLIST_PARALLELISM_NONE ) {
 		numThreads = 0;
