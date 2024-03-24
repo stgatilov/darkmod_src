@@ -142,6 +142,21 @@ bool CreateDir(const std::string &dirPath) {
     return true;
 }
 
+bool RemoveDirectoryIfEmpty(const std::string dirPath) {
+    int res = 0;
+#ifdef _WIN32
+    res = _rmdir(dirPath.c_str());
+#else
+    res = rmdir(dirPath.c_str());
+#endif
+    if (res == -1)
+        res = errno;
+    if (res == ENOTEMPTY || res == EEXIST)
+        return false;
+    ZipSyncAssertF(res == 0, "Failed to delete directory %s (error %d)", dirPath.c_str(), res);
+    return true;
+}
+
 void CreateDirectoriesForFile(const std::string &filePath, const std::string &rootPath) {
     PathAR p = PathAR::FromAbs(filePath, rootPath);
     std::vector<std::string> components;
@@ -151,6 +166,17 @@ void CreateDirectoriesForFile(const std::string &filePath, const std::string &ro
         curr += "/";
         curr += components[i];
         CreateDir(curr);
+    }
+}
+
+void PruneDirectoriesAfterFileRemoval(const std::string &filePath, const std::string &rootPath) {
+    PathAR p = PathAR::FromAbs(filePath, rootPath);
+    std::string dirPath = p.rel;
+    while (dirPath.find('/') != std::string::npos) {
+        dirPath = GetDirPath(dirPath);
+        std::string fullPath = rootPath + '/' + dirPath;
+        if (!RemoveDirectoryIfEmpty(fullPath))
+            break;
     }
 }
 

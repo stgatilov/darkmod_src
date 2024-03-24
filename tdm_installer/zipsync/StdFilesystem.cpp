@@ -132,12 +132,6 @@ namespace stdext {
         catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
         return res;
     }
-    bool is_empty(const path &path) {
-        bool res;
-        try {   res = stdfsys::is_empty(get(path)); }
-        catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
-        return res;
-    }
     uint64_t file_size(const path &path) {
         uint64_t res;
         try {   res = stdfsys::file_size(get(path)); }
