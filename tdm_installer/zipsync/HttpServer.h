@@ -14,7 +14,6 @@ struct MHD_Connection;
 
 namespace ZipSync {
 
-
 /**
  * Simple embedded HTTP server.
  * Used only for tests.
@@ -26,6 +25,9 @@ public:
         uint64_t bytesBetweenPauses = UINT64_MAX;
         //pause lasts for T seconds
         int pauseSeconds = 0;
+
+        PauseModel();
+        PauseModel(uint64_t bbp, int ps);
     };
 
 private:

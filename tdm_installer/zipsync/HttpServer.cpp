@@ -14,6 +14,13 @@ namespace ZipSync {
 //stupid GCC complains about printing uint64_t as "%llu"
 typedef unsigned long long uint64;
 
+//GCC workaround: cannot use constructor of nested struct in default value of argument
+HttpServer::PauseModel::PauseModel() = default;
+HttpServer::PauseModel::PauseModel(uint64_t bbp, int ps) {
+    bytesBetweenPauses = bbp;
+    pauseSeconds = ps;
+}
+
 HttpServer::~HttpServer() {
     Stop();
 }
@@ -139,8 +146,7 @@ public:
             return;
         _clearTime += added;
         if (_clearTime >= _model->bytesBetweenPauses) {
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(_model->pauseSeconds * 1000ms);
+            std::this_thread::sleep_for(_model->pauseSeconds * std::chrono::milliseconds(1000));
             _clearTime = 0;
         }
     }
