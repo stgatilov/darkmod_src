@@ -228,6 +228,16 @@ void DoClean(std::string root) {
         std::string fullPath = root + '/' + filename;
         g_logger->infof("Deleting %s...", filename.c_str());
         ZipSync::RemoveFile(fullPath);
+
+        std::string dirname = filename;
+        while (dirname.find('/') != std::string::npos) {
+            dirname = GetDirPath(dirname);
+            std::string fullPath = root + '/' + dirname;
+            if (!stdext::is_empty(fullPath))
+                break;
+            g_logger->infof("Pruning directory %s...", dirname.c_str());
+            stdext::remove(fullPath);
+        }
     }
 }
 

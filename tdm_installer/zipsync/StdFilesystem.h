@@ -53,6 +53,7 @@ namespace stdext {
     bool exists(const path &path);
     bool create_directories(const path &path);
     bool remove(const path &path);
+    bool is_empty(const path &path);
     uint64_t file_size(const path &path);
     std::time_t last_write_time(const path& p);
     uint64_t remove_all(const path& path);
