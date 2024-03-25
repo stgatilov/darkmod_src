@@ -39,6 +39,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "CollisionModel_local.h"
 
+idCVar cm_allocator("cm_allocator", "1", CVAR_BOOL, "Enable custom allocator for collision models?");
+
 
 idCollisionModelManagerLocal	collisionModelManagerLocal;
 idCollisionModelManager *		collisionModelManager = &collisionModelManagerLocal;
@@ -256,6 +258,9 @@ idCollisionModelManagerLocal::FreeNode
 void idCollisionModelManagerLocal::FreeNode( cm_node_t *node ) {
 	// don't free the node here
 	// the nodes are allocated in blocks which are freed when the model is freed
+	if ( !cm_allocator.GetBool() ) {
+		Mem_Free( node );
+	}
 }
 
 /*
@@ -266,6 +271,9 @@ idCollisionModelManagerLocal::FreePolygonReference
 void idCollisionModelManagerLocal::FreePolygonReference( cm_polygonRef_t *pref ) {
 	// don't free the polygon reference here
 	// the polygon references are allocated in blocks which are freed when the model is freed
+	if ( !cm_allocator.GetBool() ) {
+		Mem_Free( pref );
+	}
 }
 
 /*
@@ -276,6 +284,9 @@ idCollisionModelManagerLocal::FreeBrushReference
 void idCollisionModelManagerLocal::FreeBrushReference( cm_brushRef_t *bref ) {
 	// don't free the brush reference here
 	// the brush references are allocated in blocks which are freed when the model is freed
+	if ( !cm_allocator.GetBool() ) {
+		Mem_Free( bref );
+	}
 }
 
 /*
@@ -286,7 +297,7 @@ idCollisionModelManagerLocal::FreePolygon
 void idCollisionModelManagerLocal::FreePolygon( cm_model_t *model, cm_polygon_t *poly ) {
 	model->numPolygons--;
 	model->polygonMemory -= sizeof( cm_polygon_t ) + ( poly->numEdges - 1 ) * sizeof( poly->edges[0] );
-	if ( model->polygonBlock == NULL ) {
+	if ( model->polygonBlock == NULL || !cm_allocator.GetBool() ) {
 		Mem_Free( poly );
 	}
 }
@@ -299,7 +310,7 @@ idCollisionModelManagerLocal::FreeBrush
 void idCollisionModelManagerLocal::FreeBrush( cm_model_t *model, cm_brush_t *brush ) {
 	model->numBrushes--;
 	model->brushMemory -= sizeof( cm_brush_t ) + ( brush->numPlanes - 1 ) * sizeof( brush->planes[0] );
-	if ( model->brushBlock == NULL ) {
+	if ( model->brushBlock == NULL || !cm_allocator.GetBool()) {
 		Mem_Free( brush );
 	}
 }
@@ -563,6 +574,10 @@ cm_node_t *idCollisionModelManagerLocal::AllocNode( cm_model_t *model, int block
 	cm_node_t *node;
 	cm_nodeBlock_t *nodeBlock;
 
+	if ( !cm_allocator.GetBool() ) {
+		return (cm_node_t *)Mem_ClearedAlloc( sizeof(cm_node_t) );
+	}
+
 	if ( !model->nodeBlocks || !model->nodeBlocks->nextNode ) {
 		nodeBlock = (cm_nodeBlock_t *) Mem_ClearedAlloc( sizeof( cm_nodeBlock_t ) + blockSize * sizeof(cm_node_t) );
 		nodeBlock->nextNode = (cm_node_t *) ( ( (byte *) nodeBlock ) + sizeof( cm_nodeBlock_t ) );
@@ -593,6 +608,10 @@ cm_polygonRef_t *idCollisionModelManagerLocal::AllocPolygonReference( cm_model_t
 	cm_polygonRef_t *pref;
 	cm_polygonRefBlock_t *prefBlock;
 
+	if ( !cm_allocator.GetBool() ) {
+		return (cm_polygonRef_t *)Mem_Alloc( sizeof(cm_polygonRef_t) );
+	}
+
 	if ( !model->polygonRefBlocks || !model->polygonRefBlocks->nextRef ) {
 		prefBlock = (cm_polygonRefBlock_t *) Mem_Alloc( sizeof( cm_polygonRefBlock_t ) + blockSize * sizeof(cm_polygonRef_t) );
 		prefBlock->nextRef = (cm_polygonRef_t *) ( ( (byte *) prefBlock ) + sizeof( cm_polygonRefBlock_t ) );
@@ -621,6 +640,10 @@ cm_brushRef_t *idCollisionModelManagerLocal::AllocBrushReference( cm_model_t *mo
 	int i;
 	cm_brushRef_t *bref;
 	cm_brushRefBlock_t *brefBlock;
+
+	if ( !cm_allocator.GetBool() ) {
+		return (cm_brushRef_t *)Mem_Alloc( sizeof(cm_brushRef_t) );
+	}
 
 	if ( !model->brushRefBlocks || !model->brushRefBlocks->nextRef ) {
 		brefBlock = (cm_brushRefBlock_t *) Mem_Alloc( sizeof(cm_brushRefBlock_t) + blockSize * sizeof(cm_brushRef_t) );
@@ -653,7 +676,7 @@ cm_polygon_t *idCollisionModelManagerLocal::AllocPolygon( cm_model_t *model, int
 	size = sizeof( cm_polygon_t ) + ( numEdges - 1 ) * sizeof( poly->edges[0] );
 	model->numPolygons++;
 	model->polygonMemory += size;
-	if ( model->polygonBlock && model->polygonBlock->bytesRemaining >= size ) {
+	if ( cm_allocator.GetBool() && model->polygonBlock && model->polygonBlock->bytesRemaining >= size ) {
 		poly = (cm_polygon_t *) model->polygonBlock->next;
 		model->polygonBlock->next += size;
 		model->polygonBlock->bytesRemaining -= size;
@@ -675,7 +698,7 @@ cm_brush_t *idCollisionModelManagerLocal::AllocBrush( cm_model_t *model, int num
 	size = sizeof( cm_brush_t ) + ( numPlanes - 1 ) * sizeof( brush->planes[0] );
 	model->numBrushes++;
 	model->brushMemory += size;
-	if ( model->brushBlock && model->brushBlock->bytesRemaining >= size ) {
+	if ( cm_allocator.GetBool() && model->brushBlock && model->brushBlock->bytesRemaining >= size ) {
 		brush = (cm_brush_t *) model->brushBlock->next;
 		model->brushBlock->next += size;
 		model->brushBlock->bytesRemaining -= size;
