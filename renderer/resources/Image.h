@@ -214,6 +214,7 @@ class LoadStack;
 class idImage {
 public:
 	idImage();
+	virtual ~idImage() = default;
 
 	static const ImageType Type = IT_UNKNOWN;
 	virtual ImageType GetType() const { return Type; }
