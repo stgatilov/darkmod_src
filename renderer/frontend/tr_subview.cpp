@@ -276,6 +276,7 @@ static viewDef_t *R_XrayView() {
 	parms->isPortalSky = false;
 	parms->xrayEntityMask = XR_ONLY;
 
+
 	return parms;
 }
 
@@ -482,6 +483,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idImageScratch **ima
 	viewDef_t *parms = R_XrayView();
 	assert( parms );
 
+
 	if ( stage->width ) { // FIXME wrong field use?
 		parms->xrayEntityMask = XR_SUBSTITUTE;
 	}
@@ -505,6 +507,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idImageScratch **ima
 
 	// triangle culling order changes with mirroring
 	parms->isMirror = ( ( (int)parms->isMirror ^ (int)tr.viewDef->isMirror ) != 0 );
+
 
 	// generate render commands for it
 	R_RenderView( *parms );
@@ -755,6 +758,11 @@ bool R_GenerateSubViews( void ) {
 	// duzenko #4420: no mirrors on lightgem stage
 	if ( tr.viewDef->IsLightGem() )
 		return false;
+
+	// nbohr1more: fix compass render error with Xray
+	if (tr.viewDef->renderWorld->mapName.IsEmpty()) {
+	    return false;
+	}
 
 	bool subviews = false;
 
