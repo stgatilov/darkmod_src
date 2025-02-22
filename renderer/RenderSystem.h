@@ -232,6 +232,7 @@ public:
 	 * size using 3 bytes per pixel (stored in order RGB). Use CropRenderSize(), then GetCurrentRenderCropSize() 
 	 * to receive the necessary size.
 	 * stgatilov: usePbo = true is set only for lightgem capturing! (see #4395)
+	 * stgatilov: unlike CaptureRenderToImage, this capture excludes HUD / GUI overlays
 	 */
 	virtual void			CaptureRenderToBuffer(unsigned char* buffer, bool usePbo = false) = 0;
 
