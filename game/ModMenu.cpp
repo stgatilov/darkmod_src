@@ -449,7 +449,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 
 	CModInfoPtr curModInfo = gameLocal.m_MissionManager->GetCurrentModInfo();
 	gui->SetStateBool("hasCurrentMod", curModInfo != NULL);
-	gui->SetStateString("currentModName", common->Translate( curModInfo != NULL ? curModInfo->displayName : "#str_02189" )); // <No Mission Installed>
+	gui->SetStateString("currentModName", common->Translate( curModInfo != NULL ? curModInfo->displayName : "#str_02189" )); // <No Mission Selected>
 	gui->SetStateString("currentModDesc", common->Translate( curModInfo != NULL ? curModInfo->description : "" ));
 	UpdateSelectedMod(gui);
 
@@ -462,7 +462,7 @@ bool CModMenu::PerformVersionCheck(const CModInfoPtr& mission, idUserInterface* 
 	if (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, mission->requiredMajor, mission->requiredMinor) == OLDER)
 	{
 		gui->SetStateString("requiredVersionCheckFailText", 
-			// "Cannot install this mission, as it requires\n%s v%d.%02d.\n\nYou are running v%d.%02d. Please run the tdm_update application to update your installation.",
+			// "Cannot select this mission, as it requires\n%s v%d.%02d.\n\nYou are running v%d.%02d. Please run the tdm_update application to update your installation.",
 			va( common->Translate( "#str_07210" ),
 			GAME_VERSION, mission->requiredMajor, mission->requiredMinor, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
 
