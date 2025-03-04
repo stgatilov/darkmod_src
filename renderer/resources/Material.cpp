@@ -2502,11 +2502,9 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 	if ( cullType == CT_TWO_SIDED ) {
 		for ( int l = 0 ; l < numStages ; l++ ) {
 			if ( pd->parseStages[l].lighting != SL_AMBIENT || pd->parseStages[l].texture.texgen != TG_EXPLICIT ) {
-				if ( cullType == CT_TWO_SIDED ) {
 					cullType = CT_FRONT_SIDED;
 					shouldCreateBackSides = true;
-				}
-				break;
+				  break;
 			}
 		}
 	}
