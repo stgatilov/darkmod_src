@@ -2437,40 +2437,13 @@ void idCommonLocal::Frame( void ) {
 
 		static int64_t com_frameTimeMicro = 0;		//same as com_frameTime, but in microseconds
 		static int64_t lastFrameAstroTime = Sys_Microseconds();
-		// nbohr1more: Prevent uncapped FPS from exceeding vsync so that GUI artifacts aren't seen in vsync mode
-		if (sessLocal.com_fixedTic.GetBool() && r_swapInterval.GetBool() ) {
+		if (sessLocal.com_fixedTic.GetBool()) {
 			//stgatilov #4865: impose artificial FPS limit
-			int64_t minDeltaTimeSync = int64_t(1000000 / std::max( r_displayRefresh.GetInteger(), 60) );
-			int64_t currFrameAstroTime;
-			while (1) {
-				currFrameAstroTime = Sys_Microseconds();
-				    if (currFrameAstroTime - lastFrameAstroTime > minDeltaTimeSync )
-					break;
-				//note: this is busy-wait loop
-				#ifdef __SSE2__
-					_mm_pause();
-				#else
-					currFrameAstroTime = currFrameAstroTime;	//NOP
-				#endif
-			}
-			//see how much passed in microseconds
-			int deltaTime = currFrameAstroTime - lastFrameAstroTime;
-			lastFrameAstroTime = currFrameAstroTime;
-
-			//update precise time in microseconds, then round it to milliseconds
-			com_frameTimeMicro += deltaTime * com_timescale.GetFloat();
-			int newFrameTime = com_frameTimeMicro / 1000;
-			com_frameDelta = newFrameTime - com_frameTime;
-			com_frameTime = newFrameTime;
-
-		}
-        else if ( sessLocal.com_fixedTic.GetBool() ) {
-        	//stgatilov #4865: impose artificial FPS limit
 			int64_t minDeltaTime = int64_t(1000000 / sessLocal.com_maxFPS.GetFloat());
 			int64_t currFrameAstroTime;
 			while (1) {
 				currFrameAstroTime = Sys_Microseconds();
-				    if (currFrameAstroTime - lastFrameAstroTime > minDeltaTime)
+				if (currFrameAstroTime - lastFrameAstroTime > minDeltaTime)
 					break;
 				//note: this is busy-wait loop
 				#ifdef __SSE2__
