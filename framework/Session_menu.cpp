@@ -19,8 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "Session_local.h"
-#include "game/Missions/MissionManager.h"
-#include "renderer/resources/Image.h"
+#include "../game/Missions/MissionManager.h"
 
 idCVar	idSessionLocal::gui_configServerRate( "gui_configServerRate", "0", CVAR_GUI | CVAR_ARCHIVE | CVAR_ROM | CVAR_INTEGER, "" );
 
@@ -140,13 +139,6 @@ void idSessionLocal::StartMenu( bool playIntro ) {
 
 	// start playing the menu sounds
 	soundSystem->SetPlayingSoundWorld( menuSoundWorld );
-
-	// stgatilov #6608: save last game frame in case mission wants to use it as background in menu
-	byte *imgData = nullptr;
-	int width, height;
-	CaptureGameScreenshot( imgData, width, height );
-	globalImages->menuLastGameFrame->UploadScratch( imgData, width, height);
-	Mem_Free( imgData );
 
 	// make sure guiMainMenu is alive
 	CreateMainMenu();
