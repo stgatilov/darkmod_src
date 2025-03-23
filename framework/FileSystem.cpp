@@ -2722,6 +2722,10 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 	cmdSystem->RemoveCommand( "touchFile" );
 
 	mapDict.ClearFree();
+
+	// if this fails, then we got a file handle leak =(
+	assert(filesOpenNowInZip.GetValue() == 0);
+	assert(filesOpenNowPermanent.GetValue() == 0);
 }
 
 /*
@@ -3679,6 +3683,7 @@ idFileSystemLocal::FindFile
 	}
 	else if ( !pak ) {
 		// found in FS, not even in paks
+		delete f;
 		return FIND_YES;
 	}
 	// marking addons for inclusion on reload - may need to do that even when already in the search path
