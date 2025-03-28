@@ -1227,6 +1227,21 @@ void idExplodingBarrel::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( particleTime );
 	savefile->ReadInt( lightTime );
 	savefile->ReadFloat( time );
+
+	// DG: enforce getting fresh handle, else this may be tied to an unrelated light!
+
+	if ( lightDefHandle != -1 ) {
+
+		lightDefHandle = gameRenderWorld->AddLightDef( &light );
+
+	}
+
+	// DG: same for render entity
+
+	if ( particleModelDefHandle != -1 ) {
+
+		particleModelDefHandle = gameRenderWorld->AddEntityDef( &particleRenderEntity );
+	}
 }
 
 /*
