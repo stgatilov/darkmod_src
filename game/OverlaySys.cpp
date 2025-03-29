@@ -34,8 +34,6 @@ COverlaySys::COverlaySys()
 {
 	m_lastUsedHandle = 0;
 	m_lastUsedOverlay = NULL;
-	m_updateOpaque = false;
-	m_highestOpaque = NULL;
 	m_updateInteractive = false;
 	m_highestInteractive = NULL;
 	m_nextHandle = OVERLAYS_MIN_HANDLE;
@@ -64,7 +62,6 @@ void COverlaySys::Save( idSaveGame *savefile ) const
 		savefile->WriteInt( overlay->m_handle );
 		savefile->WriteInt( overlay->m_layer );
 		savefile->WriteBool( overlay->m_external );
-		savefile->WriteBool( overlay->m_opaque );
 		savefile->WriteBool( overlay->m_interactive );
 		if ( !overlay->m_external )
 			savefile->WriteUserInterface( overlay->m_gui, false );
@@ -94,7 +91,6 @@ void COverlaySys::Restore( idRestoreGame *savefile )
 		overlay->m_handle = handle;
 		savefile->ReadInt( overlay->m_layer );
 		savefile->ReadBool( overlay->m_external );
-		savefile->ReadBool( overlay->m_opaque );
 		savefile->ReadBool( overlay->m_interactive );
 		if (overlay->m_external)
 			overlay->m_gui = NULL; // I don't think there's a way to save/restore pointers to GUIs saved by other things.
@@ -104,21 +100,17 @@ void COverlaySys::Restore( idRestoreGame *savefile )
 		savefile->ReadInt(handle);
 	}
 
-	m_updateOpaque = m_updateInteractive = true;
-
 Quit:
 	return;
 }
+
 void COverlaySys::drawOverlays( idList<int> *onlyOverlayHandles )
 {
-	idUserInterface* gui;
-	idLinkList<SOverlay>* oNode = findOpaque();
-	if (!oNode)
-		oNode = m_overlays.NextNode();
+	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
 	
 	while (oNode)
 	{
-		gui = oNode->Owner()->m_gui;
+		idUserInterface* gui = oNode->Owner()->m_gui;
 		bool matchesFilter = (onlyOverlayHandles == nullptr || onlyOverlayHandles->Find(oNode->Owner()->m_handle));
 		if (gui && matchesFilter)
 		{
@@ -134,10 +126,6 @@ void COverlaySys::drawOverlays( idList<int> *onlyOverlayHandles )
 		}
 		oNode = oNode->NextNode();
 	}
-}
-
-bool COverlaySys::isOpaque() {
-	return findOpaque() != NULL;
 }
 
 int COverlaySys::getNextOverlay( int handle )
@@ -255,7 +243,6 @@ int COverlaySys::createOverlay( int layer, int handle )
 	overlay->m_handle = handle;
 	overlay->m_layer = layer;
 	overlay->m_external = true;
-	overlay->m_opaque = false;
 	overlay->m_interactive = false;
 
 	return handle;
@@ -276,10 +263,6 @@ void COverlaySys::destroyOverlay( int handle )
 		m_lastUsedHandle = OVERLAYS_INVALID_HANDLE;
 		m_lastUsedOverlay = NULL; // not necessary, but perhaps safer
 	}
-
-	// If this was an opaque overlay, we need to update opacity.
-	if(overlay->m_opaque)
-		m_updateOpaque = true;
 
 	// If this was an interactive overlay, we need to update interactivity.
 	if (overlay->m_interactive)
@@ -373,10 +356,6 @@ void COverlaySys::setLayer( int handle, int layer )
 			overlay->m_node.InsertAfter( *position );
 			overlay->m_layer = layer;
 
-			// If this is an opaque overlay, we need to update opacity.
-			if ( overlay->m_opaque )
-				m_updateOpaque = true;
-
 			// If this is an interactive overlay, we need to update interactivity.
 			if ( overlay->m_interactive )
 				m_updateInteractive = true;
@@ -407,37 +386,6 @@ bool COverlaySys::isExternal(int handle)
 	if ( overlay )
 	{
 		return overlay->m_external;
-	}
-	else
-	{
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("getGui: Non-existant GUI handle: %d\r", handle);
-		return false;
-	}
-}
-
-void COverlaySys::setOpaque( int handle, bool isOpaque )
-{
-	SOverlay* overlay = findOverlay( handle );
-	if ( overlay )
-	{
-		if ( overlay->m_opaque != isOpaque )
-		{
-			overlay->m_opaque = isOpaque;
-			m_updateOpaque = true;
-		}
-	}
-	else
-	{
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("getGui: Non-existant GUI handle: %d\r", handle);
-	}
-}
-
-bool COverlaySys::isOpaque( int handle )
-{
-	SOverlay* overlay = findOverlay( handle );
-	if ( overlay )
-	{
-		return overlay->m_opaque;
 	}
 	else
 	{
@@ -510,24 +458,6 @@ SOverlay* COverlaySys::findOverlay( int handle, bool updateCache )
 	}
 
 	return NULL;
-}
-
-idLinkList<SOverlay>* COverlaySys::findOpaque()
-{
-	if ( m_updateOpaque )
-	{
-		// Find the highest opaque overlay.
-		idLinkList<SOverlay>* oNode = m_overlays.PrevNode();
-		while ( oNode )
-		{
-			if ( oNode->Owner()->m_opaque )
-				break;
-			oNode = oNode->PrevNode();
-		}
-		m_highestOpaque = oNode;
-		m_updateOpaque = false;
-	}
-	return m_highestOpaque;
 }
 
 idUserInterface* COverlaySys::findInteractive()
