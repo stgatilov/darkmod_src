@@ -270,6 +270,8 @@ idRenderWorldLocal::idRenderWorldLocal() {
 
 	lightQuerySystem = new LightQuerySystem();
 	lightQuerySystem->Init( this );
+
+	xrayGuiOverlayStage = nullptr;
 }
 
 /*
@@ -899,6 +901,15 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 
 	// prepare for any 2D drawing after this
 	//tr.guiModel->Clear();
+}
+
+/*
+===================
+SetXrayGuiOverlayStage
+===================
+*/
+void idRenderWorldLocal::SetXrayGuiOverlayStage( const textureStage_t *stage ) {
+	xrayGuiOverlayStage = stage;
 }
 
 /*

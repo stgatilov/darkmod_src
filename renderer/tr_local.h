@@ -955,6 +955,8 @@ public:
 	class idGuiModel 		*guiModel;
 	class idGuiModel 		*demoGuiModel;
 
+	idImageScratch			*xrayGuiImageOverride;
+
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
 	idParallelJobList*		frontEndJobList;
 

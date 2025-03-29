@@ -803,12 +803,16 @@ bool R_GenerateSubViews( void ) {
 		}
 	}
 
+	// generate subviews for GUI overlays (from main view only)
 	if ( !tr.viewDef->isSubview ) {
-		// generate subviews for GUI overlays (from main view only)
-		if ( const textureStage_t *textureStage = tr.guiModel->NeedXraySubview() ) {
+		// note: the image which will receive Xray subview is passed into idGuiModel::ProcessOverlaySubviews
+		// that function will substitute virtual dynamic Xray texture with the actual scratch texture to display
+		tr.xrayGuiImageOverride = nullptr;
+
+		if ( const textureStage_t *textureStage = tr.viewDef->renderWorld->xrayGuiOverlayStage ) {
 			idImageScratch *imageOverride;
 			R_XrayRender( nullptr, const_cast<textureStage_t *>(textureStage), &imageOverride );
-			tr.guiModel->SetXrayImageOverride( imageOverride );
+			tr.xrayGuiImageOverride = imageOverride;
 			subviews = true;
 		}
 	}

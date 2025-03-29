@@ -157,6 +157,7 @@ public:
 
 	virtual void			SetRenderView( const renderView_t *renderView ) override;
 	virtual	void			RenderScene( const renderView_t &renderView ) override;
+	virtual void			SetXrayGuiOverlayStage( const textureStage_t *stage ) override;
 
 	virtual	int				NumAreas( void ) const override;
 	virtual int				GetAreaAtPoint( const idVec3 &point ) const override;
@@ -238,6 +239,8 @@ public:
 	bool					generateAllInteractionsCalled;
 
 	LightQuerySystem *		lightQuerySystem;
+
+	const textureStage_t *	xrayGuiOverlayStage;
 
 	typedef idFlexList<int, 128> AreaList;
 

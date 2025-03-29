@@ -3411,6 +3411,25 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	}
 }
 
+void idPlayer::CheckForXrayOverlay() {
+	const textureStage_t* xrayOverlayStage = nullptr;
+
+	for ( int h = m_overlays.getNextOverlay(OVERLAYS_INVALID_HANDLE); h != OVERLAYS_INVALID_HANDLE; h = m_overlays.getNextOverlay(h) ) {
+		if ( m_overlays.getLayer( h ) != LAYER_XRAY )
+			continue;
+
+		idUserInterface* gui = m_overlays.getGui( h );
+		xrayOverlayStage = gui->GetXrayMaterialStage();
+		if ( xrayOverlayStage )
+			break;
+		// note: we assume there can be at most one occurance of Xray in GUI overlays
+	}
+
+	// now we need to pass this information to rendered frontend
+	// more specifically: to R_GenerateSubViews for the main view
+	gameRenderWorld->SetXrayGuiOverlayStage( xrayOverlayStage );
+}
+
 /*
 ===============
 idPlayer::EnterCinematic
