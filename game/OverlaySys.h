@@ -16,6 +16,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __DARKMOD_OVERLAYSYS_H__
 #define __DARKMOD_OVERLAYSYS_H__
 
+#include <functional>
+
 const int OVERLAYS_MIN_HANDLE = 1;
 const int OVERLAYS_INVALID_HANDLE = 0;
 
@@ -78,8 +80,8 @@ class COverlaySys
 	void					Restore( idRestoreGame *savefile );
 
 	/// Draws the contained GUIs to the screen, in order.
-	/// if onlyOverlayHandles is specified, all UIs not in the list are skipped
-	void					drawOverlays( idList<int> *onlyOverlayHandles = nullptr );
+	/// if filter is specified, then it says whether to render each overlay or not
+	void					drawOverlays( std::function<bool(int)> filter );
 	/// Returns the interactive GUI.
 	idUserInterface*		findInteractive();
 	/// Used for iterating through the overlays in drawing-order.

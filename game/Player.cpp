@@ -3309,97 +3309,95 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		}
 	}
 
-	if(_hud)
-		{
+	if (_hud) {
 		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
-		}
-	else
-		{
+	} else {
 		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("PlayerHUD: NULL\r");
+	}
+
+	bool noHud = (
+		!weapon.GetEntity() ||
+		influenceActive != INFLUENCE_NONE ||
+		privateCameraView ||
+		gameLocal.GetCamera() ||
+		!_hud ||
+		!g_showHud.GetBool()
+	);
+
+	if ( !noHud ) {
+		UpdateHudStats( _hud );
+
+		//_hud->SetStateString( "weapicon", weapon.GetEntity()->Icon() );
+
+		// FIXME: this is temp to allow the sound meter to show up in the hud
+		// it should be commented out before shipping but the code can remain
+		// for mod developers to enable for the same functionality
+		_hud->SetStateInt( "s_debug", cvarSystem->GetCVarInteger( "s_showLevelMeter" ) );
+
+		weapon.GetEntity()->UpdateGUI();
+
+		//_hud->Redraw( gameLocal.realClientTime );
+		m_overlays.drawOverlays( nullptr );
+
+		// Daft Mugi #6331: Show viewpos on player HUD
+		// NOTE: Draw on top of overlays.
+		if (cv_show_viewpos.GetBool())
+		{
+			int color;
+			idStr viewposText;
+			idAngles viewAngles = renderView->viewaxis.ToAngles();
+
+			sprintf(
+				viewposText, "%.2f %.2f %.2f   %.1f %.1f %.1f",
+				renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z,
+				viewAngles.pitch, viewAngles.yaw, viewAngles.roll
+			);
+
+			switch (cv_show_viewpos.GetInteger())
+			{
+			case 1:
+				color = C_COLOR_GRAY;
+				break;
+			case 2:
+				color = C_COLOR_CYAN;
+				break;
+			default:
+				color = C_COLOR_GRAY;
+				break;
+			}
+
+			renderSystem->DrawSmallStringExt(
+				1, 1, viewposText.c_str(),
+				idStr::ColorForIndex(color), false,
+				declManager->FindMaterial("textures/consolefont_24")
+			);
 		}
 
-	if ( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !_hud || !g_showHud.GetBool() ) {
+		// STiFU: Cursor reenabled as a FrobHelper
+		if (cursor && m_FrobHelper.IsActive())
+		{
+			const float alpha = m_FrobHelper.GetAlpha();
+			cursor->SetStateFloat("FrobHelper_Opacity", alpha);
+			cursor->Redraw(gameLocal.realClientTime);
+		}
+
+		// J.C.Denton Start
+		float fFadeDelay = Max(0.0001f, cv_lg_fade_delay.GetFloat() );		// Avoid divide by zero errors. 
+		m_fBlendColVal = Lerp( m_fBlendColVal, (float)m_LightgemValue, (gameLocal.time - gameLocal.previousTime)/(1000.0f * fFadeDelay ) );
+		// J.C.Denton End
+
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r", m_LightgemValue, hud);
+		hud->SetStateFloat("lightgem_val", m_fBlendColVal );
+	}
+	else
+	{
 		// #6197: even if HUD is hidden, still render subtitles overlay
 		if (subtitlesOverlay != -1) {
-			idList<int> filter(1);
-			filter.Append(subtitlesOverlay);
-			m_overlays.drawOverlays(&filter);
-		}
-		return;
-	}
-
-	UpdateHudStats( _hud );
-
-	//_hud->SetStateString( "weapicon", weapon.GetEntity()->Icon() );
-
-	// FIXME: this is temp to allow the sound meter to show up in the hud
-	// it should be commented out before shipping but the code can remain
-	// for mod developers to enable for the same functionality
-	_hud->SetStateInt( "s_debug", cvarSystem->GetCVarInteger( "s_showLevelMeter" ) );
-
-	weapon.GetEntity()->UpdateGUI();
-
-	//_hud->Redraw( gameLocal.realClientTime );
-	m_overlays.drawOverlays();
-
-	// Daft Mugi #6331: Show viewpos on player HUD
-	// NOTE: Draw on top of overlays.
-	if (cv_show_viewpos.GetBool())
-	{
-		int color;
-		idStr viewposText;
-		idAngles viewAngles = renderView->viewaxis.ToAngles();
-
-		sprintf(
-			viewposText, "%.2f %.2f %.2f   %.1f %.1f %.1f",
-			renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z,
-			viewAngles.pitch, viewAngles.yaw, viewAngles.roll
-		);
-
-		switch (cv_show_viewpos.GetInteger())
-		{
-		case 1:
-			color = C_COLOR_GRAY;
-			break;
-		case 2:
-			color = C_COLOR_CYAN;
-			break;
-		default:
-			color = C_COLOR_GRAY;
-			break;
-		}
-
-		renderSystem->DrawSmallStringExt(
-			1, 1, viewposText.c_str(),
-			idStr::ColorForIndex(color), false,
-			declManager->FindMaterial("textures/consolefont_24")
-		);
-	}
-
-	// weapon targeting crosshair
-#if 0 // greebo: disabled cursor calls entirely
-	if ( !GuiActive() ) {
-		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
-			cursor->Redraw( gameLocal.realClientTime );
+			m_overlays.drawOverlays( [this](int id) {
+				return id == subtitlesOverlay;
+			} );
 		}
 	}
-#endif
-	// STiFU: Cursor reenabled as a FrobHelper
-	if (cursor && m_FrobHelper.IsActive())
-	{
-		const float alpha = m_FrobHelper.GetAlpha();
-		cursor->SetStateFloat("FrobHelper_Opacity", alpha);
-		cursor->Redraw(gameLocal.realClientTime);
-	}
-
-
-	// J.C.Denton Start
-	float fFadeDelay = Max(0.0001f, cv_lg_fade_delay.GetFloat() );		// Avoid divide by zero errors. 
-	m_fBlendColVal = Lerp( m_fBlendColVal, (float)m_LightgemValue, (gameLocal.time - gameLocal.previousTime)/(1000.0f * fFadeDelay ) );
-	// J.C.Denton End
-
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r", m_LightgemValue, hud);
-	hud->SetStateFloat("lightgem_val", m_fBlendColVal );
 }
 
 /*

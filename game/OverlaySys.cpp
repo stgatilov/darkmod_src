@@ -104,27 +104,26 @@ Quit:
 	return;
 }
 
-void COverlaySys::drawOverlays( idList<int> *onlyOverlayHandles )
+void COverlaySys::drawOverlays( std::function<bool(int)> filter )
 {
-	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
-	
-	while (oNode)
+	for (idLinkList<SOverlay>* oNode = m_overlays.NextNode(); oNode; oNode = oNode->NextNode())
 	{
 		idUserInterface* gui = oNode->Owner()->m_gui;
-		bool matchesFilter = (onlyOverlayHandles == nullptr || onlyOverlayHandles->Find(oNode->Owner()->m_handle));
-		if (gui && matchesFilter)
-		{
-			gameLocal.UpdateGUIScaling(gui);
+		if (!gui)
+			continue;
 
-			int time = gameLocal.realClientTime;
+		if (filter && !filter(oNode->Owner()->m_handle))
+			continue;
 
-			// greebo: We have a special GUI that is updated before control is passed to this method 
-			// there is a time offset stored in that GUI, add that to the realClientTime.
-			time += gui->GetStateInt("GuiTimeOffset");
+		gameLocal.UpdateGUIScaling(gui);
 
-			gui->Redraw(time);
-		}
-		oNode = oNode->NextNode();
+		int time = gameLocal.realClientTime;
+
+		// greebo: We have a special GUI that is updated before control is passed to this method 
+		// there is a time offset stored in that GUI, add that to the realClientTime.
+		time += gui->GetStateInt("GuiTimeOffset");
+
+		gui->Redraw(time);
 	}
 }
 
