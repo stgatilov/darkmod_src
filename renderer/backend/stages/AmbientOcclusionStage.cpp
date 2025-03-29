@@ -216,7 +216,7 @@ void AmbientOcclusionStage::BindSSAOTexture(int index) {
 }
 
 bool AmbientOcclusionStage::ShouldEnableForCurrentView() const {
-	return r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() && ( !backEnd.viewDef->isSubview || r_ssao_insubview.GetBool() ) && !backEnd.viewDef->renderWorld->mapName.IsEmpty();
+	return r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() && ( !backEnd.viewDef->isSubview || ( r_ssao_insubview.GetBool() && !backEnd.viewDef->isPortalSky )) && !backEnd.viewDef->renderWorld->mapName.IsEmpty();
 }
 
 void AmbientOcclusionStage::PrepareDepthPass() {
