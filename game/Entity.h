@@ -990,6 +990,8 @@ public:
 	void					Event_DestroyOverlay(int handle);
 	void					DestroyOverlay(int handle);
 
+	void					Event_CreateXrayOverlay(const char *guiFile);
+
 	// Returns the GUI with the given handle or NULL if not found
 	idUserInterface*		GetOverlay(int handle);
 
