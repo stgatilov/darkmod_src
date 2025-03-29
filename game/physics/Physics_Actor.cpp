@@ -100,7 +100,6 @@ void idPhysics_Actor::Restore( idRestoreGame *savefile ) {
 
 	// #6276 prevent corrupted clipmodel on restore
 	if ( clipModel != nullptr ) {
-
 		clipModel->SetPosition( clipModel->GetOrigin(), mat3_identity );
 	}
 
