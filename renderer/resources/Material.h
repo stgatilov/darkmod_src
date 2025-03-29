@@ -396,6 +396,8 @@ public:
 	const shaderStage_t *FindStageOfType( stageLighting_t type ) const;
 	const shaderStage_t *GetParallaxStage( void ) const { return FindStageOfType( SL_PARALLAX ); }
 
+	const shaderStage_t *FindXrayStage( void ) const;
+
 						// returns true if the material will draw anything at all.  Triggers, portals,
 						// etc, will not have anything to draw.  A not drawn surface can still castShadow,
 						// which can be used to make a simplified shadow hull for a complex object set

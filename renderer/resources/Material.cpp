@@ -3152,6 +3152,19 @@ const shaderStage_t *idMaterial::FindStageOfType( stageLighting_t type ) const {
 
 /*
 ===================
+idMaterial::FindXrayStage
+===================
+*/
+const shaderStage_t *idMaterial::FindXrayStage( void ) const {
+	for (int i = 0; i < numStages; i++) {
+		if (stages[i].texture.dynamic == DI_XRAY_RENDER)
+			return &stages[i];
+	}
+	return nullptr;
+}
+
+/*
+===================
 idMaterial::ReloadImages
 ===================
 */
