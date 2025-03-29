@@ -3336,8 +3336,19 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 
 		weapon.GetEntity()->UpdateGUI();
 
-		//_hud->Redraw( gameLocal.realClientTime );
-		m_overlays.drawOverlays( nullptr );
+		// only render the first overlays which are part of the game world
+		m_overlays.drawOverlays( [this](int id) {
+			return m_overlays.getLayer(id) <= LAYER_LAST_TONEMAPPED;
+		} );
+	}
+
+	session->ScheduleTonemap();
+
+	if ( !noHud ) {
+		// now render all the overlays which are HUD
+		m_overlays.drawOverlays( [this](int id) {
+			return m_overlays.getLayer(id) > LAYER_LAST_TONEMAPPED;
+		} );
 
 		// Daft Mugi #6331: Show viewpos on player HUD
 		// NOTE: Draw on top of overlays.

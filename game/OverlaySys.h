@@ -27,6 +27,10 @@ const int OVERLAYS_INVALID_HANDLE = 0;
 enum
 {
 	LAYER_UNDERWATER = 0,	// Draw the underwater overlay first
+
+	// overlays on this and earlier layers are part of game world and are tonemapped
+	LAYER_LAST_TONEMAPPED = LAYER_UNDERWATER,
+
 	LAYER_MAIN_HUD = 1,
 	LAYER_INVENTORY = 2,
  	LAYER_INVGRID = 3,		// #4286

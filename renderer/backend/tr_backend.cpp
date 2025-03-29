@@ -703,11 +703,19 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			RB_CopyRender( cmds );
 			c_copyRenders++;
 			break;
-		case RC_TONEMAP:
+		case RC_TONEMAP: {
+			bool forceOutputToBlack = ( ( const tonemapCommand_t * )cmds )->forceOutputToBlack;
 			// duzenko #4425: display the fbo content
 			frameBuffers->LeavePrimary();
-			renderBackend->Tonemap();
+			if ( !forceOutputToBlack ) {
+				renderBackend->Tonemap();
+			} else {
+				frameBuffers->defaultFbo->Bind();
+				qglClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+				qglClear( GL_COLOR_BUFFER_BIT );
+			}
 			break;
+		}
 		default:
 			common->Error( "RB_ExecuteBackEndCommands: bad commandId" );
 			break;

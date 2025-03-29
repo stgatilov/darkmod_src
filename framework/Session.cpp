@@ -304,6 +304,8 @@ void idSessionLocal::Clear() {
 	modsList.Clear();
 
 	authMsg.Clear();
+
+	tonemapHappenedCounter = 0;
 }
 
 /*
@@ -2581,11 +2583,10 @@ idSessionLocal::Draw
 */
 void idSessionLocal::Draw() {
 	bool fullConsole = false;
+	tonemapHappenedCounter = 0;
 
 	if ( insideExecuteMapChange ) {
-		renderSystem->SetColor( colorBlack );
-		renderSystem->DrawStretchPic( 0, 0, 640, 480, 0, 0, 1, 1, declManager->FindMaterial( "_white" ) );
-
+		ScheduleTonemap( true );
 		if ( guiLoading ) {
 			guiLoading->Redraw( com_frameTime );
 		}
@@ -2596,12 +2597,10 @@ void idSessionLocal::Draw() {
 		// if testing a gui, clear the screen and draw it
 		// clear the background, in case the tested gui is transparent
 		// NOTE that you can't use this for aviGame recording, it will tick at real com_frameTime between screenshots..
-		renderSystem->SetColor( colorBlack );
-		renderSystem->DrawStretchPic( 0, 0, 640, 480, 0, 0, 1, 1, declManager->FindMaterial( "_white" ) );
+		ScheduleTonemap( true );
 		guiTest->Redraw( com_frameTime );
 	} else if ( guiActive && !guiActive->State().GetBool( "gameDraw" ) ) {
-		renderSystem->SetColor( colorBlack );
-		renderSystem->DrawStretchPic( 0, 0, 640, 480, 0, 0, 1, 1, declManager->FindMaterial( "_white" ) );
+		ScheduleTonemap( true );
 
 		// draw the frozen gui in the background
 		if ( guiActive == guiMsg && guiMsgRestore ) {
@@ -2624,8 +2623,7 @@ void idSessionLocal::Draw() {
 			time_gameDraw += ( end - start );	// note time used for com_speeds
 		}
 		if ( !gameDraw ) {
-			renderSystem->SetColor( colorBlack );
-			renderSystem->DrawStretchPic( 0, 0, 640, 480, 0, 0, 1, 1, declManager->FindMaterial( "_white" ) );
+			ScheduleTonemap( true );
 		}
 
 		// save off the 2D drawing from the game
@@ -2633,6 +2631,7 @@ void idSessionLocal::Draw() {
 			renderSystem->WriteDemoPics();
 		}
 	} else {
+		ScheduleTonemap( true );
 #if ID_CONSOLE_LOCK
 		if ( com_allowConsole.GetBool() ) {
 			console->Draw( true );
@@ -2673,6 +2672,9 @@ void idSessionLocal::Draw() {
 	if ( !fullConsole ) {
 		console->Draw( false );
 	}
+
+	if ( tonemapHappenedCounter != 1 )
+		common->Warning( "idSessionLocal::Draw: tonemap called %d times", tonemapHappenedCounter );
 }
 
 /*
@@ -3053,17 +3055,23 @@ void idSessionLocal::DrawFrame() {
 
 	// render next frame
 	Draw();
+
+	// close any gui drawing
+	tr.guiModel->EmitFullScreen();
+	tr.guiModel->Clear();
+}
+
+void idSessionLocal::ScheduleTonemap( bool forceOutputToBlack ) {
 	// close any gui drawing
 	tr.guiModel->EmitFullScreen();
 	tr.guiModel->Clear();
 
-	ScheduleTonemap();
-}
-
-void idSessionLocal::ScheduleTonemap() {
 	// add the swapbuffers command
-	emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+	tonemapCommand_t *cmd = (tonemapCommand_t *)R_GetCommandBuffer( sizeof( tonemapCommand_t ) );
 	cmd->commandId = RC_TONEMAP;
+	cmd->forceOutputToBlack = forceOutputToBlack;
+
+	tonemapHappenedCounter++;
 }
 
 /*

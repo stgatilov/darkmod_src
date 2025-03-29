@@ -97,7 +97,7 @@ public:
 	virtual void		UpdateLoadingProgressBar( progressStage_t key, float ratio ) override;
 
 	virtual void		Frame() override;
-	virtual void		ScheduleTonemap() override;
+	virtual void		ScheduleTonemap( bool forceOutputToBlack = false ) override;
 
 	virtual bool		ProcessEvent( const sysEvent_t *event ) override;
 
@@ -297,6 +297,8 @@ public:
 	volatile bool		frontendActiveNow;
 	volatile bool		shutdownFrontend;
 	std::shared_ptr<ErrorReportedException> frontendException;
+
+	int					tonemapHappenedCounter;
 
 	void				FrontendThreadFunction();
 	virtual bool		IsFrontend() const override;

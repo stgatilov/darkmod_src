@@ -93,7 +93,7 @@ public:
 
 	// Inserts tonemap command into renderer backend.
 	// Must be called once per frame, after game rendering is done but HUD rendering has not started yet.
-	virtual void	ScheduleTonemap() = 0;
+	virtual void	ScheduleTonemap( bool forceOutputToBlack = false ) = 0;
 
 	// Processes the given event.
 	virtual	bool	ProcessEvent( const sysEvent_t *event ) = 0;

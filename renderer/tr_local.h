@@ -649,6 +649,10 @@ struct drawSurfsCommand_t : emptyCommand_t {
 	viewDef_t	*viewDef;
 };
 
+struct tonemapCommand_t : emptyCommand_t {
+	bool forceOutputToBlack;
+};
+
 struct drawLightgemCommand_t : drawSurfsCommand_t {
 	byte *dataBuffer;
 };
