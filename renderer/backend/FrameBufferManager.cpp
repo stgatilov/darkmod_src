@@ -141,7 +141,7 @@ void FrameBufferManager::LeavePrimary(bool copyToDefault) {
 	if ( r_frontBuffer.GetBool() ) return;
 	// if we want to do tonemapping later, we need to continue to render to a texture,
 	// otherwise we can render the remaining UI views straight to the back buffer
-	FrameBuffer *targetFbo = r_tonemapInternal.GetBool() ? guiFbo : defaultFbo;
+	FrameBuffer *targetFbo = r_tonemap.GetBool() ? guiFbo : defaultFbo;
 	if (currentRenderFbo == targetFbo) return;
 
 	currentRenderFbo = targetFbo;
@@ -155,7 +155,7 @@ void FrameBufferManager::LeavePrimary(bool copyToDefault) {
 			backEnd.pc.c_copyFrameBuffer++;
 		}
 
-		if ( r_frontBuffer.GetBool() && !r_tonemapInternal.GetBool() ) {
+		if ( r_frontBuffer.GetBool() && !r_tonemap.GetBool() ) {
 			qglFinish();
 		}
 	}

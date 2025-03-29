@@ -2581,8 +2581,6 @@ idSessionLocal::Draw
 */
 void idSessionLocal::Draw() {
 	bool fullConsole = false;
-	// disable when 3D game is not rendered (main menu, loading, etc.)
-	r_tonemapInternal.SetBool( r_tonemap.GetBool() && !r_tonemapOnlyGame3d.GetBool() );
 
 	if ( insideExecuteMapChange ) {
 		renderSystem->SetColor( colorBlack );
@@ -2616,7 +2614,6 @@ void idSessionLocal::Draw() {
 		rw->RenderScene( currentDemoRenderView );
 		renderSystem->DrawDemoPics();
 	} else if ( mapSpawned ) {
-		r_tonemapInternal.SetBool( r_tonemap.GetBool() );
 		bool gameDraw = false;
 		// normal drawing for both single and multi player
 		if ( !com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0 ) {
