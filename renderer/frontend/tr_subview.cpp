@@ -483,8 +483,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idImageScratch **ima
 	viewDef_t *parms = R_XrayView();
 	assert( parms );
 
-
-	if ( stage->width ) { // FIXME wrong field use?
+	if ( stage->xrayInclusive ) {
 		parms->xrayEntityMask = XR_SUBSTITUTE;
 	}
 
@@ -761,7 +760,7 @@ bool R_GenerateSubViews( void ) {
 
 	// nbohr1more: fix compass render error with Xray
 	if (tr.viewDef->renderWorld->mapName.IsEmpty()) {
-	    return false;
+		return false;
 	}
 
 	bool subviews = false;
