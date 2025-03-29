@@ -3056,6 +3056,11 @@ void idSessionLocal::DrawFrame() {
 	// close any gui drawing
 	tr.guiModel->EmitFullScreen();
 	tr.guiModel->Clear();
+
+	ScheduleTonemap();
+}
+
+void idSessionLocal::ScheduleTonemap() {
 	// add the swapbuffers command
 	emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_TONEMAP;

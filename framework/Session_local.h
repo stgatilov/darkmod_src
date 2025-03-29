@@ -97,6 +97,7 @@ public:
 	virtual void		UpdateLoadingProgressBar( progressStage_t key, float ratio ) override;
 
 	virtual void		Frame() override;
+	virtual void		ScheduleTonemap() override;
 
 	virtual bool		ProcessEvent( const sysEvent_t *event ) override;
 
