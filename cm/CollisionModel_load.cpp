@@ -3032,9 +3032,15 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName,
 	bool collisionSurface;
 	idStr extension;
 
-	// only load ASE and LWO models
+	// only load limited subset of models?...
 	idStr( fileName ).ExtractFileExtension( extension );
-	if ( ( extension.Icmp( "ase" ) != 0 ) && ( extension.Icmp( "lwo" ) != 0 ) && ( extension.Icmp( "ma" ) != 0 ) && ( extension.Icmp( "proxy" ) != 0 ) ) {
+	if (
+		( extension.Icmp( "ase" ) != 0 ) &&
+		( extension.Icmp( "lwo" ) != 0 ) &&
+		( extension.Icmp( "obj" ) != 0 ) &&
+		( extension.Icmp( "ma" ) != 0 ) &&
+		( extension.Icmp( "proxy" ) != 0 )
+	) {
 		return NULL;
 	}
 
