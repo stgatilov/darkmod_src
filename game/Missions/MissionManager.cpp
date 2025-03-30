@@ -872,7 +872,7 @@ void CMissionManager::InitMapSequence()
 
 				token.Clear();
 
-				lexer.ReadRestOfLine(token);
+				lexer.ReadRestOfLineUnp(&token);
 
 				idLexer mapLexer(token.c_str(), token.Length(), "mapnames");
 

@@ -1184,32 +1184,30 @@ int idLexer::ReadTokenOnLine( idToken *token ) {
 
 /*
 ================
-idLexer::ReadRestOfLine
+idLexer::ReadRestOfLineUnp
 ================
 */
-const char*	idLexer::ReadRestOfLine(idStr& out) {
-	while(1) {
+int idLexer::ReadRestOfLineUnp( idStr *out, bool eatEoln ) {
+	const char *ptr = script_p;
+	while ( *ptr != '\n' && *ptr != '\0' )
+		ptr++;
 
-		if(*idLexer::script_p == '\n') {
-			idLexer::line++;
-			break;
-		}
-
-		if(!*idLexer::script_p) {
-			break;
-		}
-
-		if(*idLexer::script_p <= ' ') {
-			out += " ";
-		} else {
-			out += *idLexer::script_p;
-		}
-		idLexer::script_p++;
+	int readChars = ptr - script_p;
+	if ( out ) {
+		out->Clear();
+		out->Append( script_p, readChars );
+		out->StripTrailing( '\r' );	// Windows EOL
 	}
-	out.Strip(' ');
-	return out.c_str();
-}
 
+	if ( eatEoln && *ptr == '\n' ) {
+		line++;
+		ptr++;
+		readChars++;
+	}
+
+	script_p = ptr;
+	return readChars;
+}
 
 /*
 ================
