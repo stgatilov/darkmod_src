@@ -1384,9 +1384,13 @@ idSlowChannel::Reset
 ===================
 */
 void idSlowChannel::Reset() {
-	memset( this, 0, sizeof( *this ) );
+// DG: memset() on this is problematic, because lowpass (SoundFX_LowpassFast) has a vtable
+	//memset( this, 0, sizeof( *this ) );
 
-	this->chan = chan;
+	active = false;
+	chan = NULL;
+	playbackState = triggerOffset = 0;
+	lowpass.Clear();
 
 	curPosition.Set( 0 );
 	newPosition.Set( 0 );
