@@ -181,7 +181,6 @@ private:
 	int				flags;						// flags used for script parsing
 	idLexer *		scriptstack;				// stack with scripts of the source
 	idToken *		tokens;						// tokens to read first
-	define_t *		defines;					// list with macro definitions
 	define_t **		definehash;					// hash chain with defines
 	indent_t *		indentstack;				// stack with indents
 	int				skip;						// > 0 if skipping conditional code

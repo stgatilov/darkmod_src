@@ -3100,7 +3100,6 @@ int idParser::LoadFile( const char *filename, bool OSPath ) {
 	idParser::loaded = true;
 
 	if ( !idParser::definehash ) {
-		idParser::defines = NULL;
 		idParser::definehash = (define_t **) Mem_ClearedAlloc( DEFINEHASHSIZE * sizeof(define_t *) );
 		idParser::AddGlobalDefinesToSource();
 	}
@@ -3135,7 +3134,6 @@ int idParser::LoadMemory(const char *ptr, int length, const char *name ) {
 	idParser::loaded = true;
 
 	if ( !idParser::definehash ) {
-		idParser::defines = NULL;
 		idParser::definehash = (define_t **) Mem_ClearedAlloc( DEFINEHASHSIZE * sizeof(define_t *) );
 		idParser::AddGlobalDefinesToSource();
 	}
@@ -3183,7 +3181,6 @@ void idParser::FreeSource( bool keepDefines ) {
 					FreeDefine(define);
 				}
 			}
-			defines = NULL;
 			Mem_Free( idParser::definehash );
 			definehash = NULL;
 		}
@@ -3246,7 +3243,6 @@ idParser::idParser() {
 	this->scriptstack = NULL;
 	this->indentstack = NULL;
 	this->definehash = NULL;
-	this->defines = NULL;
 	this->tokens = NULL;
 	this->marker_p = NULL;
 }
@@ -3264,7 +3260,6 @@ idParser::idParser( int flags ) {
 	this->scriptstack = NULL;
 	this->indentstack = NULL;
 	this->definehash = NULL;
-	this->defines = NULL;
 	this->tokens = NULL;
 	this->marker_p = NULL;
 }
@@ -3282,7 +3277,6 @@ idParser::idParser( const char *filename, int flags, bool OSPath ) {
 	this->scriptstack = NULL;
 	this->indentstack = NULL;
 	this->definehash = NULL;
-	this->defines = NULL;
 	this->tokens = NULL;
 	this->marker_p = NULL;
 	LoadFile( filename, OSPath );
@@ -3301,7 +3295,6 @@ idParser::idParser( const char *ptr, int length, const char *name, int flags ) {
 	this->scriptstack = NULL;
 	this->indentstack = NULL;
 	this->definehash = NULL;
-	this->defines = NULL;
 	this->tokens = NULL;
 	this->marker_p = NULL;
 	LoadMemory( ptr, length, name );
