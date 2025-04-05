@@ -307,20 +307,21 @@ idParser::DefineFromString
 */
 define_t *idParser::DefineFromString( const char *string ) {
 	idParser src;
-	define_t *def;
-
-    if (!src.LoadMemory(string, static_cast<int>(strlen(string)), "*defineString")) {
+	if (!src.LoadMemory(string, static_cast<int>(strlen(string)), "*defineString")) {
 		return NULL;
 	}
 	// create a define from the source
 	if ( !src.Directive_define() ) {
-		src.FreeSource();
 		return NULL;
 	}
-	def = src.CopyFirstDefine();
-	src.FreeSource();
-	//if the define was created succesfully
-	return def;
+	for ( int i = 0; i < DEFINEHASHSIZE; i++ ) {
+		for ( define_t *def = src.definehash[i]; def; def = def->hashnext ) {
+			if ( FindDefine( globaldefines, def->name ) )
+				continue;
+			return src.CopyDefine( def );
+		}
+	}
+	return NULL;
 }
 
 /*
@@ -661,22 +662,6 @@ void idParser::AddBuiltinDefines( void ) {
 		// add the define to the source
 		AddDefineToHash(define, idParser::definehash);
 	}
-}
-
-/*
-================
-idParser::CopyFirstDefine
-================
-*/
-define_t *idParser::CopyFirstDefine( void ) {
-	int i;
-
-	for ( i = 0; i < DEFINEHASHSIZE; i++ ) {
-		if ( idParser::definehash[i] ) {
-			return CopyDefine(idParser::definehash[i]);
-		}
-	}
-	return NULL;
 }
 
 /*

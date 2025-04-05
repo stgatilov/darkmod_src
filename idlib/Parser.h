@@ -210,7 +210,6 @@ private:
 	static void		FreeDefine( define_t *define );
 	static define_t *FindDefine( define_t *defines, const char *name );
 	static define_t *DefineFromString( const char *string);
-	define_t *		CopyFirstDefine( void );
 	int				Directive_include( void );
 	int				Directive_undef( void );
 	int				Directive_if_def( int type );
