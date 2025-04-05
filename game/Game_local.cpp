@@ -462,17 +462,23 @@ void idGameLocal::Init( void ) {
 
 	Printf( "--------- Initializing Game ----------\n" );
 
-	// BluePill #4539 - show whether this is a 32-bit or 64-bit binary
+	int revision = RevisionTracker::Instance().GetHighestRevision();
 	Printf( "%s %d.%02d/%zu, %s, code revision %d\n", 
  		GAME_VERSION, 
 		TDM_VERSION_MAJOR,
 		TDM_VERSION_MINOR,
 		sizeof(void*) * 8,
 		BUILD_STRING,
-		RevisionTracker::Instance().GetHighestRevision() 
+		revision
 	);
 	Printf( "Build date: %s\n", __DATE__ );
-	
+
+	int fullVer = GAME_API_VERSION * 1000000 + revision;
+	idParser::RemoveAllGlobalDefines();
+	idParser::AddGlobalDefine( va("TDM_VERSION %d", GAME_API_VERSION ) );
+	idParser::AddGlobalDefine( va("TDM_REVISION %d", revision ) );
+	idParser::AddGlobalDefine( va("TDM_VERSION_FULL %d", fullVer ) );
+
 	// register game specific decl types
 	declManager->RegisterDeclType( "model",				DECL_MODELDEF,		idDeclAllocator<idDeclModelDef> );
 	declManager->RegisterDeclType( "export",			DECL_MODELEXPORT,	idDeclAllocator<idDecl> );
