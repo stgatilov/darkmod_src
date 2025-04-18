@@ -3582,13 +3582,23 @@ idCollisionModelManagerLocal::GetModelPolygon
 ===================
 */
 bool idCollisionModelManagerLocal::GetModelPolygon( cmHandle_t model, int polygonNum, idFixedWinding &winding ) const {
-	int i, edgeNum;
+	
+	assert(0 && "if this is ever called, it must be fixed first!"); // DG: see below
+	return false;
+
+#if 0
+  
+  int i, edgeNum;
 	cm_polygon_t *poly;
 
 	if ( model < 0 || model > MAX_SUBMODELS || model >= numModels || !models[model] ) {
 		common->Printf( "idCollisionModelManagerLocal::GetModelPolygon: invalid model handle\n" );
 		return false;
 	}
+
+	// FIXME: DG: WTF is this, casting an int to a pointer?! we're lucky this is unused..
+	//   (it's called by idClip::GetModelContactFeature() which is called by
+	//    idClip()::DrawModelContactFeature(), but that is never called)
 
 	poly = *reinterpret_cast<cm_polygon_t **>(&polygonNum);
 	winding.Clear();
@@ -3598,6 +3608,8 @@ bool idCollisionModelManagerLocal::GetModelPolygon( cmHandle_t model, int polygo
 	}
 
 	return true;
+
+#endif // 0
 }
 
 /*
