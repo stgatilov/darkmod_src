@@ -180,8 +180,9 @@ typedef enum {
 
 static const int	MAX_FRAGMENT_IMAGES = 8;
 static const int	MAX_VERTEX_PARMS = 4;
+#define NEWSTAGE_PROGRAM_DELAYED ((GLSLProgram*)SIZE_MAX)
 
-typedef struct {
+typedef struct newShaderStage_s {
 	int					numVertexParms;
 	int					vertexParms[MAX_VERTEX_PARMS][4];	// evaluated register indexes
 
@@ -190,7 +191,11 @@ typedef struct {
 
 	//idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
 
+	char				programName[32];
 	GLSLProgram			*glslProgram;
+
+	// called from backend, can do program load if it was delayed
+	GLSLProgram *GetGlslProgram();
 } newShaderStage_t;
 
 // stgatilov #6571: special settings for parallax stage

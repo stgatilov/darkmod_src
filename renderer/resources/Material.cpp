@@ -778,11 +778,27 @@ int idMaterial::ParseExpression( idLexer &src ) {
 	return ParseExpressionPriority( src, TOP_PRIORITY );
 }
 
+static void LoadMaterialStageProgram( newShaderStage_t &newStage, const char *name ) {
+	if ( strlen(name) + 1 > sizeof(newStage.programName) )
+		common->Warning( "Material custom shader name '%s' is too long", name );
+	idStr::Copynz( newStage.programName, name, sizeof(newStage.programName) );
 
-static GLSLProgram* GLSL_LoadMaterialStageProgram(const char *name) {
-	return programManager->Load( name );
+	newStage.glslProgram = NEWSTAGE_PROGRAM_DELAYED;
+	if ( session->IsFrontend() ) {
+		// new material is being loaded from frontend during gameplay
+		// delay loading of the shader until its first usage in backend
+		return;
+	}
+	// load right now
+	newStage.GetGlslProgram();
 }
 
+GLSLProgram *newShaderStage_s::GetGlslProgram() {
+	if ( glslProgram == NEWSTAGE_PROGRAM_DELAYED ) {
+		glslProgram = programManager->Load( programName );
+	}
+	return glslProgram;
+}
 
 /*
 ===============
@@ -1565,21 +1581,21 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				idStr fileExt;
 				token.ExtractFileExtension( fileExt );
 				token.StripFileExtension();
-				newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
+				LoadMaterialStageProgram( newStage, token );
 			}
 			continue;
 		}
 		else if ( !token.Icmp( "fragmentProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				token.StripFileExtension();
-				newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
+				LoadMaterialStageProgram( newStage, token );
 			}
 			continue;
 		}
 		else if ( !token.Icmp( "vertexProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				token.StripFileExtension();
-				newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
+				LoadMaterialStageProgram( newStage, token );
 			}
 			continue;
 		}
