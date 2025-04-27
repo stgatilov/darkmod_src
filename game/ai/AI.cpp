@@ -4196,7 +4196,10 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 
 	// What is the lighting along the line where the thing to be observed
 	// might be.
-	float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(pointToObserve, pointToObserve2);
+	float maxDistanceToObserve = cv_ai_sight_scale.GetFloat() * GetAcuity("vis") * 1.0f;
+	if ( g_lightQuotientAlgo.GetInteger() < 2 ) {
+		maxDistanceToObserve = GetMaximumObservationDistanceForPoints(pointToObserve, pointToObserve2);
+	}
 		
 	idAASFindObservationPosition findGoal
 	(
