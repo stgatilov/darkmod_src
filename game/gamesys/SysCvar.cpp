@@ -609,7 +609,7 @@ idCVar cv_lg_fade_delay			("tdm_lg_fade_delay",			"0.09",		CVAR_GAME | CVAR_FLOA
 idCVar cv_empty_model("tdm_empty_model", "models/darkmod/misc/system/empty.lwo", CVAR_GAME | CVAR_ARCHIVE, "The empty model referenced by the 'waitForRender' script event.");
 
 idCVar g_lightQuotientAlgo(
-	"g_lightQuotientAlgo", "1", CVAR_INTEGER | CVAR_GAME,
+	"g_lightQuotientAlgo", "2", CVAR_INTEGER | CVAR_GAME,
 	"If set to 0, then use old LAS-based code.\n"
 	"If set to 1, then use new code in renderer frontend\n"
 	"If set to 2, then old LAS system is completely disabled",
