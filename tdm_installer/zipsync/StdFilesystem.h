@@ -2,6 +2,7 @@
 #define STD_FILESYSTEM_H_
 
 #include <stdint.h>
+#include <cstdint>
 #include <ctime>
 #include <string>
 #include <memory>
