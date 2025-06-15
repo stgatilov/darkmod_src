@@ -3391,7 +3391,8 @@ void idCollisionModelManagerLocal::BuildModels( const idMapFile *mapFile ) {
 	idTimer timer;
 	timer.Start();
 
-	if ( !LoadCollisionModelFile( mapFile->GetName(), mapFile->GetGeometryCRC() ) ) {
+	//if ( !LoadCollisionModelFile( mapFile->GetName(), mapFile->GetGeometryCRC() ) )
+	{
 
 		if ( !mapFile->GetNumEntities() ) {
 			return;
@@ -3448,7 +3449,7 @@ void idCollisionModelManagerLocal::LoadMap( const idMapFile *mapFile ) {
 	session->UpdateLoadingProgressBar(PROGRESS_STAGE_COLLISION, 0.0f);
 
 	// check whether we can keep the current collision map based on the mapName and mapFileTime
-	if ( loaded ) {
+	/*if ( loaded ) {
 		if ( mapName.Icmp( mapFile->GetName() ) == 0 ) {
 			if ( mapFile->GetFileTime() == mapFileTime ) {
 				common->DPrintf( "Using loaded version\n" );
@@ -3457,7 +3458,7 @@ void idCollisionModelManagerLocal::LoadMap( const idMapFile *mapFile ) {
 			common->DPrintf( "Reloading modified map\n" );
 		}
 		FreeMap();
-	}
+	}*/
 
 	// clear the collision map
 	Clear();
