@@ -344,7 +344,7 @@ bool LightEstimateSystem::ShouldSampleBeExcluded(const idEntity *entity, const s
 	const renderEntity_t *rent = gameRenderWorld->GetRenderEntity(entity->GetModelDefHandle());
 	const idRenderModel *rmodel = rent->hModel;
 	const idMaterial *material = rmodel->GetSampleMaterial(rent, sample);
-	if (!material->IsDrawn())
+	if (!material->IsDrawn() && !entity->spawnArgs.GetBool("les_sample_invisible"))
 		return true;
 	return false;
 }
