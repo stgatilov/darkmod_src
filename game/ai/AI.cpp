@@ -5943,9 +5943,6 @@ void idAI::DeadMove( void ) {
 
 	RunPhysics();
 
-	// stgatilov #6546: keep light quotient always valid for AI bodies
-	gameLocal.m_LightEstimateSystem->TrackEntity( this );
-
 	//moveResult = physicsObj.GetMoveResult();
 	AI_ONGROUND = physicsObj.OnGround();
 }
@@ -12814,8 +12811,6 @@ void idAI::DropOnRagdoll( void )
 			pWeap->DeactivateAttack();
 			pWeap->DeactivateParry();
 			pWeap->ClearOwner();
-			// stgatilov #6546: track dropped melee weapon forever
-			gameLocal.m_LightEstimateSystem->TrackEntity( ent, 1000000000 );
 		}
 
 		// greebo: Check if we should set some attachments to nonsolid
