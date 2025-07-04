@@ -72,6 +72,11 @@ if (UNIX)
 		add_compile_options(-msse2)
 	endif()
 
+	CHECK_CXX_COMPILER_FLAG("-Wdangling-reference" cxx_has_Wdangling_reference)
+	if(cxx_has_Wdangling_reference)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=dangling-reference")
+	endif()
+
 	if(FORCE_COLORED_OUTPUT)
 		if(CMAKE_COMPILER_IS_GNUCC)
 		   add_compile_options (-fdiagnostics-color=always)

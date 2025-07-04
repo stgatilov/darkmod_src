@@ -5051,7 +5051,7 @@ bool idAI::GetMovePos(idVec3 &seekPos)
 				// angua: check whether there is a door in the path
 				if (path.firstDoor != NULL)
 				{
-					const idVec3& doorOrg = path.firstDoor->GetClosedBox().GetCenter(); // grayman #3755 - use door center, not origin
+					const idVec3 doorOrg = path.firstDoor->GetClosedBox().GetCenter(); // grayman #3755 - use door center, not origin
 					//const idVec3& doorOrg = path.firstDoor->GetPhysics()->GetOrigin();
 					const idVec3& org = GetPhysics()->GetOrigin();
 					idVec3 dir = doorOrg - org;
