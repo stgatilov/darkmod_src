@@ -10,6 +10,9 @@ if (UNIX)
 	# we want debug symbols even with Release builds
 	string(APPEND CMAKE_CXX_FLAGS_RELEASE_INIT "-g -ffast-math")
 	string(APPEND CMAKE_C_FLAGS_RELEASE_INIT "-g -ffast-math")
+
+	option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored compiler warnings/errors (GCC/Clang only; esp. useful with ninja)." OFF)
+	option(ASAN		"Enable GCC/Clang Adress Sanitizer (ASan)" OFF) # TODO: MSVC also supports this, somehow?
 elseif(MSVC)
 	set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
 endif()
@@ -60,13 +63,26 @@ if (UNIX)
 			-fno-omit-frame-pointer         # crashdumps!
 			-fmessage-length=0
 			-fvisibility=hidden
-			-fno-unsafe-math-optimizations
+			-fno-unsafe-math-optimizations # TODO: maybe get rid of -ffast-math
 			-std=c++14
 	)
 	# enable SSE2 if supported (mainly 32-bit x86)
 	check_cxx_compiler_flag(-msse2 MSSE2_SUPPORTED)
 	if (MSSE2_SUPPORTED)
 		add_compile_options(-msse2)
+	endif()
+
+	if(FORCE_COLORED_OUTPUT)
+		if(CMAKE_COMPILER_IS_GNUCC)
+		   add_compile_options (-fdiagnostics-color=always)
+		else() # clang, probably if (D3_COMPILER_IS_CLANG)
+		   add_compile_options (-fcolor-diagnostics)
+		endif ()
+	endif ()
+
+	if(ASAN)
+		# if this doesn't work, ASan might not be available on your platform, don't set ASAN then..
+		add_compile_options(-fsanitize=address)
 	endif()
 
 	# TODO: do we really want to keep using this
@@ -257,6 +273,11 @@ if (WIN32)
 	set_target_properties(TheDarkMod PROPERTIES WIN32_EXECUTABLE TRUE)
 elseif (UNIX)
 	target_link_libraries(TheDarkMod pthread dl stdc++fs X11 Xext Xxf86vm)
+
+	if(ASAN)
+		target_link_libraries(TheDarkMod -fsanitize=address)
+	endif()
+
 	# strip debug symbols from executable and put them into a separate symbols file
 	add_custom_command(
 			TARGET TheDarkMod POST_BUILD
