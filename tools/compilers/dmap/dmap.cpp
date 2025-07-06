@@ -507,6 +507,9 @@ void Dmap( const idCmdArgs &args ) {
 			// create the collision map
 			start = Sys_Milliseconds();
 
+			// stgatilov: make sure we don't accidentally retain the old CM for the obsolete map
+			collisionModelManager->FreeMap();
+
 			collisionModelManager->LoadMap( dmapGlobals.dmapFile );
 			collisionModelManager->FreeMap();
 

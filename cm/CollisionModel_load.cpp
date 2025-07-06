@@ -3449,7 +3449,8 @@ void idCollisionModelManagerLocal::LoadMap( const idMapFile *mapFile ) {
 	session->UpdateLoadingProgressBar(PROGRESS_STAGE_COLLISION, 0.0f);
 
 	// check whether we can keep the current collision map based on the mapName and mapFileTime
-	/*if ( loaded ) {
+	// stgatilov: this skip is especially important on quickload
+	if ( loaded ) {
 		if ( mapName.Icmp( mapFile->GetName() ) == 0 ) {
 			if ( mapFile->GetFileTime() == mapFileTime ) {
 				common->DPrintf( "Using loaded version\n" );
@@ -3458,7 +3459,7 @@ void idCollisionModelManagerLocal::LoadMap( const idMapFile *mapFile ) {
 			common->DPrintf( "Reloading modified map\n" );
 		}
 		FreeMap();
-	}*/
+	}
 
 	// clear the collision map
 	Clear();
