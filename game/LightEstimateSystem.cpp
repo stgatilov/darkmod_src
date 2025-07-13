@@ -481,6 +481,7 @@ void LightEstimateSystem::SetExplicitSamplingForEntity(idEntity *entity, const i
 		msampling = new LesModelSampling();
 		msampling->samples.SetNum(n);
 		idBounds bbox;
+		bbox.Clear();
 		for (int i = 0; i < n; i++) {
 			samplePointOnModel_t &smp = msampling->samples[i];
 			smp.staticPosition = (*samples)[i];
