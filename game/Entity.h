@@ -36,6 +36,8 @@ typedef std::shared_ptr<CInventoryItem> CInventoryItemPtr;
 class CInventoryCursor;
 typedef std::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
 
+struct LesModelSampling;
+
 /**
 * This struct defines one entity with an optional offset, count and
 * probability, to spawn it upon the death of another entity.
@@ -430,6 +432,8 @@ public:
 	float					m_LightQuotient;
 	// The last time the above value has been calculated
 	int						m_LightQuotientLastEvalTime;
+
+	LesModelSampling *		m_lesExplicitSampling;		// stgatilov #6623: samples for Light Estimate System (override rendermodel)
 
 	bool					m_droppedByAI;	// grayman #1330
 

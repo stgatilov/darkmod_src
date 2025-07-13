@@ -1131,6 +1131,7 @@ idEntity::idEntity()
 
 	m_LightQuotient = 0;
 	m_LightQuotientLastEvalTime = -1;
+	m_lesExplicitSampling = nullptr;
 
 	previousVoiceShader = nullptr;
 	previousBodyShader = nullptr;
@@ -1666,6 +1667,9 @@ idEntity::~idEntity( void )
 	FreeModelDef();
 	FreeSoundEmitter( false );
 
+	delete m_lesExplicitSampling;
+	m_lesExplicitSampling = NULL;
+
 	if ( xrayDefHandle != -1 ) {
 		gameRenderWorld->FreeEntityDef( xrayDefHandle );
 		xrayDefHandle = -1;
@@ -1898,6 +1902,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteFloat(m_LightQuotient);
 	savefile->WriteInt(m_LightQuotientLastEvalTime);
+	LightEstimateSystem::SaveExplicitSampling(savefile, this);
 
 	savefile->WriteBool(m_droppedByAI);		// grayman #1330
 
@@ -2216,6 +2221,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadFloat(m_LightQuotient);
 	savefile->ReadInt(m_LightQuotientLastEvalTime);
+	LightEstimateSystem::RestoreExplicitSampling(savefile, this);
 
 	savefile->ReadBool(m_droppedByAI);	// grayman #1330
 

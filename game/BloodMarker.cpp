@@ -22,6 +22,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "BloodMarker.h"
 #include "StimResponse/Stim.h"
 
+#include "game/LightEstimateSystem.h"
+
 const idEventDef EV_GenerateBloodSplat("_TDM_GenerateBloodSplat", EventArgs(), EV_RETURNS_VOID, "internal");
 
 CLASS_DECLARATION( idEntity, CBloodMarker )
@@ -75,6 +77,29 @@ void CBloodMarker::Event_GenerateBloodSplat()
 		}
 
 		PostEventMS(&EV_Remove, 1000);
+	}
+
+	if ( LightEstimateSystem *les = gameLocal.m_LightEstimateSystem ) {
+		// generate explicit samples for LES
+		idVec3 axisU, axisV;
+		params.dir.NormalVectors( axisU, axisV );
+
+		idList<idVec3> positions;
+		for ( int i = 0; i <= 2; i++ ) {
+			float radius = (params.size * 0.5f) * i / 2;
+			int n = 1 + 6 * i;
+			for ( int i = 0; i < n; i++ ) {
+				float s, c;
+				idMath::SinCos( idMath::TWO_PI * i / n, s, c);
+				positions.Append( params.origin + radius * ( axisU * c + axisV * s ) );
+			}
+		}
+
+		// transform to model coords
+		for ( idVec3 &point : positions )
+			point = ( point - GetPhysics()->GetOrigin() ) * GetPhysics()->GetAxis().Transpose();
+
+		les->SetExplicitSamplingForEntity( this, &positions );
 	}
 }
 
