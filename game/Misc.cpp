@@ -1329,7 +1329,18 @@ void idStaticEntity::ReapplyDecals()
 				di = decals_list.erase( di );
 				continue;
 			}
-			gameLocal.ProjectDecal( di->origin, di->dir, di->decal_depth, di->decal_parallel, di->size, di->decal, di->decal_angle, this, false, di->decal_starttime );
+
+			ProjectDecalParams params;
+			params.origin = di->origin;
+			params.dir = di->dir;
+			params.depth = di->decal_depth;
+			params.parallel = di->decal_parallel;
+			params.size = di->size;
+			params.material = di->decal;
+			params.randomizeAngle = di->decal_randomizeAngle;
+			params.angle = di->decal_angle;
+			params.starttime = di->decal_starttime;
+			gameLocal.ProjectDecal( params );
 		}
 		++di;
 	}

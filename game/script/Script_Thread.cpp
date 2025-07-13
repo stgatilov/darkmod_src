@@ -2845,8 +2845,17 @@ void idThread::Event_ProjectDecal( const idVec3& traceOrigin, const idVec3& trac
 	// if trace made contact with a surface...
 	if ( trace.fraction < 1.0f )
 	{
-		gameLocal.ProjectDecal( tr.c.point, -tr.c.normal, 8.0f, true, decalSize, decal,
-								DEG2RAD(angle), gameLocal.entities[tr.c.entityNum], true, -1, false );
+		ProjectDecalParams params;
+		params.origin = tr.c.point;
+		params.dir = -tr.c.normal;
+		params.depth = 8.0f;
+		params.parallel = true;
+		params.size = decalSize;
+		params.material = decal;
+		params.randomizeAngle = false;
+		params.angle = DEG2RAD(angle);
+		params.saveOnTarget = gameLocal.entities[tr.c.entityNum];
+		gameLocal.ProjectDecal( params );
 	}
 }
 

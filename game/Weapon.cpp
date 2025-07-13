@@ -3498,7 +3498,14 @@ void idWeapon::Event_Melee( void ) {
 						// project decal
 						decal = weaponDef->dict.GetString( "mtr_strike" );
 						if ( decal && *decal ) {
-							gameLocal.ProjectDecal( tr.c.point, -tr.c.normal, 8.0f, true, 6.0, decal );
+							ProjectDecalParams params;
+							params.origin = tr.c.point;
+							params.dir = -tr.c.normal;
+							params.depth = 8.0f;
+							params.parallel = true;
+							params.size = 6.0f;
+							params.material = decal;
+							gameLocal.ProjectDecal( params );
 						}
 						nextStrikeFx = gameLocal.time + 200;
 					} else {

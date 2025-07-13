@@ -6637,22 +6637,21 @@ void idGameLocal::RadiusPushClipModel( const idVec3 &origin, const float push, c
 idGameLocal::ProjectDecal
 ===============
 */
-void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, 
-								const char *material, float angle, idEntity* target, bool save, int starttime, bool allowRandomAngle )
+void idGameLocal::ProjectDecal( ProjectDecalParams params )
 {
 	float s, c;
 	idMat3 axis, axistemp;
 	idFixedWinding winding;
 	idVec3 windingOrigin, projectionOrigin;
 
-	if ( starttime == -1 )
+	if ( params.starttime == -1 )
 	{
-		starttime = time; // Optional param defaults to -1 => gameLocal.time -- SteveL #3817
+		params.starttime = time; // Optional param defaults to -1 => gameLocal.time -- SteveL #3817
 	}
 
-	if ( target && save )
+	if ( params.saveOnTarget )
 	{
-		target->SaveDecalInfo( origin, dir, depth, parallel, size, material, angle ); // Save for reapplication after LOD switches -- SteveL #3817
+		params.saveOnTarget->SaveDecalInfo( params ); // Save for reapplication after LOD switches -- SteveL #3817
 	}
 
 	static idVec3 decalWinding[4] = {
@@ -6666,36 +6665,36 @@ void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float d
 		return;
 	}
 
-	// randomly rotate the decal winding if angle = 0 and random angles are allowed
-	if( angle == 0 && allowRandomAngle )
+	// randomly rotate the decal winding random angle is requested
+	if( params.randomizeAngle )
 	{
-		angle = random.RandomFloat() * idMath::TWO_PI;
+		params.angle = random.RandomFloat() * idMath::TWO_PI;
 	}
 
-	idMath::SinCos16( angle, s, c );
+	idMath::SinCos16( params.angle, s, c );
 
 	// winding orientation
-	axis[2] = dir;
+	axis[2] = params.dir;
 	axis[2].Normalize();
 	axis[2].NormalVectors( axistemp[0], axistemp[1] );
 	axis[0] = axistemp[ 0 ] * c + axistemp[ 1 ] * -s;
 	axis[1] = axistemp[ 0 ] * -s + axistemp[ 1 ] * -c;
 
-	windingOrigin = origin + depth * axis[2];
-	if ( parallel ) {
-		projectionOrigin = origin - depth * axis[2];
+	windingOrigin = params.origin + params.depth * axis[2];
+	if ( params.parallel ) {
+		projectionOrigin = params.origin - params.depth * axis[2];
 	} else {
-		projectionOrigin = origin;
+		projectionOrigin = params.origin;
 	}
 
-	size *= 0.5f;
+	params.size *= 0.5f;
 
 	winding.Clear();
-	winding += idVec5( windingOrigin + ( axis * decalWinding[0] ) * size, idVec2( 1, 1 ) );
-	winding += idVec5( windingOrigin + ( axis * decalWinding[1] ) * size, idVec2( 0, 1 ) );
-	winding += idVec5( windingOrigin + ( axis * decalWinding[2] ) * size, idVec2( 0, 0 ) );
-	winding += idVec5( windingOrigin + ( axis * decalWinding[3] ) * size, idVec2( 1, 0 ) );
-	gameRenderWorld->ProjectDecalOntoWorld( winding, projectionOrigin, parallel, depth * 0.5f, declManager->FindMaterial( material ), starttime );
+	winding += idVec5( windingOrigin + ( axis * decalWinding[0] ) * params.size, idVec2( 1, 1 ) );
+	winding += idVec5( windingOrigin + ( axis * decalWinding[1] ) * params.size, idVec2( 0, 1 ) );
+	winding += idVec5( windingOrigin + ( axis * decalWinding[2] ) * params.size, idVec2( 0, 0 ) );
+	winding += idVec5( windingOrigin + ( axis * decalWinding[3] ) * params.size, idVec2( 1, 0 ) );
+	gameRenderWorld->ProjectDecalOntoWorld( winding, projectionOrigin, params.parallel, params.depth * 0.5f, declManager->FindMaterial( params.material ), params.starttime );
 }
 
 /*
@@ -6729,7 +6728,14 @@ void idGameLocal::BloodSplat( const idVec3 &origin, const idVec3 &dir, float siz
 
 	if ( clip.Translation( results, origin, origin + direction * 64.0f, &mdl, mat3_identity, CONTENTS_SOLID, NULL ) )
 	{
-		ProjectDecal( results.endpos, dir, 2.0f * size, true, size, material );
+		ProjectDecalParams params;
+		params.origin = results.endpos;
+		params.dir = dir;
+		params.depth = 2.0f * size;
+		params.parallel = true;
+		params.size = size;
+		params.material = material;
+		ProjectDecal( params );
 	}
 }
 

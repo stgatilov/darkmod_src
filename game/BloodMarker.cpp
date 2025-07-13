@@ -33,6 +33,15 @@ void CBloodMarker::Event_GenerateBloodSplat()
 	idVec3 dir = gameLocal.GetGravity();
 	dir.Normalize();
 
+	ProjectDecalParams params;
+	params.origin = GetPhysics()->GetOrigin();
+	params.dir = dir;
+	params.depth = 3.0f;
+	params.parallel = false;
+	params.size = _size;
+	params.angle = _angle;
+	params.randomizeAngle = false;
+
 	if (!_isFading)
 	{
 		// Read the stay duration from the material info
@@ -40,7 +49,8 @@ void CBloodMarker::Event_GenerateBloodSplat()
 
 		if (material != NULL)
 		{
-			gameLocal.ProjectDecal(GetPhysics()->GetOrigin(), dir, 3, false, _size, _bloodSplat, _angle);
+			params.material = _bloodSplat;
+			gameLocal.ProjectDecal( params );
 
 			PostEventMS(&EV_GenerateBloodSplat, material->GetDecalInfo().stayTime);
 		}
@@ -52,7 +62,8 @@ void CBloodMarker::Event_GenerateBloodSplat()
 	else
 	{
 		// We're fading, just spawn one last decal and schedule our removal
-		gameLocal.ProjectDecal(GetPhysics()->GetOrigin(), dir, 3, false, _size, _bloodSplatFading, _angle);
+		params.material = _bloodSplatFading;
+		gameLocal.ProjectDecal( params );
 
 		// grayman #3075 - notify the AI who spilled the blood that
 		// we're going away.

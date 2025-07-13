@@ -1941,6 +1941,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 		savefile->WriteFloat( i->decal_depth );
 		savefile->WriteBool( i->decal_parallel );
 		savefile->WriteFloat( i->decal_angle );
+		savefile->WriteBool( i->decal_randomizeAngle);
 	}
 }
 
@@ -2259,6 +2260,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 		savefile->ReadFloat( di.decal_depth );
 		savefile->ReadBool( di.decal_parallel );
 		savefile->ReadFloat( di.decal_angle );
+		savefile->ReadBool( di.decal_randomizeAngle);
 		decals_list.push_back( di );
 	}
 	needsDecalRestore = ( decalscount > 0 );
@@ -3634,6 +3636,7 @@ void idEntity::SaveOverlayInfo( const idVec3& impact_origin, const idVec3& impac
 	di.decal_depth = 0.0f;		// not used for animated overlays
 	di.decal_parallel = false;	// not used for animated overlays
 	di.decal_angle = 0.0f;		// not used for animated overlays
+	di.decal_randomizeAngle = true;	// ...
 	di.decal_starttime = 0;		// not used for animated overlays
 	decals_list.push_back( di );
 }
@@ -3645,17 +3648,18 @@ idEntity::SaveDecalInfo
 For restoration after a LOD switch. -- SteveL #3817
 ================
 */
-void idEntity::SaveDecalInfo( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material, float angle )
+void idEntity::SaveDecalInfo( const ProjectDecalParams &params )
 {
 	SDecalInfo di;
-	di.decal_angle = angle;
-	di.decal = material;
-	di.decal_depth = depth;
-	di.dir = dir;
+	di.decal_randomizeAngle = params.randomizeAngle;
+	di.decal_angle = params.angle;
+	di.decal = params.material;
+	di.decal_depth = params.depth;
+	di.dir = params.dir;
 	di.overlay_joint = INVALID_JOINT; // only needed for animated overlays
-	di.origin = origin;
-	di.decal_parallel = parallel;
-	di.size = size;
+	di.origin = params.origin;
+	di.decal_parallel = params.parallel;
+	di.size = params.size;
 	di.decal_starttime = gameLocal.time;
 	decals_list.push_back( di );
 }

@@ -1392,7 +1392,14 @@ void idExplodingBarrel::ExplodingEffects( void ) {
 
 	temp = spawnArgs.GetString( "mtr_burnmark" );
 	if ( *temp != '\0' ) {
-		gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), GetPhysics()->GetGravity(), 128.0f, true, 96.0f, temp );
+		ProjectDecalParams params;
+		params.origin = GetPhysics()->GetOrigin();
+		params.dir = GetPhysics()->GetGravity();
+		params.depth = 128.0f;
+		params.parallel = true;
+		params.size = 96.0f;
+		params.material = temp;
+		gameLocal.ProjectDecal( params );
 	}
 }
 

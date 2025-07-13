@@ -246,6 +246,7 @@ typedef struct SAttachPosition_s
 	int						decal_starttime;
 	float					decal_depth;
 	bool					decal_parallel;
+	bool					decal_randomizeAngle;
 	float					decal_angle;
 } SDecalInfo;
 
@@ -1534,8 +1535,7 @@ private:
 public:
 	virtual void		ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material, bool save = true );
 	void				RestoreDecals();	// Deferred action, done at end of Think() after model has been Presented
-	void				SaveDecalInfo( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, 
-									   const char *decal, float angle = 0.0f ); // Applied by gameLocal, so needs to be public
+	void				SaveDecalInfo( const ProjectDecalParams &params ); // Applied by gameLocal, so needs to be public
 protected:
 	std::list<SDecalInfo>	decals_list;
 	bool				needsDecalRestore;
