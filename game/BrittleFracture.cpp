@@ -785,8 +785,19 @@ void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, co
 			continue;
 		}
 
-		idFixedWinding *decal = new idFixedWinding;
-		shards[i]->decals.Append( decal );
+		idFixedWinding* decal = new idFixedWinding;
+
+
+		// Amadeus: #6588 - Added a maximum decal limit to prevent infinite decals from spawning and tanking the framerate to 0
+		const int MAX_DECALS = 1;
+		idList<idFixedWinding*>& decalList = shards[i]->decals;
+
+		if (decalList.Num() >= MAX_DECALS) {
+			delete decalList[0];
+			decalList.RemoveIndex(0);
+		}
+
+		decalList.Append(decal);
 
 		decal->SetNumPoints( winding.GetNumPoints() );
 		for ( j = 0; j < winding.GetNumPoints(); j++ ) {
