@@ -7,9 +7,9 @@ if(NOT is_multi_config AND NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (UNIX)
-	# we want debug symbols even with Release builds
-	string(APPEND CMAKE_CXX_FLAGS_RELEASE_INIT "-g -ffast-math")
-	string(APPEND CMAKE_C_FLAGS_RELEASE_INIT "-g -ffast-math")
+	# we want debug symbols even with Release builds; enable the "good parts" of -ffast-math (which is not to be trusted)
+	string(APPEND CMAKE_CXX_FLAGS_RELEASE_INIT "-g -fno-math-errno -fno-trapping-math -ffinite-math-only")
+	string(APPEND CMAKE_C_FLAGS_RELEASE_INIT "-g -fno-math-errno -fno-trapping-math -ffinite-math-only")
 
 	option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored compiler warnings/errors (GCC/Clang only; esp. useful with ninja)." OFF)
 	option(ASAN		"Enable GCC/Clang Adress Sanitizer (ASan)" OFF) # TODO: MSVC also supports this, somehow?
@@ -68,7 +68,6 @@ if (UNIX)
 			-fno-omit-frame-pointer         # crashdumps!
 			-fmessage-length=0
 			-fvisibility=hidden
-			-fno-unsafe-math-optimizations # TODO: maybe get rid of -ffast-math
 			-std=c++14
 	)
 	# enable SSE2 if supported (mainly 32-bit x86)
