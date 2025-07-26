@@ -56,6 +56,11 @@ if (UNIX)
 			-Woverloaded-virtual            # almost-overriding virtual functions is dangerous for us
 			-Wsuggest-override              # recommend using "override" keyword
 	)
+	CHECK_CXX_COMPILER_FLAG("-Wdangling-reference" cxx_has_Wdangling_reference)
+	if(cxx_has_Wdangling_reference)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=dangling-reference")
+	endif()
+
 	# configure other compile options
 	add_compile_options(
 			-pipe
@@ -70,11 +75,6 @@ if (UNIX)
 	check_cxx_compiler_flag(-msse2 MSSE2_SUPPORTED)
 	if (MSSE2_SUPPORTED)
 		add_compile_options(-msse2)
-	endif()
-
-	CHECK_CXX_COMPILER_FLAG("-Wdangling-reference" cxx_has_Wdangling_reference)
-	if(cxx_has_Wdangling_reference)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=dangling-reference")
 	endif()
 
 	if(FORCE_COLORED_OUTPUT)
