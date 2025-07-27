@@ -77,10 +77,20 @@ if (UNIX)
 		add_compile_options(-msse2)
 	endif()
 
+	# don't mess up math code with useless FMA "optimizations"
+	# (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100839)
+	# see also https://github.com/dhewm/dhewm3/commit/2521c3dfdb87c9261f69615ab7ecc241c1046bb4
+	# and https://github.com/dhewm/dhewm3/issues/147
+	# and https://github.com/RobertBeckebans/RBDOOM-3-BFG/issues/436#issuecomment-850930254 (and following)
+	CHECK_CXX_COMPILER_FLAG("-ffp-contract=off" cxx_has_fp-contract)
+	if(cxx_has_fp-contract)
+		add_compile_options(-ffp-contract=off)
+	endif()
+
 	if(FORCE_COLORED_OUTPUT)
 		if(CMAKE_COMPILER_IS_GNUCC)
 		   add_compile_options (-fdiagnostics-color=always)
-		else() # clang, probably if (D3_COMPILER_IS_CLANG)
+		else() # clang, probably
 		   add_compile_options (-fcolor-diagnostics)
 		endif ()
 	endif ()
