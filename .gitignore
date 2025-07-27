@@ -5,7 +5,7 @@ CMakeSettings.json
 
 .svn/
 .vs/
-build/
+build*/
 ipch/
 Darkmod.log
 
