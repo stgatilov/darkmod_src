@@ -792,10 +792,21 @@ void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, co
 		const int MAX_DECALS = 1;
 		idList<idFixedWinding*>& decalList = shards[i]->decals;
 
+		// Get time in seconds
+		float currentTime = MS2SEC(gameLocal.time);
+
+		// Don't spawn new decals until after time passes
+		if (currentTime < shards[i]->nextDecalTime) {
+			return; 
+		}
+
 		if (decalList.Num() >= MAX_DECALS) {
 			delete decalList[0];
 			decalList.RemoveIndex(0);
 		}
+
+		// Set time for when the next decal is allowed (3 seconds)
+		shards[i]->nextDecalTime = currentTime + 3.0f;
 
 		decalList.Append(decal);
 
