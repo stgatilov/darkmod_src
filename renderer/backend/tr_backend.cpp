@@ -416,8 +416,8 @@ static void	RB_SetBuffer( const void *data ) {
 
 	backEnd.frameCount = cmd->frameCount;
 
-	qglDrawBuffer( r_frontBuffer.GetBool() ? GL_FRONT : GL_BACK );
-	qglReadBuffer( r_frontBuffer.GetBool() ? GL_FRONT : GL_BACK );
+	qglDrawBuffer( GL_BACK );
+	qglReadBuffer( GL_BACK );
 
 	// note: clear was moved to RB_BeginDrawingView
 }
@@ -604,9 +604,7 @@ void RB_SwapBuffers() {
 	}
 
 	// don't flip if drawing to front buffer
-	if ( !r_frontBuffer.GetBool() ) {
-		GLimp_SwapBuffers();
-	}
+	GLimp_SwapBuffers();
 }
 
 /*

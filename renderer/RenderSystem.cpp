@@ -729,12 +729,6 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	cmd = ( setBufferCommand_t * )R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_SET_BUFFER;
 	cmd->frameCount = frameCount;
-
-	if ( r_frontBuffer.GetBool() ) {
-		cmd->buffer = ( int )GL_FRONT;
-	} else {
-		cmd->buffer = ( int )GL_BACK;
-	}
 }
 
 void idRenderSystemLocal::WriteDemoPics() {

@@ -641,7 +641,6 @@ struct bloomCommand_t : emptyCommand_t {
 };
 
 struct setBufferCommand_t : emptyCommand_t {
-	GLenum	buffer;
 	int		frameCount;
 };
 
