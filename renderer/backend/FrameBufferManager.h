@@ -88,7 +88,7 @@ public:
 	FrameBuffer *activeFbo = nullptr;
 	FrameBuffer *activeDrawFbo = nullptr;
 
-	// #6593: whether tonemap has been run yet or not
+	// #6644: whether tonemap has been run yet or not
 	// ideally, this state should be in tr_backend.cpp near drawToPrimary
 	bool tonemapNotYet = false;
 };
