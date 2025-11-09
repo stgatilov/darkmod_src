@@ -114,6 +114,8 @@ void FrameBufferManager::BeginFrame() {
 
 	currentRenderFbo = defaultFbo;
 	defaultFbo->Bind();
+
+	frameBuffers->tonemapNotYet = r_tonemap.GetBool();
 }
 
 void FrameBufferManager::EnterPrimary() {
@@ -139,7 +141,7 @@ idCVar r_fboScaling( "r_fboScaling", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHI
 void FrameBufferManager::LeavePrimary(bool copyToDefault) {
 	// if we want to do tonemapping later, we need to continue to render to a texture,
 	// otherwise we can render the remaining UI views straight to the back buffer
-	FrameBuffer *targetFbo = r_tonemap.GetBool() ? guiFbo : defaultFbo;
+	FrameBuffer *targetFbo = frameBuffers->tonemapNotYet ? guiFbo : defaultFbo;
 	if (currentRenderFbo == targetFbo) return;
 
 	currentRenderFbo = targetFbo;

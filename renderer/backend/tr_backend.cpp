@@ -694,7 +694,6 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 				c_drawBloom++;
 				FB_DebugShowContents();
 				frameBuffers->LeavePrimary();
-				drawToPrimary = false;
 			}
 			break;
 		case RC_COPY_RENDER:
@@ -712,6 +711,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 				qglClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 				qglClear( GL_COLOR_BUFFER_BIT );
 			}
+			drawToPrimary = false;	// never draw to primaryFbo again
+			frameBuffers->tonemapNotYet = false;	// never render to guiFbo again
+			frameBuffers->LeavePrimary(false);		// a hack to set proper currentRenderFbo
 			break;
 		}
 		default:
