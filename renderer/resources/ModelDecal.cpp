@@ -32,10 +32,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 /*
 ==================
-idRenderModelDecal::idRenderModelDecal
+idDecalOnRenderModel::idDecalOnRenderModel
 ==================
 */
-idRenderModelDecal::idRenderModelDecal( void ) {
+idDecalOnRenderModel::idDecalOnRenderModel( void ) {
 	memset( &tri, 0, sizeof( tri ) );
 	tri.verts = ( idDrawVert* )Mem_Alloc16( MAX_DECAL_VERTS * sizeof( idDrawVert ) );
 	tri.indexes = ( glIndex_t* )Mem_Alloc16( MAX_DECAL_INDEXES * sizeof( glIndex_t ) );
@@ -45,41 +45,41 @@ idRenderModelDecal::idRenderModelDecal( void ) {
 
 /*
 ==================
-idRenderModelDecal::~idRenderModelDecal
+idDecalOnRenderModel::~idDecalOnRenderModel
 ==================
 */
-idRenderModelDecal::~idRenderModelDecal( void ) {
+idDecalOnRenderModel::~idDecalOnRenderModel( void ) {
 	Mem_Free16( tri.indexes );
 	Mem_Free16( tri.verts );
 }
 
 /*
 ==================
-idRenderModelDecal::idRenderModelDecal
+idDecalOnRenderModel::idDecalOnRenderModel
 ==================
 */
-idRenderModelDecal *idRenderModelDecal::Alloc( void ) {
-	return new idRenderModelDecal;
+idDecalOnRenderModel *idDecalOnRenderModel::Alloc( void ) {
+	return new idDecalOnRenderModel;
 }
 
 /*
 ==================
-idRenderModelDecal::idRenderModelDecal
+idDecalOnRenderModel::idDecalOnRenderModel
 ==================
 */
-void idRenderModelDecal::Free( idRenderModelDecal *decal ) {
+void idDecalOnRenderModel::Free( idDecalOnRenderModel *decal ) {
 	delete decal;
 }
 
 /*
 =================
-idRenderModelDecal::CreateProjectionInfo
+idDecalOnRenderModel::CreateProjectionInfo
 =================
 */
-bool idRenderModelDecal::CreateProjectionInfo( decalProjectionInfo_t &info, const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) {
+bool idDecalOnRenderModel::CreateProjectionInfo( decalProjectionInfo_t &info, const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) {
 
 	if ( winding.GetNumPoints() != NUM_DECAL_BOUNDING_PLANES - 2 ) {
-		common->Printf( "idRenderModelDecal::CreateProjectionInfo: winding must have %d points\n", NUM_DECAL_BOUNDING_PLANES - 2 );
+		common->Printf( "idDecalOnRenderModel::CreateProjectionInfo: winding must have %d points\n", NUM_DECAL_BOUNDING_PLANES - 2 );
 		return false;
 	}
 
@@ -166,10 +166,10 @@ bool idRenderModelDecal::CreateProjectionInfo( decalProjectionInfo_t &info, cons
 
 /*
 =================
-idRenderModelDecal::CreateProjectionInfo
+idDecalOnRenderModel::CreateProjectionInfo
 =================
 */
-void idRenderModelDecal::GlobalProjectionInfoToLocal( decalProjectionInfo_t &localInfo, const decalProjectionInfo_t &info, const idVec3 &origin, const idMat3 &axis ) {
+void idDecalOnRenderModel::GlobalProjectionInfoToLocal( decalProjectionInfo_t &localInfo, const decalProjectionInfo_t &info, const idVec3 &origin, const idMat3 &axis ) {
 	float modelMatrix[16];
 
 	R_AxisToModelMatrix( axis, origin, modelMatrix );
@@ -194,10 +194,10 @@ void idRenderModelDecal::GlobalProjectionInfoToLocal( decalProjectionInfo_t &loc
 
 /*
 =================
-idRenderModelDecal::AddWinding
+idDecalOnRenderModel::AddWinding
 =================
 */
-void idRenderModelDecal::AddWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime ) {
+void idDecalOnRenderModel::AddWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime ) {
 	int i;
 	float invFadeDepth, fade;
 	decalInfo_t	decalInfo;
@@ -252,7 +252,7 @@ void idRenderModelDecal::AddWinding( const idWinding &w, const idMaterial *decal
 
 	// if we are at the end of the list, create a new decal
 	if ( !nextDecal ) {
-		nextDecal = idRenderModelDecal::Alloc();
+		nextDecal = idDecalOnRenderModel::Alloc();
 	}
 	// let the next decal on the chain take a look
 	nextDecal->AddWinding( w, decalMaterial, fadePlanes, fadeDepth, startTime );
@@ -260,10 +260,10 @@ void idRenderModelDecal::AddWinding( const idWinding &w, const idMaterial *decal
 
 /*
 =================
-idRenderModelDecal::AddDepthFadedWinding
+idDecalOnRenderModel::AddDepthFadedWinding
 =================
 */
-void idRenderModelDecal::AddDepthFadedWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime ) {
+void idDecalOnRenderModel::AddDepthFadedWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime ) {
 	idFixedWinding front, back;
 
 	front = w;
@@ -280,10 +280,10 @@ void idRenderModelDecal::AddDepthFadedWinding( const idWinding &w, const idMater
 
 /*
 =================
-idRenderModelDecal::CreateDecal
+idDecalOnRenderModel::CreateDecal
 =================
 */
-void idRenderModelDecal::CreateDecal( const idRenderModel *model, const decalProjectionInfo_t &localInfo ) {
+void idDecalOnRenderModel::CreateDecal( const idRenderModel *model, const decalProjectionInfo_t &localInfo ) {
 
 	// check all model surfaces
 	for ( int surfNum = 0; surfNum < model->NumSurfaces(); surfNum++ ) {
@@ -375,14 +375,14 @@ void idRenderModelDecal::CreateDecal( const idRenderModel *model, const decalPro
 
 /*
 =====================
-idRenderModelDecal::RemoveFadedDecals
+idDecalOnRenderModel::RemoveFadedDecals
 =====================
 */
-idRenderModelDecal *idRenderModelDecal::RemoveFadedDecals( idRenderModelDecal *decals, int time ) {
+idDecalOnRenderModel *idDecalOnRenderModel::RemoveFadedDecals( idDecalOnRenderModel *decals, int time ) {
 	int i, j, minTime, newNumIndexes, newNumVerts;
 	int inUse[MAX_DECAL_VERTS];
 	decalInfo_t	decalInfo;
-	idRenderModelDecal *nextDecal;
+	idDecalOnRenderModel *nextDecal;
 
 	if ( decals == NULL ) {
 		return NULL;
@@ -450,10 +450,10 @@ idRenderModelDecal *idRenderModelDecal::RemoveFadedDecals( idRenderModelDecal *d
 
 /*
 =====================
-idRenderModelDecal::AddDecalDrawSurf
+idDecalOnRenderModel::AddDecalDrawSurf
 =====================
 */
-void idRenderModelDecal::AddDecalDrawSurf( viewEntity_t *space ) {
+void idDecalOnRenderModel::AddDecalDrawSurf( viewEntity_t *space ) {
 	int i, j, maxTime;
 	float f;
 	decalInfo_t	decalInfo;
@@ -515,18 +515,18 @@ void idRenderModelDecal::AddDecalDrawSurf( viewEntity_t *space ) {
 
 /*
 ====================
-idRenderModelDecal::ReadFromDemoFile
+idDecalOnRenderModel::ReadFromDemoFile
 ====================
 */
-void idRenderModelDecal::ReadFromDemoFile( idDemoFile *f ) {
+void idDecalOnRenderModel::ReadFromDemoFile( idDemoFile *f ) {
 	// FIXME: implement
 }
 
 /*
 ====================
-idRenderModelDecal::WriteToDemoFile
+idDecalOnRenderModel::WriteToDemoFile
 ====================
 */
-void idRenderModelDecal::WriteToDemoFile( idDemoFile *f ) const {
+void idDecalOnRenderModel::WriteToDemoFile( idDemoFile *f ) const {
 	// FIXME: implement
 }

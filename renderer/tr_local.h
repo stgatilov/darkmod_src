@@ -366,8 +366,8 @@ public:
 	// note that an entity could still be in the view frustum and not be visible due
 	// to portal passing
 
-	idRenderModelDecal		*decals;					// chain of decals that have been projected on this model
-	idRenderModelOverlay 	*overlay;					// blood overlays on animated models
+	idDecalOnRenderModel		*decals;					// chain of decals that have been projected on this model
+	idOverlayOnRenderModel 	*overlay;					// blood overlays on animated models
 
 	areaReference_t 		*entityRefs;				// chain of all references
 	idInteraction 			*firstInteraction;			// doubly linked list

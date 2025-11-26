@@ -1198,7 +1198,7 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) {
 			if ( def->overlay && !r_skipOverlays.GetBool() ) {
 				def->overlay->AddOverlaySurfacesToModel( def->cachedDynamicModel );
 			} else {
-				idRenderModelOverlay::RemoveOverlaySurfacesFromModel( def->cachedDynamicModel );
+				idOverlayOnRenderModel::RemoveOverlaySurfacesFromModel( def->cachedDynamicModel );
 			}
 
 			if ( r_checkBounds.GetBool() ) {
@@ -1531,7 +1531,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 	}
 
 	// add the lightweight decal surfaces
-	for ( idRenderModelDecal *decal = def.decals; decal; decal = decal->Next() ) {
+	for ( idDecalOnRenderModel *decal = def.decals; decal; decal = decal->Next() ) {
 		decal->AddDecalDrawSurf( vEntity );
 	}
 }

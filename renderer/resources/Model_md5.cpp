@@ -839,7 +839,7 @@ idRenderModel *idRenderModelMD5::InstantiateDynamicModel( const struct renderEnt
 		} else {
 
 			// Remove Overlays before adding new surfaces
-			idRenderModelOverlay::RemoveOverlaySurfacesFromModel( staticModel );
+			idOverlayOnRenderModel::RemoveOverlaySurfacesFromModel( staticModel );
 
 			mesh->surfaceNum = staticModel->NumSurfaces();
 			surf = &staticModel->surfaces.Alloc();

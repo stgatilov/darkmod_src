@@ -47,13 +47,13 @@ typedef struct decalProjectionInfo_s {
 } decalProjectionInfo_t;
 
 
-class idRenderModelDecal {
+class idDecalOnRenderModel {
 public:
-								idRenderModelDecal( void );
-								~idRenderModelDecal( void );
+								idDecalOnRenderModel( void );
+								~idDecalOnRenderModel( void );
 
-	static idRenderModelDecal *	Alloc( void );
-	static void					Free( idRenderModelDecal *decal );
+	static idDecalOnRenderModel *Alloc( void );
+	static void					Free( idDecalOnRenderModel *decal );
 
 								// Creates decal projection info.
 	static bool					CreateProjectionInfo( decalProjectionInfo_t &info, const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime );
@@ -65,14 +65,14 @@ public:
 	void						CreateDecal( const idRenderModel *model, const decalProjectionInfo_t &localInfo );
 
 								// Remove decals that are completely faded away.
-	static idRenderModelDecal *	RemoveFadedDecals( idRenderModelDecal *decals, int time );
+	static idDecalOnRenderModel *RemoveFadedDecals( idDecalOnRenderModel *decals, int time );
 
 								// Updates the vertex colors, removing any faded indexes,
 								// then copy the verts to temporary vertex cache and adds a drawSurf.
 	void						AddDecalDrawSurf( struct viewEntity_s *space );
 
 								// Returns the next decal in the chain.
-	idRenderModelDecal *		Next( void ) const { return nextDecal; }
+	idDecalOnRenderModel *		Next( void ) const { return nextDecal; }
 
 	void						ReadFromDemoFile( class idDemoFile *f );
 	void						WriteToDemoFile( class idDemoFile *f ) const;
@@ -85,7 +85,7 @@ private:
 	srfTriangles_t				tri;
 	float						vertDepthFade[MAX_DECAL_VERTS];
 	int							indexStartTime[MAX_DECAL_INDEXES];
-	idRenderModelDecal *		nextDecal;
+	idDecalOnRenderModel *		nextDecal;
 
 								// Adds the winding triangles to the appropriate decal in the
 								// chain, creating a new one if necessary.

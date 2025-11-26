@@ -989,8 +989,8 @@ R_FreeEntityDefDecals
 */
 void R_FreeEntityDefDecals( idRenderEntityLocal *def ) {
 	while( def->decals ) {
-		idRenderModelDecal *next = def->decals->Next();
-		idRenderModelDecal::Free( def->decals );
+		idDecalOnRenderModel *next = def->decals->Next();
+		idDecalOnRenderModel::Free( def->decals );
 		def->decals = next;
 	}
 }
@@ -1001,7 +1001,7 @@ R_FreeEntityDefFadedDecals
 ===================
 */
 void R_FreeEntityDefFadedDecals( idRenderEntityLocal *def, int time ) {
-	def->decals = idRenderModelDecal::RemoveFadedDecals( def->decals, time );
+	def->decals = idDecalOnRenderModel::RemoveFadedDecals( def->decals, time );
 }
 
 /*
@@ -1011,7 +1011,7 @@ R_FreeEntityDefOverlay
 */
 void R_FreeEntityDefOverlay( idRenderEntityLocal *def ) {
 	if ( def->overlay ) {
-		idRenderModelOverlay::Free( def->overlay );
+		idOverlayOnRenderModel::Free( def->overlay );
 		def->overlay = NULL;
 	}
 }

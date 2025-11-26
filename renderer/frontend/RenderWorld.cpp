@@ -633,7 +633,7 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 	idRenderEntityLocal *def;
 	decalProjectionInfo_t info, localInfo;
 
-	if ( !idRenderModelDecal::CreateProjectionInfo( info, winding, projectionOrigin, parallel, fadeDepth, material, startTime ) ) {
+	if ( !idDecalOnRenderModel::CreateProjectionInfo( info, winding, projectionOrigin, parallel, fadeDepth, material, startTime ) ) {
 		return;
 	}
 
@@ -668,11 +668,11 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 			}
 
 			// transform the bounding planes, fade planes and texture axis into local space
-			idRenderModelDecal::GlobalProjectionInfoToLocal( localInfo, info, def->parms.origin, def->parms.axis );
+			idDecalOnRenderModel::GlobalProjectionInfoToLocal( localInfo, info, def->parms.origin, def->parms.axis );
 			localInfo.force = ( def->parms.customShader != NULL );
 
 			if ( !def->decals ) {
-				def->decals = idRenderModelDecal::Alloc();
+				def->decals = idDecalOnRenderModel::Alloc();
 			}
 			def->decals->CreateDecal( model, localInfo );
 		}
@@ -703,7 +703,7 @@ void idRenderWorldLocal::ProjectDecal( qhandle_t entityHandle, const idFixedWind
 		return;
 	}
 
-	if ( !idRenderModelDecal::CreateProjectionInfo( info, winding, projectionOrigin, parallel, fadeDepth, material, startTime ) ) {
+	if ( !idDecalOnRenderModel::CreateProjectionInfo( info, winding, projectionOrigin, parallel, fadeDepth, material, startTime ) ) {
 		return;
 	}
 
@@ -716,11 +716,11 @@ void idRenderWorldLocal::ProjectDecal( qhandle_t entityHandle, const idFixedWind
 	}
 
 	// transform the bounding planes, fade planes and texture axis into local space
-	idRenderModelDecal::GlobalProjectionInfoToLocal( localInfo, info, def->parms.origin, def->parms.axis );
+	idDecalOnRenderModel::GlobalProjectionInfoToLocal( localInfo, info, def->parms.origin, def->parms.axis );
 	localInfo.force = ( def->parms.customShader != NULL );
 
 	if ( def->decals == NULL ) {
-		def->decals = idRenderModelDecal::Alloc();
+		def->decals = idDecalOnRenderModel::Alloc();
 	}
 	def->decals->CreateDecal( model, localInfo );
 }
@@ -751,7 +751,7 @@ void idRenderWorldLocal::ProjectOverlay( qhandle_t entityHandle, const idPlane l
 	model = R_EntityDefDynamicModel( def );
 
 	if ( !def->overlay ) {
-		def->overlay = idRenderModelOverlay::Alloc();
+		def->overlay = idOverlayOnRenderModel::Alloc();
 	}
 
 	def->overlay->CreateOverlay( model, localTextureAxis, material, refEnt->customSkin, refEnt->customShader ); // Skin params added -- SteveL #3844
