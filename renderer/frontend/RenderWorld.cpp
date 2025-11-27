@@ -23,7 +23,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "LightQuerySystem.h"
 
 idCVarInt r_useAreaLocks( "r_useAreaLocks", "3", CVAR_RENDERER, "1 - suppress multiple entity/area refs, 2 - lights, 3 - both" );
-idCVar r_decalInteractive( "r_decalInteractive", "-1", CVAR_RENDERER | CVAR_INTEGER,
+idCVar r_decalInteractive( "r_decalInteractive", "1", CVAR_RENDERER | CVAR_INTEGER,
 	"Decide whether decal is made simple or light-interactible:\n"
 	"  0 --- always create simple (unlit)\n"
 	"  1 --- always create interactive/model\n"
