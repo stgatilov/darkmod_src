@@ -288,7 +288,8 @@ typedef enum {
 	MF_FORCESHADOWS				= BIT(3),
 	MF_NOSELFSHADOW				= BIT(4),
 	MF_NOPORTALFOG				= BIT(5),	// this fog volume won't ever consider a portal fogged out
-	MF_EDITOR_VISIBLE			= BIT(6)	// in use (visible) per editor
+	MF_EDITOR_VISIBLE			= BIT(6),	// in use (visible) per editor
+	MF_FORCEINTERACTIONS		= BIT(7),	// #5867: force decal to use generic frontend processing
 } materialFlags_t;
 
 // contents flags, NOTE: make sure to keep the defines in script/tdm_defs.script up to date with these!
@@ -726,15 +727,15 @@ private:
 
 	int					numOps;
 	expOp_t *			ops;				// evaluate to make expressionRegisters
-																										
-	int					numRegisters;																			//
+
+	int					numRegisters;
 	float *				expressionRegisters;
 
 	float *				constantRegisters;	// NULL if ops ever reference globalParms or entityParms
 
 	int					numStages;
 	int					numAmbientStages;
-																										
+
 	shaderStage_t *		stages;
 
 	// stgatilov: which subsegments of stages comprise interaction groups

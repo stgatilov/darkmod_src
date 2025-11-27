@@ -152,6 +152,7 @@ public:
 
 	virtual void			ProjectDecalOntoWorld( const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) override;
 	virtual void			ProjectDecal( qhandle_t entityHandle, const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) override;
+	void					FinishProjectDecal( idRenderEntityLocal *def, const idRenderModel *model, const decalProjectionInfo_t &info );
 	virtual void			ProjectOverlay( qhandle_t entityHandle, const idPlane localTextureAxis[2], const idMaterial *material ) override;
 	virtual void			RemoveDecals( qhandle_t entityHandle ) override;
 
@@ -348,6 +349,9 @@ public:
 
 	void					AddEntityToAreas(idRenderEntityLocal* def);
 	void					AddLightToAreas(idRenderLightLocal* def);
+
+	idDecalOnRenderModel	*cachedNewDecal = nullptr;
+	void					CreateDecalInModel( idRenderEntityLocal *def, const idRenderModel *model, const decalProjectionInfo_t &localInfo );
 
 	//-------------------------------
 	// tr_light.c

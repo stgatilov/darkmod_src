@@ -55,6 +55,18 @@ idDecalOnRenderModel::~idDecalOnRenderModel( void ) {
 
 /*
 ==================
+idDecalOnRenderModel::Clear
+==================
+*/
+void idDecalOnRenderModel::Clear( void ) {
+	tri.numVerts = 0;
+	tri.numIndexes = 0;
+	material = NULL;
+	nextDecal = NULL;
+}
+
+/*
+==================
 idDecalOnRenderModel::idDecalOnRenderModel
 ==================
 */
@@ -283,7 +295,7 @@ void idDecalOnRenderModel::AddDepthFadedWinding( const idWinding &w, const idMat
 idDecalOnRenderModel::CreateDecal
 =================
 */
-void idDecalOnRenderModel::CreateDecal( const idRenderModel *model, const decalProjectionInfo_t &localInfo ) {
+void idDecalOnRenderModel::CreateDecal( const idRenderModel *model, const decalProjectionInfo_t &localInfo, bool *pAdded ) {
 
 	// check all model surfaces
 	for ( int surfNum = 0; surfNum < model->NumSurfaces(); surfNum++ ) {
@@ -369,6 +381,9 @@ void idDecalOnRenderModel::CreateDecal( const idRenderModel *model, const decalP
 			}
 
 			AddDepthFadedWinding( fw, localInfo.material, localInfo.fadePlanes, localInfo.fadeDepth, localInfo.startTime );
+
+			if ( pAdded )
+				*pAdded = true;
 		}
 	}
 }
@@ -378,35 +393,32 @@ void idDecalOnRenderModel::CreateDecal( const idRenderModel *model, const decalP
 idDecalOnRenderModel::RemoveFadedDecals
 =====================
 */
-idDecalOnRenderModel *idDecalOnRenderModel::RemoveFadedDecals( idDecalOnRenderModel *decals, int time ) {
-	int i, j, minTime, newNumIndexes, newNumVerts;
-	int inUse[MAX_DECAL_VERTS];
-	decalInfo_t	decalInfo;
-	idDecalOnRenderModel *nextDecal;
-
+idDecalOnRenderModel *idDecalOnRenderModel::RemoveFadedDecals( idDecalOnRenderModel *decals, int time, bool *pRemoved ) {
 	if ( decals == NULL ) {
 		return NULL;
 	}
 
 	// recursively free any next decals
-	decals->nextDecal = RemoveFadedDecals( decals->nextDecal, time );
+	decals->nextDecal = RemoveFadedDecals( decals->nextDecal, time, pRemoved );
 
 	// free the decals if no material set
 	if ( decals->material == NULL ) {
-		nextDecal = decals->nextDecal;
+		if ( pRemoved )
+			*pRemoved = true;
+		idDecalOnRenderModel *nextDecal = decals->nextDecal;
 		Free( decals );
 		return nextDecal;
 	}
 	
-	decalInfo = decals->material->GetDecalInfo();
-	minTime = time - ( decalInfo.stayTime + decalInfo.fadeTime );
+	decalInfo_t decalInfo = decals->material->GetDecalInfo();
+	int minTime = time - ( decalInfo.stayTime + decalInfo.fadeTime );
 
-	newNumIndexes = 0;
-	for ( i = 0; i < decals->tri.numIndexes; i += 3 ) {
+	int newNumIndexes = 0;
+	for ( int i = 0; i < decals->tri.numIndexes; i += 3 ) {
 		if ( decals->indexStartTime[i] > minTime ) {
 			// keep this triangle
 			if ( newNumIndexes != i ) {
-				for ( j = 0; j < 3; j++ ) {
+				for ( int j = 0; j < 3; j++ ) {
 					decals->tri.indexes[newNumIndexes+j] = decals->tri.indexes[i+j];
 					decals->indexStartTime[newNumIndexes+j] = decals->indexStartTime[i+j];
 				}
@@ -414,24 +426,30 @@ idDecalOnRenderModel *idDecalOnRenderModel::RemoveFadedDecals( idDecalOnRenderMo
 			newNumIndexes += 3;
 		}
 	}
+	if ( pRemoved && newNumIndexes != decals->tri.numIndexes )
+		*pRemoved = true;
 
 	// free the decals if all trianges faded away
 	if ( newNumIndexes == 0 ) {
-		nextDecal = decals->nextDecal;
+		assert( !( pRemoved && *pRemoved == false ) );
+		idDecalOnRenderModel *nextDecal = decals->nextDecal;
 		Free( decals );
 		return nextDecal;
 	}
 
 	decals->tri.numIndexes = newNumIndexes;
 
+	int inUse[MAX_DECAL_VERTS];
 	memset( inUse, 0, sizeof( inUse ) );
-	for ( i = 0; i < decals->tri.numIndexes; i++ ) {
+	for ( int i = 0; i < decals->tri.numIndexes; i++ ) {
 		inUse[decals->tri.indexes[i]] = 1;
 	}
 
-	newNumVerts = 0;
-	for ( i = 0; i < decals->tri.numVerts; i++ ) {
+	int newNumVerts = 0;
+	for ( int i = 0; i < decals->tri.numVerts; i++ ) {
 		if ( !inUse[i] ) {
+			if ( pRemoved )
+				*pRemoved = true;
 			continue;
 		}
 		decals->tri.verts[newNumVerts] = decals->tri.verts[i];
@@ -441,7 +459,7 @@ idDecalOnRenderModel *idDecalOnRenderModel::RemoveFadedDecals( idDecalOnRenderMo
 	}
 	decals->tri.numVerts = newNumVerts;
 
-	for ( i = 0; i < decals->tri.numIndexes; i++ ) {
+	for ( int i = 0; i < decals->tri.numIndexes; i++ ) {
 		decals->tri.indexes[i] = inUse[decals->tri.indexes[i]];
 	}
 
@@ -450,25 +468,17 @@ idDecalOnRenderModel *idDecalOnRenderModel::RemoveFadedDecals( idDecalOnRenderMo
 
 /*
 =====================
-idDecalOnRenderModel::AddDecalDrawSurf
+idDecalOnRenderModel::UpdateAndGetDecalSurface
 =====================
 */
-void idDecalOnRenderModel::AddDecalDrawSurf( viewEntity_t *space ) {
-	int i, j, maxTime;
-	float f;
-	decalInfo_t	decalInfo;
-	
-	if ( tri.numIndexes == 0 ) {
-		return;
-	}
-
+const srfTriangles_t &idDecalOnRenderModel::UpdateAndGetDecalSurface( int time ) {
 	// fade down all the verts with time
-	decalInfo = material->GetDecalInfo();
-	maxTime = decalInfo.stayTime + decalInfo.fadeTime;
+	decalInfo_t decalInfo = material->GetDecalInfo();
+	int maxTime = decalInfo.stayTime + decalInfo.fadeTime;
 
 	// set vertex colors and remove faded triangles
-	for ( i = 0 ; i < tri.numIndexes ; i += 3 ) {
-		int	deltaTime = tr.viewDef->renderView.time - indexStartTime[i];
+	for ( int i = 0 ; i < tri.numIndexes ; i += 3 ) {
+		int	deltaTime = time - indexStartTime[i];
 
 		if ( deltaTime > maxTime ) {
 			continue;
@@ -479,9 +489,9 @@ void idDecalOnRenderModel::AddDecalDrawSurf( viewEntity_t *space ) {
 		}
 
 		deltaTime -= decalInfo.stayTime;
-		f = (float)deltaTime / decalInfo.fadeTime;
+		float f = (float)deltaTime / decalInfo.fadeTime;
 
-		for ( j = 0; j < 3; j++ ) {
+		for ( int j = 0; j < 3; j++ ) {
 			int	ind = tri.indexes[i+j];
 
 			for ( int k = 0; k < 4; k++ ) {
@@ -496,6 +506,42 @@ void idDecalOnRenderModel::AddDecalDrawSurf( viewEntity_t *space ) {
 			}
 		}
 	}
+
+	return tri;
+}
+
+/*
+=====================
+idDecalOnRenderModel::GetMaterial
+=====================
+*/
+const idMaterial *idDecalOnRenderModel::GetMaterial() const {
+	return material;
+}
+
+/*
+=====================
+idDecalOnRenderModel::ComputeBoundingBox
+=====================
+*/
+idBounds idDecalOnRenderModel::ComputeBoundingBox() const {
+	idBounds bbox;
+	bbox.Clear();
+	SIMDProcessor->MinMax( bbox[0], bbox[1], tri.verts, tri.numVerts );
+	return bbox;
+}
+
+/*
+=====================
+idDecalOnRenderModel::AddDecalDrawSurf
+=====================
+*/
+void idDecalOnRenderModel::AddDecalDrawSurf( viewEntity_t *space ) {
+	if ( tri.numIndexes == 0 ) {
+		return;
+	}
+
+	UpdateAndGetDecalSurface( tr.viewDef->renderView.time );
 
 	// copy the tri and indexes to temp heap memory,
 	// because if we are running multi-threaded, we wouldn't
@@ -529,4 +575,142 @@ idDecalOnRenderModel::WriteToDemoFile
 */
 void idDecalOnRenderModel::WriteToDemoFile( idDemoFile *f ) const {
 	// FIXME: implement
+}
+
+//==================================================================================
+
+static const char *Decal_SnapshotName = "_Decal_Snapshot_";
+
+/*
+====================
+idRenderModelDecal::idRenderModelDecal
+====================
+*/
+idRenderModelDecal::idRenderModelDecal() = default;
+
+/*
+====================
+idRenderModelDecal::~idRenderModelDecal
+====================
+*/
+idRenderModelDecal::~idRenderModelDecal() {
+	while( decalsList ) {
+		idDecalOnRenderModel *next = decalsList->Next();
+		idDecalOnRenderModel::Free( decalsList );
+		decalsList = next;
+	}
+}
+
+/*
+====================
+idRenderModelDecal::IsDynamicModel
+====================
+*/
+dynamicModel_t idRenderModelDecal::IsDynamicModel() const {
+	return DM_CONTINUOUS;
+}
+
+idCVar r_useCachedDecalModels( "r_useCachedDecalModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache geometry of decal models" );
+
+/*
+====================
+idRenderModelDecal::IsDynamicModel
+====================
+*/
+idRenderModel *idRenderModelDecal::InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) {
+	if ( !view ) {
+		// called e.g. from inside idRenderWorldLocal::TraceAll for light estimate system
+		return NULL;
+	}
+	int genTime = view->renderView.time;
+
+	if ( cachedModel && !r_useCachedDecalModels.GetBool() ) {
+		delete cachedModel;
+		cachedModel = NULL;
+	}
+
+	bool needsFullRegen = !cachedModel || geometryHasChanged;
+	decalsList = idDecalOnRenderModel::RemoveFadedDecals( decalsList, genTime, &needsFullRegen );
+
+	if ( !needsFullRegen ) {
+		int numDecals = 0;
+		for ( idDecalOnRenderModel *decal = decalsList; decal; decal = decal->Next() )
+			numDecals++;
+		if ( cachedModel->NumSurfaces() != numDecals ) {
+			// surfaces are duplicated in case of ShouldCreateBackSides inside FinishSurfaces
+			needsFullRegen = true;
+		}
+	}
+
+	idRenderModelStatic	*staticModel;
+	if ( needsFullRegen ) {
+		// no cached model OR geometry has changed since last generation
+		delete cachedModel;
+		cachedModel = NULL;
+		staticModel = new idRenderModelStatic;
+		staticModel->InitEmpty( Decal_SnapshotName );
+	} else {
+		// can reuse cached previous model, just update colors
+		// this allows us to avoid calling costly FinishSurfaces every frame
+		staticModel = static_cast<idRenderModelStatic*>( cachedModel );
+	}
+
+	int numSurfs = 0;
+	for ( idDecalOnRenderModel *decal = decalsList; decal; decal = decal->Next() ) {
+		const srfTriangles_t &srcTri = decal->UpdateAndGetDecalSurface( genTime );
+		const idMaterial *material = decal->GetMaterial();
+
+		if ( needsFullRegen ) {
+			modelSurface_t surf;
+			surf.geometry = R_CopyStaticTriSurf( &srcTri );
+			surf.geometry->generateNormals = true;
+
+			surf.material = material;
+			surf.id = numSurfs++;
+			staticModel->AddSurface( surf );
+			assert( staticModel->NumSurfaces() == numSurfs );
+		}
+		else {
+			assert( material == staticModel->surfaces[numSurfs].material );
+			srfTriangles_t *updatedTri = staticModel->surfaces[numSurfs].geometry;
+			numSurfs++;
+
+			assert( updatedTri );
+			assert( updatedTri->numIndexes == srcTri.numIndexes );
+			for ( int v = 0; v < updatedTri->numVerts; v++ ) {
+				const idDrawVert &vert = srcTri.verts[v];
+				idDrawVert &updatedVert = updatedTri->verts[v];
+				// only colors can change due to fading
+				updatedVert.SetColor( vert.GetColor() );
+			}
+		}
+	}
+	assert( staticModel->NumSurfaces() == numSurfs );
+
+	if ( needsFullRegen ) {
+		staticModel->FinishSurfaces();
+		// this is freshly computed tight bounding box
+		// we can use it in decal model too: it might be a bit smaller due to some faded decals removed
+		// however, I think entity bounds and area refs probably won't be regenerated
+		bounds = staticModel->bounds;
+	}
+
+	geometryHasChanged = false;
+	return staticModel;
+}
+
+/*
+====================
+idRenderModelDecal::RecomputeBoundingBox
+====================
+*/
+void idRenderModelDecal::RecomputeBoundingBox() {
+	bounds.Clear();
+
+	for ( idDecalOnRenderModel *decal = decalsList; decal; decal = decal->Next() ) {
+		bounds.AddBounds( decal->ComputeBoundingBox() );
+	}
+
+	if ( bounds.IsCleared() )
+		bounds.Zero();
 }

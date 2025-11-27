@@ -916,6 +916,7 @@ void R_FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool
 	if ( !keepDecals ) {
 		R_FreeEntityDefDecals( def );
 		R_FreeEntityDefOverlay( def );
+		R_FreeEntityDefChildren( def );
 	}
 
 	bool forceShadowsBehindOpaque = ( def->parms.hModel->IsStaticWorldModel() || def->parms.forceShadowBehindOpaque );
@@ -980,6 +981,29 @@ void R_ClearEntityDefDynamicModel( idRenderEntityLocal *def ) {
 	if ( def->dynamicModel ) {
 		def->dynamicModel = NULL;
 	}
+}
+
+/*
+===================
+R_FreeEntityDefChildren
+===================
+*/
+void R_FreeEntityDefChildren( idRenderEntityLocal *def ) {
+	while ( def->children.Num() > 0 ) {
+		def->world->FreeEntityDef( def->children.Last()->GetIndex() );
+	}
+}
+
+/*
+===================
+R_InheritRenderParmsForChildEntity
+===================
+*/
+void R_InitRenderParmsForChildEntity( renderEntity_t &parms, idRenderEntityLocal *def, idRenderModel *model ) {
+	memset( &parms, 0, sizeof(parms) );
+	parms.origin = def->parms.origin;
+	parms.axis = def->parms.axis;
+	parms.hModel = model;
 }
 
 /*

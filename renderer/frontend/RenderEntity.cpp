@@ -38,6 +38,8 @@ idRenderEntityLocal::idRenderEntityLocal() {
 	visibleCount			= 0;
 	decals					= NULL;
 	overlay					= NULL;
+	parent					= NULL;
+	children.Clear();
 	entityRefs				= NULL;
 	firstInteraction		= NULL;
 	lastInteraction			= NULL;

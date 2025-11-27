@@ -369,6 +369,9 @@ public:
 	idDecalOnRenderModel		*decals;					// chain of decals that have been projected on this model
 	idOverlayOnRenderModel 	*overlay;					// blood overlays on animated models
 
+	idList<idRenderEntityLocal*> children;				// #5867 children entities get some properties synchronized from parent
+	idRenderEntityLocal		*parent;					// when this parent dies, children must die too
+
 	areaReference_t 		*entityRefs;				// chain of all references
 	idInteraction 			*firstInteraction;			// doubly linked list
 	idInteraction 			*lastInteraction;
@@ -1453,7 +1456,9 @@ void R_ClearEntityDefDynamicModel( idRenderEntityLocal *def );
 void R_FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool keepCachedDynamicModel );
 void R_FreeEntityDefDecals( idRenderEntityLocal *def );
 void R_FreeEntityDefOverlay( idRenderEntityLocal *def );
+void R_FreeEntityDefChildren( idRenderEntityLocal *def );
 void R_FreeEntityDefFadedDecals( idRenderEntityLocal *def, int time );
+void R_InitRenderParmsForChildEntity( renderEntity_t &parms, idRenderEntityLocal *def, idRenderModel *model );
 
 void R_CreateLightDefFogPortals( idRenderLightLocal *ldef );
 

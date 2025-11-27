@@ -23,6 +23,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "LightQuerySystem.h"
 
 idCVarInt r_useAreaLocks( "r_useAreaLocks", "3", CVAR_RENDERER, "1 - suppress multiple entity/area refs, 2 - lights, 3 - both" );
+idCVar r_decalInteractive( "r_decalInteractive", "-1", CVAR_RENDERER | CVAR_INTEGER,
+	"Decide whether decal is made simple or light-interactible:\n"
+	"  0 --- always create simple (unlit)\n"
+	"  1 --- always create interactive/model\n"
+	" -1 --- depends on forceInteractions in material",
+	-1, 1
+);
 
 /*
 ===================
@@ -413,6 +420,14 @@ void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEn
 	// based on the model bounds, add references in each area
 	// that may contain the updated surface
 	R_CreateEntityRefs( def );
+
+	// parameters of child entities are tied to parent
+	// update them as well with new orientation
+	for ( int childIdx = 0; childIdx < def->children.Num(); childIdx++ ) {
+		renderEntity_t parms;
+		R_InitRenderParmsForChildEntity( parms, def, def->children[childIdx]->parms.hModel );
+		UpdateEntityDef( def->children[childIdx]->index, &parms );
+	}
 }
 
 /*
@@ -438,6 +453,15 @@ void idRenderWorldLocal::FreeEntityDef( qhandle_t entityHandle ) {
 	}
 
 	R_FreeEntityDefDerivedData( def, false, false );
+
+	if ( def->parent ) {
+		// when deleting a child, drop it from the parent's list
+		idList<idRenderEntityLocal *> &list = def->parent->children;
+		if ( list.Last() == def )	// see R_FreeEntityDefChildren
+			list.Pop();
+		else
+			list.Remove( def );
+	}
 
 	if ( session->writeDemo && def->archived ) {
 		WriteFreeEntity( entityHandle );
@@ -631,7 +655,7 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 	const portalArea_t *area;
 	const idRenderModel *model;
 	idRenderEntityLocal *def;
-	decalProjectionInfo_t info, localInfo;
+	decalProjectionInfo_t info;
 
 	if ( !idDecalOnRenderModel::CreateProjectionInfo( info, winding, projectionOrigin, parallel, fadeDepth, material, startTime ) ) {
 		return;
@@ -667,14 +691,7 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 				continue;
 			}
 
-			// transform the bounding planes, fade planes and texture axis into local space
-			idDecalOnRenderModel::GlobalProjectionInfoToLocal( localInfo, info, def->parms.origin, def->parms.axis );
-			localInfo.force = ( def->parms.customShader != NULL );
-
-			if ( !def->decals ) {
-				def->decals = idDecalOnRenderModel::Alloc();
-			}
-			def->decals->CreateDecal( model, localInfo );
+			FinishProjectDecal( def, model, info );
 		}
 	}
 }
@@ -685,7 +702,7 @@ idRenderWorldLocal::ProjectDecal
 ====================
 */
 void idRenderWorldLocal::ProjectDecal( qhandle_t entityHandle, const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) {
-	decalProjectionInfo_t info, localInfo;
+	decalProjectionInfo_t info;
 
 	if ( entityHandle < 0 || entityHandle >= entityDefs.Num() ) {
 		common->Error( "idRenderWorld::ProjectOverlay: index = %i", entityHandle );
@@ -707,6 +724,15 @@ void idRenderWorldLocal::ProjectDecal( qhandle_t entityHandle, const idFixedWind
 		return;
 	}
 
+	FinishProjectDecal( def, model, info );
+}
+
+/*
+====================
+idRenderWorldLocal::FinishProjectDecal
+====================
+*/
+void idRenderWorldLocal::FinishProjectDecal( idRenderEntityLocal *def, const idRenderModel *model, const decalProjectionInfo_t &info ) {
 	idBounds bounds;
 	bounds.FromTransformedBounds( model->Bounds( &def->parms ), def->parms.origin, def->parms.axis );
 
@@ -716,13 +742,23 @@ void idRenderWorldLocal::ProjectDecal( qhandle_t entityHandle, const idFixedWind
 	}
 
 	// transform the bounding planes, fade planes and texture axis into local space
+	decalProjectionInfo_t localInfo;
 	idDecalOnRenderModel::GlobalProjectionInfoToLocal( localInfo, info, def->parms.origin, def->parms.axis );
 	localInfo.force = ( def->parms.customShader != NULL );
 
-	if ( def->decals == NULL ) {
-		def->decals = idDecalOnRenderModel::Alloc();
+	bool decalAsModel = r_decalInteractive.GetInteger() != 0;
+	if ( r_decalInteractive.GetInteger() < 0 )
+		decalAsModel = localInfo.material->TestMaterialFlag( MF_FORCEINTERACTIONS );
+
+	if ( decalAsModel ) {
+		CreateDecalInModel( def, model, localInfo );
 	}
-	def->decals->CreateDecal( model, localInfo );
+	else {
+		if ( !def->decals ) {
+			def->decals = idDecalOnRenderModel::Alloc();
+		}
+		def->decals->CreateDecal( model, localInfo );
+	}
 }
 
 /*
@@ -775,6 +811,7 @@ void idRenderWorldLocal::RemoveDecals( qhandle_t entityHandle ) {
 
 	R_FreeEntityDefDecals( def );
 	R_FreeEntityDefOverlay( def );
+	R_FreeEntityDefChildren( def );
 }
 
 /*
@@ -2705,6 +2742,78 @@ idRenderWorldLocal::RegenerateWorld
 */
 void idRenderWorldLocal::RegenerateWorld() {
 	R_RegenerateWorld_f( idCmdArgs() );
+}
+
+/*
+===============
+idRenderWorldLocal::CreateDecalInModel
+===============
+*/
+void idRenderWorldLocal::CreateDecalInModel( idRenderEntityLocal *def, const idRenderModel *model, const decalProjectionInfo_t &localInfo ) {
+	// find existing child with decal model
+	idRenderModelDecal *decalModel = nullptr;
+	idDecalOnRenderModel *decalsList = nullptr;
+	int childIdx;
+	for ( childIdx = 0; childIdx < def->children.Num(); childIdx++ ) {
+		idRenderModel *model = def->children[childIdx]->parms.hModel;
+		if ( decalModel = dynamic_cast<idRenderModelDecal*>( model ) ) {
+			decalsList = decalModel->decalsList;
+			break;
+		}
+	}
+
+	bool createNewDecal = ( decalsList == nullptr );
+	if ( createNewDecal ) {
+		// either no child exists, or it exists but has empty decal list
+		if ( cachedNewDecal ) {
+			decalsList = cachedNewDecal;
+			cachedNewDecal = nullptr;
+		} else {
+			decalsList = idDecalOnRenderModel::Alloc();
+		}
+	}
+
+	bool nonempty = false;
+	decalsList->CreateDecal( model, localInfo, &nonempty );
+
+	if ( !nonempty ) {
+		// it frequently happens that actual projection creates no geometry
+		if ( createNewDecal ) {
+			// we have just allocated this decal afresh
+			// put it into cache and reuse later...
+			if ( !cachedNewDecal ) {
+				decalsList->Clear();
+				cachedNewDecal = decalsList;
+			} else {
+				delete decalsList;
+			}
+		}
+		return;
+	}
+
+	renderEntity_t parms;
+	R_InitRenderParmsForChildEntity( parms, def, nullptr );
+
+	qhandle_t handle;
+	if ( decalModel ) {
+		handle = def->children[childIdx]->index;
+	} else {
+		handle = AllocateEntityDefHandle();
+		decalModel = new idRenderModelDecal();
+		decalModel->InitEmpty( idStr("_DecalModel_") + model->Name() );
+	}
+	decalModel->decalsList = decalsList;
+	parms.hModel = decalModel;
+	decalModel->RecomputeBoundingBox();
+	decalModel->geometryHasChanged = true;
+
+	UpdateEntityDef( handle, &parms );
+
+	if ( childIdx == def->children.Num() ) {
+		// link newly added entity to the parent
+		def->children.Append( entityDefs[handle] );
+		def->children[childIdx]->parent = def;
+	}
 }
 
 /*

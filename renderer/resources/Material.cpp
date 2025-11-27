@@ -2197,6 +2197,10 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			allowOverlays = false;
 			continue;
 		}
+		else if ( !token.Icmp( "forceInteractions" ) ) {
+			SetMaterialFlag( MF_FORCEINTERACTIONS );
+			continue;
+		}
 		// nbohr1more: #4379 lightgem culling
 		else if ( !token.Icmp( "islightgemsurf" ) ) {
 			isLightgemSurf = true;
