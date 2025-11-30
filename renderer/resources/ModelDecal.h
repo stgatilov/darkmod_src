@@ -121,9 +121,6 @@ public:
 	void RecomputeBoundingBox();
 
 	idDecalOnRenderModel *decalsList = nullptr;
-	// whether geometry/topology/size of any part of the model has changed
-	// since the last time when InstantiateDynamicModel was called
-	bool geometryHasChanged = true;
 };
 
 #endif /* !__MODELDECAL_H__ */

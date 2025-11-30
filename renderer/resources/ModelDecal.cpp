@@ -629,7 +629,7 @@ idRenderModel *idRenderModelDecal::InstantiateDynamicModel( const struct renderE
 		cachedModel = NULL;
 	}
 
-	bool needsFullRegen = !cachedModel || geometryHasChanged;
+	bool needsFullRegen = !cachedModel;
 	decalsList = idDecalOnRenderModel::RemoveFadedDecals( decalsList, genTime, &needsFullRegen );
 
 	if ( !needsFullRegen ) {
@@ -695,7 +695,6 @@ idRenderModel *idRenderModelDecal::InstantiateDynamicModel( const struct renderE
 		bounds = staticModel->bounds;
 	}
 
-	geometryHasChanged = false;
 	return staticModel;
 }
 

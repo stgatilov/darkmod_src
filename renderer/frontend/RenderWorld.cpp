@@ -2818,13 +2818,17 @@ void idRenderWorldLocal::CreateDecalInModel( idRenderEntityLocal *def, const idR
 	decalModel->decalsList = decalsList;
 	parms.hModel = decalModel;
 	decalModel->RecomputeBoundingBox();
-	decalModel->geometryHasChanged = true;
 
 	UpdateEntityDef( handle, &parms );
 
+	idRenderEntityLocal *decalDef = entityDefs[handle];
+	// drop cache model due to major topology change
+	delete decalDef->cachedDynamicModel;
+	decalDef->cachedDynamicModel = NULL;
+
 	if ( childIdx == def->children.Num() ) {
 		// link newly added entity to the parent
-		def->children.Append( entityDefs[handle] );
+		def->children.Append( decalDef );
 		def->children[childIdx]->parent = def;
 	}
 }
