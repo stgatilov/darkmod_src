@@ -4928,6 +4928,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		ClearPersistentInfo();
 		ClearPersistentInfoInGui(gui);
 		gameLocal.persistentLevelInfoLocation = PERSISTENT_LOCATION_MAINMENU;
+
+		// Recreate main menu GUI
+		// This is necessary to reset MM_CURRENTMISSION if player starts mission again
+		session->ResetMainMenu();
+		session->SetMainMenuStartAtBriefing();
+		session->StartMenu();
 	}
 	else if (cmd == "setlang")
 	{
