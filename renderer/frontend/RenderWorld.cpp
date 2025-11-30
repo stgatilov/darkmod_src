@@ -660,6 +660,11 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 	int areas[10], numAreas;
 	numAreas = FindAreasInBounds( info.projectionBounds, areas, 10 );
 
+	// stgatilov #5867: first collect list of entities to project to, then do the projection
+	// it is important because now decal models can live in renderentities,
+	// area->entity refs can be modified while we iterate over them
+	idFlexList<int, 128> projectOntoEntityIds;
+
 	// check all areas for models
 	for ( int i = 0; i < numAreas; i++ ) {
 		const portalArea_t *area = &portalAreas[ areas[i] ];
@@ -686,8 +691,21 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 				continue;
 			}
 
-			FinishProjectDecal( def, model, info );
+			if ( projectOntoEntityIds.Find( entityIdx ) ) {
+				// stgatilov #5867: don't project onto same entity twice
+				continue;
+			}
+
+			projectOntoEntityIds.AddGrow( entityIdx );
 		}
+	}
+
+	for ( int i = 0; i < projectOntoEntityIds.Num(); i++ ) {
+		int entityIdx = projectOntoEntityIds[i];
+		idRenderEntityLocal *def = entityDefs[entityIdx];
+		const idRenderModel *model = def->parms.hModel;
+
+		FinishProjectDecal( def, model, info );
 	}
 }
 
