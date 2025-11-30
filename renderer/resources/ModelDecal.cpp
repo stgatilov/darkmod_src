@@ -676,12 +676,19 @@ idRenderModel *idRenderModelDecal::InstantiateDynamicModel( const struct renderE
 			numSurfs++;
 
 			assert( updatedTri );
-			assert( updatedTri->numIndexes == srcTri.numIndexes );
-			for ( int v = 0; v < updatedTri->numVerts; v++ ) {
+			assert( srcTri.numVerts == updatedTri->numVerts - updatedTri->numMirroredVerts );
+			for ( int v = 0; v < srcTri.numVerts; v++ ) {
 				const idDrawVert &vert = srcTri.verts[v];
 				idDrawVert &updatedVert = updatedTri->verts[v];
 				// only colors can change due to fading
 				updatedVert.SetColor( vert.GetColor() );
+			}
+
+			// some vertexes are duplicated inside FinishSurfaces 
+			for ( int m = 0; m < updatedTri->numMirroredVerts; m++ ) {
+				int dstV = updatedTri->numVerts - updatedTri->numMirroredVerts + m;
+				int srcV = updatedTri->mirroredVerts[m];
+				updatedTri->verts[dstV].SetColor( updatedTri->verts[srcV].GetColor() );
 			}
 		}
 	}
