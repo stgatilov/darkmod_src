@@ -651,30 +651,25 @@ idRenderWorldLocal::ProjectDecalOntoWorld
 ================
 */
 void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) {
-	int i, areas[10], numAreas;
-	const portalArea_t *area;
-	const idRenderModel *model;
-	idRenderEntityLocal *def;
 	decalProjectionInfo_t info;
-
 	if ( !idDecalOnRenderModel::CreateProjectionInfo( info, winding, projectionOrigin, parallel, fadeDepth, material, startTime ) ) {
 		return;
 	}
 
 	// get the world areas touched by the projection volume
+	int areas[10], numAreas;
 	numAreas = FindAreasInBounds( info.projectionBounds, areas, 10 );
 
 	// check all areas for models
-	for ( i = 0; i < numAreas; i++ ) {
-
-		area = &portalAreas[ areas[i] ];
+	for ( int i = 0; i < numAreas; i++ ) {
+		const portalArea_t *area = &portalAreas[ areas[i] ];
 
 		// check all models in this area
 		for ( int entityIdx : area->entityRefs ) {
-			def = entityDefs[entityIdx];
+			idRenderEntityLocal *def = entityDefs[entityIdx];
 
 			// completely ignore any dynamic or callback models
-			model = def->parms.hModel;
+			const idRenderModel *model = def->parms.hModel;
 			if ( model == NULL || model->IsDynamicModel() != DM_STATIC || def->parms.callback ) {
 				continue;
 			}
