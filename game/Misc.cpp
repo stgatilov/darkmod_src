@@ -3289,7 +3289,10 @@ void idFuncPortal::Think( void )
 	delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
 	delta -= GetPhysics()->GetOrigin();
 
-	bWithinDist = (delta.LengthSqr() < m_Distance);
+	// stgatilov: this is obviously LOD-related portal closing
+	// make it respect LOD distance multiplier
+	float lodCoeff = idMath::Fmax( cv_lod_bias.GetFloat(), 1.0f );
+	bWithinDist = (delta.LengthSqr() < m_Distance * lodCoeff * lodCoeff);
 
 	if( (!state && !bWithinDist) || (state && bWithinDist) )
 	{
