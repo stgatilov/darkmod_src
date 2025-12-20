@@ -651,7 +651,12 @@ idCVar cv_moveable_collision("tdm_show_moveable_collision",  "0", CVAR_GAME | CV
 /**
 * DarkMod LOD system
 **/
-idCVar cv_lod_bias("tdm_lod_bias",	"1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "A factor to multiply the LOD (level of detail) distance with. Default is 1.0 (meaning no change). Values < 1.0 make the distances smaller, reducing detail and increasing framerate, values > 1 increase the distance and thus detail at the expense of framerate." );
+idCVar cv_lod_bias("tdm_lod_bias",	"1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"A factor to multiply the LOD (level of detail) distance with.\n"
+	"Default is 1.0 (meaning no change).\n"
+	"Value < 1.0 does not affect distances, but can fully hide some objects.\n"
+	"Value > 1.0 increases the hide/switch distance at the expense of performance."
+);
 
 /**
 * End DarkMod cvars
