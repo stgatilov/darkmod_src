@@ -103,7 +103,9 @@ void idSessionLocal::CreateMainMenu() {
 	} else if ( mainMenuStartState == MMSS_FAILURE ) {
 		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_FAILURE"));
 	} else if ( mainMenuStartState == MMSS_BRIEFING ) {
-		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_BRIEFING_VIDEO"));
+		// #6648: simulate switch forward into BRIEFING_VIDEO, so that state skipping works properly
+		guiMainMenu->SetStateInt("mode", guiMainMenu->GetStateInt("#MM_STATE_MAINMENU_NOTINGAME"));
+		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_FORWARD"));
 	} else {
 		assert(false);
 	}
