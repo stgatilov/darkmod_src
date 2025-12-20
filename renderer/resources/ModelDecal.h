@@ -116,7 +116,7 @@ public:
 	~idRenderModelDecal();
 
 	virtual dynamicModel_t IsDynamicModel() const override;
-	virtual idRenderModel *InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
+	virtual idRenderModel *InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) override;
 
 	void RecomputeBoundingBox();
 
