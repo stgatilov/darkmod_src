@@ -178,6 +178,9 @@
     <Filter Include="Renderer\Backend\Stages">
       <UniqueIdentifier>{bab852b7-1248-4e31-80c8-bd75d92b63ad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sys\RenderDoc">
+      <UniqueIdentifier>{27feb915-f8c0-4c61-8299-fd2596465176}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1653,6 +1656,12 @@
     </ClInclude>
     <ClInclude Include="renderer\backend\VertexArrayState.h">
       <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="sys\renderdoc\RenderDoc.h">
+      <Filter>Sys\RenderDoc</Filter>
+    </ClInclude>
+    <ClInclude Include="sys\renderdoc\renderdoc_app.h">
+      <Filter>Sys\RenderDoc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -3639,6 +3648,9 @@
     </ClCompile>
     <ClCompile Include="renderer\backend\VertexArrayState.cpp">
       <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\renderdoc\RenderDoc.cpp">
+      <Filter>Sys\RenderDoc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

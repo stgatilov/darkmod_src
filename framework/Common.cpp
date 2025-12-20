@@ -2799,6 +2799,8 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// get architecture info
 		Sys_Init();
 
+		RenderDoc_Init();
+
 		// initialize networking
 		Sys_InitNetworking();
 

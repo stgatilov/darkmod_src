@@ -666,6 +666,8 @@
     <ClInclude Include="sound\snd_efxpresets.h" />
     <ClInclude Include="sound\snd_local.h" />
     <ClInclude Include="sound\sound.h" />
+    <ClInclude Include="sys\renderdoc\RenderDoc.h" />
+    <ClInclude Include="sys\renderdoc\renderdoc_app.h" />
     <ClInclude Include="sys\sys_padinput.h" />
     <ClInclude Include="sys\sys_local.h" />
     <ClInclude Include="sys\sys_public.h" />
@@ -1326,6 +1328,7 @@
     <ClCompile Include="sound\snd_system.cpp" />
     <ClCompile Include="sound\snd_wavefile.cpp" />
     <ClCompile Include="sound\snd_world.cpp" />
+    <ClCompile Include="sys\renderdoc\RenderDoc.cpp" />
     <ClCompile Include="sys\sys_cpu.cpp" />
     <ClCompile Include="sys\sys_padinput.cpp" />
     <ClCompile Include="sys\sys_local.cpp" />
