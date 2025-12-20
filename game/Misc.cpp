@@ -3270,39 +3270,37 @@ void idFuncPortal::OpenPortal( void )
 
 void idFuncPortal::Think( void )
 {
-	extern idCVar r_lockView;
-	idVec3 delta;
-	bool bWithinDist;
+	auto ThinkImpl = [&]() {
+		if( !m_bDistDependent )
+			return;
 
-	if( !m_bDistDependent )
-		goto Quit;
+		if( (gameLocal.time - m_TimeStamp) < m_Interval )
+			return;
 
-	if( (gameLocal.time - m_TimeStamp) < m_Interval )
-		goto Quit;
+		extern idCVar r_lockView;
+		if ( r_lockView.GetInteger() != 0 )
+			return;
 
-	if ( r_lockView.GetInteger() != 0 )
-		goto Quit;
+		m_TimeStamp = gameLocal.time;
+		bool bWithinDist = false;
 
-	m_TimeStamp = gameLocal.time;
-	bWithinDist = false;
+		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
+		delta -= GetPhysics()->GetOrigin();
 
-	delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
-	delta -= GetPhysics()->GetOrigin();
+		// stgatilov: this is obviously LOD-related portal closing
+		// make it respect LOD distance multiplier
+		float lodCoeff = idMath::Fmax( cv_lod_bias.GetFloat(), 1.0f );
+		bWithinDist = (delta.LengthSqr() < m_Distance * lodCoeff * lodCoeff);
 
-	// stgatilov: this is obviously LOD-related portal closing
-	// make it respect LOD distance multiplier
-	float lodCoeff = idMath::Fmax( cv_lod_bias.GetFloat(), 1.0f );
-	bWithinDist = (delta.LengthSqr() < m_Distance * lodCoeff * lodCoeff);
+		if( (!state && !bWithinDist) || (state && bWithinDist) )
+		{
+			// toggle portal and trigger targets
+			Event_Activate( gameLocal.GetLocalPlayer() );
+		}
+	};
 
-	if( (!state && !bWithinDist) || (state && bWithinDist) )
-	{
-		// toggle portal and trigger targets
-		Event_Activate( gameLocal.GetLocalPlayer() );
-	}
-
-Quit:
+	ThinkImpl();
 	idEntity::Think();
-	return;
 }
 
 /*
