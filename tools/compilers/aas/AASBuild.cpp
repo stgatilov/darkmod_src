@@ -675,7 +675,7 @@ bool idAASBuild::Build( const idStr &fileName, const idAASSettings *settings ) {
 
 	// if there is a .proc file newer than the .map file
 	if ( !LoadProcBSP( fileName, mapFile->GetFileTime() ) )
-		common->Error( "Failed to load %s file or it is older than %s", fileName, mapFile->GetFileName() );
+		common->Error( "Failed to load %s file or it is older than %s", fileName.c_str(), mapFile->GetFileName() );
 	ClipBrushSidesWithProcBSP( brushList );
 	DeleteProcBSP();
 
