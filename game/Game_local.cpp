@@ -4150,6 +4150,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			{"START_GAME", NULL, NULL, NULL},
 			{"END_GAME", NULL, NULL, NULL},
 			{"FINISHED", NULL, NULL, NULL},
+			{"AFTER_SUCCESS", NULL, NULL, NULL},
 			{"FORWARD", NULL, NULL, NULL},
 			{"BACKWARD", NULL, NULL, NULL},
 			{"MAINMENU_INGAME", "MainMenuInGameState", "MAINMENU_INGAME", "MusicIngame"},
@@ -4183,7 +4184,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			{"FINISHED", "FORWARD", "DEBRIEFING_VIDEO"},
 			{"DEBRIEFING_VIDEO", "FORWARD", "DEBRIEFING"},		{"DEBRIEFING", "BACKWARD", "DEBRIEFING_VIDEO"},
 			{"DEBRIEFING", "FORWARD", "SUCCESS"},				{"SUCCESS", "BACKWARD", "DEBRIEFING"},
-			{"SUCCESS", "FORWARD", "MAINMENU"},
+			{"SUCCESS", "FORWARD", "AFTER_SUCCESS"},
 		};
 
 		static const int STATENUM = sizeof(STATES) / sizeof(STATES[0]);
@@ -4289,6 +4290,16 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending game");
 				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va("disconnect\n") );
 				Redirect("MAINMENU_NOTINGAME");
+			}
+			if (targetState->name == "AFTER_SUCCESS") {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Past success screen");
+				// schedule new transition to be done in delayed fashion
+				// too much stuff happens at this immediate moment...
+				gui->ResetWindowTime("SuccessContinueSelect");
+				// transition to SUCCESS state causes success music to start playing
+				// but it turns out we can trigger this transition even from NONE state
+				//Redirect("SUCCESS");
+				Redirect("NONE");
 			}
 
 			idStr modeMusicState = gui->GetStateString("MusicLastState");
