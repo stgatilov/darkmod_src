@@ -1448,6 +1448,7 @@ void R_DeriveEntityData( idRenderEntityLocal *def );
 void R_CreateEntityRefs( idRenderEntityLocal *def );
 void R_CreateLightRefs( idRenderLightLocal *light );
 
+void R_SetLightFrustum( const idPlane lightProject[4], idPlane frustum[6] );
 void R_DeriveLightData( idRenderLightLocal *light );
 void R_FreeLightDefDerivedData( idRenderLightLocal *light );
 void R_CheckForEntityDefsUsingModel( idRenderModel *model );
