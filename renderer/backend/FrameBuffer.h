@@ -48,6 +48,7 @@ public:
 	const char *Name() const { return name.c_str(); }
 
 	static void CreateDefaultFrameBuffer(FrameBuffer *fbo);
+	static void ValidateStateOfBinds(FrameBuffer *readFboExpected, FrameBuffer *drawFboExpected);
 
 	static const int MAX_COLOR_ATTACHMENTS = 8;
 private:

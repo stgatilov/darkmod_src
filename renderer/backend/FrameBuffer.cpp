@@ -144,18 +144,49 @@ void FrameBuffer::Validate() {
 	}
 }
 
-void FrameBuffer::Bind() {
-	if (!initialized) {
-		Generate();
-		// definitely bind in this case since we recreated the fbo object
-		qglBindFramebuffer(GL_FRAMEBUFFER, fbo);
+void FrameBuffer::ValidateStateOfBinds( FrameBuffer *readFboExpected, FrameBuffer *drawFboExpected ) {
+	if ( !r_glDebugContext.GetInteger() && !r_glDebugOutput.GetInteger() )
+		return;	// validation is only for debug context
+
+	GLint readGl = -1, drawGl = -1;
+	qglGetIntegerv( GL_READ_FRAMEBUFFER_BINDING, &readGl );
+	qglGetIntegerv( GL_DRAW_FRAMEBUFFER_BINDING, &drawGl );
+	GLint readCpp = frameBuffers->activeFbo->fbo;
+	GLint drawCpp = frameBuffers->activeDrawFbo->fbo;
+
+	if ( readGl != readCpp || drawGl != drawCpp ) {
+		common->Warning( "Framebuffer binds out of sync:  GL: %d | %d  C++ %d | %d", readGl, drawGl, readCpp, drawCpp );
 	}
 
-	if (frameBuffers->activeFbo != this || frameBuffers->activeDrawFbo != this) {
+	if ( readFboExpected && readFboExpected != frameBuffers->activeFbo ) {
+		common->Warning(
+			"Framebuffer read bind wrong:  %s(%d) instead of %s(%d)",
+			frameBuffers->activeFbo->name.c_str(), frameBuffers->activeFbo->fbo,
+			readFboExpected->name.c_str(), readFboExpected->fbo
+		);
+	}
+	if ( drawFboExpected && drawFboExpected != frameBuffers->activeDrawFbo ) {
+		common->Warning(
+			"Framebuffer write bind wrong:  %s(%d) instead of %s(%d)",
+			frameBuffers->activeDrawFbo->name.c_str(), frameBuffers->activeDrawFbo->fbo,
+			drawFboExpected->name.c_str(), drawFboExpected->fbo
+		);
+	}
+}
+
+void FrameBuffer::Bind() {
+	bool needGenerate = !initialized;
+	if (needGenerate) {
+		Generate();
+	}
+
+	if (frameBuffers->activeFbo != this || frameBuffers->activeDrawFbo != this || needGenerate) {
 		qglBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		frameBuffers->activeFbo = this;
 		frameBuffers->activeDrawFbo = this;
 	}
+
+	ValidateStateOfBinds(this, this);
 }
 
 void FrameBuffer::BlitTo( FrameBuffer *target, GLbitfield mask, GLenum filter ) {
@@ -163,11 +194,14 @@ void FrameBuffer::BlitTo( FrameBuffer *target, GLbitfield mask, GLenum filter ) 
 }
 
 void FrameBuffer::BlitToVidSize(FrameBuffer *target, GLbitfield mask, GLenum filter, int x, int y, int w, int h) {
-	FrameBuffer *previous = frameBuffers->activeFbo;
-	Bind();
-	qglDisable(GL_SCISSOR_TEST);
+	FrameBuffer *readFbo = frameBuffers->activeFbo;
+	FrameBuffer *drawFbo = frameBuffers->activeDrawFbo;
 
+	Bind();
 	target->BindDraw();
+	ValidateStateOfBinds(this, target);
+
+	qglDisable(GL_SCISSOR_TEST);
 
 	int xl = x, yl = y, xr = x + w, yr = y + h;
 	// note: avoid floats here!
@@ -185,7 +219,10 @@ void FrameBuffer::BlitToVidSize(FrameBuffer *target, GLbitfield mask, GLenum fil
 	);
 
 	qglEnable(GL_SCISSOR_TEST);
-	previous->Bind();
+
+	readFbo->Bind();
+	drawFbo->BindDraw();
+	ValidateStateOfBinds(readFbo, drawFbo);
 }
 
 void FrameBuffer::CreateDefaultFrameBuffer(FrameBuffer *fbo) {
@@ -203,16 +240,24 @@ void FrameBuffer::Generate() {
 }
 
 void FrameBuffer::BindDraw() {
-	if (!initialized) {
+	FrameBuffer *readFbo = frameBuffers->activeFbo;
+
+	bool needGenerate = !initialized;
+	if (needGenerate) {
 		Generate();
-		// definitely bind in this case since we recreated the fbo object
-		qglBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 	}
 
-	if (frameBuffers->activeDrawFbo != this) {
+	if (frameBuffers->activeDrawFbo != this || needGenerate) {
 		qglBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		frameBuffers->activeDrawFbo = this;
 	}
+	if (needGenerate) {
+		// Generate usually calls method "Bind" inside, which changes both states
+		qglBindFramebuffer(GL_READ_FRAMEBUFFER, readFbo->fbo);
+		frameBuffers->activeFbo = readFbo;
+	}
+
+	ValidateStateOfBinds(readFbo, this);
 }
 
 void FrameBuffer::AddRenderBuffer( GLuint &buffer, GLenum attachment, GLenum format, const idStr &name ) {
