@@ -23,6 +23,15 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 idCVar	idSessionLocal::gui_configServerRate( "gui_configServerRate", "0", CVAR_GUI | CVAR_ARCHIVE | CVAR_ROM | CVAR_INTEGER, "" );
 
+idCVar renderdoc_capture_startmenu(
+	"renderdoc_capture_startmenu", "0", CVAR_RENDERER | CVAR_INTEGER,
+	"Record N frames in RenderDoc when starting main menu."
+);
+idCVar renderdoc_capture_exitmenu(
+	"renderdoc_capture_exitmenu", "0", CVAR_RENDERER | CVAR_INTEGER,
+	"Record N frames in RenderDoc when exiting main menu."
+);
+
 // implements the setup for, and commands from, the main menu
 
 /*
@@ -125,6 +134,8 @@ idSessionLocal::StartMainMenu
 ==============
 */
 void idSessionLocal::StartMenu( bool playIntro ) {
+	RenderDoc_TriggerCapture(renderdoc_capture_startmenu.GetInteger());
+
 	if ( guiActive && guiActive == guiMainMenu ) {
 		return;
 	}
@@ -216,6 +227,8 @@ idSessionLocal::ExitMenu
 ===============
 */
 void idSessionLocal::ExitMenu( void ) {
+	RenderDoc_TriggerCapture( renderdoc_capture_exitmenu.GetInteger() );
+
 	guiActive = NULL;
 
 	// go back to the game sounds
