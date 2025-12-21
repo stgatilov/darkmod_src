@@ -235,8 +235,24 @@ void FrameBuffer::CreateDefaultFrameBuffer(FrameBuffer *fbo) {
 }
 
 void FrameBuffer::Generate() {
+	// stgatilov #6608: this method is sometimes called by Bind / BindDraw
+	// and generator function often calls idImage::GenerateAttachment, which changes bound texture on active unit
+	// but caller usually does not expect it!
+	// so we'd better temporary switch to surely unused texture unit here
+	static const int UNUSED_TMU = 15;
+	int oldTmu = backEnd.glState.currenttmu;
+	GL_SelectTexture( UNUSED_TMU );
+
 	generator( this );
 	Validate();
+
+	if ( r_glDebugContext.GetBool() && backEnd.glState.currenttmu != UNUSED_TMU ) {
+		common->Warning(
+			"Framebuffer '%s' generate function changed active TMU: %d -> %d",
+			name.c_str(), UNUSED_TMU, backEnd.glState.currenttmu
+		);
+	}
+	GL_SelectTexture( oldTmu );
 }
 
 void FrameBuffer::BindDraw() {
