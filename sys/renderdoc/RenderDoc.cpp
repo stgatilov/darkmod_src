@@ -107,10 +107,15 @@ void RenderDoc_EndCapture() {
 	RenderDocApi->EndFrameCapture( NULL, NULL );
 }
 
-bool RenderDoc_TriggerCapture() {
+bool RenderDoc_TriggerCapture( int numFrames ) {
 	if ( !RenderDocApi || renderdoc_block.GetBool() )
 		return false;
-	RenderDocApi->TriggerCapture();
+
+	if ( numFrames == 1 ) {
+		RenderDocApi->TriggerCapture();
+	} else if ( numFrames > 1 ) {
+		RenderDocApi->TriggerMultiFrameCapture( numFrames );
+	}
 	return true;
 }
 

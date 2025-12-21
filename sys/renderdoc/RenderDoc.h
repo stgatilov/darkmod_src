@@ -28,7 +28,7 @@ void RenderDoc_StartCapture();
 void RenderDoc_EndCapture();
 
 // programmatically trigger capture as if the user has pressed PrtScrn hotkey
-bool RenderDoc_TriggerCapture();
+bool RenderDoc_TriggerCapture(int numFrames = 1);
 
 // scope-based wrapper arround StartCapture / EndCapture
 struct RenderDoc_ScopedCapture {
