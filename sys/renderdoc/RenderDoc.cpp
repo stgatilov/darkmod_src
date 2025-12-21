@@ -51,7 +51,12 @@ RENDERDOC_API_1_6_0 *RenderDocApi = NULL;
 idCVar renderdoc_block( "renderdoc_block", "0", CVAR_RENDERER | CVAR_BOOL, "If set to 1, then programmatic RenderDoc captures are blocked" );
 
 static void RenderDoc_TriggerCapture_f( const idCmdArgs &args ) {
-	bool ok = RenderDoc_TriggerCapture();
+	int numFrames = 1;
+	if ( args.Argc() >= 2 )
+		numFrames = atoi( args.Argv( 1 ) );
+
+	bool ok = RenderDoc_TriggerCapture(numFrames);
+
 	if ( ok ) {
 		common->Printf("RenderDoc capture done.\n");
 	} else {
