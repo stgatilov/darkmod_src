@@ -428,6 +428,26 @@ void idSessionLocal::Shutdown() {
 	Clear();
 }
 
+void idSessionLocal::CaptureGameScreenshot( byte* &data, int &width, int &height ) {
+	game->Draw(0);
+	// need to make the changes to the vertex cache accessible to the backend
+	vertexCache.EndFrame();
+
+	// render image to buffer
+	renderSystem->GetCurrentRenderCropSize(width, height);
+	byte *imgData = (byte*)Mem_Alloc(height * width * 3);
+	renderSystem->CaptureRenderToBuffer(imgData);
+
+	// 1) convert to RGBA (all image routines use this)
+	// 2) flip vertically (to get y = 0 at top like in GUI and commodity images)
+	data = (byte*)Mem_Alloc(height * width * 4);
+	for (int y = 0; y < height; y++) {
+		bool ok = SIMDProcessor->ConvertRowToRGBA8(imgData + 3 * (height - 1 - y) * width, width, 24, false, data + 4 * y * width);
+		assert(ok);
+	}
+	Mem_Free(imgData);
+}
+
 /*
 ================
 idSessionLocal::StartWipe
@@ -1984,23 +2004,11 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	// Write screenshot
 	if ( !autosave ) {
 		qglFinish();
-		game->Draw( 0 );
-		// need to make the changes to the vertex cache accessible to the backend
-		vertexCache.EndFrame();
 
-		// stgatilov: render image to buffer
 		int width, height;
-		renderSystem->GetCurrentRenderCropSize(width, height);
-		byte *imgData = (byte*)Mem_Alloc(height * width * 3);
-		renderSystem->CaptureRenderToBuffer(imgData);
+		byte *imgData = nullptr;
+		CaptureGameScreenshot( imgData, width, height );
 
-		{ // convert to RGBA since image processing functions use that
-			byte *newImg = (byte*)Mem_Alloc(height * width * 4);
-			bool ok = SIMDProcessor->ConvertRowToRGBA8(imgData, width * height, 24, false, newImg);
-			assert(ok);
-			Mem_Free(imgData);
-			imgData = newImg;
-		}
 		// downsample the image to reduce file size
 		while ( width > 480 && height > 270 ) {
 			imgData = R_MipMap( imgData, width, height );
@@ -2012,7 +2020,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		idImageWriter wr;
 		wr.Source(imgData, width, height, 4);
 		wr.Dest(fileSystem->OpenFileWrite(previewFile.c_str(), "fs_modSavePath"));
-		wr.Flip();
 		wr.WriteExtension(previewExtension.c_str());
 		Mem_Free(imgData);
 

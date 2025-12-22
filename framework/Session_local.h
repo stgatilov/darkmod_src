@@ -140,6 +140,8 @@ public:
 	void				LoadSession( const char *name );
 	void				SaveSession( const char *name );
 
+	void				CaptureGameScreenshot( byte* &data, int &width, int &height );
+
 	// called by Draw when the scene to scene wipe is still running
 	void				DrawWipeModel();
 	void				StartWipe( const char *materialName, bool hold = false);

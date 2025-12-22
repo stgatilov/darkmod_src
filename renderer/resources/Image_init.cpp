@@ -1758,6 +1758,7 @@ void idImageManager::Init() {
 	// used for screen wipes/doublevision/etc., also used as dynamic texture
 	scratchImage = ImageScratch( "_scratch" );
 	scratchImage->isDynamicImagePlaceholder = true;
+	menuLastGameFrame = ImageScratch( "_menuLastGameFrame" );
 	// were used as dynamic textures, since #6434 they are interchangeable with _dynamic image
 	ImageScratch( "_scratch2" )->isDynamicImagePlaceholder = true;
 	for (int k = 1; k <= 9; k++)
