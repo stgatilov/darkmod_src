@@ -722,6 +722,7 @@ void R_ReloadGuis_f( const idCmdArgs &args );
 void R_ListGuis_f( const idCmdArgs &args );
 
 void *R_GetCommandBuffer( int bytes );
+void R_IssueRenderCommands( frameData_t *frameData, bool swapBuffers );
 
 // this allows a global override of all materials
 bool R_GlobalShaderOverride( const idMaterial **shader );

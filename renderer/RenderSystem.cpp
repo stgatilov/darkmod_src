@@ -146,7 +146,7 @@ R_IssueRenderCommands
 Called by R_EndFrame each frame
 ====================
 */
-void R_IssueRenderCommands( frameData_t *frameData ) {
+void R_IssueRenderCommands( frameData_t *frameData, bool swapBuffers ) {
 	TRACE_GL_SCOPE( "R_IssueRenderCommands" )
 	TRACE_CPU_SCOPE( "R_IssueRenderCommands" )
 
@@ -170,7 +170,8 @@ void R_IssueRenderCommands( frameData_t *frameData ) {
 	}
 	R_ClearCommandChain( frameData );
 
-	RB_SwapBuffers();
+	if ( swapBuffers )
+		RB_SwapBuffers();
 }
 
 /*
@@ -759,7 +760,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		session->ActivateFrontend();
 		frameBuffers->BeginFrame();
 		// start the back end up again with the new command list
-		R_IssueRenderCommands( backendFrameData );
+		R_IssueRenderCommands( backendFrameData, true );
 		renderBackend->EndFrame();
 		session->WaitForFrontendCompletion();
 		common->SetErrorIndirection( false );
@@ -1103,7 +1104,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char *buffer, bool use
 	cmd.imageWidth = rc.width;
 	cmd.imageHeight = rc.height;
 
-	R_IssueRenderCommands( frameData );
+	R_IssueRenderCommands( frameData, false );
 }
 
 /*
