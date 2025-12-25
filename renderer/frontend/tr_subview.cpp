@@ -351,7 +351,27 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		return;
 	}
 
-	//tr.CropRenderSize( stage->width, stage->height, true, true );
+	// #5485: find the 'root' view to read main resolution from
+	// it is usually the main view, but it can be remote subview as well
+	int rootW = 0, rootH = 0;
+	for ( viewDef_t *view = tr.viewDef; view; view = view->superView )
+		if ( !view->isMirrorGen ) {
+			rootW = view->viewport.GetWidth();
+			rootH = view->viewport.GetHeight();
+			break;
+		}
+	// compute resolution based on this subview parameters
+	float resolutionFactor = stage->mirrorResolutionFactor;
+	int thisW = (int) idMath::Ceil( resolutionFactor * rootW );
+	int thisH = (int) idMath::Ceil( resolutionFactor * rootH );
+	// but never make it more detailed than the current view
+	// so, full-resolution mirror in low-res water surface will still be rendered low-res
+	int cropW, cropH;
+	tr.GetCurrentRenderCropSize( cropW, cropH );
+	thisW = idMath::Imin( thisW, cropW );
+	thisH = idMath::Imin( thisH, cropH );
+
+	tr.CropRenderSize( thisW, thisH, false, true );
 
 	parms->renderView.x = 0;
 	parms->renderView.y = 0;
@@ -360,7 +380,10 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 
 	tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
-	parms->scissor = scissor;
+	parms->scissor.x1 = scissor.x1 * thisW / cropW;
+	parms->scissor.y1 = scissor.y1 * thisH / cropH;
+	parms->scissor.x2 = scissor.x2 * thisW / cropW;
+	parms->scissor.y2 = scissor.y2 * thisH / cropH;
 
 	parms->superView = tr.viewDef;
 	parms->subviewSurface = surf;
@@ -374,10 +397,11 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	// copy this rendering to the image
 	stage->image = nullptr;
 	idImageScratch *outputTexture = tr.CreateImageForSubview();
+	// TODO: optimize by copying only the scissor
 	tr.CaptureRenderToImage( *outputTexture );
 	surf->dynamicImageOverride = outputTexture;
 
-	//tr.UnCrop();
+	tr.UnCrop();
 }
 
 /*

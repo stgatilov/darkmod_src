@@ -156,6 +156,7 @@ typedef struct {
 	dynamicImage_t		dynamic;
 	int					width, height;
 	bool				xrayInclusive;
+	float				mirrorResolutionFactor;		// #5485
 } textureStage_t;
 
 // the order BUMP / DIFFUSE / SPECULAR is necessary for interactions to draw correctly on low end cards

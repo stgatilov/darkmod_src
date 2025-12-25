@@ -1241,11 +1241,18 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 
 		else if ( !token.Icmp( "mirrorRenderMap" ) ) {
-			ts->dynamic = DI_MIRROR_RENDER;
-			//ts->width = src.ParseInt();
-			//ts->height = src.ParseInt();
 			src.SkipRestOfLine();
+			ts->dynamic = DI_MIRROR_RENDER;
+			ts->mirrorResolutionFactor = 1.0f;
 			ts->texgen = TG_SCREEN;
+			continue;
+		}
+		else if ( !token.Icmp( "mirrorResolutionFactor" ) ) {	// #5485
+			if ( ts->dynamic != DI_MIRROR_RENDER ) {
+				common->Warning( "'mirrorResolutionFactor' is before 'mirrorRenderMap' in material '%s'", GetName() );
+				// yep, either useless or overwritten with 1.0
+			}
+			ts->mirrorResolutionFactor = src.ParseFloat();
 			continue;
 		}
 
