@@ -218,6 +218,7 @@ static viewDef_t *R_MirrorViewBySurface( drawSurf_t *drawSurf ) {
 	parms->unlockedRenderView = nullptr;
 
 	parms->isSubview = true;
+	parms->isMirrorGen = true;
 	parms->isMirrorInverted = true;
 	parms->isPortalSky = false;
 	parms->isXray = false;
@@ -274,8 +275,8 @@ static viewDef_t *R_XrayView() {
 	parms->isXray = true;
 	parms->isSubview = true;
 	parms->isPortalSky = false;
+	parms->isMirrorGen = false;
 	parms->xrayEntityMask = XR_ONLY;
-
 
 	return parms;
 }
@@ -297,6 +298,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->unlockedRenderView = nullptr;
 
 	parms->isSubview = true;
+	parms->isMirrorGen = false;
 	parms->isMirrorInverted = false;
 	parms->isPortalSky = false;
 	parms->isXray = false;
@@ -394,6 +396,7 @@ void R_PortalRender() {
 	parms->superView = tr.viewDef;
 	parms->subviewSurface = nullptr;
 	parms->isPortalSky = true;
+	parms->isMirrorGen = false;
 
 	parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.GetLocalPlayer()->playerView.ShakeAxis();
 
@@ -507,7 +510,6 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idImageScratch **ima
 	// triangle culling order changes with mirroring
 	parms->isMirrorInverted = ( ( (int)parms->isMirrorInverted ^ (int)tr.viewDef->isMirrorInverted ) != 0 );
 
-
 	// generate render commands for it
 	R_RenderView( *parms );
 
@@ -535,6 +537,7 @@ bool R_Lightgem_Render() {
 	parms = *tr.viewDef;
 	parms.unlockedRenderView = nullptr;
 	parms.isSubview = true;
+	parms.isMirrorGen = false;
 
 	// Get position for lg
 	idEntity* lg = gameLocal.m_lightGem.m_LightgemSurface.GetEntity();
