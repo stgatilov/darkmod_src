@@ -453,6 +453,15 @@
           </ArrayItems>
         </Expand>
       </Synthetic>
+      <Synthetic Name="[Subview stack]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>superView</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
     </Expand>
   </Type>
 
