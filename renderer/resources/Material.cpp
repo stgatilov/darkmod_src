@@ -1254,9 +1254,15 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				common->Warning( "'remoteResolution' is before 'remoteRenderMap' in material '%s'", GetName() );
 				// yep, either useless or overwritten with 1.0
 			}
-			ts->remoteResolutionWorld = src.ParseFloat();
 			ts->remoteWidth = src.ParseInt();
 			ts->remoteHeight = src.ParseInt();
+			idToken arg;
+			if ( src.ReadTokenOnLine( &arg ) ) {
+				src.UnreadToken( &arg );
+				ts->remoteResolutionWorld = src.ParseFloat();
+			} else {
+				ts->remoteResolutionWorld = -1.0f;
+			}
 			continue;
 		}
 
