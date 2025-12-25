@@ -72,6 +72,42 @@ static void R_MirrorVector( const idVec3 in, orientation_t *surface, orientation
 
 /*
 =============
+R_EstimatePositionByTexcoordDerivsOfSurface
+
+Computes derivatives of 3D position by texcoord.
+We combine them with "pixels per doom-unit" kind of resolution to known resolution in pixels.
+=============
+*/
+static idVec2 R_EstimatePositionByTexcoordDerivsOfSurface ( const srfTriangles_t *tri ) {
+	idVec2 maxDerivs;
+	maxDerivs.Zero();
+
+	for ( int i = 0; i < tri->numIndexes / 3; i++ ) {
+		const idDrawVert &v0 = tri->verts[tri->indexes[3 * i + 0]];
+		const idDrawVert &v1 = tri->verts[tri->indexes[3 * i + 1]];
+		const idDrawVert &v2 = tri->verts[tri->indexes[3 * i + 2]];
+
+		idMat2 dt( v1.st - v0.st, v2.st - v0.st );
+		dt.TransposeSelf();
+		dt.InverseSelf();
+
+		idVec3 dp01 = v1.xyz - v0.xyz;
+		idVec3 dp02 = v2.xyz - v0.xyz;
+
+		idVec3 derivS = dt[0][0] * dp01 + dt[1][0] * dp02;
+		idVec3 derivT = dt[0][1] * dp01 + dt[1][1] * dp02;
+
+		maxDerivs.x = idMath::Fmax( maxDerivs.x, derivS.LengthSqr() );
+		maxDerivs.y = idMath::Fmax( maxDerivs.y, derivT.LengthSqr() );
+	}
+	maxDerivs.x = idMath::Sqrt( maxDerivs.x );
+	maxDerivs.y = idMath::Sqrt( maxDerivs.y );
+
+	return maxDerivs;
+}
+
+/*
+=============
 R_PlaneForSurface
 
 Returns the plane for the first triangle in the surface
@@ -302,7 +338,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->isMirrorInverted = false;
 	parms->isPortalSky = false;
 	parms->isXray = false;
-		// if we see remote screen in mirror, drop mirror's clip plane
+	// if we see remote screen in mirror, drop mirror's clip plane
 	parms->numClipPlanes = 0;
 	parms->xrayEntityMask = XR_IGNORE;
 
@@ -310,7 +346,20 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->renderView.viewID = VID_SUBVIEW;	// clear to allow player bodies to show up, and suppress view weapons
 	parms->initialViewAreaOrigin = parms->renderView.vieworg;
 
-	tr.CropRenderSize( stage->width, stage->height );
+	// #5485: if 3D resolution is set, multiply it by position/texcoord derivatives magnitude
+	idVec2 resolution = idVec2( FLT_MAX, FLT_MAX );
+	if ( stage->remoteResolutionWorld >= 0.0f ) {
+		idVec2 derivs = R_EstimatePositionByTexcoordDerivsOfSurface( surf->frontendGeo );
+		resolution = derivs * stage->remoteResolutionWorld;
+	}
+	// limit effective resolution by the explicit numbers
+	resolution.Clamp( idVec2( 1, 1 ), idVec2( stage->remoteWidth, stage->remoteHeight ) );
+	int resW = (int) idMath::Ceil( resolution.x );
+	int resH = (int) idMath::Ceil( resolution.y );
+
+	// TODO: reduce resolution is the polygon is small enough on screen?
+
+	tr.CropRenderSize( resW, resH, false, true );
 
 	parms->renderView.x = 0;
 	parms->renderView.y = 0;

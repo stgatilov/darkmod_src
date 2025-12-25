@@ -1230,8 +1230,33 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 
 		else if ( !token.Icmp( "remoteRenderMap" ) ) {
 			ts->dynamic = DI_REMOTE_RENDER;
-			ts->width = src.ParseInt();
-			ts->height = src.ParseInt();
+			idToken arg;
+			if ( src.ReadTokenOnLine( &arg ) ) {
+				// this case is deprecated!
+				src.UnreadToken( &arg );
+				ts->remoteWidth = src.ParseInt();
+				ts->remoteHeight = src.ParseInt();
+				// #5485: this is how resolution actually worked in 2.13 and earlier
+				ts->remoteWidth = glConfig.vidWidth * ts->remoteWidth / SCREEN_WIDTH;
+				ts->remoteHeight = glConfig.vidHeight * ts->remoteHeight / SCREEN_HEIGHT;
+				ts->remoteResolutionWorld = -1.0f;
+			} else {
+				// ideally, it should be overwritten by "remoteResolution"
+				ts->remoteWidth = 512;
+				ts->remoteHeight = 512;
+				ts->remoteResolutionWorld = -1.0f;
+			}
+			src.SkipRestOfLine();
+			continue;
+		}
+		else if ( !token.Icmp( "remoteResolution" ) ) {
+			if ( ts->dynamic != DI_REMOTE_RENDER ) {
+				common->Warning( "'remoteResolution' is before 'remoteRenderMap' in material '%s'", GetName() );
+				// yep, either useless or overwritten with 1.0
+			}
+			ts->remoteResolutionWorld = src.ParseFloat();
+			ts->remoteWidth = src.ParseInt();
+			ts->remoteHeight = src.ParseInt();
 			continue;
 		}
 
