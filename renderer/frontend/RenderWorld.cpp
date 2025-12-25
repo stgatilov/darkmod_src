@@ -907,9 +907,9 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 	idVec3	cross;
 	cross = parms->renderView.viewaxis[1].Cross( parms->renderView.viewaxis[2] );
 	if ( cross * parms->renderView.viewaxis[0] > 0 ) {
-		parms->isMirror = false;
+		parms->isMirrorInverted = false;
 	} else {
-		parms->isMirror = true;
+		parms->isMirrorInverted = true;
 	}
 
 	if ( r_lockSurfaces.GetBool() ) {

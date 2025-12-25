@@ -519,7 +519,7 @@ typedef struct viewDef_s {
 	// a different side than the renderView.viewOrg is.
 
 	bool				isSubview;				// true if this view is not the main view
-	bool				isMirror;				// the portal is a mirror, invert the face culling
+	bool				isMirrorInverted;		// mirrored/inverted view: invert the face culling (false inside double-mirror)
 	bool				isPortalSky;			// true if view is generated for portalSky
 	bool				isXray;					// true if view is generated for xray
 	xrayEntityMask_t	xrayEntityMask;

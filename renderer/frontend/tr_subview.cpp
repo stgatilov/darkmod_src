@@ -218,7 +218,7 @@ static viewDef_t *R_MirrorViewBySurface( drawSurf_t *drawSurf ) {
 	parms->unlockedRenderView = nullptr;
 
 	parms->isSubview = true;
-	parms->isMirror = true;
+	parms->isMirrorInverted = true;
 	parms->isPortalSky = false;
 	parms->isXray = false;
 	parms->xrayEntityMask = XR_IGNORE;
@@ -297,7 +297,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->unlockedRenderView = nullptr;
 
 	parms->isSubview = true;
-	parms->isMirror = false;
+	parms->isMirrorInverted = false;
 	parms->isPortalSky = false;
 	parms->isXray = false;
 		// if we see remote screen in mirror, drop mirror's clip plane
@@ -364,7 +364,7 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	parms->subviewSurface = surf;
 
 	// triangle culling order changes with mirroring
-	parms->isMirror = (((int)parms->isMirror ^ (int)tr.viewDef->isMirror) != 0);
+	parms->isMirrorInverted = (((int)parms->isMirrorInverted ^ (int)tr.viewDef->isMirrorInverted) != 0);
 
 	// generate render commands for it
 	R_RenderView( *parms );
@@ -439,7 +439,7 @@ void R_PortalRender() {
 		// set up viewport, adjusted for resolution and OpenGL style 0 at the bottom
 		tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
-		if ( tr.viewDef->isMirror ) {
+		if ( tr.viewDef->isMirrorInverted ) {
 			parms->scissor = tr.viewDef->scissor; // mirror in an area that has sky, limit to mirror rect only
 		} else {
 			parms->scissor.x1 = 0;
@@ -457,9 +457,9 @@ void R_PortalRender() {
 		idVec3	cross;
 		cross = parms->renderView.viewaxis[1].Cross( parms->renderView.viewaxis[2] );
 		if ( cross * parms->renderView.viewaxis[0] > 0 ) {
-			parms->isMirror = false;
+			parms->isMirrorInverted = false;
 		} else {
-			parms->isMirror = true;
+			parms->isMirrorInverted = true;
 		}
 
 		R_RenderView( *parms );
@@ -505,7 +505,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idImageScratch **ima
 	parms->subviewSurface = surf;
 
 	// triangle culling order changes with mirroring
-	parms->isMirror = ( ( (int)parms->isMirror ^ (int)tr.viewDef->isMirror ) != 0 );
+	parms->isMirrorInverted = ( ( (int)parms->isMirrorInverted ^ (int)tr.viewDef->isMirrorInverted ) != 0 );
 
 
 	// generate render commands for it

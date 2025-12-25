@@ -79,12 +79,12 @@ void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, const vie
 	}
 
 	// draw depth-fail stencil shadows
-	qglStencilOpSeparate( viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_DECR_WRAP, GL_KEEP );
-	qglStencilOpSeparate( viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_INCR_WRAP, GL_KEEP );
+	qglStencilOpSeparate( viewDef->isMirrorInverted ? GL_FRONT : GL_BACK, GL_KEEP, GL_DECR_WRAP, GL_KEEP );
+	qglStencilOpSeparate( viewDef->isMirrorInverted ? GL_BACK : GL_FRONT, GL_KEEP, GL_INCR_WRAP, GL_KEEP );
 	DrawSurfs( viewDef, vLight, depthFailSurfs.Ptr(), depthFailSurfs.Num() );
 	// draw traditional depth-pass stencil shadows
-	qglStencilOpSeparate( viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, GL_INCR_WRAP );
-	qglStencilOpSeparate( viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, GL_DECR_WRAP );
+	qglStencilOpSeparate( viewDef->isMirrorInverted ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, GL_INCR_WRAP );
+	qglStencilOpSeparate( viewDef->isMirrorInverted ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, GL_DECR_WRAP );
 	DrawSurfs( viewDef, vLight, depthPassSurfs.Ptr(), depthPassSurfs.Num() );
 
 	// reset state

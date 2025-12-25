@@ -137,13 +137,13 @@ void GL_Cull( const int cullType ) {
 		}
 
 		if ( cullType == CT_BACK_SIDED ) {
-			if ( backEnd.viewDef->isMirror ) {
+			if ( backEnd.viewDef->isMirrorInverted ) {
 				qglCullFace( GL_FRONT );
 			} else {
 				qglCullFace( GL_BACK );
 			}
 		} else {
-			if ( backEnd.viewDef->isMirror ) {
+			if ( backEnd.viewDef->isMirrorInverted ) {
 				qglCullFace( GL_BACK );
 			} else {
 				qglCullFace( GL_FRONT );
