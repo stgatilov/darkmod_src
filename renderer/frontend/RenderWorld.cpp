@@ -1282,28 +1282,18 @@ int idRenderWorldLocal::GetPointInArea( int areaNum, idVec3 &result ) const {
 BoundsInAreas_r
 ===================
 */
-void idRenderWorldLocal::BoundsInAreas_r( int nodeNum, const idBounds &bounds, int *areas, int *numAreas, int maxAreas ) const {
-	int side, i;
-	areaNode_t *node;
-
+void idRenderWorldLocal::BoundsInAreas_r( int nodeNum, const idBounds &bounds, AreaList &areaIds ) const {
 	do {
 		if ( nodeNum < 0 ) {
 			nodeNum = -1 - nodeNum;
-
-			for ( i = 0; i < (*numAreas); i++ ) {
-				if ( areas[i] == nodeNum ) {
-					break;
-				}
-			}
-			if ( i >= (*numAreas) && (*numAreas) < maxAreas ) {
-				areas[(*numAreas)++] = nodeNum;
-			}
+			if ( !areaIds.Find( nodeNum ) )
+				areaIds.AddGrow( nodeNum );
 			return;
 		}
 
-		node = areaNodes + nodeNum;
+		areaNode_t *node = areaNodes + nodeNum;
+		int side = bounds.PlaneSide( node->plane );
 
-		side = bounds.PlaneSide( node->plane );
 		if ( side == PLANESIDE_FRONT ) {
 			nodeNum = node->children[0];
 		}
@@ -1312,16 +1302,12 @@ void idRenderWorldLocal::BoundsInAreas_r( int nodeNum, const idBounds &bounds, i
 		}
 		else {
 			if ( node->children[1] != 0 ) {
-				BoundsInAreas_r( node->children[1], bounds, areas, numAreas, maxAreas );
-				if ( (*numAreas) >= maxAreas ) {
-					return;
-				}
+				BoundsInAreas_r( node->children[1], bounds, areaIds );
 			}
 			nodeNum = node->children[0];
 		}
-	} while( nodeNum != 0 );
 
-	return;
+	} while( nodeNum != 0 );
 }
 
 /*
@@ -1333,17 +1319,20 @@ FindAreasInBounds
 ===================
 */
 int idRenderWorldLocal::FindAreasInBounds( const idBounds &bounds, int *areas, int maxAreas ) const {
-	int numAreas = 0;
-
 	assert( areas );
 	assert( bounds[0][0] <= bounds[1][0] && bounds[0][1] <= bounds[1][1] && bounds[0][2] <= bounds[1][2] );
 	static const float sizeCap = 3e+5;
 	assert( bounds[1][0] - bounds[0][0] < sizeCap && bounds[1][1] - bounds[0][1] < sizeCap && bounds[1][2] - bounds[0][2] < sizeCap );
 
 	if ( !areaNodes ) {
-		return numAreas;
+		return 0;
 	}
-	BoundsInAreas_r( 0, bounds, areas, &numAreas, maxAreas );
+
+	AreaList areaIds;
+	BoundsInAreas_r( 0, bounds, areaIds );
+
+	int numAreas = idMath::Imin( areaIds.Num(), maxAreas );
+	memcpy( areas, areaIds.Ptr(), numAreas * sizeof( areaIds[0] ) );
 	return numAreas;
 }
 

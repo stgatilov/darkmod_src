@@ -329,7 +329,7 @@ public:
 	};
 	void					RecurseFullLineIntersectionBSP_r( idList<LineIntersectionPoint> &result, int nodeNum, int parentNodeNum, float paramMin, float paramMax, const idVec3 &origin, const idVec3 &dir ) const;
 
-	void					BoundsInAreas_r( int nodeNum, const idBounds &bounds, int *areas, int *numAreas, int maxAreas ) const;
+	void					BoundsInAreas_r( int nodeNum, const idBounds &bounds, AreaList &areaIds ) const;
 
 	float					DrawTextLength( const char *text, float scale, int len = 0 );
 
