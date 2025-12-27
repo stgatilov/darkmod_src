@@ -378,10 +378,6 @@ extern idCVar cv_pm_stepvol_crouch_run;
 extern idCVar cv_pm_min_stepsound_interval;
 
 // Lightgem
-extern idCVar cv_lg_distance;
-extern idCVar cv_lg_xoffs;
-extern idCVar cv_lg_yoffs;
-extern idCVar cv_lg_zoffs;
 extern idCVar cv_lg_oxoffs;
 extern idCVar cv_lg_oyoffs;
 extern idCVar cv_lg_ozoffs;
