@@ -614,16 +614,12 @@ RB_CopyRender
 Copy part of the current framebuffer to an image
 =============
 */
-bool RB_CopyRender( const void *data ) {
+void RB_CopyRender( const void *data ) {
 	if ( r_skipCopyTexture.GetBool() ) {
-		return false;
+		return;
 	}
 	const copyRenderCommand_t &cmd = *( copyRenderCommand_t * )data;
-
-	if ( cmd.imageWidth * cmd.imageHeight == 0 )
-		return false;
 	frameBuffers->CopyRender( cmd );
-	return true;
 }
 
 /*

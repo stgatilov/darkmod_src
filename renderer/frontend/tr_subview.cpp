@@ -434,6 +434,12 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	parms->scissor.x2 = scissor.x2 * thisW / cropW;
 	parms->scissor.y2 = scissor.y2 * thisH / cropH;
 
+	renderCrop_t copyScissor;
+	copyScissor.x = parms->scissor.x1;
+	copyScissor.y = parms->scissor.y1;
+	copyScissor.width = parms->scissor.GetWidth();
+	copyScissor.height = parms->scissor.GetHeight();
+
 	parms->superView = tr.viewDef;
 	parms->subviewSurface = surf;
 
@@ -447,7 +453,7 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	stage->image = nullptr;
 	idImageScratch *outputTexture = tr.CreateImageForSubview();
 	// TODO: optimize by copying only the scissor
-	tr.CaptureRenderToImage( *outputTexture );
+	tr.CaptureRenderToImage( *outputTexture, &copyScissor );
 	surf->dynamicImageOverride = outputTexture;
 
 	tr.UnCrop();

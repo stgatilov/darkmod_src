@@ -1050,7 +1050,7 @@ void idRenderSystemLocal::PostProcess() {
 CaptureRenderToImage
 ================
 */
-void idRenderSystemLocal::CaptureRenderToImage( idImageScratch &image ) {
+void idRenderSystemLocal::CaptureRenderToImage( idImageScratch &image, const renderCrop_t *scissor ) {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
@@ -1076,6 +1076,11 @@ void idRenderSystemLocal::CaptureRenderToImage( idImageScratch &image ) {
 	cmd.imageHeight = rc.height;
 	cmd.image = &image;
 	cmd.buffer = NULL;
+	if ( scissor ) {
+		cmd.scissor = *scissor;
+	} else {
+		cmd.scissor = rc;
+	}
 }
 
 void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char *buffer, bool usePbo ) {
@@ -1103,6 +1108,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char *buffer, bool use
 	cmd.y = rc.y;
 	cmd.imageWidth = rc.width;
 	cmd.imageHeight = rc.height;
+	cmd.scissor = rc;
 
 	R_IssueRenderCommands( frameData, false );
 }

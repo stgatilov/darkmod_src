@@ -54,7 +54,7 @@ private:
 	void CreateResolve(FrameBuffer *resolve);
 	void CreateGui(FrameBuffer *gui);
 
-	void CopyRender( idImageScratch *image, int x, int y, int imageWidth, int imageHeight );
+	void CopyRender( idImageScratch *image, int x, int y, int imageWidth, int imageHeight, renderCrop_t scissor );
 	void CopyRender( unsigned char *buffer, int x, int y, int imageWidth, int imageHeight, bool usePBO );
 	bool EnsureScratchImageCreated( idImageScratch *image, int width, int height );
 	GLuint pbo = 0;

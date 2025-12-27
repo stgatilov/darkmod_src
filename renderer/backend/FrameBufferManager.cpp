@@ -250,9 +250,9 @@ void FrameBufferManager::CopyRender( const copyRenderCommand_t &cmd ) {
 	if ( cmd.buffer ) {
 		CopyRender( cmd.buffer, cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, cmd.usePBO );
 	}
-
-	if ( cmd.image )
-		CopyRender( cmd.image, cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight );
+	if ( cmd.image ) {
+		CopyRender( cmd.image, cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, cmd.scissor );
+	}
 
 	currentRenderFbo->Bind();
 
@@ -318,13 +318,28 @@ bool FrameBufferManager::EnsureScratchImageCreated( idImageScratch *image, int w
 	}
 }
 
-void FrameBufferManager::CopyRender( idImageScratch* image, int x, int y, int imageWidth, int imageHeight ) {
+idCVar r_copyRenderUseScissor( "r_copyRenderUseScissor", "1", CVAR_RENDERER | CVAR_BOOL, "Use scissor for optimization when copying subview images" );
+
+void FrameBufferManager::CopyRender( idImageScratch* image, int x, int y, int imageWidth, int imageHeight, renderCrop_t scissor ) {
+	int scissorXbeg = scissor.x;
+	int scissorYbeg = scissor.y;
+	int scissorXend = scissor.x + scissor.width;
+	int scissorYend = scissor.y + scissor.height;
+
 	if ( activeFbo == primaryFbo || activeFbo == resolveFbo ) {
 		x *= r_fboResolution.GetFloat();
 		y *= r_fboResolution.GetFloat();
 		imageWidth *= r_fboResolution.GetFloat();
 		imageHeight *= r_fboResolution.GetFloat();
+		scissorXbeg = idMath::Floor( scissorXbeg * r_fboResolution.GetFloat() );
+		scissorYbeg = idMath::Floor( scissorYbeg * r_fboResolution.GetFloat() );
+		scissorXend = idMath::Ceil( scissorXend * r_fboResolution.GetFloat() );
+		scissorYend = idMath::Ceil( scissorYend * r_fboResolution.GetFloat() );
 	}
+	scissorXbeg = idMath::ClampInt( x, x + imageWidth, scissorXbeg );
+	scissorXend = idMath::ClampInt( x, x + imageWidth, scissorXend );
+	scissorYbeg = idMath::ClampInt( y, y + imageHeight, scissorYbeg );
+	scissorYend = idMath::ClampInt( y, y + imageHeight, scissorYend );
 
 	// if copying into _scratch or _xray, then make sure it is generated and has proper size
 	if ( !EnsureScratchImageCreated( image, imageWidth, imageHeight ) ) {
@@ -336,7 +351,11 @@ void FrameBufferManager::CopyRender( idImageScratch* image, int x, int y, int im
 
 	// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 	// it and don't try and do a texture compression or some other silliness
-	qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
+	if ( r_copyRenderUseScissor.GetBool() ) {
+		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, scissorXbeg - x, scissorYbeg - y, scissorXbeg, scissorYbeg, scissorXend - scissorXbeg, scissorYend - scissorYbeg );
+	} else {
+		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
+	}
 }
 
 void FrameBufferManager::CopyRender( unsigned char *buffer, int x, int y, int imageWidth, int imageHeight, bool usePBO ) {

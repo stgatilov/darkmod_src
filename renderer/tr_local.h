@@ -31,7 +31,7 @@ const float FOG_ENTER = ( FOG_ENTER_SIZE + 1.0f ) / ( FOG_ENTER_SIZE * 2 );
 // picky to get the bilerp correct at terminator
 
 
-typedef struct {
+typedef struct renderCrop_s {
 	int		x, y, width, height;	// these are in physical, OpenGL Y-at-bottom pixels
 } renderCrop_t;
 
@@ -666,6 +666,7 @@ struct copyRenderCommand_t : emptyCommand_t {
 	int		cubeFace;			// when copying to a cubeMap
 	unsigned char	*buffer;	// to memory instead of to texture
 	bool	usePBO;				// lightgem optimization
+	renderCrop_t scissor;		// only copy given scissor without image/buffer
 };
 
 //=======================================================================
@@ -891,7 +892,7 @@ public:
 	virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref, bool envshot = false ) override;
 	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false ) override;
 	virtual void			GetCurrentRenderCropSize( int &width, int &height ) override;
-	virtual void			CaptureRenderToImage( idImageScratch &image ) override;
+	virtual void			CaptureRenderToImage( idImageScratch &image, const renderCrop_t *scissor = nullptr ) override;
 	virtual void			CaptureRenderToBuffer( unsigned char *buffer, bool usePbo = false ) override;
 	virtual void			PostProcess() override;
 	virtual void			UnCrop() override;
