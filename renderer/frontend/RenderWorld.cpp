@@ -1660,7 +1660,7 @@ bool idRenderWorldLocal::TraceAll( modelTrace_t &trace, const idVec3 &start, con
 		R_GlobalPointToLocal( modelMatrix, start, localStart );
 		R_GlobalPointToLocal( modelMatrix, end, localEnd );
 
-		localTrace_t localTrace = R_LocalTrace( localStart, localEnd, radius, true, surf->geometry );
+		localTrace_t localTrace = R_LocalTrace( localStart, localEnd, radius, false, surf->geometry );
 
 		if ( localTrace.fraction < trace.fraction ) {
 			trace.fraction = localTrace.fraction;
