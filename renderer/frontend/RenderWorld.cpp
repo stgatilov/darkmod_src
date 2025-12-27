@@ -1292,6 +1292,14 @@ void idRenderWorldLocal::BoundsInAreas_r( int nodeNum, const idBounds &bounds, A
 		}
 
 		areaNode_t *node = areaNodes + nodeNum;
+		// if we know that all possible children nodes only touch areas
+		// we have already marked, we can early out
+		if ( node->commonChildrenArea != CHILDREN_HAVE_MULTIPLE_AREAS && r_useNodeCommonChildren.GetBool() ) {
+			if ( areaIds.Find( node->commonChildrenArea ) ) {
+				return;
+			}
+		}
+
 		int side = bounds.PlaneSide( node->plane );
 
 		if ( side == PLANESIDE_FRONT ) {
