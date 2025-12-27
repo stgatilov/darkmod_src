@@ -506,6 +506,7 @@ typedef struct viewDef_s {
 
 	idRenderWorldLocal *renderWorld;
 
+	int					viewCount;				// tr.viewCount recorded during R_RenderView 
 	float				floatTime;
 
 	idVec3				initialViewAreaOrigin;

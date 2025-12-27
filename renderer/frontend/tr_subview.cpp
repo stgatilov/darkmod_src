@@ -323,10 +323,11 @@ R_RemoteRender
 ===============
 */
 static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
-
 	// if the entity doesn't have a remoteRenderView, do nothing
 	if ( !surf->space->entityDef->parms.remoteRenderView ) 
 		return;
+
+	TRACE_CPU_SCOPE( "R_RemoteRender" );
 
 	// copy the viewport size from the original
 	viewDef_t* parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
@@ -400,6 +401,8 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		return;
 	}
 
+	TRACE_CPU_SCOPE( "R_MirrorRender" );
+
 	// #5485: find the 'root' view to read main resolution from
 	// it is usually the main view, but it can be remote subview as well
 	int rootW = 0, rootH = 0;
@@ -465,6 +468,8 @@ R_PortalRender
 =================
 */
 void R_PortalRender() {
+	TRACE_CPU_SCOPE( "R_PortalRender" );
+
 	viewDef_t		*parms;
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.viewDef;
@@ -561,6 +566,8 @@ R_XrayRender
 =================
 */
 void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idImageScratch **imageOverride ) {
+	TRACE_CPU_SCOPE( "R_XrayRender" );
+
 	// issue a new view command
 	viewDef_t *parms = R_XrayView();
 	assert( parms );
@@ -609,7 +616,7 @@ R_Lightgem_Render
 =================
 */
 bool R_Lightgem_Render() {
-	// issue a new view command
+	TRACE_CPU_SCOPE( "R_Lightgem_Render" );
 
 	// copy the viewport size from the original
 	auto &parms = *(viewDef_t *)R_FrameAlloc( sizeof( viewDef_t ) );

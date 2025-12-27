@@ -1165,18 +1165,16 @@ Parms will typically be allocated with R_FrameAlloc
 ================
 */
 void R_RenderView( viewDef_t &parms ) {
-	TRACE_CPU_SCOPE( "R_RenderView" )
-	
-	viewDef_t		*oldView;
+	parms.viewCount = tr.viewCount++;
+	TRACE_CPU_SCOPE_FORMAT( "R_RenderView", "viewCount = %d\nID = %d", parms.viewCount, parms.renderView.viewID );
 
 	if ( parms.renderView.width <= 0 || parms.renderView.height <= 0 ) {
 		return;
 	}
-	tr.viewCount++;
 	parms.renderWorld->entityDefsInView.SetBitsSameAll(false);
 
 	// save view in case we are a subview
-	oldView = tr.viewDef;
+	viewDef_t *oldView = tr.viewDef;
 
 	tr.viewDef = &parms;
 

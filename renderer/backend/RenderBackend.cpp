@@ -73,6 +73,7 @@ void RenderBackend::Shutdown() {
 }
 
 void RenderBackend::DrawView( const viewDef_t *viewDef, bool colorIsBackground ) {
+	TRACE_CPU_SCOPE_FORMAT( "DrawView", "viewCount = %d\nID = %d", viewDef->viewCount, viewDef->renderView.viewID );
 	TRACE_GL_SCOPE( "DrawView" );
 
 	// skip render bypasses everything that has models, assuming
