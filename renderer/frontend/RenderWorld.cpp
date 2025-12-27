@@ -1404,7 +1404,7 @@ guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, const idVec3 st
 			continue;
 		}
 
-		local = R_LocalTrace( localStart, localEnd, 0.0f, tri );
+		local = R_LocalTrace( localStart, localEnd, 0.0f, true, tri );
 		if ( local.fraction < 1.0 ) {
 			idVec3				origin, axis[3];
 			idVec3				cursor;
@@ -1503,7 +1503,7 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 			}
 		}
 
-		localTrace = R_LocalTrace( localStart, localEnd, radius, surf->geometry );
+		localTrace = R_LocalTrace( localStart, localEnd, radius, true, surf->geometry );
 
 		if ( localTrace.fraction < trace.fraction ) {
 			trace.fraction = localTrace.fraction;
@@ -1660,7 +1660,7 @@ bool idRenderWorldLocal::TraceAll( modelTrace_t &trace, const idVec3 &start, con
 		R_GlobalPointToLocal( modelMatrix, start, localStart );
 		R_GlobalPointToLocal( modelMatrix, end, localEnd );
 
-		localTrace_t localTrace = R_LocalTrace( localStart, localEnd, radius, surf->geometry );
+		localTrace_t localTrace = R_LocalTrace( localStart, localEnd, radius, true, surf->geometry );
 
 		if ( localTrace.fraction < trace.fraction ) {
 			trace.fraction = localTrace.fraction;

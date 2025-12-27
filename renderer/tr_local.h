@@ -1827,9 +1827,10 @@ typedef struct {
 	idVec3		point;
 	idVec3		normal;
 	int			indexes[3];
+	bool		backHit;
 } localTrace_t;
 
-localTrace_t R_LocalTrace( const idVec3 &start, const idVec3 &end, const float radius, const srfTriangles_t *tri );
+localTrace_t R_LocalTrace( const idVec3 &start, const idVec3 &end, const float radius, bool frontOnly, const srfTriangles_t *tri );
 
 /*
 =============================================================
