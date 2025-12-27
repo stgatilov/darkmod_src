@@ -25,6 +25,13 @@ idCVar r_subviewMaxDepth(
 	"How many nested subviews to generate at most (#6434).\n"
 	"For instance: value = 1 means that direct mirrors and remotes are rendered, but all subviews nested inside them are black."
 );
+idCVar r_remoteLimitResolutionByScreenSize(
+	"r_remoteLimitResolutionByScreenSize", "1.0", CVAR_RENDERER | CVAR_FLOAT,
+	"Reduce resolution of remote subview when it is small on screen.\n"
+	"Size ratio (screen pixel / remote pixel) does not exceed X.\n"
+	"Value X = 0 disable this optimization.",
+	0.0f, 10.0f
+);
 
 
 typedef struct {
@@ -322,7 +329,7 @@ static viewDef_t *R_XrayView() {
 R_RemoteRender
 ===============
 */
-static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
+static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage, const idBounds *ndcBounds ) {
 	// if the entity doesn't have a remoteRenderView, do nothing
 	if ( !surf->space->entityDef->parms.remoteRenderView ) 
 		return;
@@ -347,18 +354,42 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->renderView.viewID = VID_SUBVIEW;	// clear to allow player bodies to show up, and suppress view weapons
 	parms->initialViewAreaOrigin = parms->renderView.vieworg;
 
+	idVec2 positionByTexcoordDerivs = R_EstimatePositionByTexcoordDerivsOfSurface( surf->frontendGeo );
+
 	// #5485: if 3D resolution is set, multiply it by position/texcoord derivatives magnitude
 	idVec2 resolution = idVec2( FLT_MAX, FLT_MAX );
 	if ( stage->remoteResolutionWorld >= 0.0f ) {
-		idVec2 derivs = R_EstimatePositionByTexcoordDerivsOfSurface( surf->frontendGeo );
-		resolution = derivs * stage->remoteResolutionWorld;
+		resolution = positionByTexcoordDerivs * stage->remoteResolutionWorld;
 	}
+
+	if ( r_remoteLimitResolutionByScreenSize.GetFloat() > 0.0 && ndcBounds ) {
+		// estimate upper bound on "screen pixel to 3D distance" derivatives
+		const idRenderMatrix &proj = tr.viewDef->projectionRenderMatrix;
+		// note: R_GlobalToNormalizedDeviceCoordinates actually returns depth in [0..1]
+		float minDepth = (*ndcBounds)[0].z;
+		float minViewDistance = proj.DepthToZ( minDepth );	// viewZ negated!
+		float minClipW = proj[3][3] - proj[3][2] * minViewDistance;
+		idVec2 ndcMaxDeriv = idVec2( proj[0][0], proj[1][1] ) / minViewDistance;
+		int cropW, cropH;
+		tr.GetCurrentRenderCropSize( cropW, cropH );
+		idVec2 pixelMaxDeriv = ndcMaxDeriv * 0.5f;
+		pixelMaxDeriv.MulCW( idVec2( cropW, cropH ) );
+		// limit remote subview resolution by our current screen resolution
+		idVec2 pixelByTexcoordDeriv = idMath::Fmax( pixelMaxDeriv[0], pixelMaxDeriv[1] ) * positionByTexcoordDerivs;
+		idVec2 capResolution = pixelByTexcoordDeriv * r_remoteLimitResolutionByScreenSize.GetFloat();
+		if ( idMath::Fmax( capResolution.x, capResolution.y ) < (1 << 16)) {
+			// round vertical resolution to power-of-two so that resolution does not change all the time on move
+			// constant changes in remote resolution increase aliasing effects
+			int vertPot = idMath::CeilPowerOfTwo( int( capResolution.y ) );
+			capResolution *= vertPot / capResolution.x;
+			resolution.MinCW( capResolution );
+		}
+	}
+
 	// limit effective resolution by the explicit numbers
 	resolution.Clamp( idVec2( 1, 1 ), idVec2( stage->remoteWidth, stage->remoteHeight ) );
 	int resW = (int) idMath::Ceil( resolution.x );
 	int resH = (int) idMath::Ceil( resolution.y );
-
-	// TODO: reduce resolution is the polygon is small enough on screen?
 
 	tr.CropRenderSize( resW, resH, false, true );
 
@@ -806,7 +837,7 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 			const shaderStage_t	*stage = shader->GetStage( i );
 			switch ( stage->texture.dynamic ) {
 			case DI_REMOTE_RENDER:
-				R_RemoteRender( drawSurf, const_cast<textureStage_t *>(&stage->texture) );
+				R_RemoteRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), &ndcBounds );
 				break;
 			case DI_MIRROR_RENDER:
 				R_MirrorRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), scissor );
