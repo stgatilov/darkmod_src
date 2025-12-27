@@ -749,7 +749,8 @@ void R_TransformModelToClip( const idVec3 &src, const float *modelMatrix, const 
 ==========================
 R_GlobalToNormalizedDeviceCoordinates
 
--1 to 1 range in x, y, and z
+-1 to 1 range in x, y
+0 to 1 range in z
 ==========================
 */
 void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) {
