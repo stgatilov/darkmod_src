@@ -23,6 +23,9 @@ patches:
     - patch_file: "patches/1.22.2-tdm-mxcsr-availability.patch"
       patch_description: "TDM: don't use mxcsr on Elbrus, where it is not available"
       patch_type: "portability"
+    - patch_file: "patches/1.22.2-cmake-version-update.patch"
+      patch_description: "TDM: update minimum cmake version from 3.0 to 3.13 (for cmake 4)"
+      patch_type: "portability"
   "1.21.1":
     - patch_file: "patches/1.21.1-tdm-mxcsr-availability.patch"
       patch_description: "TDM: don't use mxcsr on Elbrus, where it is not available"
