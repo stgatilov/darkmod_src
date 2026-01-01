@@ -379,6 +379,9 @@ public:
 	bool					needsPortalSky;
 	int						centerArea;
 
+	static const int		TimedViewsPerFrame = 8;
+	float					timeAddSingleModel[8];		// #6650. statistics of R_AddSingleModel per view on the last frame
+
 	idSysMutex				mutex;						// needed to synchronize R_EntityDefDynamicModel over multiple threads
 };
 

@@ -1663,6 +1663,9 @@
     <ClInclude Include="sys\renderdoc\renderdoc_app.h">
       <Filter>Sys\RenderDoc</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\JobChunks.h">
+      <Filter>Idlib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3651,6 +3654,9 @@
     </ClCompile>
     <ClCompile Include="sys\renderdoc\RenderDoc.cpp">
       <Filter>Sys\RenderDoc</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\JobChunks.cpp">
+      <Filter>Idlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

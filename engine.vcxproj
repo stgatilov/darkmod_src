@@ -564,6 +564,7 @@
     <ClInclude Include="idlib\hashing\sha256.h" />
     <ClInclude Include="idlib\Heap.h" />
     <ClInclude Include="idlib\Heap_Embedded.h" />
+    <ClInclude Include="idlib\JobChunks.h" />
     <ClInclude Include="idlib\LangDict.h" />
     <ClInclude Include="idlib\Lexer.h" />
     <ClInclude Include="idlib\Lib.h" />
@@ -1198,6 +1199,7 @@
     </ClCompile>
     <ClCompile Include="idlib\Heap.cpp" />
     <ClCompile Include="idlib\Heap_Embedded.cpp" />
+    <ClCompile Include="idlib\JobChunks.cpp" />
     <ClCompile Include="idlib\LangDict.cpp" />
     <ClCompile Include="idlib\Lexer.cpp" />
     <ClCompile Include="idlib\Lib.cpp" />

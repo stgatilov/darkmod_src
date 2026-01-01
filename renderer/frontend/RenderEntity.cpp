@@ -45,6 +45,7 @@ idRenderEntityLocal::idRenderEntityLocal() {
 	lastInteraction			= NULL;
 	needsPortalSky			= false;
 	centerArea				= 0;
+	memset( timeAddSingleModel, 0, sizeof(timeAddSingleModel) );
 }
 
 void idRenderEntityLocal::FreeRenderEntity() {

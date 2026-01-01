@@ -19,11 +19,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/tr_local.h"
 #include "renderer/resources/Model_local.h"
 #include "renderer/backend/FrameBufferManager.h"
+#include "idlib/JobChunks.h"
 
 #define CHECK_BOUNDS_EPSILON			1.0f
 
 idCVar r_maxShadowMapLight( "r_maxShadowMapLight", "1000", CVAR_ARCHIVE | CVAR_RENDERER, "lights bigger than this will be force-sent to stencil" );
-idCVar r_useParallelAddModels( "r_useParallelAddModels", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "parallelize R_AddModelSurfaces in frontend using jobs" );
+idCVar r_useParallelAddModels( "r_useParallelAddModels", "2", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "parallelize R_AddModelSurfaces in frontend using jobs", 0, 2 );
+idCVar r_parallelAddModelsChunk( "r_parallelAddModelsChunk", "0.1", CVAR_RENDERER | CVAR_FLOAT, "typical duration in milliseconds for a chunk of R_AddModelSurfaces jobs" );
 idCVarBool r_useClipPlaneCulling( "r_useClipPlaneCulling", "1", CVAR_RENDERER, "cull surfaces behind mirrors" );
 
 /*
@@ -1686,6 +1688,23 @@ void R_AddPreparedSurfaces( viewEntity_t *vEntity ) {
 	}
 }
 
+void R_AddChunkOfModels( const chjChunk_t *chunk ) {
+	TRACE_CPU_SCOPE( "R_AddChunkOfModels" )
+	float invFreq = 1.0f / Sys_ClockTicksPerSecond();
+	int viewIndex = (tr.viewCount - tr.viewCountAtFrameStart) % idRenderEntityLocal::TimedViewsPerFrame;
+
+	for ( int i = chunk->start; i < chunk->end; i++ ) {
+		viewEntity_t *viewEnt = (viewEntity_t*) chunk->jobsPtr[i].param;
+
+		uint64_t timeStart = Sys_GetClockTicks();
+		R_AddSingleModel( viewEnt );
+		uint64_t timeEnd = Sys_GetClockTicks();
+
+		viewEnt->entityDef->timeAddSingleModel[viewIndex] = invFreq * (timeEnd - timeStart);
+	}
+}
+REGISTER_PARALLEL_JOB( R_AddChunkOfModels, "R_AddChunkOfModels" );
+
 /*
 ===================
 R_AddModelSurfaces
@@ -1698,15 +1717,27 @@ two or more lights.
 ===================
 */
 void R_AddModelSurfaces( void ) {
-	TRACE_CPU_SCOPE( "R_AddModelSurfaces ")
-	
+	TRACE_CPU_SCOPE( "R_AddModelSurfaces" )
+
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
 	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
 
 	if ( r_useParallelAddModels.GetBool() && r_materialOverride.GetString()[0] == '\0' ) {
-		for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
-			tr.frontEndJobList->AddJob( (jobRun_t)R_AddSingleModel, vEntity );
+		if ( r_useParallelAddModels.GetInteger() == 2 ) {
+			static JobsInChunks chunking;	// #6650: reorder and chunk jobs!
+			chunking.Clear();
+			int viewIndex = (tr.viewCount - tr.viewCountAtFrameStart) % idRenderEntityLocal::TimedViewsPerFrame;
+			for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
+				chunking.AddJob( vEntity, vEntity->entityDef->timeAddSingleModel[viewIndex] );
+			}
+			int numThreads = parallelJobManager->GetNumProcessingUnits();
+			chunking.MakeChunks( r_parallelAddModelsChunk.GetFloat() * 1e-3f, numThreads );
+			chunking.AddToJobList( tr.frontEndJobList, R_AddChunkOfModels );
+		} else {
+			for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
+				tr.frontEndJobList->AddJob( (jobRun_t)R_AddSingleModel, vEntity );
+			}
 		}
 		tr.frontEndJobList->Submit();
 		tr.frontEndJobList->Wait();
