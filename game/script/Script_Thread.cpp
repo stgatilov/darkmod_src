@@ -2792,7 +2792,8 @@ void idThread::Event_GetNextEntity( const char* key, const char* value, const id
 	int i = lastMatch ? lastMatch->entityNumber + 1 : 0;
 
 	// Step 2: Advance i to the next matching entity
-	for ( ; i < MAX_GENTITIES ; ++i )
+	bool foundMatch = false;
+	for ( ; i < gameLocal.num_entities ; ++i )
 	{
 		idEntity* ent = gameLocal.entities[i];
 		
@@ -2806,7 +2807,6 @@ void idThread::Event_GetNextEntity( const char* key, const char* value, const id
 		}
 		
 		// Search spawnargs for a matching value. If key is empty, all keys will be tested.
-		bool foundMatch = false;
 		const idKeyValue* kv = NULL;
 		while ( (kv = ent->spawnArgs.MatchPrefix(key, kv)) != NULL )
 		{
@@ -2824,7 +2824,7 @@ void idThread::Event_GetNextEntity( const char* key, const char* value, const id
 	}
 
 	// Step 3: Return a value
-	idThread::ReturnEntity( i < MAX_GENTITIES ? gameLocal.entities[i] : NULL );
+	idThread::ReturnEntity( foundMatch ? gameLocal.entities[i] : NULL );
 }
 
 // Allow scripts to use the World particle system -- SteveL #3962
