@@ -134,7 +134,6 @@ localTrace_t R_LocalTrace( const idVec3 &start, const idVec3 &end, const float r
 		if ( d1 > 0.0f && d2 > 0.0f ) {
 			continue;		// fully in front of the plane
 		}
-		assert( d1 >= 0.0f && d2 < 0.0f || d2 >= 0.0f && d1 < 0.0f );
 
 		f = d1 / ( d1 - d2 );
 		assert( f >= 0.0f && f <= 1.0f );
