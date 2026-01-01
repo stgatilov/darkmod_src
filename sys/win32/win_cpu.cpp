@@ -35,7 +35,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 Sys_GetClockTicks
 ================
 */
-double Sys_GetClockTicks( void ) {
+uint64 Sys_GetClockTicks( void ) {
 #if 0
 
 	LARGE_INTEGER li;
@@ -50,7 +50,7 @@ double Sys_GetClockTicks( void ) {
 	__cpuid( values, 0 );*/
 	// greebo: Use the intrinsic provided by the VC++ compiler in x64
 	unsigned __int64 ticks = __rdtsc();
-	return static_cast<double>( ticks );
+	return ticks;
 
 #endif
 }
@@ -60,8 +60,8 @@ double Sys_GetClockTicks( void ) {
 Sys_ClockTicksPerSecond
 ================
 */
-double Sys_ClockTicksPerSecond( void ) {
-	static double ticks = 0;
+uint64 Sys_ClockTicksPerSecond( void ) {
+	static uint64 ticks = 0;
 #if 0
 
 	if ( !ticks ) {
