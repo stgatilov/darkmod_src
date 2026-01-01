@@ -1164,7 +1164,7 @@ public:
 	virtual int					GetNumFreeJobLists() const override;
 	virtual idParallelJobList *	GetJobList( int index ) override;
 
-	virtual int					GetNumProcessingUnits() override;
+	virtual int					GetNumProcessingUnits( int parallelism = JOBLIST_PARALLELISM_REALTIME ) override;
 
 	virtual void				WaitForAllJobLists() override;
 
@@ -1313,15 +1313,6 @@ idParallelJobList * idParallelJobManagerLocal::GetJobList( int index ) {
 
 /*
 ========================
-idParallelJobManagerLocal::GetNumProcessingUnits
-========================
-*/
-int idParallelJobManagerLocal::GetNumProcessingUnits() {
-	return maxThreads;
-}
-
-/*
-========================
 idParallelJobManagerLocal::WaitForAllJobLists
 ========================
 */
@@ -1334,15 +1325,10 @@ void idParallelJobManagerLocal::WaitForAllJobLists() {
 
 /*
 ========================
-idParallelJobManagerLocal::Submit
+idParallelJobManagerLocal::GetNumProcessingUnits
 ========================
 */
-void idParallelJobManagerLocal::Submit( idParallelJobList_Threads * jobList, int parallelism ) {
-	/*if ( jobs_numThreads.IsModified() ) {
-		ChangePhysicalThreadsCount();
-		jobs_numThreads.ClearModified();
-	}*/
-
+int idParallelJobManagerLocal::GetNumProcessingUnits( int parallelism ) {
 	bool disk = (parallelism & JOBLIST_PARALLELISM_FLAG_DISK) != 0;
 	parallelism &= ~JOBLIST_PARALLELISM_FLAG_DISK;
 
@@ -1380,6 +1366,22 @@ void idParallelJobManagerLocal::Submit( idParallelJobList_Threads * jobList, int
 	if (disk && isRunningOnHdd) {
 		numThreads = idMath::Imin(numThreads, jobs_maxHddThreads.GetInteger());
 	}
+
+	return numThreads;
+}
+
+/*
+========================
+idParallelJobManagerLocal::Submit
+========================
+*/
+void idParallelJobManagerLocal::Submit( idParallelJobList_Threads * jobList, int parallelism ) {
+	/*if ( jobs_numThreads.IsModified() ) {
+		ChangePhysicalThreadsCount();
+		jobs_numThreads.ClearModified();
+	}*/
+
+	int numThreads = GetNumProcessingUnits( parallelism );
 
 	if ( numThreads <= 0 ) {
 		threadJobListState_t state( jobList->GetVersion() );
