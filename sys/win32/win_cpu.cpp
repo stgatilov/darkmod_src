@@ -43,29 +43,14 @@ double Sys_GetClockTicks( void ) {
 	QueryPerformanceCounter( &li );
 	return = ( double ) li.LowPart + ( double ) 0xFFFFFFFF * li.HighPart;
 
-#elif defined (_MSC_VER) && defined(_WIN64)
+#else
 
-	// stgatilov: serialize pipeline with cpuid instruction
+	/*// stgatilov: serialize pipeline with cpuid instruction
 	int values[4];
-	__cpuid( values, 0 );
+	__cpuid( values, 0 );*/
 	// greebo: Use the intrinsic provided by the VC++ compiler in x64
 	unsigned __int64 ticks = __rdtsc();
 	return static_cast<double>( ticks );
-
-#else
-
-	unsigned long lo, hi;
-
-	__asm {
-		push ebx
-		xor eax, eax
-		cpuid
-		rdtsc
-		mov lo, eax
-		mov hi, edx
-		pop ebx
-	}
-	return ( double ) lo + ( double ) 0xFFFFFFFF * hi;
 
 #endif
 }
