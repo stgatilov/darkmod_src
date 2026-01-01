@@ -3352,13 +3352,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs,
 				LAS.updateLASState();
 			}
 
-			unsigned int ticks = static_cast<unsigned int>(sys->GetClockTicks());
-
 			// Tick the timers. Should be done before stim/response, just to be safe. :)
-			ProcessTimer(ticks);
+			ProcessTimer(this->time);
 
 			// TDM: Work through the active stims/responses
-			ProcessStimResponse(ticks);
+			ProcessStimResponse(this->time);
 
 			// TDM: Update objective system
 			m_MissionData->UpdateObjectives();

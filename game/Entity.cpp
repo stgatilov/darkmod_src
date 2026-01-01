@@ -11045,7 +11045,7 @@ void idEntity::Event_TimerStart(int stimType)
 
 	if (timer != NULL)
 	{
-		timer->Start(static_cast<unsigned int>(sys->GetClockTicks()));
+		timer->Start(gameLocal.time);
 	}
 }
 
@@ -11058,7 +11058,7 @@ void idEntity::Event_TimerRestart(int stimType)
 
 	if (timer != NULL)
 	{
-		timer->Restart(static_cast<unsigned int>(sys->GetClockTicks()));
+		timer->Restart(gameLocal.time);
 	}
 }
 
