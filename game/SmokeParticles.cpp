@@ -257,7 +257,7 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemS
 			newSmoke->index = prevCount;
 			newSmoke->axis = axis;
 			newSmoke->origin = origin;
-			newSmoke->random = steppingRandom;
+			newSmoke->randomSeed = steppingRandom.GetSeed();
 			newSmoke->privateStartTime = systemStartTime + prevCount * finalParticleTime / stage->totalParticles;
 			newSmoke->next = active->smokes;
 			active->smokes = newSmoke;
@@ -345,7 +345,7 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 			}
 
 			part.index = smoke->index;
-			part.randomSeed = smoke->random.GetSeed();
+			part.randomSeed = smoke->randomSeed;
 
 			part.origin = smoke->origin;
 			part.axis = smoke->axis;

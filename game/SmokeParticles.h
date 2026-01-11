@@ -42,7 +42,7 @@ typedef struct singleSmoke_s {
 	struct singleSmoke_s	 *	next;
 	int							privateStartTime;	// start time for this particular particle
 	int							index;				// particle index in system, 0 <= index < stage->totalParticles
-	idRandom					random;
+	int							randomSeed;
 	idVec3						origin;
 	idMat3						axis;
 } singleSmoke_t;
