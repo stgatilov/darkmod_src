@@ -1904,6 +1904,7 @@ idFuncSmoke::idFuncSmoke() {
 	smokeTime = 0;
 	smoke = NULL;
 	restart = false;
+	useCycles = false;
 }
 
 /*
@@ -1915,6 +1916,7 @@ void idFuncSmoke::Save(	idSaveGame *savefile ) const {
 	savefile->WriteInt( smokeTime );
 	savefile->WriteParticle( smoke );
 	savefile->WriteBool( restart );
+	savefile->WriteBool( useCycles );
 }
 
 /*
@@ -1926,6 +1928,7 @@ void idFuncSmoke::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( smokeTime );
 	savefile->ReadParticle( smoke );
 	savefile->ReadBool( restart );
+	savefile->ReadBool( useCycles );
 }
 
 /*
@@ -1940,6 +1943,7 @@ void idFuncSmoke::Spawn( void ) {
 	} else {
 		smoke = NULL;
 	}
+	useCycles = spawnArgs.GetBool( "use_cycles" );
 	if ( spawnArgs.GetBool( "start_off" ) ) {
 		smokeTime = 0;
 		restart = false;
@@ -1949,7 +1953,6 @@ void idFuncSmoke::Spawn( void ) {
 		restart = true;
 	}
 	GetPhysics()->SetContents( 0 );
-	
 }
 
 /*
@@ -1994,8 +1997,9 @@ void idFuncSmoke::Think( void ) {
 	}
 
 	if ( ( thinkFlags & TH_UPDATEPARTICLES) && !fl.hidden ) {
-		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() ) ) {
-			if ( restart ) {
+		bool continues = gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), useCycles );
+		if ( !continues ) {
+			if ( restart && !useCycles ) {
 				smokeTime = gameLocal.time;
 			} else {
 				smokeTime = 0;
