@@ -167,6 +167,21 @@
     </Expand>
   </Type>
 
+  <Type Name="activeSmokeStage_t">
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All particles]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>smokes</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  
   <Type Name="CInventory">
     <DisplayString>Inventory: {m_Category}</DisplayString>
   </Type>
