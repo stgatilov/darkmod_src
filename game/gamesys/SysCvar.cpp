@@ -320,12 +320,13 @@ idCVar cv_pm_lean_angle_mod("pm_lean_angle_mod", "0.5", CVAR_GAME | CVAR_FLOAT, 
 * Dark Mod Frobbing
 * Frob expansion radius for easier frobbing, time it takes for frob highlight to fade in and out
 **/
-idCVar cv_frob_distance_default(	"tdm_frob_distance_default",	"63",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Default frob distance for all items in doom units.  For developer use only, will break game if set wrong!  Default is 63.");
-idCVar cv_frob_width(				"tdm_frob_width",		"10.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "When frobbing, a cube of this dimension is created at the point the frob hit, and things within are frob candidates.  Makes frobbing easier but can go thru solid objects if set too high.  Default is 10.");
-idCVar cv_frob_fadetime(			"tdm_frob_fadetime",	"100",		CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time it takes for frob highlight effect to fade in and out." );
-idCVar cv_frob_debug_bounds(		"tdm_frob_debug_bounds", "0",		CVAR_GAME | CVAR_BOOL,					"Set to 1 to see a visualization of the bounds that are used to check for frobable items within them." );
-idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",		CVAR_GAME | CVAR_BOOL,	"Set to 1 to have weapons automatically selected when the respective item is picked up." );
-idCVar cv_frob_debug_hud(	"tdm_frob_debug_hud", "0",		CVAR_GAME | CVAR_BOOL,	"Set to 1 to show some frobbing info." );
+idCVar cv_frob_distance_default(		"tdm_frob_distance_default",	"63",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"Default frob distance for all items in doom units.  For developer use only, will break game if set wrong!  Default is 63.");
+idCVar cv_frob_width(					"tdm_frob_width",		"10.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,		"When frobbing, a cube of this dimension is created at the point the frob hit, and things within are frob candidates.  Makes frobbing easier but can go thru solid objects if set too high.  Default is 10.");
+idCVar cv_frob_fadetime(				"tdm_frob_fadetime",	"100",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"Time it takes for frob highlight effect to fade in and out." );
+idCVar cv_frob_debug_bounds(			"tdm_frob_debug_bounds", "0",			CVAR_GAME | CVAR_BOOL,						"Set to 1 to see a visualization of the bounds that are used to check for frobable items within them." );
+idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",	CVAR_GAME | CVAR_BOOL,						"Set to 1 to have weapons automatically selected when the respective item is picked up." );
+idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME |CVAR_BOOL,						"Set to 1 to have items automatically selected when the respective item is picked up.");
+idCVar cv_frob_debug_hud(				"tdm_frob_debug_hud", "0",				CVAR_GAME | CVAR_BOOL,						"Set to 1 to show some frobbing info." );
 
 idCVar cv_frobhelper_active(			"tdm_frobhelper_active",			"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,	"Set to 1 to activate the FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_alwaysVisible(     "tdm_frobhelper_alwaysVisible",     "0",    CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,    "Set to 1 to always display the frobhelper like a crosshair.", 0, 1); // stifu #4990

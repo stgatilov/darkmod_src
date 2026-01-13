@@ -11738,7 +11738,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 			SelectWeapon(weaponItem->GetWeaponIndex(), false);
 		}
 	}
-	else if (returnValue != NULL)
+	else if (returnValue != NULL && cv_frob_item_selects_item.GetBool())
 	{
 		// Ordinary inventory item, set the cursor onto it
 		prev = InventoryCursor()->GetCurrentItem();
