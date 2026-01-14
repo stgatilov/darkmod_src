@@ -98,6 +98,9 @@ textures/darkmod/wood/boards/planks_floor_redwood_posh_scuffed
 textures/darkmod/wood/boards/roof_framework_boards_large_old_red
 textures/darkmod/wood/panels/panel_decorative_red_grated
 textures/darkmod/wood/panels/panel_decorative_red_grated_grime
+textures/darkmod/paint_paper/fleur_blue
+textures/darkmod/paint_paper/fleur_green
+textures/darkmod/paint_paper/fleur_red
 
 If you believe any asset has been wrongfully included in The Dark Mod, please contact
 the team.
