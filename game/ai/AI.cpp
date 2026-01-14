@@ -24,6 +24,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "MovementSubsystem.h"
 #include "Memory.h"
 #include "States/KnockedOutState.h"
+#include "States/BlindedState.h"
 #include "States/DeadState.h"
 #include "States/ConversationState.h"
 #include "States/PainState.h"
@@ -11883,13 +11884,23 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	   below m_KoAlertImmuneState, a KO can occur only from behind.
     6. Finally, check the KO angles and determine if the blow has landed in the right place.
 	7. A sleeping AI can be KOed from the front, unless he's wearing a helmet with a facemask.
+	8. A recently blinded AI can be KOed from any angle, at any alert level, unless he's wearing a helmet with a facemask.
  */
-
+	const bool isRecentlyBlinded = [BlindedState = std::dynamic_pointer_cast<ai::BlindedState>(GetMind()->GetState())] 
+		{
+			if (BlindedState == nullptr)
+				return false;
+			const int KOSusceptibilityDuration = cv_ai_ko_susceptibility_after_flash_duration.GetInteger();
+			if (KOSusceptibilityDuration <= 0)
+				return false;
+			const int KOSusceptibilityEndTime = std::min<>(BlindedState->GetStartTime() + KOSusceptibilityDuration, BlindedState->GetEndTime());
+			return gameLocal.time < KOSusceptibilityEndTime;
+		}();
+	const bool hasEliteFaceguardHelmet = minDotVert == 1.0f || minDotHoriz == 1.0f;
 	bool immune2KO = false;
-	if ((GetMoveType() == MOVETYPE_SLEEP) && // grayman #3951
-		((minDotVert != 1.0f) && (minDotHoriz != 1.0f))) // cos(DEG2RAD(0.0f)) indicates elite faceguard helmet
+	if ((GetMoveType() == MOVETYPE_SLEEP || isRecentlyBlinded) && // Rule #7 & Rule #8
+		!hasEliteFaceguardHelmet)
 	{
-		// Rule #7 - no immunity
 		minDotVert = minDotHoriz = -1.0f; // cos(DEG2RAD(180.0f)) everyone gets KO'ed
 	}
 	else if (spawnArgs.GetBool("is_civilian", "0"))
@@ -11897,10 +11908,10 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 		// Rule #1
 	}
 	// everyone else is a combatant
-	else if ( AI_AlertIndex >= m_KoAlertImmuneState )
+	else if ( AI_AlertIndex >= m_KoAlertImmuneState)
 	{
 		// is the AI immune at high alert levels?
-		if ( m_bKoAlertImmune )
+		if (m_bKoAlertImmune)
 		{
 			immune2KO = true; // Rule #2
 		}
