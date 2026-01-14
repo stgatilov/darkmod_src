@@ -94,6 +94,7 @@ textures/darkmod/stone/brick/blocks_light_stained_trimmed
 textures/darkmod/stone/brick/blocks_palemasonry_small_regular_trimmed
 textures/darkmod/stone/brick/blocks_palemasonry_irregular_trimmed
 textures/darkmod/stone/brick/blocks_palemasonry_irregular
+textures/darkmod/stone/brick/blocks_concrete_small_trimmed2
 textures/darkmod/wood/boards/planks_floor_redwood_posh_scuffed
 textures/darkmod/wood/boards/roof_framework_boards_large_old_red
 textures/darkmod/wood/panels/panel_decorative_red_grated
