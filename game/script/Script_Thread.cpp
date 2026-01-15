@@ -51,7 +51,8 @@ const idEventDef EV_Thread_PrintLn( "println", EventArgs('s', "text", ""), EV_RE
 const idEventDef EV_Thread_Say( "say", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Multiplayer - Print this line on the network");
 const idEventDef EV_Thread_Assert( "assert", EventArgs('f', "condition", ""), EV_RETURNS_VOID, "Breaks if the condition is zero. (Only works in debug builds.)");
 const idEventDef EV_Thread_Trigger( "trigger", EventArgs('e', "entityToTrigger", ""), EV_RETURNS_VOID, "Triggers the given entity.");
-const idEventDef EV_Thread_SetCvar( "setcvar", EventArgs('s', "name", "", 's', "value", ""), EV_RETURNS_VOID, "Sets a cvar.");
+const idEventDef EV_Thread_SetCvar( "setcvar", EventArgs('s', "name", "", 's', "value", ""), EV_RETURNS_VOID, "Sets mission override for cvar.");
+const idEventDef EV_Thread_UnsetCvar( "unsetcvar", EventArgs('s', "name", ""), EV_RETURNS_VOID, "Drops mission override for cvar (user value remains).");
 const idEventDef EV_Thread_GetCvar( "getcvar", EventArgs('s', "name", ""), 's', "Returns the string for a cvar.");
 const idEventDef EV_Thread_GetCvarF( "getcvarf", EventArgs('s', "name", ""), 'f', "Returns float value for a cvar.");
 const idEventDef EV_Thread_Random( "random", EventArgs('f', "range", ""), 'f', "Returns a random value X where 0 <= X < range.");
@@ -329,6 +330,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Assert,				idThread::Event_Assert )
 	EVENT( EV_Thread_Trigger,				idThread::Event_Trigger )
 	EVENT( EV_Thread_SetCvar,				idThread::Event_SetCvar )
+	EVENT( EV_Thread_UnsetCvar,				idThread::Event_UnsetCvar )
 	EVENT( EV_Thread_GetCvar,				idThread::Event_GetCvar )
 	EVENT( EV_Thread_GetCvarF,				idThread::Event_GetCvarF )
 	EVENT( EV_Thread_Random,				idThread::Event_Random )
@@ -1356,6 +1358,15 @@ idThread::Event_SetCvar
 */
 void idThread::Event_SetCvar( const char *name, const char *value ) const {
 	cvarSystem->SetCVarMissionString( name, value );
+}
+
+/*
+================
+idThread::Event_UnsetCvar
+================
+*/
+void idThread::Event_UnsetCvar( const char *name ) const {
+	cvarSystem->SetCVarMissionString( name, nullptr );
 }
 
 /*
