@@ -1042,6 +1042,7 @@ void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) 
 
 	argNum = 1;
 	show = SHOW_VALUE;
+	bool onlyMissionOverrides = false;
 
 	if ( idStr::Icmp( args.Argv( argNum ), "-" ) == 0 || idStr::Icmp( args.Argv( argNum ), "/" ) == 0 ) {
 		if ( idStr::Icmp( args.Argv( argNum + 1 ), "help" ) == 0 || idStr::Icmp( args.Argv( argNum + 1 ), "?" ) == 0 ) {
@@ -1053,6 +1054,10 @@ void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) 
 		} else if ( idStr::Icmp( args.Argv( argNum + 1 ), "flags" ) == 0 ) {
 			argNum = 3;
 			show = SHOW_FLAGS;
+		} else if ( idStr::Icmp( args.Argv( argNum + 1 ), "mission" ) == 0 ) {
+			argNum = 3;
+			show = SHOW_VALUE;
+			onlyMissionOverrides = true;
 		}
 	}
 
@@ -1071,7 +1076,9 @@ void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) 
 		if ( !( cvar->GetFlags() & flags ) ) {
 			continue;
 		}
-
+		if ( onlyMissionOverrides && !cvar->missionOverride ) {
+			continue;
+		}
 		if ( match.Length() && !cvar->nameString.Filter( match, false ) ) {
 			continue;
 		}
@@ -1186,7 +1193,8 @@ void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) 
 	common->Printf(	"listCvar [search string]          = list cvar values\n"
 				"listCvar -help [search string]    = list cvar descriptions\n"
 				"listCvar -type [search string]    = list cvar types\n"
-				"listCvar -flags [search string]   = list cvar flags\n" );
+				"listCvar -flags [search string]   = list cvar flags\n"
+				"listCvar -mission [search string] = list cvar mission overrides\n");
 }
 
 /*
