@@ -353,7 +353,7 @@ public:
 	 * FrobEntity is NULL when no entity is highlighted. Otherwise it will point 
 	 * to the entity which is currently highlighted.
 	 */
-	idEntityPtr<idEntity>	m_FrobEntity;
+	idEntityPtr<idEntity>	m_FrobHilightedEntity;
 
 	/**
 	* Frobbed joint and frobbed clipmodel ID if an AF has been frobbed
@@ -861,8 +861,9 @@ public:
 	void					PerformFrobCheckInternal();
 
 	/**
-	 * greebo: Performs a frob action on the given entity. The above method
-	 * PerformFrob() without arguments redirects the call to this one.
+	 * greebo: Performs a frob action on the given entity. The methods
+	 * PerformFrobKeyPressed(), PerformFrobKeyRepeat() and PerformFrobKeyRelease()
+	 * redirect the call to this one.
 	 * This method might be invoked by scripts as well to simulate 
 	 * a frob action without having the player to hit any buttons.
 	 * 
@@ -874,26 +875,25 @@ public:
 	 * This happens e.g. when frobbing door while having lockpick/key selected.
 	 * When run from game script, it must always be false!
 	 *
-	 * Hold time: The amount of time the button has been held, if applicable (0 by default)
 	 */
 	void					PerformFrob(EImpulseState impulseState, idEntity* frobbed, bool allowUseCurrentInvItem);
 
 	// Gets called when the player hits the frob button.
-	void					PerformFrob();
+	void					PerformFrobKeyPressed();
 	// Gets repeatedly called when the player holds down the frob button
 	void					PerformFrobKeyRepeat(int holdTime);
 	// Gets called when the player releases the frob button
 	void					PerformFrobKeyRelease(int holdTime);
 
 	// Obsttorte: #5984 (multilooting)
-	bool					multiloot;
-	int						multiloot_lastfrob;
+	bool					m_multiLoot;
+	int						m_multiLoot_lastFrobTime; // game time
 
 	// Daft Mugi #6316: Hold Frob for alternate interaction
-	idEntityPtr<idEntity>   holdFrobEntity;
-	idEntityPtr<idEntity>   holdFrobDraggedEntity;
-	int                     holdFrobStartTime;
-	idMat3                  holdFrobStartViewAxis;
+	idEntityPtr<idEntity>   m_holdFrobEntity;
+	idEntityPtr<idEntity>   m_holdFrobDraggedEntity;
+	int                     m_holdFrobStartTime;
+	idMat3                  m_holdFrobStartViewAxis;
 
 	// angua: Set ideal crouch state
 	void					EvaluateCrouch();
