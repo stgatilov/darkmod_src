@@ -871,13 +871,20 @@ public:
 	 *
 	 */
 	void					PerformFrob(EImpulseState impulseState, idEntity* target, bool allowUseCurrentInvItem);
+
+	/**
+	 * stifu: Try to use inventory item on frob highlighted entity
+	 *
+	 * returns true, if the entity is an inventory item or if we are multilooting. In both cases, we don't need to process the frob any further
+	 */
+	bool                    PerformFrob_TryUseOnFrob(EImpulseState impulseState, bool allowUseCurrentInvItem);
 	
 	/**
 	 * stifu: Try to pickup an inventory item.
 	 * 
 	 * returns true, if the entity is an inventory item or if we are multilooting. In both cases, we don't need to process the frob any further
 	 */
-	bool PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, idEntity* target);
+	bool                    PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, idEntity* target);
 
 	// Gets called when the player hits the frob button.
 	void					PerformFrobKeyPressed();

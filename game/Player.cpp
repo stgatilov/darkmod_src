@@ -11781,31 +11781,11 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		m_FrobPressedTarget = target;
 	}
 
-	// greebo: Check the frob highlighted entity, this might be the same as the argument
-	// Retrieve the entity before trying to add it to the inventory, the pointer
-	// might be cleared after calling AddToInventory().
-	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
-
-	// Do we allow use on frob?
-	// stgatilov #5542: block use-on-frob when frob called from game script	
-	if (!m_multiLoot && allowUseCurrentInvItem && cv_tdm_inv_use_on_frob.GetBool())
+	if (PerformFrob_TryUseOnFrob(impulseState, allowUseCurrentInvItem))
 	{
-		// Check if we have a "use" relationship with the currently selected inventory item (key => door)
-		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
-
-		if (item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedByItem(item, true))
-		{
-			const bool couldBeUsed = UseInventoryItem(impulseState, item, USERCMD_MSEC, true); // true => is frob action
-
-			// Give optional visual feedback on the KeyDown event
-			if ((impulseState == EPressed) && cv_tdm_inv_use_visual_feedback.GetBool())
-			{
-				m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
-			}
-
-			return;
-		}
+		return;
 	}
+	
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// If FrobUsedOnlyByInv mode is active, we can only perform use_on_frob actions, so skip all the rest
@@ -11814,20 +11794,17 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		return;
 	}
 
-
-	if (PerformFrob_TryPickupInventoryItem(impulseState, target))
-		return;
-	// Item could not be added to inventory, so handle body and equip/use frob.
-
-
-
 	if (impulseState == EPressed)
-	{   
+	{
 		// Trigger the frob action script on key down
-		// TODO Research: Do we need to execute this also on inventory items or is this just for use-type interactions?
 		target->FrobAction(true);
 	}
 
+	if (PerformFrob_TryPickupInventoryItem(impulseState, target))
+	{
+		return;
+	}
+	
 
 	
 
@@ -11885,6 +11862,8 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 			}
 		}
 	}
+
+	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
 
 	if (impulseState == EPressed)
 	{
@@ -11957,6 +11936,33 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	}
 }
 
+bool idPlayer::PerformFrob_TryUseOnFrob(EImpulseState impulseState, bool allowUseCurrentInvItem)
+{
+	// Do we allow use on frob?
+	// stgatilov #5542: block use-on-frob when frob called from game script	
+	if (m_multiLoot || !allowUseCurrentInvItem || !cv_tdm_inv_use_on_frob.GetBool())
+		return false;
+
+	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
+	
+	// Check if we have a "use" relationship with the currently selected inventory item (key => door)
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
+
+	if (item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedByItem(item, true))
+	{
+		const bool couldBeUsed = UseInventoryItem(impulseState, item, USERCMD_MSEC, true); // true => is frob action
+
+		// Give optional visual feedback on the KeyDown event
+		if ((impulseState == EPressed) && cv_tdm_inv_use_visual_feedback.GetBool())
+		{
+			m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
+		}
+
+		return true;
+	}
+	
+	return false;
+}
 
 
 bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, idEntity* target)
@@ -11985,7 +11991,7 @@ bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, id
 	{
 		// Daft Mugi #6270: STIM_FROB response needs to be triggered when
 		// multiloot is likely to succeed on ERepeat.
-		// TODO research: do we need
+		// TODO research: Should we not rather execute this when we actually know that multiloot will succeed?
 		target->TriggerResponse(this, ST_FROB);
 	}
 
@@ -11998,12 +12004,12 @@ bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, id
 
 		const idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
 
-		// TODO Research: Is there really a case, where we should add an item to inventory, but then not activateContacts (if highlightedEntity != target)?
+		// TODO Research: Is there really a case, where we should add an item to inventory, but then not activateContacts (if highlightedEntity != target)? What is this highlightedEntity == target supposed to achieve? Should we maybe use the boolean that indicates whether PerformFrob was executed from a script?
 		CInventoryItemPtr addedItem = AddToInventory(target);
 
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
 
-		// Check if the frobbed entity is the one currently highlighted by the player		
+		// Check if the frobbed entity is the one currently highlighted by the player
 		if ((addedItem != NULL) && (highlightedEntity == target))
 		{
 			// Item has been added to the inventory, clear the entity pointer
@@ -12151,9 +12157,6 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 		}
 	}
 
-	// Get the currently frobbed entity
-	idEntity* frob = m_FrobHilightedEntity.GetEntity();
-
 	// use the original target until frob is released and pressed again
 	if ( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != nullptr)
 	{
@@ -12166,7 +12169,7 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 	}
 
 	// Relay the function to the specialised method
-	PerformFrob(EReleased, frob, true);
+	PerformFrob(EReleased, m_FrobHilightedEntity.GetEntity(), true);
 }
 
 void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount)
