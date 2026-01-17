@@ -327,7 +327,7 @@ idCVar cv_frob_debug_bounds(			"tdm_frob_debug_bounds", "0",			CVAR_GAME | CVAR_
 idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",	CVAR_GAME | CVAR_BOOL,						"Set to 1 to have weapons automatically selected when the respective item is picked up." );
 idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME |CVAR_BOOL,						"Set to 1 to have items automatically selected when the respective item is picked up.");
 idCVar cv_frob_debug_hud(				"tdm_frob_debug_hud", "0",				CVAR_GAME | CVAR_BOOL,						"Set to 1 to show some frobbing info." );
-idCVar cv_frob_control_style(			"tdm_frob_control_style", "2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"Frob control style: 0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction), 1: Thief/2.12 (Mixed), 2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
+idCVar cv_frob_control_style(			"tdm_frob_control_style", "2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style: 0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction), 1: Thief/2.12 (Mixed), 2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
 
 idCVar cv_frobhelper_active(			"tdm_frobhelper_active",			"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,	"Set to 1 to activate the FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_alwaysVisible(     "tdm_frobhelper_alwaysVisible",     "0",    CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,    "Set to 1 to always display the frobhelper like a crosshair.", 0, 1); // stifu #4990
@@ -344,21 +344,11 @@ idCVar cv_holdfrob_delay(
 	"Set to 0 for original TDM behavior.",
 	0, 2000
 );
-idCVar cv_holdfrob_bounds(
-	"tdm_holdfrob_bounds", "7", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,
-	"The view position must stay within the bounds in order to perform an interaction.",
-	0.0f, 1000.0f
-);
-idCVar cv_holdfrob_drag_body_behavior(
-	"tdm_holdfrob_drag_body_behavior", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,
-	"Which drag body behavior?\n"
+idCVar cv_holdfrob_drag_entity_behavior(
+	"tdm_holdfrob_drag_entity_behavior", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,
+	"Which drag entity behavior?\n"
 	"  1 --- on first frob release (key up), let go of body.\n"
 	"  0 --- on second frob, let go of body. (original TDM behavior)"
-);
-
-idCVar cv_holdfrob_drag_all_entities(
-	"tdm_holdfrob_drag_all_entities", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,
-	"If enabled, all possible entities will be grabbed on long-press frob."
 );
 
 // Obsttorte: #5984 (multilooting)

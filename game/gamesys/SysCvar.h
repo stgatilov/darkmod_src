@@ -274,10 +274,7 @@ extern idCVar cv_frobhelper_ignore_size;
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 extern idCVar cv_holdfrob_delay;
-extern idCVar cv_holdfrob_bounds;
-extern idCVar cv_holdfrob_drag_body_behavior;
-
-extern idCVar cv_holdfrob_drag_all_entities;
+extern idCVar cv_holdfrob_drag_entity_behavior;
 
 //Obsttorte: #5984 (multilooting)
 extern idCVar cv_multiloot_min_interval;

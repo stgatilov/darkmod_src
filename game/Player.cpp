@@ -712,13 +712,10 @@ idPlayer::idPlayer() :
 	m_multiLoot = false;
 	m_multiLoot_lastFrobTime = 0;
 
-	// Daft Mugi #6316
-	/*m_holdFrobEntity = NULL;
-	m_holdFrobDraggedEntity = NULL;
-	m_holdFrobStartTime = 0;
-	m_holdFrobStartViewAxis.Zero();*/
+	// Daft Mugi / stifu #6316
 	m_canToggleEquip = true;
 	m_canUseWorldItem = true;
+	m_isShoulderableBody = false;
 
 	// greebo: Initialise the frob trace contact material to avoid 
 	// crashing during map save when nothing has been frobbed yet
@@ -2450,14 +2447,11 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	m_multiLoot = false;
 	m_multiLoot_lastFrobTime = 0;
 
-	// Daft Mugi #6316: Hold Frob for alternate interaction
+	// Daft Mugi / stifu #6316: Hold Frob for alternate interaction
 	// The hold frob values don't get saved, but reset on load.
-	/*m_holdFrobEntity = NULL;
-	m_holdFrobDraggedEntity = NULL;
-	m_holdFrobStartTime = 0;
-	m_holdFrobStartViewAxis.Zero();*/
 	m_canToggleEquip = true;
 	m_canUseWorldItem = true;
+	m_isShoulderableBody = false;
 
 	savefile->ReadInt( buttonMask );
 	savefile->ReadInt( oldButtons );
@@ -9002,120 +8996,6 @@ bool idPlayer::CanHoldFrobAction(int holdtime)
 
 /*
 ================
-idPlayer::SetHoldFrobView
-================
-*/
-/*void idPlayer::SetHoldFrobView(void)
-{
-	m_holdFrobStartViewAxis = renderView->viewaxis;
-}
-*/
-
-/*
-================
-idPlayer::HoldFrobViewDistance
-================
-*/
-/*
-float idPlayer::HoldFrobViewDistance( void )
-{
-	// Relative to the player's view axis (x,y,z = forward,left,up).
-	// Use a point in front of the player.
-	idVec3 frobStartView = idVec3(100, 0, 0) * m_holdFrobStartViewAxis;
-	idVec3 frobCurrentView = idVec3(100, 0, 0) * renderView->viewaxis;
-	float holdFrobDistance = (frobCurrentView - frobStartView).Length();
-
-	return holdFrobDistance;
-}
-*(
-
-/*
-================
-idPlayer::IsAdditionalHoldFrobDraggableType
-================
-*/
-/*
-bool idPlayer::IsAdditionalHoldFrobDraggableType(idEntity* target)
-{
-	if (!cv_holdfrob_drag_all_entities.GetBool())
-		return false;
-
-	return IsUsedItemOrJunk(target);
-}
-*/
-
-/*
-================
-idPlayer::IsUsedItemOrJunk
-================
-*/
-/*
-bool idPlayer::IsUsedItemOrJunk(idEntity* target)
-{
-	// Precondition: target must be moveable type
-
-	if (target == nullptr || !IsHoldFrobEnabled())
-		return false;
-
-	{
-		const bool isLantern = target->spawnArgs.GetString("is_lantern", nullptr) != nullptr;
-		if (isLantern)
-			return false;
-	}
-
-	{
-		const bool isJunk = !target->spawnArgs.GetBool("equippable", "0");
-		if (isJunk)
-			return true;
-	}
-
-	{
-		auto IsExtinguishedCandle = [](idEntity* target) -> bool
-		{
-			const idStr skinUnlit = target->spawnArgs.GetString("skin_unlit", nullptr);
-			if (skinUnlit.IsEmpty())
-				return false;
-
-			const idStr skin = target->spawnArgs.GetString("skin", nullptr);
-			return skin == skinUnlit; // Works only if target is not lantern
-		};
-		if (IsExtinguishedCandle(target))
-			return true;
-
-		{
-			static const idStr sCandle("candle");
-			idEntity* candle = target->GetAttachmentByPosition(sCandle);
-			const bool hasCandle = candle != nullptr;
-			const bool notCandle = target->spawnArgs.GetString("skin_unlit", nullptr) == nullptr;    // Make sure it is not a candle
-			const bool isCandleHolderWithoutCandle =
-				target->spawnArgs.GetBool("extinguished", "0") // Works only if target is not lantern
-				&& !hasCandle;
-
-			if (notCandle && isCandleHolderWithoutCandle)
-				return true;
-
-			if (hasCandle && IsExtinguishedCandle(candle))
-				return true;
-		}
-	}
-
-	{
-		const idStr modelName_Eaten = target->spawnArgs.GetString("model_eaten", nullptr);
-		if (!modelName_Eaten.IsEmpty())
-		{
-			const idStr modelName = target->spawnArgs.GetString("model", nullptr);
-			const bool isFoodRemains = modelName == modelName_Eaten;
-			if (isFoodRemains)
-				return true;
-		}
-	}
-
-	return false;
-}
-*/
-
-/*
-================
 idPlayer::OnLadder
 ================
 */
@@ -11780,14 +11660,14 @@ bool idPlayer::IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) cons
 		{
 		default:
 		case Style::Thief:
-			if (cv_holdfrob_drag_body_behavior.GetBool() && m_isShoulderableBody)
+			if (cv_holdfrob_drag_entity_behavior.GetBool() && m_isShoulderableBody)
 				return Frob::ReleasedLong == frobButtonState;
 			else
 				return Frob::ReleasedShort == frobButtonState;
 		case Style::TDM:
 			return Frob::ReleasedShort == frobButtonState;
 		case Style::TDM_inverted:
-			if (cv_holdfrob_drag_body_behavior.GetBool())
+			if (cv_holdfrob_drag_entity_behavior.GetBool())
 				return Frob::ReleasedLong == frobButtonState;
 			else
 				return Frob::ReleasedShort == frobButtonState;
@@ -11802,7 +11682,7 @@ bool idPlayer::IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) cons
 		case Style::TDM:
 			return Frob::HoldLong == frobButtonState;
 		case Style::TDM_inverted:
-			if (cv_holdfrob_drag_body_behavior.GetBool())
+			if (cv_holdfrob_drag_entity_behavior.GetBool())
 				return false; // not supported
 			else
 				return Frob::HoldLong == frobButtonState;
@@ -12019,115 +11899,6 @@ void idPlayer::PerformFrob(EFrobButtonState frobButtonState, idEntity* target, b
 	}
 
 	PerformFrob_TryGrab(frobButtonState);
-	
-
-	
-
-	/*
-	const bool grabableType = target->spawnArgs.GetBool("grabable", "1"); // allow override
-	const bool bodyType = grabableType
-		&& (target->IsType(idAFEntity_Base::Type) || target->IsType(idAFAttachment::Type));
-	const bool moveableType = grabableType
-		&& (target->IsType(idMoveable::Type) || target->IsType(idMoveableItem::Type));
-
-	// If an attachment, such as a head, get its body.
-	idEntity* bodyTarget = target->IsType(idAFAttachment::Type)
-		? static_cast<idAFAttachment*>(target)->GetBindMaster()
-		: target;
-
-	const bool holdFrobBodyType = bodyType
-		&& bodyTarget
-		&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
-		&& IsHoldFrobEnabled();
-
-	bool holdFrobDraggableType = holdFrobBodyType;
-	if (!holdFrobDraggableType && moveableType)
-		holdFrobDraggableType = IsAdditionalHoldFrobDraggableType(target);
-
-	const bool holdFrobUsableType = moveableType
-		&& target->spawnArgs.GetBool("equippable", "0")
-		&& IsHoldFrobEnabled()
-		&& !IsUsedItemOrJunk(target);
-
-	// Do not pick up live, conscious AI
-	if (target->IsType(idAI::Type))
-	{
-		idAI* AItarget = static_cast<idAI*>(target);
-		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
-			return;
-	}
-	
-	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
-
-	if (impulseState == EPressed)
-	{
-		if (holdFrobUsableType || holdFrobDraggableType)
-		{
-			// Store frobbed entity and start time tracking.
-			m_holdFrobEntity = highlightedEntity;
-			m_holdFrobDraggedEntity = NULL;
-			SetHoldFrobView();
-			return;
-		}
-	}
-
-	if (impulseState == ERepeat && m_holdFrobEntity.GetEntity() == highlightedEntity)
-	{
-		if (holdFrobDraggableType)
-		{
-			// Drag entity if enough time has passed or view has moved outside of bounds.
-			if (CanHoldFrobAction()
-			    || (HoldFrobViewDistance() > cv_holdfrob_bounds.GetFloat()))
-			{
-				gameLocal.m_Grabber->Update(this, false, true);
-				m_holdFrobEntity = NULL;
-				// Store grabber entity of what is dragged, so the entity can be released later.
-				m_holdFrobDraggedEntity = gameLocal.m_Grabber->GetSelected();
-				return;
-			}
-		}
-
-		if (holdFrobUsableType)
-		{
-			// Equip/Use, if enough time has passed.
-			if (CanHoldFrobAction())
-			{
-				gameLocal.m_Grabber->EquipFrobEntity(this);
-				m_holdFrobEntity = NULL;
-				return;
-			}
-		}
-	}
-
-	if (impulseState == EReleased && m_holdFrobEntity.GetEntity() == highlightedEntity)
-	{
-		if (holdFrobBodyType)
-		{
-			// Pick up (shoulder) body
-			gameLocal.m_Grabber->EquipFrobEntity(this);
-			m_holdFrobEntity = NULL;
-			return;
-		}
-
-		if (holdFrobUsableType || holdFrobDraggableType)
-		{
-			// Pick up, since it was not equipped/used (or toggled on/off).
-			gameLocal.m_Grabber->Update(this, false, true);
-			m_holdFrobEntity = NULL;
-			return;
-		}
-	}
-
-
-	// Item could not be added to inventory, so try to pick it up.
-
-	if (impulseState == EPressed && (moveableType || bodyType))
-	{
-		// Grab it if it's a grabable class and not overridden
-		gameLocal.m_Grabber->Update(this, false, true); // preservePosition = true #4149
-		return;
-	}
-	//*/
 }
 
 bool idPlayer::PerformFrob_TryDoorFineControl(EFrobButtonState frobButtonState)

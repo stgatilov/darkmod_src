@@ -886,6 +886,11 @@ public:
 		Invalid = -1,
 	};
 
+    /**
+     * stifu: Check if the correct FrobButtonState and all other conditions are met to execute a certain action.
+     * 
+     * returns true if all conditions are met.
+     */
 	template <EFrobAction action>
 	bool IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) const;
 
@@ -950,8 +955,18 @@ public:
 	 */
 	bool					PerformFrob_TryLootUnconsciousBody(EFrobButtonState frobButtonState);
 
+    /**
+     * stifu: Try to use a world item.
+     *
+     * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+     */
 	bool					PerformFrob_TryUseWorldItem(EFrobButtonState frobButtonState);
 
+    /**
+     * stifu: Try to grab a world item.
+     *
+     * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+     */
 	bool					PerformFrob_TryGrab(EFrobButtonState frobButtonState);
 	
 
@@ -964,13 +979,8 @@ public:
 	void					PerformFrobKeyRelease(int holdTime);
 
 	// Daft Mugi #6316: Hold Frob for alternate interaction
-	// TODO: Check which can be removed
 	bool					IsHoldFrobEnabled(void);
 	bool					CanHoldFrobAction(int holdtime);
-	//void					SetHoldFrobView(void);
-	//float					HoldFrobViewDistance(void);
-	//bool					IsAdditionalHoldFrobDraggableType(idEntity* target);
-	//bool					IsUsedItemOrJunk(idEntity* target);
 
 	// Obsttorte: #5984 (multilooting)
 	bool					m_multiLoot;
