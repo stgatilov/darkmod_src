@@ -91,8 +91,19 @@ public:
 
 	// Ishtvan: Allow for fine control when frob is held
 	virtual void			FrobAction(bool frobMaster, bool isFrobPeerAction = false) override;
-	virtual void			FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0) override;
-	virtual void			FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0) override;
+	enum class FineControlState : int
+	{
+		None,
+		Init,
+		Execute,
+		Stop
+	};
+private:
+	FineControlState		InitFineControl();
+public:
+	FineControlState		ExecuteFineControl(int holdTime = 0); // returns true, if fine control is being performed
+	FineControlState		StopFineControl();
+	
 
 	void					RegisterAI(idAI* ai);	// grayman #1145
 	void					TellRegisteredUsers();	// grayman #1145
@@ -575,9 +586,9 @@ protected:
 	idVec2						m_mousePosition;
 
 	/**
-	* True when frob is held down but not long enough to initialize fine control
+	* The state of the fine control
 	**/
-	bool						m_bFineControlStarting;
+	FineControlState			m_FineControlState;
 
 	/**
 	* grayman #2345 - idBox of the closed mover, used in pathfinding

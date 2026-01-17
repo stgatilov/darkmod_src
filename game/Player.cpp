@@ -11819,6 +11819,8 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		return;
 	// Item could not be added to inventory, so handle body and equip/use frob.
 
+
+
 	if (impulseState == EPressed)
 	{   
 		// Trigger the frob action script on key down
@@ -12097,11 +12099,15 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 	// Get the currently frobbed entity
 	idEntity* frob = m_FrobHilightedEntity.GetEntity();
 
-	// use the original target until frob is released and pressed again
-	
-	if (m_FrobPressedTarget.IsValid() && (m_FrobPressedTarget.GetEntity() != NULL))
+	// use the original target until frob is released and pressed again	
+	if (m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != nullptr)
 	{
-		m_FrobPressedTarget.GetEntity()->FrobHeld( true, false, holdTime );
+		CBinaryFrobMover* Door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
+		if (Door != nullptr)
+		{
+			if (Door->ExecuteFineControl(holdTime) != CBinaryFrobMover::FineControlState::None)
+				return;
+		}
 	}
 	
 	// Relay the function to the specialised method
@@ -12149,9 +12155,14 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 	idEntity* frob = m_FrobHilightedEntity.GetEntity();
 
 	// use the original target until frob is released and pressed again
-	if ( m_FrobPressedTarget.IsValid() && (m_FrobPressedTarget.GetEntity() != NULL) )
+	if ( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != nullptr)
 	{
-		m_FrobPressedTarget.GetEntity()->FrobReleased( true, false, holdTime );
+		CBinaryFrobMover* Door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
+		if (Door != nullptr)
+		{
+			if (Door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop)
+				return;
+		}
 	}
 
 	// Relay the function to the specialised method

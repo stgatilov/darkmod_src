@@ -97,7 +97,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_stopWhenBlocked = false;
 	m_LockOnClose = false;
 	m_mousePosition.Zero();
-	m_bFineControlStarting = false;
+	m_FineControlState = FineControlState::None;
 	m_closedBox = box_zero; // grayman #2345 - holds closed position
 	m_closedBox.Clear();	// grayman #2345
 	m_registeredAI.Clear();	// grayman #1145
@@ -172,7 +172,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 
 	savefile->WriteBool(m_stopWhenBlocked);
 	savefile->WriteBool(m_LockOnClose);
-	savefile->WriteBool(m_bFineControlStarting);
+	savefile->WriteInt(static_cast<int>(m_FineControlState));
 	savefile->WriteBox(m_closedBox); // grayman #2345
 	
 	// grayman #1145 - registered AI for a locked door
@@ -231,7 +231,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_stopWhenBlocked);
 	savefile->ReadBool(m_LockOnClose);
-	savefile->ReadBool(m_bFineControlStarting);
+	savefile->ReadInt(reinterpret_cast<int&>(m_FineControlState));
 	savefile->ReadBox(m_closedBox); // grayman #2345
 
 	// grayman #1145 - registered AI for a locked door
@@ -1616,21 +1616,29 @@ void CBinaryFrobMover::Event_HandleLockRequest()
 void CBinaryFrobMover::FrobAction(bool frobMaster, bool isFrobPeerAction)
 {
 	idEntity::FrobAction( frobMaster, isFrobPeerAction );
-	if( m_bInterruptable && cv_tdm_door_control.GetBool() )
-		m_bFineControlStarting = true;
+	InitFineControl();
 }
 
-void CBinaryFrobMover::FrobHeld(bool frobMaster, bool isFrobPeerAction, int holdTime)
+CBinaryFrobMover::FineControlState CBinaryFrobMover::InitFineControl()
 {
-	if ( !m_bInterruptable || !cv_tdm_door_control.GetBool() || holdTime < 200 )
-		return;
+	if (!m_bInterruptable || !cv_tdm_door_control.GetBool())
+		return FineControlState::None;
 
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	
-	if( m_bFineControlStarting )
+	m_FineControlState = FineControlState::Init;
+	return FineControlState::Init;
+}
+
+CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl(int holdTime)
+{
+	if (m_FineControlState == FineControlState::None || holdTime < 200) // TODO: potentially use hold frob duration cvar?
+		return FineControlState::None;
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+
+	if (m_FineControlState == FineControlState::Init)
 	{
 		// initialize fine control
-		player->SetImmobilization( "door handling",  EIM_VIEW_ANGLE );
+		player->SetImmobilization("door handling", EIM_VIEW_ANGLE);
 		m_mousePosition.x = player->usercmd.mx;
 		m_mousePosition.y = player->usercmd.my;
 
@@ -1639,18 +1647,16 @@ void CBinaryFrobMover::FrobHeld(bool frobMaster, bool isFrobPeerAction, int hold
 		Event_StopRotating();
 		Event_StopMoving();
 		OnInterrupt();
-
-		m_bFineControlStarting = false;
+		m_FineControlState = FineControlState::Execute;
 	}
 
-	//float dx = player->usercmd.mx - m_mousePosition.x;
 	float dy = player->usercmd.my - m_mousePosition.y;
 	m_mousePosition.x = player->usercmd.mx;
 	m_mousePosition.y = player->usercmd.my;
 
 	// figure out the view direction (rotation only for now)
 	float sign = 1.0f;
-	idRotation openRot = (0.1f*(m_OpenAngles - m_ClosedAngles).Normalize360()).ToRotation();
+	idRotation openRot = (0.1f * (m_OpenAngles - m_ClosedAngles).Normalize360()).ToRotation();
 	openRot.SetOrigin(GetPhysics()->GetOrigin());
 	idVec3 playerOrg = player->GetPhysics()->GetOrigin();
 	idVec3 testOrg = playerOrg;
@@ -1662,14 +1668,22 @@ void CBinaryFrobMover::FrobHeld(bool frobMaster, bool isFrobPeerAction, int hold
 		sign = -1.0f;
 
 	float desiredPos = GetFractionalPosition() + sign * cv_tdm_door_control_sensitivity.GetFloat() * dy;
-	desiredPos = idMath::ClampFloat( 0.0f, 1.0f, desiredPos );
-	SetFractionalPosition( desiredPos, false );
+	desiredPos = idMath::ClampFloat(0.0f, 1.0f, desiredPos);
+	SetFractionalPosition(desiredPos, false);
+	
+	return FineControlState::Execute;
 }
 
-void CBinaryFrobMover::FrobReleased(bool frobMaster, bool isFrobPeerAction, int holdTime)
+CBinaryFrobMover::FineControlState CBinaryFrobMover::StopFineControl()
 {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	player->SetImmobilization( "door handling",  0 );
+	if (m_FineControlState == FineControlState::None)
+		return FineControlState::None;
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	player->SetImmobilization("door handling", 0);
+	m_FineControlState = FineControlState::None; // Reset for next fine control
+
+	return FineControlState::Stop;
 }
 
 // grayman #1145 - add an AI who unsuccessfully tried to open a locked door
