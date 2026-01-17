@@ -976,8 +976,9 @@ public:
 	bool					m_multiLoot;
 	int						m_multiLoot_lastFrobTime; // game time
 
-	bool					m_canToggleEquip;  // Toggle only once per frob
-	bool					m_canUseWorldItem; // Use only once per frob
+	bool					m_canToggleEquip;     // Toggle only once per frob
+	bool					m_canUseWorldItem;    // Use only once per frob
+    bool                    m_isShoulderableBody; // Modifies FrobActionTriggers when using EFrobControlStyle::Thief
 
 	// angua: Set ideal crouch state
 	void					EvaluateCrouch();

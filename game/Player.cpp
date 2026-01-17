@@ -11780,6 +11780,10 @@ bool idPlayer::IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) cons
 		{
 		default:
 		case Style::Thief:
+			if (cv_holdfrob_drag_body_behavior.GetBool() && m_isShoulderableBody)
+				return Frob::ReleasedLong == frobButtonState;
+			else
+				return Frob::ReleasedShort == frobButtonState;
 		case Style::TDM:
 			return Frob::ReleasedShort == frobButtonState;
 		case Style::TDM_inverted:
@@ -11843,11 +11847,14 @@ bool idPlayer::IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) cons
 		{
 		case Style::TDM:
 			return Frob::HoldLong == frobButtonState;
-		default:
 		case Style::TDM_inverted:
 			return Frob::ReleasedShort == frobButtonState;
-		case Style::Thief: // TODO: Implement
-			return false;
+		default:
+		case Style::Thief:
+			if (m_isShoulderableBody)
+				return Frob::ReleasedShort == frobButtonState;
+			else
+				return Frob::HoldLong == frobButtonState;
 		}
 	}
 	else if (Action::GrabWorldItem == action)
@@ -11858,6 +11865,12 @@ bool idPlayer::IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) cons
 			return Frob::ReleasedShort == frobButtonState;
 		case Style::TDM_inverted:
 			return Frob::HoldLong == frobButtonState;
+		default:
+		case Style::Thief:
+			if (m_isShoulderableBody)
+				return Frob::HoldLong == frobButtonState;
+			else
+				return Frob::ReleasedShort == frobButtonState;
 		}
 	}
 
@@ -11932,6 +11945,35 @@ void idPlayer::PerformFrob(EFrobButtonState frobButtonState, idEntity* target, b
 		m_multiLoot = false;
 		m_canToggleEquip = true;
 		m_canUseWorldItem = true;
+
+		m_isShoulderableBody = [this, target]
+			{
+				const bool grabableType = target->spawnArgs.GetBool("grabable", "1"); // allow override
+				const bool bodyType = grabableType
+					&& (target->IsType(idAFEntity_Base::Type) || target->IsType(idAFAttachment::Type));
+
+				// TODO research: do we need to call GetBindMaster in a loop?
+				idEntity* bodyTarget = target->IsType(idAFAttachment::Type)
+					? static_cast<idAFAttachment*>(target)->GetBindMaster()
+					: target;
+
+				const bool holdFrobBodyType = bodyType
+					&& bodyTarget
+					&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
+					&& IsHoldFrobEnabled();
+
+				if (!holdFrobBodyType)
+					return false;
+
+				// TODO Research: Do we need to 
+				if (target->IsType(idAI::Type))
+				{
+					idAI* AItarget = static_cast<idAI*>(target);
+					if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
+						return false;
+				}
+				return true;				
+			}();
 	}
 
 	// stgatilov #5542: block use-on-frob when frob called from game script	
@@ -11977,6 +12019,8 @@ void idPlayer::PerformFrob(EFrobButtonState frobButtonState, idEntity* target, b
 	}
 
 	PerformFrob_TryGrab(frobButtonState);
+	
+
 	
 
 	/*
@@ -12285,47 +12329,20 @@ bool idPlayer::PerformFrob_TryGrab(EFrobButtonState frobButtonState)
 
 	gameLocal.m_Grabber->Update(this, false, true); // preservePosition = true #4149
 	m_FrobPressedTarget = nullptr;
+	if (m_isShoulderableBody)
+		m_canToggleEquip = false;
 
 	return true;
 }
 
 void idPlayer::PerformFrobKeyPressed()
-{
-	/*
-	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
-
-	// If holding an equippable item, begin tracking frob for later
-	// equip/use or drop.
-	if (IsHoldFrobEnabled()
-		&& grabberEnt
-		&& grabberEnt->spawnArgs.GetBool("equippable", "0")
-		&& !IsUsedItemOrJunk(grabberEnt))
-	{
-		m_holdFrobEntity = grabberEnt;
-		m_holdFrobStartTime = gameLocal.time;
-		return;
-	}
-	*/
-	
+{	
 	// Relay the function to the specialised method
 	PerformFrob(EFrobButtonState::Pressed, m_FrobHilightedEntity.GetEntity());
 }
 
 void idPlayer::PerformFrobKeyRepeat(int holdTime)
 {
-	// If holding an equippable item, use it if frob held long enough.
-	/*
-	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
-	if (m_holdFrobEntity.GetEntity()
-	    && m_holdFrobEntity.GetEntity() == grabberEnt
-	    && CanHoldFrobAction())
-	{
-		gameLocal.m_Grabber->ToggleEquip();
-		m_holdFrobEntity = NULL;
-		return;
-	}
-	//*/
-
 	if (!CanHoldFrobAction(holdTime) || !IsHoldFrobEnabled())
 		return;
 	
@@ -12335,35 +12352,6 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 
 void idPlayer::PerformFrobKeyRelease(int holdTime)
 {
-	
-
-	/*
-	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
-	if (IsHoldFrobEnabled())
-	{
-		idEntity* holdFrobEnt = m_holdFrobEntity.GetEntity();
-
-		// NOTE: When hold-frob drag body behavior is false, do not
-		// stop dragging. (Matches original TDM behavior)
-		if (m_holdFrobDraggedEntity.GetEntity()
-		    && cv_holdfrob_drag_body_behavior.GetBool())
-		{
-			holdFrobEnt = m_holdFrobDraggedEntity.GetEntity();
-		}
-
-		// If currently dragging a body, stop dragging.
-		// If currently holding an equippable item, drop it.
-		// When hold-frob delay is 0, behavior matches TDM v2.11 (and prior).
-		if (holdFrobEnt && holdFrobEnt == grabberEnt)
-		{
-			gameLocal.m_Grabber->Update(this);
-			m_holdFrobDraggedEntity = NULL;
-			m_holdFrobEntity = NULL;
-			return;
-		}
-	}
-	*/
-
 	// Relay the function to the specialised method
 	PerformFrob(IsHoldFrobEnabled() && CanHoldFrobAction(holdTime) 
 		? EFrobButtonState::ReleasedLong : EFrobButtonState::ReleasedShort,
