@@ -172,7 +172,6 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 
 	savefile->WriteBool(m_stopWhenBlocked);
 	savefile->WriteBool(m_LockOnClose);
-	savefile->WriteInt(static_cast<int>(m_FineControlState));
 	savefile->WriteBox(m_closedBox); // grayman #2345
 	
 	// grayman #1145 - registered AI for a locked door
@@ -231,8 +230,9 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_stopWhenBlocked);
 	savefile->ReadBool(m_LockOnClose);
-	savefile->ReadInt(reinterpret_cast<int&>(m_FineControlState));
 	savefile->ReadBox(m_closedBox); // grayman #2345
+
+	m_FineControlState = FineControlState::None; // It does not make sense to store helddown-button control state
 
 	// grayman #1145 - registered AI for a locked door
 	m_registeredAI.Clear();
@@ -1650,6 +1650,7 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl(int hold
 		m_FineControlState = FineControlState::Execute;
 	}
 
+	// TODO: Get more intuitive door fine control!
 	float dy = player->usercmd.my - m_mousePosition.y;
 	m_mousePosition.x = player->usercmd.mx;
 	m_mousePosition.y = player->usercmd.my;
