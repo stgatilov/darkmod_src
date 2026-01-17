@@ -758,6 +758,7 @@ public:
 	*/
 	void					PerformKeyRepeat(int impulse, int holdTime);
 
+
 	/**
 	* Ishtvan: Start tracking a mouse gesture that started when the key "impulse" was pressed
 	* Discretizes analog mouse movement into a few different gesture possibilities
@@ -838,14 +839,6 @@ public:
 	bool					IsForcedCrouch( void );
 	void					ResetForcedCrouchMantle( void );
 
-	// Daft Mugi #6316: Hold Frob for alternate interaction
-	bool					IsHoldFrobEnabled( void );
-	bool					CanHoldFrobAction( void );
-	void					SetHoldFrobView( void );
-	float					HoldFrobViewDistance( void );
-	bool					IsAdditionalHoldFrobDraggableType(idEntity* target);
-	bool					IsUsedItemOrJunk(idEntity* target);
-
 	virtual bool			OnLadder( void ) const override;
 	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const override;
 
@@ -859,6 +852,7 @@ public:
 	**/
 	void					PerformFrobCheck();
 	void					PerformFrobCheckInternal();
+
 
 	/**
 	 * greebo: Performs a frob action on the given entity. The methods
@@ -876,7 +870,14 @@ public:
 	 * When run from game script, it must always be false!
 	 *
 	 */
-	void					PerformFrob(EImpulseState impulseState, idEntity* frobbed, bool allowUseCurrentInvItem);
+	void					PerformFrob(EImpulseState impulseState, idEntity* target, bool allowUseCurrentInvItem);
+	
+	/**
+	 * stifu: Try to pickup an inventory item.
+	 * 
+	 * returns true, if the entity is an inventory item or if we are multilooting. In both cases, we don't need to process the frob any further
+	 */
+	bool PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, idEntity* target);
 
 	// Gets called when the player hits the frob button.
 	void					PerformFrobKeyPressed();
@@ -884,6 +885,14 @@ public:
 	void					PerformFrobKeyRepeat(int holdTime);
 	// Gets called when the player releases the frob button
 	void					PerformFrobKeyRelease(int holdTime);
+
+	// Daft Mugi #6316: Hold Frob for alternate interaction
+	bool					IsHoldFrobEnabled(void);
+	bool					CanHoldFrobAction(void);
+	void					SetHoldFrobView(void);
+	float					HoldFrobViewDistance(void);
+	bool					IsAdditionalHoldFrobDraggableType(idEntity* target);
+	bool					IsUsedItemOrJunk(idEntity* target);
 
 	// Obsttorte: #5984 (multilooting)
 	bool					m_multiLoot;

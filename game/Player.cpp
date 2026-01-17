@@ -11754,6 +11754,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 	return returnValue;
 }
 
+
 void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool allowUseCurrentInvItem)
 {
 	// greebo: Don't perform frobs on hidden or NULL entities
@@ -11761,61 +11762,43 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	{
 		return;
 	}
-	// Obsttorte: #5984) multilooting
-	// return, if not enough time has passed since the last pickup
-	if (m_multiLoot && ( gameLocal.time - m_multiLoot_lastFrobTime < cv_multiloot_min_interval.GetInteger() ) )
-	{
-		return;
-	}
-	// disable multiloot and return if too much time has passed since last pickup
-	if (m_multiLoot && ( gameLocal.time - m_multiLoot_lastFrobTime > cv_multiloot_max_interval.GetInteger() ) )
-	{
-		m_multiLoot = false;
-		return;
-	}
+
 	// if we only allow "simple" frob actions and this isn't one, play forbidden sound
-	if ( (GetImmobilization() & EIM_FROB_COMPLEX) && !target->m_bFrobSimple )
+	if ((GetImmobilization() & EIM_FROB_COMPLEX) && !target->m_bFrobSimple)
 	{
 		// TODO: Rename this "uh-uh" sound to something more general?
-		StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );
+		StartSound("snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL);
 		return;
 	}
 
-	// greebo: Check the frob entity, this might be the same as the argument
+	if (impulseState == EPressed)
+	{
+		// Fire the STIM_FROB response on key down (if defined) on this entity
+		// TODO research: Should this always be executed or only if something actually happens with the entity?
+		target->TriggerResponse(this, ST_FROB);
+		
+		// note which target we started pressing frob on
+		m_FrobPressedTarget = target;
+	}
+
+	// greebo: Check the frob highlighted entity, this might be the same as the argument
 	// Retrieve the entity before trying to add it to the inventory, the pointer
 	// might be cleared after calling AddToInventory().
 	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
 
-	const bool repeatMultiloot = m_multiLoot
-		&& impulseState == ERepeat
-		// Obsttorte: don't do anything if we are multilooting and this is no inventory item
-		&& target->spawnArgs.GetString("inv_name", nullptr) != nullptr
-		// Daft Mugi #6270: Do not multiloot immobile readables
-		&& !target->spawnArgs.GetBool("is_immobile_readable", "0");
-
-	if (impulseState == EPressed || repeatMultiloot)
-	{
-		// Fire the STIM_FROB response on key down (if defined) on this entity
-		// Daft Mugi #6270: STIM_FROB response needs to be triggered when
-		// multiloot is likely to succeed on ERepeat.
-		target->TriggerResponse(this, ST_FROB);
-	}
-
 	// Do we allow use on frob?
-	// stgatilov #5542: block use-on-frob when frob called from game script
+	// stgatilov #5542: block use-on-frob when frob called from game script	
 	if (!m_multiLoot && allowUseCurrentInvItem && cv_tdm_inv_use_on_frob.GetBool())
 	{
 		// Check if we have a "use" relationship with the currently selected inventory item (key => door)
 		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
-		// Only allow items with UseOnFrob == TRUE to be used when frobbing
-		if ( item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedByItem(item, true))
+		if (item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedByItem(item, true))
 		{
-			// Try to use the item
-			bool couldBeUsed = UseInventoryItem( impulseState, item, USERCMD_MSEC, true ); // true => is frob action
+			const bool couldBeUsed = UseInventoryItem(impulseState, item, USERCMD_MSEC, true); // true => is frob action
 
 			// Give optional visual feedback on the KeyDown event
-			if ( (impulseState == EPressed) && cv_tdm_inv_use_visual_feedback.GetBool())
+			if ((impulseState == EPressed) && cv_tdm_inv_use_visual_feedback.GetBool())
 			{
 				m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
 			}
@@ -11823,52 +11806,28 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 			return;
 		}
 	}
+	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// If FrobUsedOnlyByInv mode is active, we can only perform use_on_frob actions, so skip all the rest
-	if ( m_bFrobOnlyUsedByInv )
+	if (m_bFrobOnlyUsedByInv)
 	{
 		return;
 	}
 
-	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
-	// Try to add world item to inventory
-	if (impulseState == EPressed || repeatMultiloot)
-	{
-		// First we have to check whether that entity is an inventory 
-		// item. In that case, we have to add it to the inventory and
-		// hide the entity.
+	if (PerformFrob_TryPickupInventoryItem(impulseState, target))
+		return;
+	// Item could not be added to inventory, so handle body and equip/use frob.
 
+	if (impulseState == EPressed)
+	{   
 		// Trigger the frob action script on key down
+		// TODO Research: Do we need to execute this also on inventory items or is this just for use-type interactions?
 		target->FrobAction(true);
-
-		CInventoryItemPtr addedItem = AddToInventory(target);
-
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
-
-		// note which target we started pressing frob on
-		m_FrobPressedTarget = target;
-
-		// Check if the frobbed entity is the one currently highlighted by the player
-		if ( (addedItem != NULL) && (highlightedEntity == target) ) 
-		{
-			// Item has been added to the inventory, clear the entity pointer
-			m_FrobHilightedEntity = NULL;
-
-			// Obsttorte: start multiloot
-			m_multiLoot = true;
-			m_multiLoot_lastFrobTime = gameLocal.time; 
-
-			// grayman #3011 - is anything sitting on this inventory item?
-			target->ActivateContacts();
-
-			// Item added to inventory, so skip other frob code
-			return;
-		}
 	}
 
 
-	// Item could not be added to inventory, so handle body and equip/use frob.
+	
 
 	const bool grabableType = target->spawnArgs.GetBool("grabable", "1"); // allow override
 	const bool bodyType = grabableType
@@ -11995,6 +11954,74 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		return;
 	}
 }
+
+
+
+bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, idEntity* target)
+{
+	// Obsttorte: #5984) multilooting
+	// return, if not enough time has passed since the last pickup
+	if (m_multiLoot && (gameLocal.time - m_multiLoot_lastFrobTime < cv_multiloot_min_interval.GetInteger()))
+	{
+		return true;
+	}
+	// disable multiloot and return if too much time has passed since last pickup
+	if (m_multiLoot && (gameLocal.time - m_multiLoot_lastFrobTime > cv_multiloot_max_interval.GetInteger()))
+	{
+		m_multiLoot = false;
+		return true;
+	}
+
+	const bool repeatMultiloot = m_multiLoot
+		&& impulseState == ERepeat
+		// Obsttorte: don't do anything if we are multilooting and this is no inventory item
+		&& target->spawnArgs.GetString("inv_name", nullptr) != nullptr
+		// Daft Mugi #6270: Do not multiloot immobile readables
+		&& !target->spawnArgs.GetBool("is_immobile_readable", "0");
+
+	if (repeatMultiloot)
+	{
+		// Daft Mugi #6270: STIM_FROB response needs to be triggered when
+		// multiloot is likely to succeed on ERepeat.
+		// TODO research: do we need
+		target->TriggerResponse(this, ST_FROB);
+	}
+
+	// Try to add world item to inventory
+	if (impulseState == EPressed || repeatMultiloot)
+	{
+		// First we have to check whether that entity is an inventory 
+		// item. In that case, we have to add it to the inventory and
+		// hide the entity.
+
+		const idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
+
+		// TODO Research: Is there really a case, where we should add an item to inventory, but then not activateContacts (if highlightedEntity != target)?
+		CInventoryItemPtr addedItem = AddToInventory(target);
+
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
+
+		// Check if the frobbed entity is the one currently highlighted by the player		
+		if ((addedItem != NULL) && (highlightedEntity == target))
+		{
+			// Item has been added to the inventory, clear the entity pointer
+			m_FrobHilightedEntity = NULL;
+
+			// Obsttorte: start multiloot
+			m_multiLoot = true;
+			m_multiLoot_lastFrobTime = gameLocal.time;
+
+			// grayman #3011 - is anything sitting on this inventory item?
+			target->ActivateContacts();
+
+			// Item added to inventory, so skip other frob code
+			return true;
+		}
+	}
+
+	return m_multiLoot;
+}
+
 
 void idPlayer::PerformFrobKeyPressed()
 {
