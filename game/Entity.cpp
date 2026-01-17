@@ -3029,9 +3029,9 @@ void idEntity::Hide( void )
 	
 		if (player)
 		{
-			if (player->m_FrobEntity.GetEntity() == this)
+			if (player->m_FrobHilightedEntity.GetEntity() == this)
 			{
-				player->m_FrobEntity = NULL;
+				player->m_FrobHilightedEntity = NULL;
 			}
 		}
 
