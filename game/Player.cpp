@@ -11755,7 +11755,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 }
 
 
-void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool allowUseCurrentInvItem)
+void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool executedFromScript)
 {
 	// greebo: Don't perform frobs on hidden or NULL entities
 	if (target == NULL || target->IsHidden())
@@ -11771,7 +11771,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		return;
 	}
 
-	if (impulseState == EPressed)
+	if (impulseState == EPressed) // Init
 	{
 		// Fire the STIM_FROB response on key down (if defined) on this entity
 		// TODO research: Should this always be executed or only if something actually happens with the entity?
@@ -11781,7 +11781,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		m_FrobPressedTarget = target;
 	}
 
-	if (PerformFrob_TryUseOnFrob(impulseState, allowUseCurrentInvItem))
+	if (PerformFrob_TryUseOnFrob(impulseState, executedFromScript))
 	{
 		return;
 	}
@@ -11936,11 +11936,11 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	}
 }
 
-bool idPlayer::PerformFrob_TryUseOnFrob(EImpulseState impulseState, bool allowUseCurrentInvItem)
+bool idPlayer::PerformFrob_TryUseOnFrob(EImpulseState impulseState, bool executedFromScript)
 {
 	// Do we allow use on frob?
 	// stgatilov #5542: block use-on-frob when frob called from game script	
-	if (m_multiLoot || !allowUseCurrentInvItem || !cv_tdm_inv_use_on_frob.GetBool())
+	if (m_multiLoot || executedFromScript || !cv_tdm_inv_use_on_frob.GetBool())
 		return false;
 
 	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
@@ -12079,7 +12079,7 @@ void idPlayer::PerformFrobKeyPressed()
 	}
 
 	// Relay the function to the specialised method
-	PerformFrob(EPressed, frob, true);
+	PerformFrob(EPressed, frob);
 }
 
 void idPlayer::PerformFrobKeyRepeat(int holdTime)
@@ -12117,7 +12117,7 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 	}
 	
 	// Relay the function to the specialised method
-	PerformFrob(ERepeat, frob, true);
+	PerformFrob(ERepeat, frob);
 }
 
 void idPlayer::PerformFrobKeyRelease(int holdTime)
@@ -12169,7 +12169,7 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 	}
 
 	// Relay the function to the specialised method
-	PerformFrob(EReleased, m_FrobHilightedEntity.GetEntity(), true);
+	PerformFrob(EReleased, m_FrobHilightedEntity.GetEntity());
 }
 
 void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount)

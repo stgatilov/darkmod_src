@@ -11105,7 +11105,7 @@ void idEntity::Event_Frob()
 	if (player != NULL)
 	{
 		// Let the player frob this entity.
-		player->PerformFrob(EPressed, this, false);
+		player->PerformFrob(EPressed, this, true);
 	}
 }
 
