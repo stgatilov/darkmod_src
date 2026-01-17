@@ -1621,7 +1621,7 @@ void CBinaryFrobMover::FrobAction(bool frobMaster, bool isFrobPeerAction)
 
 CBinaryFrobMover::FineControlState CBinaryFrobMover::InitFineControl()
 {
-	if (!m_bInterruptable || !cv_tdm_door_control.GetBool())
+	if (!m_bInterruptable || !cv_tdm_door_control.GetBool() || IsLocked())
 		return FineControlState::None;
 
 	m_FineControlState = FineControlState::Init;
