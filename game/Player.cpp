@@ -11786,7 +11786,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool ex
 	{
 		// If there is nothing highlighted and shouldering a body,
 		// drop the body.
-		if (m_bShoulderingBody && !executedFromScript)
+		if (m_bShoulderingBody && !executedFromScript) // TODO research: Do we need to check executedFromScript here?
 			gameLocal.m_Grabber->Dequip();
 		return;
 	}
@@ -11849,6 +11849,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool ex
 	if (impulseState == EPressed)
 	{
 		// Trigger the frob action script on key down
+		// TODO: we must delay the frobAction until we know if it was a long-press or short-press
 		target->FrobAction(true);
 	}
 
@@ -11857,63 +11858,13 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool ex
 		return;
 	}
 	
+	if (PerformFrob_TryLootUnconsciousBody(impulseState, target))
+	{
+		return;
+	}
+
 
 	
-
-	const bool grabableType = target->spawnArgs.GetBool("grabable", "1"); // allow override
-	const bool bodyType = grabableType
-		&& (target->IsType(idAFEntity_Base::Type) || target->IsType(idAFAttachment::Type));
-	const bool moveableType = grabableType
-		&& (target->IsType(idMoveable::Type) || target->IsType(idMoveableItem::Type));
-
-	// If an attachment, such as a head, get its body.
-	idEntity* bodyTarget = target->IsType(idAFAttachment::Type)
-		? static_cast<idAFAttachment*>(target)->GetBindMaster()
-		: target;
-
-	const bool holdFrobBodyType = bodyType
-		&& bodyTarget
-		&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
-		&& IsHoldFrobEnabled();
-
-	bool holdFrobDraggableType = holdFrobBodyType;
-	if (!holdFrobDraggableType && moveableType)
-		holdFrobDraggableType = IsAdditionalHoldFrobDraggableType(target);
-
-	const bool holdFrobUsableType = moveableType
-		&& target->spawnArgs.GetBool("equippable", "0")
-		&& IsHoldFrobEnabled()
-		&& !IsUsedItemOrJunk(target);
-
-	// Do not pick up live, conscious AI
-	if (target->IsType(idAI::Type))
-	{
-		idAI* AItarget = static_cast<idAI*>(target);
-		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
-			return;
-	}
-
-	// Daft Mugi #6257: Auto-Search Bodies
-	if (bodyType && cv_tdm_autosearch_bodies.GetBool())
-	{
-		// delay > 0 and shoulderable, hold-frob behavior (on EReleased)
-		bool isHoldFrob = holdFrobBodyType && impulseState == EReleased;
-		// delay > 0 and non-shoulderable, regular behavior  (on EPressed)
-		// delay == 0, TDM v2.11 (and prior) regular behavior (on EPressed)
-		bool isRegular = !holdFrobBodyType && impulseState == EPressed;
-
-		if (isHoldFrob || isRegular)
-		{
-			// If looted body this time, do not shoulder/pick up body.
-			// NOTE: The body being frobbed might not be an idAI.
-			if (bodyTarget
-			    && bodyTarget->IsType(idAFEntity_Base::Type)
-			    && bodyTarget->AddAttachmentsToInventory(this))
-			{
-				return;
-			}
-		}
-	}
 
 	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
 
@@ -12081,6 +12032,37 @@ bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, id
 	return m_multiLoot;
 }
 
+
+bool idPlayer::PerformFrob_TryLootUnconsciousBody(EImpulseState impulseState, idEntity* target)
+{
+	// TODO: This must be ShortPressRelease later
+	if (!cv_tdm_autosearch_bodies.GetBool() || impulseState != EPressed)
+		return false;
+
+	// If an attachment, such as a head, get its body.
+	// TODO research: should we not loop until GetBindMaster() returns nullptr?
+	idEntity* bodyTarget = target->IsType(idAFAttachment::Type)
+		? static_cast<idAFAttachment*>(target)->GetBindMaster()
+		: target;
+
+	// Do not pick up live, conscious AI
+	// TODO research: Should we use bodytarget here?
+	if (target->IsType(idAI::Type))
+	{
+		idAI* AItarget = static_cast<idAI*>(bodyTarget);
+		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
+			return false;
+	}
+
+	const bool grabableType = target->spawnArgs.GetBool("grabable", "1"); // allow override
+	const bool bodyType = grabableType
+		&& (target->IsType(idAFEntity_Base::Type) || target->IsType(idAFAttachment::Type));
+	
+	if (!bodyType || bodyTarget == nullptr || !bodyTarget->IsType(idAFEntity_Base::Type))
+		return false;
+
+	return bodyTarget->AddAttachmentsToInventory(this);
+}
 
 void idPlayer::PerformFrobKeyPressed()
 {

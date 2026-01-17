@@ -872,16 +872,24 @@ public:
 	/**
 	 * stifu: Try to use inventory item on frob highlighted entity
 	 *
-	 * returns true, if the entity is an inventory item or if we are multilooting. In both cases, we don't need to process the frob any further
+	 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 	 */
 	bool                    PerformFrob_TryUseOnFrob(EImpulseState impulseState, bool executedFromScript);
 	
 	/**
 	 * stifu: Try to pickup an inventory item.
 	 * 
-	 * returns true, if the entity is an inventory item or if we are multilooting. In both cases, we don't need to process the frob any further
+	 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 	 */
 	bool                    PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, idEntity* target);
+
+	/**
+	 * stifu: Try to loot an unconscious body.
+	 * Daft Mugi #6257: Auto-Search Bodies
+	 *
+	 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+	 */
+	bool					PerformFrob_TryLootUnconsciousBody(EImpulseState impulseState, idEntity* target);
 
 	// Gets called when the player hits the frob button.
 	void					PerformFrobKeyPressed();
