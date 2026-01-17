@@ -713,10 +713,12 @@ idPlayer::idPlayer() :
 	m_multiLoot_lastFrobTime = 0;
 
 	// Daft Mugi #6316
-	m_holdFrobEntity = NULL;
+	/*m_holdFrobEntity = NULL;
 	m_holdFrobDraggedEntity = NULL;
 	m_holdFrobStartTime = 0;
-	m_holdFrobStartViewAxis.Zero();
+	m_holdFrobStartViewAxis.Zero();*/
+	m_canToggleEquip = true;
+	m_canUseWorldItem = true;
 
 	// greebo: Initialise the frob trace contact material to avoid 
 	// crashing during map save when nothing has been frobbed yet
@@ -2450,10 +2452,12 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	// Daft Mugi #6316: Hold Frob for alternate interaction
 	// The hold frob values don't get saved, but reset on load.
-	m_holdFrobEntity = NULL;
+	/*m_holdFrobEntity = NULL;
 	m_holdFrobDraggedEntity = NULL;
 	m_holdFrobStartTime = 0;
-	m_holdFrobStartViewAxis.Zero();
+	m_holdFrobStartViewAxis.Zero();*/
+	m_canToggleEquip = true;
+	m_canUseWorldItem = true;
 
 	savefile->ReadInt( buttonMask );
 	savefile->ReadInt( oldButtons );
@@ -8984,17 +8988,16 @@ bool idPlayer::IsHoldFrobEnabled( void )
 	return cv_holdfrob_delay.GetInteger() > 0;
 }
 
+
 /*
 ================
 idPlayer::CanHoldFrobAction
 ================
 */
-bool idPlayer::CanHoldFrobAction( void )
+bool idPlayer::CanHoldFrobAction(int holdtime)
 {
-	int delay = cv_holdfrob_delay.GetInteger();
-	// Is hold frob enabled and has enough time elapsed?
-	return (delay > 0)
-		&& (gameLocal.time - m_holdFrobStartTime >= delay);
+	const int delay = cv_holdfrob_delay.GetInteger();
+	return delay > 0 && holdtime >= delay;
 }
 
 /*
@@ -9002,16 +9005,18 @@ bool idPlayer::CanHoldFrobAction( void )
 idPlayer::SetHoldFrobView
 ================
 */
-void idPlayer::SetHoldFrobView( void )
+/*void idPlayer::SetHoldFrobView(void)
 {
 	m_holdFrobStartViewAxis = renderView->viewaxis;
 }
+*/
 
 /*
 ================
 idPlayer::HoldFrobViewDistance
 ================
 */
+/*
 float idPlayer::HoldFrobViewDistance( void )
 {
 	// Relative to the player's view axis (x,y,z = forward,left,up).
@@ -9022,12 +9027,14 @@ float idPlayer::HoldFrobViewDistance( void )
 
 	return holdFrobDistance;
 }
+*(
 
 /*
 ================
 idPlayer::IsAdditionalHoldFrobDraggableType
 ================
 */
+/*
 bool idPlayer::IsAdditionalHoldFrobDraggableType(idEntity* target)
 {
 	if (!cv_holdfrob_drag_all_entities.GetBool())
@@ -9035,12 +9042,14 @@ bool idPlayer::IsAdditionalHoldFrobDraggableType(idEntity* target)
 
 	return IsUsedItemOrJunk(target);
 }
+*/
 
 /*
 ================
 idPlayer::IsUsedItemOrJunk
 ================
 */
+/*
 bool idPlayer::IsUsedItemOrJunk(idEntity* target)
 {
 	// Precondition: target must be moveable type
@@ -9103,6 +9112,7 @@ bool idPlayer::IsUsedItemOrJunk(idEntity* target)
 
 	return false;
 }
+*/
 
 /*
 ================
@@ -11754,86 +11764,178 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 	return returnValue;
 }
 
+template<idPlayer::EFrobAction action>
+bool idPlayer::IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) const
+{
+	using Action = EFrobAction;
+	using Frob = EFrobButtonState;
+	using Style = EFrobControlStyle;
+	if (Action::Init == action)
+	{
+		return Frob::Pressed == frobButtonState;
+	}
+	else if (Action::ReleaseGrabbedObject == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		default:
+		case Style::Thief:
+		case Style::TDM:
+			return Frob::ReleasedShort == frobButtonState;
+		case Style::TDM_inverted:
+			if (cv_holdfrob_drag_body_behavior.GetBool())
+				return Frob::ReleasedLong == frobButtonState;
+			else
+				return Frob::ReleasedShort == frobButtonState;
+		}
+	}
+	else if (Action::ToggleGrabbedObject == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		default:
+		case Style::Thief:
+		case Style::TDM:
+			return Frob::HoldLong == frobButtonState;
+		case Style::TDM_inverted:
+			if (cv_holdfrob_drag_body_behavior.GetBool())
+				return false; // not supported
+			else
+				return Frob::HoldLong == frobButtonState;
+		}
+	}
+	else if (Action::DoorFineControl == action)
+	{
+		return  Frob::HoldLong == frobButtonState;
+	}
+	else if (Action::DoorFineControlEnd == action)
+	{
+		return Frob::ReleasedLong == frobButtonState;
+	}
+	else if (Action::UseOnFrob == action)
+	{
+		return Frob::Pressed == frobButtonState;
+	}
+	else if (Action::LootUnconsciousBody == action)
+	{
+		// TODO: review
+		return Frob::ReleasedShort == frobButtonState;
+	}
+	else if (Action::LootWorldItem == action)
+	{
+		return Frob::Pressed == frobButtonState;
+	}
+	else if (Action::RepeatMultiLootWorldItem == action)
+	{
+		return Frob::HoldLong == frobButtonState;
+	}
+	else if (Action::StopMultiLootWorldItem == action)
+	{
+		return Frob::ReleasedLong == frobButtonState;
+	}
+	else if (Action::InheritedFrobAction == action)
+	{
+		return Frob::Pressed == frobButtonState;
+	}
+	else if (Action::UseWorldItem == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		case Style::TDM:
+			return Frob::HoldLong == frobButtonState;
+		default:
+		case Style::TDM_inverted:
+			return Frob::ReleasedShort == frobButtonState;
+		case Style::Thief: // TODO: Implement
+			return false;
+		}
+	}
+	else if (Action::GrabWorldItem == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		case Style::TDM:
+			return Frob::ReleasedShort == frobButtonState;
+		case Style::TDM_inverted:
+			return Frob::HoldLong == frobButtonState;
+		}
+	}
 
-void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool executedFromScript)
+
+	return false;
+}
+
+
+
+void idPlayer::PerformFrob(EFrobButtonState frobButtonState, idEntity* target, bool executedFromScript)
 {
 	// Ignore frobs if player-frobbing is immobilized.
-	if ((GetImmobilization() & EIM_FROB) != 0 && !executedFromScript)
+	if (!executedFromScript && (GetImmobilization() & EIM_FROB) != 0)
 	{
 		return;
 	}
 
-	if (impulseState == EPressed && !executedFromScript) // TODO research: Do we need to check executedFromScript here?
+	if (!executedFromScript
+		&& IsCorrectFrobActionTrigger<EFrobAction::ReleaseGrabbedObject>(frobButtonState))
 	{
-		idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
-
 		// If the grabber is currently holding something and frob is pressed,
 		// release it.  Do not frob anything new since you're holding an item.
-		if (grabberEnt)
+		if (gameLocal.m_Grabber->GetSelected())
 		{
 			gameLocal.m_Grabber->Update(this);
 			return;
 		}
 	}
 
-	if (impulseState == EReleased)
+	if (!executedFromScript
+		&& IsCorrectFrobActionTrigger<EFrobAction::ToggleGrabbedObject>(frobButtonState)
+		&& m_canToggleEquip
+		&& gameLocal.m_Grabber->GetSelected() != nullptr)
 	{
-		m_multiLoot = false;
+		gameLocal.m_Grabber->ToggleEquip();
+		m_canToggleEquip = false;
 	}
 
 	// greebo: Don't perform frobs on hidden or NULL entities
-	if (target == NULL || target->IsHidden())
+	if (target && target->IsHidden())
 	{
-		// If there is nothing highlighted and shouldering a body,
-		// drop the body.
-		if (m_bShoulderingBody && !executedFromScript) // TODO research: Do we need to check executedFromScript here?
-			gameLocal.m_Grabber->Dequip();
-		return;
+		target = nullptr;
 	}
-
-	// if we only allow "simple" frob actions and this isn't one, play forbidden sound
-	if ((GetImmobilization() & EIM_FROB_COMPLEX) && !target->m_bFrobSimple)
+	if (IsCorrectFrobActionTrigger<EFrobAction::Init>(frobButtonState))
 	{
-		// TODO: Rename this "uh-uh" sound to something more general?
-		StartSound("snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL);
-		return;
-	}
+		if (target == nullptr)
+		{
+			// If there is nothing highlighted and shouldering a body,
+			// drop the body.
+			if (!executedFromScript && m_bShoulderingBody)
+			{
+				gameLocal.m_Grabber->Dequip();
+				m_FrobPressedTarget = nullptr;
+			}
+			return;
+		}
 
-	if (impulseState == EPressed) // Init
-	{
+		// if we only allow "simple" frob actions and this isn't one, play forbidden sound
+		if ((GetImmobilization() & EIM_FROB_COMPLEX) != 0 && !target->m_bFrobSimple)
+		{
+			// TODO: Rename this "uh-uh" sound to something more general?
+			StartSound("snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL);
+			return;
+		}
+
 		// Fire the STIM_FROB response on key down (if defined) on this entity
 		// TODO research: Should this always be executed or only if something actually happens with the entity?
 		target->TriggerResponse(this, ST_FROB);
 		
 		// note which target we started pressing frob on
 		m_FrobPressedTarget = target;
-
-		m_holdFrobEntity = nullptr;
-		m_holdFrobDraggedEntity = nullptr;
-
-		m_holdFrobStartTime = gameLocal.time; // TODO: Temporarily moved up! This will be reverted later
+		m_multiLoot = false;
+		m_canToggleEquip = true;
+		m_canUseWorldItem = true;
 	}
 
-	if (executedFromScript && m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != nullptr)
-	{
-		// Door fine control
-		CBinaryFrobMover* Door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
-		if (Door != nullptr)
-		{
-			if (impulseState == ERepeat)
-			{
-				if (Door->ExecuteFineControl(gameLocal.time - m_holdFrobStartTime) != CBinaryFrobMover::FineControlState::None)
-					return;
-			}
-			else if (impulseState == EReleased)
-			{
-				if (Door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop)
-					return;
-			}
-		}
-	}
-
-	if (PerformFrob_TryUseOnFrob(impulseState, executedFromScript))
+	// stgatilov #5542: block use-on-frob when frob called from game script	
+	if (!executedFromScript && PerformFrob_TryUseOnFrob(frobButtonState, target))
 	{
 		return;
 	}
@@ -11846,26 +11948,71 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool ex
 		return;
 	}
 
-	if (impulseState == EPressed)
+	if (!executedFromScript && PerformFrob_TryDoorFineControl(frobButtonState))
+	{
+		return;
+	}
+
+	if (IsCorrectFrobActionTrigger<EFrobAction::InheritedFrobAction>(frobButtonState) && target)
 	{
 		// Trigger the frob action script on key down
-		// TODO: we must delay the frobAction until we know if it was a long-press or short-press
 		target->FrobAction(true);
 	}
 
-	if (PerformFrob_TryPickupInventoryItem(impulseState, target))
+	if (PerformFrob_TryPickupInventoryItem(frobButtonState, target))
 	{
-		return;
-	}
-	
-	if (PerformFrob_TryLootUnconsciousBody(impulseState, target))
-	{
+		m_FrobPressedTarget = nullptr;
 		return;
 	}
 
+	if (PerformFrob_TryLootUnconsciousBody(frobButtonState))
+	{
+		m_FrobPressedTarget = nullptr;
+		return;
+	}
 
+	if (!executedFromScript && PerformFrob_TryUseWorldItem(frobButtonState))
+	{
+		return;
+	}
+
+	PerformFrob_TryGrab(frobButtonState);
 	
 
+	/*
+	const bool grabableType = target->spawnArgs.GetBool("grabable", "1"); // allow override
+	const bool bodyType = grabableType
+		&& (target->IsType(idAFEntity_Base::Type) || target->IsType(idAFAttachment::Type));
+	const bool moveableType = grabableType
+		&& (target->IsType(idMoveable::Type) || target->IsType(idMoveableItem::Type));
+
+	// If an attachment, such as a head, get its body.
+	idEntity* bodyTarget = target->IsType(idAFAttachment::Type)
+		? static_cast<idAFAttachment*>(target)->GetBindMaster()
+		: target;
+
+	const bool holdFrobBodyType = bodyType
+		&& bodyTarget
+		&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
+		&& IsHoldFrobEnabled();
+
+	bool holdFrobDraggableType = holdFrobBodyType;
+	if (!holdFrobDraggableType && moveableType)
+		holdFrobDraggableType = IsAdditionalHoldFrobDraggableType(target);
+
+	const bool holdFrobUsableType = moveableType
+		&& target->spawnArgs.GetBool("equippable", "0")
+		&& IsHoldFrobEnabled()
+		&& !IsUsedItemOrJunk(target);
+
+	// Do not pick up live, conscious AI
+	if (target->IsType(idAI::Type))
+	{
+		idAI* AItarget = static_cast<idAI*>(target);
+		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
+			return;
+	}
+	
 	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
 
 	if (impulseState == EPressed)
@@ -11936,26 +12083,42 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool ex
 		gameLocal.m_Grabber->Update(this, false, true); // preservePosition = true #4149
 		return;
 	}
+	//*/
 }
 
-bool idPlayer::PerformFrob_TryUseOnFrob(EImpulseState impulseState, bool executedFromScript)
+bool idPlayer::PerformFrob_TryDoorFineControl(EFrobButtonState frobButtonState)
+{
+	CBinaryFrobMover* Door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
+	if (Door == nullptr)
+		return false;
+	
+	if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControl>(frobButtonState))
+	{
+		return Door->ExecuteFineControl() != CBinaryFrobMover::FineControlState::None;
+	}
+	else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControlEnd>(frobButtonState))
+	{
+		return Door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop;
+	}	
+
+	return false;
+}
+
+bool idPlayer::PerformFrob_TryUseOnFrob(EFrobButtonState frobButtonState, idEntity* target)
 {
 	// Do we allow use on frob?
-	// stgatilov #5542: block use-on-frob when frob called from game script	
-	if (m_multiLoot || executedFromScript || !cv_tdm_inv_use_on_frob.GetBool())
+	if (target == nullptr || m_multiLoot || !cv_tdm_inv_use_on_frob.GetBool())
 		return false;
-
-	idEntity* highlightedEntity = m_FrobHilightedEntity.GetEntity();
 	
 	// Check if we have a "use" relationship with the currently selected inventory item (key => door)
 	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
-	if (item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedByItem(item, true))
+	if (item && item->UseOnFrob() && target && target->CanBeUsedByItem(item, true))
 	{
-		const bool couldBeUsed = UseInventoryItem(impulseState, item, USERCMD_MSEC, true); // true => is frob action
+		const bool couldBeUsed = UseInventoryItem(FrobButtonStateToImpulseState(frobButtonState), item, USERCMD_MSEC, true); // true => is frob action
 
 		// Give optional visual feedback on the KeyDown event
-		if ((impulseState == EPressed) && cv_tdm_inv_use_visual_feedback.GetBool())
+		if (IsCorrectFrobActionTrigger<EFrobAction::UseOnFrob>(frobButtonState) && cv_tdm_inv_use_visual_feedback.GetBool())
 		{
 			m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
 		}
@@ -11966,8 +12129,7 @@ bool idPlayer::PerformFrob_TryUseOnFrob(EImpulseState impulseState, bool execute
 	return false;
 }
 
-
-bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, idEntity* target)
+bool idPlayer::PerformFrob_TryPickupInventoryItem(EFrobButtonState frobButtonState, idEntity* target)
 {
 	// Obsttorte: #5984) multilooting
 	// return, if not enough time has passed since the last pickup
@@ -11976,14 +12138,21 @@ bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, id
 		return true;
 	}
 	// disable multiloot and return if too much time has passed since last pickup
-	if (m_multiLoot && (gameLocal.time - m_multiLoot_lastFrobTime > cv_multiloot_max_interval.GetInteger()))
+	if (m_multiLoot 
+		&& ((gameLocal.time - m_multiLoot_lastFrobTime > cv_multiloot_max_interval.GetInteger()) 
+			|| IsCorrectFrobActionTrigger<EFrobAction::StopMultiLootWorldItem>(frobButtonState)))
 	{
 		m_multiLoot = false;
 		return true;
 	}
 
+	if (target == nullptr)
+	{
+		return m_multiLoot;
+	}
+
 	const bool repeatMultiloot = m_multiLoot
-		&& impulseState == ERepeat
+		&& IsCorrectFrobActionTrigger<EFrobAction::RepeatMultiLootWorldItem>(frobButtonState)
 		// Obsttorte: don't do anything if we are multilooting and this is no inventory item
 		&& target->spawnArgs.GetString("inv_name", nullptr) != nullptr
 		// Daft Mugi #6270: Do not multiloot immobile readables
@@ -11995,10 +12164,13 @@ bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, id
 		// multiloot is likely to succeed on ERepeat.
 		// TODO research: Should we not rather execute this when we actually know that multiloot will succeed?
 		target->TriggerResponse(this, ST_FROB);
+		
+		// Execute frob action on item that is going to be picked up
+		target->FrobAction(true);
 	}
 
 	// Try to add world item to inventory
-	if (impulseState == EPressed || repeatMultiloot)
+	if (IsCorrectFrobActionTrigger<EFrobAction::LootWorldItem>(frobButtonState) || repeatMultiloot)
 	{
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
@@ -12032,11 +12204,16 @@ bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, id
 	return m_multiLoot;
 }
 
-
-bool idPlayer::PerformFrob_TryLootUnconsciousBody(EImpulseState impulseState, idEntity* target)
+bool idPlayer::PerformFrob_TryLootUnconsciousBody(EFrobButtonState frobButtonState)
 {
-	// TODO: This must be ShortPressRelease later
-	if (!cv_tdm_autosearch_bodies.GetBool() || impulseState != EPressed)
+	if (!cv_tdm_autosearch_bodies.GetBool() 
+		|| !IsCorrectFrobActionTrigger<EFrobAction::LootUnconsciousBody>(frobButtonState))
+	{
+		return false;
+	}
+
+	idEntity* target = m_FrobPressedTarget.GetEntity();
+	if (!target)
 		return false;
 
 	// If an attachment, such as a head, get its body.
@@ -12064,8 +12241,57 @@ bool idPlayer::PerformFrob_TryLootUnconsciousBody(EImpulseState impulseState, id
 	return bodyTarget->AddAttachmentsToInventory(this);
 }
 
+bool idPlayer::PerformFrob_TryUseWorldItem(EFrobButtonState frobButtonState)
+{
+	if (!IsCorrectFrobActionTrigger<EFrobAction::UseWorldItem>(frobButtonState)
+		|| !m_canUseWorldItem)
+	{
+		return false;
+	}
+
+	bool used = gameLocal.m_Grabber->EquipFrobEntity(this);
+	if (used)
+	{
+		m_canUseWorldItem = false;
+	}
+	return used;
+}
+
+bool idPlayer::PerformFrob_TryGrab(EFrobButtonState frobButtonState)
+{
+	if (!IsCorrectFrobActionTrigger<EFrobAction::GrabWorldItem>(frobButtonState))
+		return false;
+
+	idEntity* target = m_FrobPressedTarget.GetEntity();
+	if (target == nullptr)
+		return false;
+	const bool grabbable = target->spawnArgs.GetBool("grabable", "1") &&
+		(target->IsType(idMoveable::Type) || target->IsType(idAFEntity_Base::Type) ||
+			target->IsType(idMoveableItem::Type) || target->IsType(idAFAttachment::Type));
+	if (!grabbable)
+	{
+		return false;
+	}
+
+	// Do not pick up live, conscious AI
+	if (target->IsType(idAI::Type))
+	{
+		idAI* AItarget = static_cast<idAI*>(target);
+		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
+		{
+			return false;
+		}
+	}
+
+	gameLocal.m_Grabber->Update(this, false, true); // preservePosition = true #4149
+	m_FrobPressedTarget = nullptr;
+
+	return true;
+}
+
 void idPlayer::PerformFrobKeyPressed()
 {
+	/*
 	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
 
 	// If holding an equippable item, begin tracking frob for later
@@ -12079,16 +12305,17 @@ void idPlayer::PerformFrobKeyPressed()
 		m_holdFrobStartTime = gameLocal.time;
 		return;
 	}
+	*/
 	
 	// Relay the function to the specialised method
-	PerformFrob(EPressed, m_FrobHilightedEntity.GetEntity());
+	PerformFrob(EFrobButtonState::Pressed, m_FrobHilightedEntity.GetEntity());
 }
 
 void idPlayer::PerformFrobKeyRepeat(int holdTime)
 {
-	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
-
 	// If holding an equippable item, use it if frob held long enough.
+	/*
+	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
 	if (m_holdFrobEntity.GetEntity()
 	    && m_holdFrobEntity.GetEntity() == grabberEnt
 	    && CanHoldFrobAction())
@@ -12097,15 +12324,21 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 		m_holdFrobEntity = NULL;
 		return;
 	}
+	//*/
+
+	if (!CanHoldFrobAction(holdTime) || !IsHoldFrobEnabled())
+		return;
 	
 	// Relay the function to the specialised method
-	PerformFrob(ERepeat, m_FrobHilightedEntity.GetEntity());
+	PerformFrob(EFrobButtonState::HoldLong, m_FrobHilightedEntity.GetEntity());
 }
 
 void idPlayer::PerformFrobKeyRelease(int holdTime)
 {
-	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
+	
 
+	/*
+	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
 	if (IsHoldFrobEnabled())
 	{
 		idEntity* holdFrobEnt = m_holdFrobEntity.GetEntity();
@@ -12129,9 +12362,18 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 			return;
 		}
 	}
+	*/
 
 	// Relay the function to the specialised method
-	PerformFrob(EReleased, m_FrobHilightedEntity.GetEntity());
+	PerformFrob(IsHoldFrobEnabled() && CanHoldFrobAction(holdTime) 
+		? EFrobButtonState::ReleasedLong : EFrobButtonState::ReleasedShort,
+		m_FrobHilightedEntity.GetEntity());
+
+	// Reset for next
+	m_FrobPressedTarget = nullptr;
+	m_multiLoot = false;
+	m_canToggleEquip = true;
+	m_canUseWorldItem = true;
 }
 
 void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount)

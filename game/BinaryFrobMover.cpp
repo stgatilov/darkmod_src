@@ -1628,9 +1628,9 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::InitFineControl()
 	return FineControlState::Init;
 }
 
-CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl(int holdTime)
+CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl()
 {
-	if (m_FineControlState == FineControlState::None || holdTime < 200) // TODO: potentially use hold frob duration cvar?
+	if (m_FineControlState == FineControlState::None) // TODO: potentially use hold frob duration cvar?
 		return FineControlState::None;
 
 	idPlayer* player = gameLocal.GetLocalPlayer();
@@ -1651,6 +1651,7 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl(int hold
 	}
 
 	// TODO: Get more intuitive door fine control!
+	// TODO: FIX broken door anmiation, when opening door to the other side
 	float dy = player->usercmd.my - m_mousePosition.y;
 	m_mousePosition.x = player->usercmd.mx;
 	m_mousePosition.y = player->usercmd.my;

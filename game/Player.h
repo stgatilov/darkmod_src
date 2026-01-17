@@ -853,6 +853,58 @@ public:
 	void					PerformFrobCheck();
 	void					PerformFrobCheckInternal();
 
+	enum class EFrobControlStyle // see cv_frob_control_style
+	{
+		TDM = 0,
+		Thief = 1,
+		TDM_inverted = 2,
+	};
+
+	enum class EFrobAction
+	{
+		Init,
+		ReleaseGrabbedObject,
+		ToggleGrabbedObject,
+		DoorFineControl,
+		DoorFineControlEnd,
+		UseOnFrob,
+		LootUnconsciousBody,
+		LootWorldItem,
+		RepeatMultiLootWorldItem,
+		StopMultiLootWorldItem,
+		InheritedFrobAction,
+		UseWorldItem, // Shoulder body, blow out candle, eat apple, ...
+		GrabWorldItem,
+	};
+
+	enum class EFrobButtonState
+	{
+		Pressed = EPressed,
+		ReleasedShort = EReleased,
+		HoldLong = ENumImpulseStates + 1,
+		ReleasedLong = ENumImpulseStates + 2,
+		Invalid = -1,
+	};
+
+	template <EFrobAction action>
+	bool IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) const;
+
+	inline static EImpulseState FrobButtonStateToImpulseState(EFrobButtonState ButtonState)
+	{
+		switch (ButtonState)
+		{
+		case EFrobButtonState::Pressed:
+			return EPressed;
+		case EFrobButtonState::HoldLong:
+			return ERepeat;
+		case EFrobButtonState::ReleasedLong:
+		case EFrobButtonState::ReleasedShort:
+			return EReleased;
+		default:
+			return ENumImpulseStates;
+		}
+	}
+
 
 	/**
 	 * greebo: Performs a frob action on the given entity. The methods
@@ -861,27 +913,34 @@ public:
 	 * This method might be invoked by scripts as well to simulate 
 	 * a frob action without having the player to hit any buttons.
 	 * 
-	 * @impulseState: the button state of the frob key. Pass EPressed if you
+	 * @frobButtonState: the button state of the frob key. Pass EPressed if you
 	 * want to simulate a one-time frob event.
 	 *
 	 * @executedFromScript: true, if executed from game script
 	 *
 	 */
-	void					PerformFrob(EImpulseState impulseState, idEntity* target, bool executedFromScript = false);
+	void					PerformFrob(EFrobButtonState frobButtonState, idEntity* target, bool executedFromScript = false);
+
+	/**
+	 * stifu: Try to fine control doors etc
+	 *
+	 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+	 */
+	bool                    PerformFrob_TryDoorFineControl(EFrobButtonState frobButtonState);
 
 	/**
 	 * stifu: Try to use inventory item on frob highlighted entity
 	 *
 	 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 	 */
-	bool                    PerformFrob_TryUseOnFrob(EImpulseState impulseState, bool executedFromScript);
+	bool                    PerformFrob_TryUseOnFrob(EFrobButtonState frobButtonState, idEntity* target);
 	
 	/**
 	 * stifu: Try to pickup an inventory item.
 	 * 
 	 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 	 */
-	bool                    PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, idEntity* target);
+	bool                    PerformFrob_TryPickupInventoryItem(EFrobButtonState frobButtonState, idEntity* target);
 
 	/**
 	 * stifu: Try to loot an unconscious body.
@@ -889,7 +948,13 @@ public:
 	 *
 	 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 	 */
-	bool					PerformFrob_TryLootUnconsciousBody(EImpulseState impulseState, idEntity* target);
+	bool					PerformFrob_TryLootUnconsciousBody(EFrobButtonState frobButtonState);
+
+	bool					PerformFrob_TryUseWorldItem(EFrobButtonState frobButtonState);
+
+	bool					PerformFrob_TryGrab(EFrobButtonState frobButtonState);
+	
+
 
 	// Gets called when the player hits the frob button.
 	void					PerformFrobKeyPressed();
@@ -899,22 +964,20 @@ public:
 	void					PerformFrobKeyRelease(int holdTime);
 
 	// Daft Mugi #6316: Hold Frob for alternate interaction
+	// TODO: Check which can be removed
 	bool					IsHoldFrobEnabled(void);
-	bool					CanHoldFrobAction(void);
-	void					SetHoldFrobView(void);
-	float					HoldFrobViewDistance(void);
-	bool					IsAdditionalHoldFrobDraggableType(idEntity* target);
-	bool					IsUsedItemOrJunk(idEntity* target);
+	bool					CanHoldFrobAction(int holdtime);
+	//void					SetHoldFrobView(void);
+	//float					HoldFrobViewDistance(void);
+	//bool					IsAdditionalHoldFrobDraggableType(idEntity* target);
+	//bool					IsUsedItemOrJunk(idEntity* target);
 
 	// Obsttorte: #5984 (multilooting)
 	bool					m_multiLoot;
 	int						m_multiLoot_lastFrobTime; // game time
 
-	// Daft Mugi #6316: Hold Frob for alternate interaction
-	idEntityPtr<idEntity>   m_holdFrobEntity;
-	idEntityPtr<idEntity>   m_holdFrobDraggedEntity;
-	int                     m_holdFrobStartTime;
-	idMat3                  m_holdFrobStartViewAxis;
+	bool					m_canToggleEquip;  // Toggle only once per frob
+	bool					m_canUseWorldItem; // Use only once per frob
 
 	// angua: Set ideal crouch state
 	void					EvaluateCrouch();
@@ -1569,4 +1632,3 @@ ID_INLINE void idPlayer::SetSelfSmooth( bool b ) {
 }
 
 #endif /* !__GAME_PLAYER_H__ */
-

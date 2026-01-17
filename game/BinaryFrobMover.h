@@ -101,7 +101,7 @@ public:
 private:
 	FineControlState		InitFineControl();
 public:
-	FineControlState		ExecuteFineControl(int holdTime = 0); // returns true, if fine control is being performed
+	FineControlState		ExecuteFineControl(); // returns true, if fine control is being performed
 	FineControlState		StopFineControl();
 	
 
