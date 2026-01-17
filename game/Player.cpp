@@ -11757,9 +11757,37 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 
 void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool executedFromScript)
 {
+	// Ignore frobs if player-frobbing is immobilized.
+	if ((GetImmobilization() & EIM_FROB) != 0 && !executedFromScript)
+	{
+		return;
+	}
+
+	if (impulseState == EPressed && !executedFromScript) // TODO research: Do we need to check executedFromScript here?
+	{
+		idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
+
+		// If the grabber is currently holding something and frob is pressed,
+		// release it.  Do not frob anything new since you're holding an item.
+		if (grabberEnt)
+		{
+			gameLocal.m_Grabber->Update(this);
+			return;
+		}
+	}
+
+	if (impulseState == EReleased)
+	{
+		m_multiLoot = false;
+	}
+
 	// greebo: Don't perform frobs on hidden or NULL entities
 	if (target == NULL || target->IsHidden())
 	{
+		// If there is nothing highlighted and shouldering a body,
+		// drop the body.
+		if (m_bShoulderingBody && !executedFromScript)
+			gameLocal.m_Grabber->Dequip();
 		return;
 	}
 
@@ -11779,6 +11807,30 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool ex
 		
 		// note which target we started pressing frob on
 		m_FrobPressedTarget = target;
+
+		m_holdFrobEntity = nullptr;
+		m_holdFrobDraggedEntity = nullptr;
+
+		m_holdFrobStartTime = gameLocal.time; // TODO: Temporarily moved up! This will be reverted later
+	}
+
+	if (executedFromScript && m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != nullptr)
+	{
+		// Door fine control
+		CBinaryFrobMover* Door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
+		if (Door != nullptr)
+		{
+			if (impulseState == ERepeat)
+			{
+				if (Door->ExecuteFineControl(gameLocal.time - m_holdFrobStartTime) != CBinaryFrobMover::FineControlState::None)
+					return;
+			}
+			else if (impulseState == EReleased)
+			{
+				if (Door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop)
+					return;
+			}
+		}
 	}
 
 	if (PerformFrob_TryUseOnFrob(impulseState, executedFromScript))
@@ -11872,7 +11924,6 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool ex
 			// Store frobbed entity and start time tracking.
 			m_holdFrobEntity = highlightedEntity;
 			m_holdFrobDraggedEntity = NULL;
-			m_holdFrobStartTime = gameLocal.time;
 			SetHoldFrobView();
 			return;
 		}
@@ -12033,63 +12084,26 @@ bool idPlayer::PerformFrob_TryPickupInventoryItem(EImpulseState impulseState, id
 
 void idPlayer::PerformFrobKeyPressed()
 {
-	// Initialize/reset hold frob
-	m_holdFrobEntity = NULL;
-	m_holdFrobDraggedEntity = NULL;
-
-	// Ignore frobs if player-frobbing is immobilized.
-	if ( GetImmobilization() & EIM_FROB )
-	{
-		return;
-	}
-
 	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
 
 	// If holding an equippable item, begin tracking frob for later
 	// equip/use or drop.
 	if (IsHoldFrobEnabled()
-	    && grabberEnt
-	    && grabberEnt->spawnArgs.GetBool("equippable", "0")
-	    && !IsUsedItemOrJunk(grabberEnt))
+		&& grabberEnt
+		&& grabberEnt->spawnArgs.GetBool("equippable", "0")
+		&& !IsUsedItemOrJunk(grabberEnt))
 	{
 		m_holdFrobEntity = grabberEnt;
 		m_holdFrobStartTime = gameLocal.time;
 		return;
 	}
-
-	// If the grabber is currently holding something and frob is pressed,
-	// release it.  Do not frob anything new since you're holding an item.
-	if (grabberEnt)
-	{
-		gameLocal.m_Grabber->Update( this );
-		return;
-	}
-
-	// Get the currently frobbed entity
-	idEntity* frob = m_FrobHilightedEntity.GetEntity();
-
-	// If there is nothing highlighted and shouldering a body,
-	// drop the body.
-	if (IsHoldFrobEnabled()
-	    && !frob
-	    && IsShoulderingBody())
-	{
-		gameLocal.m_Grabber->Dequip();
-		return;
-	}
-
+	
 	// Relay the function to the specialised method
-	PerformFrob(EPressed, frob);
+	PerformFrob(EPressed, m_FrobHilightedEntity.GetEntity());
 }
 
 void idPlayer::PerformFrobKeyRepeat(int holdTime)
 {
-	// Ignore frobs if player-frobbing is immobilized.
-	if ( GetImmobilization() & EIM_FROB )
-	{
-		return;
-	}
-
 	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
 
 	// If holding an equippable item, use it if frob held long enough.
@@ -12101,36 +12115,13 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 		m_holdFrobEntity = NULL;
 		return;
 	}
-
-	// Get the currently frobbed entity
-	idEntity* frob = m_FrobHilightedEntity.GetEntity();
-
-	// use the original target until frob is released and pressed again	
-	if (m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != nullptr)
-	{
-		CBinaryFrobMover* Door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
-		if (Door != nullptr)
-		{
-			if (Door->ExecuteFineControl(holdTime) != CBinaryFrobMover::FineControlState::None)
-				return;
-		}
-	}
 	
 	// Relay the function to the specialised method
-	PerformFrob(ERepeat, frob);
+	PerformFrob(ERepeat, m_FrobHilightedEntity.GetEntity());
 }
 
 void idPlayer::PerformFrobKeyRelease(int holdTime)
 {
-	// Obsttorte: multilooting
-	m_multiLoot = false;
-
-	// Ignore frobs if player-frobbing is immobilized.
-	if ( GetImmobilization() & EIM_FROB )
-	{
-		return;
-	}
-
 	idEntity* grabberEnt = gameLocal.m_Grabber->GetSelected();
 
 	if (IsHoldFrobEnabled())
@@ -12154,17 +12145,6 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 			m_holdFrobDraggedEntity = NULL;
 			m_holdFrobEntity = NULL;
 			return;
-		}
-	}
-
-	// use the original target until frob is released and pressed again
-	if ( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != nullptr)
-	{
-		CBinaryFrobMover* Door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
-		if (Door != nullptr)
-		{
-			if (Door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop)
-				return;
 		}
 	}
 
