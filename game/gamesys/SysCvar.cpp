@@ -327,7 +327,7 @@ idCVar cv_frob_debug_bounds(			"tdm_frob_debug_bounds", "0",			CVAR_GAME | CVAR_
 idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",	CVAR_GAME | CVAR_BOOL,						"Set to 1 to have weapons automatically selected when the respective item is picked up." );
 idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME |CVAR_BOOL,						"Set to 1 to have items automatically selected when the respective item is picked up.");
 idCVar cv_frob_debug_hud(				"tdm_frob_debug_hud", "0",				CVAR_GAME | CVAR_BOOL,						"Set to 1 to show some frobbing info." );
-idCVar cv_frob_control_style(			"tdm_frob_control_style", "2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style: 0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction), 1: Thief/2.12 (Mixed), 2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
+idCVar cv_frob_control_style(			"tdm_frob_control_style", "2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style:\n\t0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction),\n\t1: Thief/2.12 (Like TDM, but behavior for bodys is swapped),\n\t2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
 
 idCVar cv_frobhelper_active(			"tdm_frobhelper_active",			"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,	"Set to 1 to activate the FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_alwaysVisible(     "tdm_frobhelper_alwaysVisible",     "0",    CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,    "Set to 1 to always display the frobhelper like a crosshair.", 0, 1); // stifu #4990

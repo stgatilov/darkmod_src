@@ -11702,7 +11702,6 @@ bool idPlayer::IsCorrectFrobActionTrigger(EFrobButtonState frobButtonState) cons
 	}
 	else if (Action::LootUnconsciousBody == action)
 	{
-		// TODO: review
 		return Frob::ReleasedShort == frobButtonState;
 	}
 	else if (Action::LootWorldItem == action)
@@ -11811,7 +11810,6 @@ void idPlayer::PerformFrob(EFrobButtonState frobButtonState, idEntity* target, b
 		// if we only allow "simple" frob actions and this isn't one, play forbidden sound
 		if ((GetImmobilization() & EIM_FROB_COMPLEX) != 0 && !target->m_bFrobSimple)
 		{
-			// TODO: Rename this "uh-uh" sound to something more general?
 			StartSound("snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL);
 			return;
 		}
@@ -11832,7 +11830,6 @@ void idPlayer::PerformFrob(EFrobButtonState frobButtonState, idEntity* target, b
 				const bool bodyType = grabableType
 					&& (target->IsType(idAFEntity_Base::Type) || target->IsType(idAFAttachment::Type));
 
-				// TODO research: do we need to call GetBindMaster in a loop?
 				idEntity* bodyTarget = target->IsType(idAFAttachment::Type)
 					? static_cast<idAFAttachment*>(target)->GetBindMaster()
 					: target;
@@ -11845,7 +11842,7 @@ void idPlayer::PerformFrob(EFrobButtonState frobButtonState, idEntity* target, b
 				if (!holdFrobBodyType)
 					return false;
 
-				// TODO Research: Do we need to 
+				// TODO Research: Should this rather be executed on bodyTarget?
 				if (target->IsType(idAI::Type))
 				{
 					idAI* AItarget = static_cast<idAI*>(target);
@@ -12032,13 +12029,12 @@ bool idPlayer::PerformFrob_TryLootUnconsciousBody(EFrobButtonState frobButtonSta
 		return false;
 
 	// If an attachment, such as a head, get its body.
-	// TODO research: should we not loop until GetBindMaster() returns nullptr?
 	idEntity* bodyTarget = target->IsType(idAFAttachment::Type)
 		? static_cast<idAFAttachment*>(target)->GetBindMaster()
 		: target;
 
 	// Do not pick up live, conscious AI
-	// TODO research: Should we use bodytarget here?
+	// TODO research: Should we check bodytarget rather than target here?
 	if (target->IsType(idAI::Type))
 	{
 		idAI* AItarget = static_cast<idAI*>(bodyTarget);
@@ -12064,7 +12060,7 @@ bool idPlayer::PerformFrob_TryUseWorldItem(EFrobButtonState frobButtonState)
 		return false;
 	}
 
-	bool used = gameLocal.m_Grabber->EquipFrobEntity(this);
+	const bool used = gameLocal.m_Grabber->EquipFrobEntity(this);
 	if (used)
 	{
 		m_canUseWorldItem = false;
@@ -12108,7 +12104,6 @@ bool idPlayer::PerformFrob_TryGrab(EFrobButtonState frobButtonState)
 
 void idPlayer::PerformFrobKeyPressed()
 {	
-	// Relay the function to the specialised method
 	PerformFrob(EFrobButtonState::Pressed, m_FrobHilightedEntity.GetEntity());
 }
 
@@ -12117,7 +12112,6 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 	if (!CanHoldFrobAction(holdTime) || !IsHoldFrobEnabled())
 		return;
 	
-	// Relay the function to the specialised method
 	PerformFrob(EFrobButtonState::HoldLong, m_FrobHilightedEntity.GetEntity());
 }
 
@@ -12133,6 +12127,7 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 	m_multiLoot = false;
 	m_canToggleEquip = true;
 	m_canUseWorldItem = true;
+	m_isShoulderableBody = false;
 }
 
 void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount)

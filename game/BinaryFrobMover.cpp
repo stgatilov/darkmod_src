@@ -1630,7 +1630,7 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::InitFineControl()
 
 CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl()
 {
-	if (m_FineControlState == FineControlState::None) // TODO: potentially use hold frob duration cvar?
+	if (m_FineControlState == FineControlState::None)
 		return FineControlState::None;
 
 	idPlayer* player = gameLocal.GetLocalPlayer();
