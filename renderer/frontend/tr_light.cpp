@@ -1768,6 +1768,10 @@ void R_RemoveUnecessaryViewLights( void ) {
 	int numViewLights = 0;
 	for (vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next) {
 		numViewLights++;
+		// stgatilov: volumetric effect is always visible, even if no surfaces are lit
+		// and it requires shadows to be computed correctly
+		if ( vLight->volumetricDust != 0.0f )
+			continue;
 		// if the light didn't have any lit surfaces visible, there is no need to
 		// draw any of the shadows.  We still keep the vLight for debugging
 		// draws
