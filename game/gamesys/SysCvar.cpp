@@ -628,6 +628,8 @@ idCVar cv_door_control_sensitivity("tdm_door_control_sensitivity", "0.01", CVAR_
 	"Sets fine door control mouse sensitivity. Only applicable if tdm_door_control = 1.");
 idCVar cv_door_control_movetime_factor_slow("tdm_door_control_movetime_factor_slow", "2.5", CVAR_GAME | CVAR_FLOAT,
 	"If the slow door control is used (tdm_door_control = 2 or 3), the movetime is multiplied by this value. Values > 1 mean slower motion.");
+idCVar cv_door_control_movetime_factor_fast("tdm_door_control_movetime_factor_fast", "0.25", CVAR_GAME | CVAR_FLOAT,
+	"Close door fast by holding Frob and pressing attack. Speed is controlled by this value. Values < 1 mean fast motion.");
 
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 

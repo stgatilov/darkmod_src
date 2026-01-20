@@ -914,6 +914,7 @@ public:
 			DoorMoveRegular,
 			DoorMoveSlow,
 			DoorMoveSlowInterrupt,
+			DoorCloseFast,
 			UseOnFrob,
 			LootUnconsciousBody,
 			LootWorldItem,
@@ -982,6 +983,7 @@ public:
 		bool m_canUseWorldItem{true};     // Only once per frob
 		bool m_isShoulderableBody{false}; // Modifies FrobActionTriggers when using EControlStyle::Thief
 		bool m_canDoorMoveSlow{true};     // Only once per frob
+		bool m_wasAttackPressed{false};
 
 		// Obsttorte: #5984 (multilooting)
 		bool m_multiLoot{false};

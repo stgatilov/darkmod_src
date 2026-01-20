@@ -636,6 +636,11 @@ bool CBinaryFrobMover::StartMoving(bool open)
 		m_bIsMovingSlowBuffered = false;
 		m_bIsMovingSlow = true;
 	}
+	else if (m_bIsClosingFastBuffered)
+	{
+		move_time = static_cast<int>(cv_door_control_movetime_factor_fast.GetFloat() * m_move_time_normal);
+		m_bIsClosingFastBuffered = false;
+	}
 
 	// Get the target position and orientation
 	idVec3 targetOrigin = open ? m_OpenOrigin : m_ClosedOrigin;
@@ -691,7 +696,7 @@ bool CBinaryFrobMover::StartMoving(bool open)
 	}
 	else
 	{
-		ResetMovingSlow();
+		ResetMovingSlowOrFast();
 	}
 
 	return m_StateChange;
@@ -899,7 +904,7 @@ bool CBinaryFrobMover::CanBeUsedByItem(const CInventoryItemPtr& item, const bool
 
 void CBinaryFrobMover::ToggleOpen()
 {
-	const bool dontInterrupt = m_bIsMovingSlowBuffered;
+	const bool dontInterrupt = m_bIsMovingSlowBuffered || m_bIsClosingFastBuffered;
 	if (!IsMoving() || dontInterrupt)
 	{
 		// We are not moving
@@ -929,11 +934,20 @@ void CBinaryFrobMover::BufferMovingSlow(bool bForceOpen)
 		m_bIntentOpen = true;
 }
 
-void CBinaryFrobMover::ResetMovingSlow()
+void CBinaryFrobMover::BufferClosingFast()
 {
-	m_bIsMovingSlowBuffered = false;
-	m_bIsMovingSlow         = false;
-	move_time               = m_move_time_normal;
+	m_bIsClosingFastBuffered = true;
+	m_bIsMovingSlowBuffered  = false;
+	m_bIntentOpen            = false;
+
+}
+
+void CBinaryFrobMover::ResetMovingSlowOrFast()
+{
+	m_bIsMovingSlowBuffered  = false;
+	m_bIsMovingSlow          = false;
+	m_bIsClosingFastBuffered = false;
+	move_time                = m_move_time_normal;
 }
 
 void CBinaryFrobMover::Interrupt()
@@ -977,7 +991,7 @@ void CBinaryFrobMover::DoneStateChange()
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: DoneStateChange\r" );
 
-	ResetMovingSlow();
+	ResetMovingSlowOrFast();
 
 	// Check which position we're at, set the state variables and fire the correct events
 

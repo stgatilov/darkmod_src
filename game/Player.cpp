@@ -11668,6 +11668,13 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state) cons
 	{
 		return Frob::ReleasedLong == state;
 	}
+	else if (Action::DoorCloseFast == action)
+	{
+		if (Frob::HoldLong != state)
+			return false;
+		const bool attackPressedNow = !m_wasAttackPressed && 0 != (m_player->usercmd.buttons & BUTTON_ATTACK);
+		return attackPressedNow;
+	}
 	else if (Action::UseOnFrob == action)
 	{
 		return Frob::Pressed == state;
@@ -11823,6 +11830,8 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 				}
 				return true;				
 			}();
+
+		m_wasAttackPressed = 0 != (m_player->usercmd.buttons & BUTTON_ATTACK);
 	}
 
 	// stgatilov #5542: block use-on-frob when frob called from game script	
@@ -11902,6 +11911,8 @@ void idPlayer::FrobHandling::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(m_multiLoot_lastFrobTime);
 	savefile->ReadBool(m_canDoorMoveSlow);
 	m_FrobPressedTarget.Restore(savefile);
+	m_wasAttackPressed = false;
+	m_player->SetImmobilization("DoorControl", 0);
 }
 
 bool idPlayer::FrobHandling::TryDoorControl(EButtonState state, idEntity* target)
@@ -11954,18 +11965,41 @@ bool idPlayer::FrobHandling::TryDoorControl(EButtonState state, idEntity* target
 			const bool doorControlAllowed = IsDoorControlAllowed();
 			if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state))
 			{
+				door->StopFineControl();
 				door->FrobAction(true);
+				m_player->SetImmobilization("DoorControl", 0);
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControlInit>(state))
 			{
-				return door->InitFineControl() == CBinaryFrobMover::FineControlState::Init;
+				if (door->InitFineControl() == CBinaryFrobMover::FineControlState::Init)
+				{
+					m_player->SetImmobilization("DoorControl", EIM_ATTACK | EIM_WEAPON_SELECT);
+					return true;
+				}
+				return false;
+			}
+			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorCloseFast>(state) && !door->IsAtClosedPosition())
+			{
+				door->StopFineControl();
+				door->BufferClosingFast();
+				// stifu: We are using FrobAction in case any scripting is tied to it. 
+				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
+				door->FrobAction(true);
+				m_wasAttackPressed = true;
+				m_player->SetImmobilization("DoorControl", 0);
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControl>(state) && doorControlAllowed)
 			{
-				return door->ExecuteFineControl() != CBinaryFrobMover::FineControlState::None;
+				if (door->ExecuteFineControl() == CBinaryFrobMover::FineControlState::None)
+				{
+					m_player->SetImmobilization("DoorControl", 0);
+					return false;
+				}
+				return true;
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControlEnd>(state) || !doorControlAllowed)
 			{
+				m_player->SetImmobilization("DoorControl", 0);
 				return door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop;
 			}
 			return true;
@@ -11973,18 +12007,34 @@ bool idPlayer::FrobHandling::TryDoorControl(EButtonState state, idEntity* target
 
 	case DoorHoldfrob::Open:
 	case DoorHoldfrob::Toggle:
-		{
+		{		
+		    if (IsCorrectFrobActionTrigger<EFrobAction::Init>(state))
+			{
+				m_player->SetImmobilization("DoorControl", EIM_ATTACK | EIM_WEAPON_SELECT);
+			}
 		    const bool doorControlAllowed = IsDoorControlAllowed();
 			if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state))
 			{
 				door->FrobAction(true);
+				m_player->SetImmobilization("DoorControl", 0);
+			}
+			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorCloseFast>(state) && !door->IsAtClosedPosition())
+			{
+				door->BufferClosingFast();
+				// stifu: We are using FrobAction in case any scripting is tied to it. 
+				// If frobaction does not call ToggleOpen, the door would not necessarily close.
+				door->FrobAction(true);
+				m_canDoorMoveSlow  = false;
+				m_wasAttackPressed = true;
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveSlow>(state) 
 				&& m_canDoorMoveSlow && !door->IsMovingSlow() && doorControlAllowed
 				&& (controlMode != DoorHoldfrob::Open || !door->IsAtOpenPosition()))
 			{
 				if (door->IsMoving())
+				{
 					door->Interrupt();
+				}
 				door->BufferMovingSlow(controlMode == DoorHoldfrob::Open);
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
@@ -12004,6 +12054,7 @@ bool idPlayer::FrobHandling::TryDoorControl(EButtonState state, idEntity* target
 					{
 						m_canDoorMoveSlow = true;
 					}
+					m_player->SetImmobilization("DoorControl", 0);
 				}
 			}
 			return true;

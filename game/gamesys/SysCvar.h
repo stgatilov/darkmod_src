@@ -432,6 +432,7 @@ extern idCVar cv_door_ignore_locks;
 extern idCVar cv_door_control;
 extern idCVar cv_door_control_sensitivity;
 extern idCVar cv_door_control_movetime_factor_slow;
+extern idCVar cv_door_control_movetime_factor_fast;
 
 extern idCVar cv_dm_distance;
 

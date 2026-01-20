@@ -126,15 +126,17 @@ private: // members | Ishtvan/stifu: fine control
 	**/
 	FineControlState			m_FineControlState;
 
-public: // methods | stifu: open/close slowly
+public: // methods | stifu: open/close slowly, close fast
 
 	bool					IsMovingSlow() const { return m_bIsMovingSlow; }
 	void					Interrupt();
 	void					BufferMovingSlow(bool bForceOpen);
-	void					ResetMovingSlow();
+	void					BufferClosingFast();
+	void					ResetMovingSlowOrFast();
 
-private: // members | stifu: open/close slowly
+private: // members | stifu: open/close slowly, close fast
 	bool					m_bIsMovingSlowBuffered{ false };
+	bool					m_bIsClosingFastBuffered{ false };
 	bool					m_bIsMovingSlow{ false };
 	int						m_move_time_normal{0};
 
