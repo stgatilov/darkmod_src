@@ -35,6 +35,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <numeric>
 
 #include "../sys/sys_padinput.h"
+#include "Player.h"
 
 /*
 ===============================================================================
@@ -11643,11 +11644,27 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state) cons
 				return Frob::HoldLong == state;
 		}
 	}
+	else if (Action::DoorFineControlInit == action)
+	{
+		return Frob::Pressed == state;
+	}
 	else if (Action::DoorFineControl == action)
 	{
-		return  Frob::HoldLong == state;
+		return Frob::HoldLong == state;
 	}
 	else if (Action::DoorFineControlEnd == action)
+	{
+		return Frob::ReleasedLong == state;
+	}
+	else if (Action::DoorMoveRegular == action)
+	{
+		return Frob::ReleasedShort == state;
+	}
+	else if (Action::DoorMoveSlow == action)
+	{
+		return Frob::HoldLong == state;
+	}
+	else if (Action::DoorMoveSlowInterrupt == action)
 	{
 		return Frob::ReleasedLong == state;
 	}
@@ -11822,10 +11839,11 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 		return;
 	}
 
-	if (!executedFromScript && TryDoorFineControl(state))
+	if (!executedFromScript && TryDoorControl(state, target))
 	{
 		return;
 	}
+	
 
 	if (IsCorrectFrobActionTrigger<EFrobAction::InheritedFrobAction>(state) && target)
 	{
@@ -11870,6 +11888,7 @@ void idPlayer::FrobHandling::Save(idSaveGame* savefile) const
 	savefile->WriteBool(m_isShoulderableBody);
 	savefile->WriteBool(m_multiLoot);
 	savefile->WriteInt(m_multiLoot_lastFrobTime);
+	savefile->WriteBool(m_canDoorMoveSlow);
 	m_FrobPressedTarget.Save(savefile);
 }
 
@@ -11881,25 +11900,111 @@ void idPlayer::FrobHandling::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(m_isShoulderableBody);
 	savefile->ReadBool(m_multiLoot);
 	savefile->ReadInt(m_multiLoot_lastFrobTime);
+	savefile->ReadBool(m_canDoorMoveSlow);
 	m_FrobPressedTarget.Restore(savefile);
 }
 
-bool idPlayer::FrobHandling::TryDoorFineControl(EButtonState state)
+bool idPlayer::FrobHandling::TryDoorControl(EButtonState state, idEntity* target)
 {
-	CBinaryFrobMover* Door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
-	if (Door == nullptr)
-		return false;
-	
-	if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControl>(state))
-	{
-		return Door->ExecuteFineControl() != CBinaryFrobMover::FineControlState::None;
-	}
-	else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControlEnd>(state))
-	{
-		return Door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop;
-	}	
+	auto GetBindMaster = [](idEntity* ent) -> idEntity*
+		{
+			if (ent == nullptr)
+				return nullptr;
+			idEntity* bindmaster = ent->GetBindMaster();
+			while (bindmaster != nullptr)
+			{
+				ent = bindmaster;
+				bindmaster = ent->GetBindMaster();
+			}
+			return ent;
+		};
 
-	return false;
+	idEntity* frobpressed = GetBindMaster(m_FrobPressedTarget.GetEntity());
+	target                = GetBindMaster(target);
+	
+	CBinaryFrobMover* door = dynamic_cast<CBinaryFrobMover*>(frobpressed);
+	if (door == nullptr)
+		return false;
+
+	auto IsDoorControlAllowed = [this, target, frobpressed]
+		{
+			const int  distanceToEntity   = static_cast<int>((m_player->GetEyePosition() - frobpressed->GetPhysics()->GetOrigin()).Length());
+			const bool insideFrobDistance = distanceToEntity < frobpressed->m_FrobDistance;
+			const bool lookingAtDoor      = target == frobpressed;
+			return insideFrobDistance || lookingAtDoor;
+			/*
+			* stifu: distanceToEntity is not the same as the frob-trace-distance to entity. This
+			* can lead to door being frob-highlighted, but not controllable, if we use distanceToEntity
+			* for stopping door control. We therefore also use lookingAtDoor.
+			* GOAL: Player should be able to start start door control whenever it can be highlighted, but also sneak through the door while not looking at it.
+			* TODO: Find better approach that works only on distance?
+			**/
+		};
+
+	using DoorHoldfrob = CBinaryFrobMover::HoldfrobMode;
+	const DoorHoldfrob controlMode = static_cast<DoorHoldfrob>(cv_door_control.GetInteger());
+	switch (controlMode)
+	{
+	default:
+	case DoorHoldfrob::Disabled:
+		return false;
+
+	case DoorHoldfrob::FineControl:
+		{
+			const bool doorControlAllowed = IsDoorControlAllowed();
+			if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state))
+			{
+				door->FrobAction(true);
+			}
+			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControlInit>(state))
+			{
+				return door->InitFineControl() == CBinaryFrobMover::FineControlState::Init;
+			}
+			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControl>(state) && doorControlAllowed)
+			{
+				return door->ExecuteFineControl() != CBinaryFrobMover::FineControlState::None;
+			}
+			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControlEnd>(state) || !doorControlAllowed)
+			{
+				return door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop;
+			}
+			return true;
+		}
+
+	case DoorHoldfrob::Open:
+	case DoorHoldfrob::Toggle:
+		{
+		    const bool doorControlAllowed = IsDoorControlAllowed();
+			if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state))
+			{
+				door->FrobAction(true);
+			}
+			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveSlow>(state) 
+				&& m_canDoorMoveSlow && !door->IsMovingSlow() && doorControlAllowed)
+			{
+				door->BufferMovingSlow();
+				//Door->ToggleOpen();
+				door->FrobAction(true);
+				m_canDoorMoveSlow = false;
+			}
+			else
+			{
+				const bool interruptInputTrigger = IsCorrectFrobActionTrigger<EFrobAction::DoorMoveSlowInterrupt>(state);
+				if (interruptInputTrigger || !doorControlAllowed)
+				{
+					if (door->IsMovingSlow())
+					{
+						door->Interrupt();
+					}
+					if (interruptInputTrigger)
+					{
+						m_canDoorMoveSlow = true;
+					}
+				}
+			}
+			return true;
+		}
+	}
 }
 
 bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)

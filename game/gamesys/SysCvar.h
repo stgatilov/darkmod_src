@@ -365,9 +365,6 @@ extern idCVar cv_tdm_inv_use_on_frob;
 extern idCVar cv_tdm_inv_use_visual_feedback;
 extern idCVar cv_tdm_subtitles;
 
-extern idCVar cv_tdm_door_control;
-extern idCVar cv_tdm_door_control_sensitivity;
-
 extern idCVar cv_pm_stepvol_walk;
 extern idCVar cv_pm_stepvol_run;
 extern idCVar cv_pm_stepvol_creep;
@@ -431,6 +428,10 @@ extern idCVar cv_ai_hearing_hardcore;
 
 extern idCVar cv_door_auto_open_on_unlock;
 extern idCVar cv_door_ignore_locks;
+
+extern idCVar cv_door_control;
+extern idCVar cv_door_control_sensitivity;
+extern idCVar cv_door_control_movetime_factor_slow;
 
 extern idCVar cv_dm_distance;
 

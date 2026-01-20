@@ -186,6 +186,9 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_targetingOff);	// grayman #3029
 	savefile->WriteBool(m_wasFoundLocked);	// grayman #3104
 	savefile->WriteInt(m_timeDoorStartedMoving); // grayman #3462
+
+	savefile->WriteBool(m_bIsMovingSlow);
+	savefile->WriteInt(m_move_time_normal);
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -249,6 +252,9 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_targetingOff);			// grayman #3029
 	savefile->ReadBool(m_wasFoundLocked);		// grayman #3104
 	savefile->ReadInt(m_timeDoorStartedMoving); // grayman #3462
+
+	savefile->ReadBool(m_bIsMovingSlow);
+	savefile->ReadInt(m_move_time_normal);
 }
 
 void CBinaryFrobMover::Spawn()
@@ -278,6 +284,8 @@ void CBinaryFrobMover::Spawn()
 	// Schedule a post-spawn event to parse the rest of the spawnargs
 	// greebo: Be sure to use 16 ms as delay to allow the SpawnBind event to execute before this one.
 	PostEventMS( &EV_PostSpawn, 16 );
+
+	m_move_time_normal = static_cast<int>(1000.0f * spawnArgs.GetFloat("move_time", "1"));
 }
 
 void CBinaryFrobMover::ComputeAdditionalMembers()
@@ -620,8 +628,15 @@ void CBinaryFrobMover::CloseAndLock()
 	}
 }
 
-bool CBinaryFrobMover::StartMoving(bool open) 
+bool CBinaryFrobMover::StartMoving(bool open)
 {
+	if (m_bIsMovingSlowBuffered)
+	{
+		move_time = static_cast<int>(cv_door_control_movetime_factor_slow.GetFloat() * m_move_time_normal);
+		m_bIsMovingSlowBuffered = false;
+		m_bIsMovingSlow = true;
+	}
+
 	// Get the target position and orientation
 	idVec3 targetOrigin = open ? m_OpenOrigin : m_ClosedOrigin;
 	idAngles targetAngles = open ? m_OpenAngles : m_ClosedAngles;
@@ -673,6 +688,10 @@ bool CBinaryFrobMover::StartMoving(bool open)
 		{
 			m_Open = true;
 		}
+	}
+	else
+	{
+		ResetMovingSlow();
 	}
 
 	return m_StateChange;
@@ -880,10 +899,11 @@ bool CBinaryFrobMover::CanBeUsedByItem(const CInventoryItemPtr& item, const bool
 
 void CBinaryFrobMover::ToggleOpen()
 {
-	if (!IsMoving())
+	const bool dontInterrupt = m_bIsMovingSlowBuffered;
+	if (!IsMoving() || dontInterrupt)
 	{
 		// We are not moving
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: Was stationary on ToggleOpen\r" );
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: Was stationary on ToggleOpen\r");
 
 		if (m_bIntentOpen)
 		{
@@ -897,12 +917,29 @@ void CBinaryFrobMover::ToggleOpen()
 		return;
 	}
 
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was moving on ToggleOpen.\r" );
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was moving on ToggleOpen.\r");
 
+	Interrupt();
+}
+
+void CBinaryFrobMover::BufferMovingSlow()
+{
+	m_bIsMovingSlowBuffered = true;
+}
+
+void CBinaryFrobMover::ResetMovingSlow()
+{
+	m_bIsMovingSlowBuffered = false;
+	m_bIsMovingSlow         = false;
+	move_time               = m_move_time_normal;
+}
+
+void CBinaryFrobMover::Interrupt()
+{
 	// We are moving, is the mover interruptable?
 	if (m_bInterruptable && PreInterrupt())
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted! Stopping door\r" );
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Interrupted! Stopping door\r");
 
 		m_bInterrupted = true;
 		Event_StopRotating();
@@ -937,6 +974,8 @@ void CBinaryFrobMover::DoneStateChange()
 	}
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: DoneStateChange\r" );
+
+	ResetMovingSlow();
 
 	// Check which position we're at, set the state variables and fire the correct events
 
@@ -1568,8 +1607,13 @@ float CBinaryFrobMover::GetFractionalPosition()
 		//this should not happen during gameplay
 		//however, it happens on map start for double doors
 		//when door A is post-spawned, it calls this on door B before that is post-spawned
-		returnval = 0.5;
+		returnval = 0.5f;
 	}
+
+	if (returnval < 0.01f)
+		returnval = 0.0f;
+	else if (returnval > 0.99f)
+		returnval = 1.0f;
 
 	return returnval;
 }
@@ -1577,7 +1621,7 @@ float CBinaryFrobMover::GetFractionalPosition()
 void CBinaryFrobMover::SetFractionalPosition(float fraction, bool immediately)
 {
 	idVec3 targetOrigin = m_ClosedOrigin + (m_OpenOrigin - m_ClosedOrigin) * fraction;
-	idAngles targetAngles = m_ClosedAngles + (m_OpenAngles - m_ClosedAngles) * fraction;
+	idAngles targetAngles = m_ClosedAngles + (m_OpenAngles - m_ClosedAngles).Normalize180() * fraction;
 	idAngles angleDelta = (targetAngles - physicsObj.GetLocalAngles()).Normalize180();
 
 	if (immediately) {
@@ -1615,14 +1659,17 @@ void CBinaryFrobMover::Event_HandleLockRequest()
 
 void CBinaryFrobMover::FrobAction(bool frobMaster, bool isFrobPeerAction)
 {
-	idEntity::FrobAction( frobMaster, isFrobPeerAction );
-	InitFineControl();
+	idEntity::FrobAction(frobMaster, isFrobPeerAction);
 }
 
 CBinaryFrobMover::FineControlState CBinaryFrobMover::InitFineControl()
 {
-	if (!m_bInterruptable || !cv_tdm_door_control.GetBool() || IsLocked())
+	if (!m_bInterruptable 
+		|| cv_door_control.GetInteger() != static_cast<int>(HoldfrobMode::FineControl) 
+		|| IsLocked())
+	{
 		return FineControlState::None;
+	}
 
 	m_FineControlState = FineControlState::Init;
 	return FineControlState::Init;
@@ -1643,15 +1690,11 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl()
 		m_mousePosition.y = player->usercmd.my;
 
 		// Stop the door from opening or closing as normal:
-		m_bInterrupted = true;
-		Event_StopRotating();
-		Event_StopMoving();
-		OnInterrupt();
+		Interrupt();
 		m_FineControlState = FineControlState::Execute;
 	}
 
 	// TODO: Get more intuitive door fine control!
-	// TODO: FIX broken door anmiation, when opening door to the other side
 	float dy = player->usercmd.my - m_mousePosition.y;
 	m_mousePosition.x = player->usercmd.mx;
 	m_mousePosition.y = player->usercmd.my;
@@ -1669,8 +1712,20 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl()
 	else
 		sign = -1.0f;
 
-	float desiredPos = GetFractionalPosition() + sign * cv_tdm_door_control_sensitivity.GetFloat() * dy;
-	desiredPos = idMath::ClampFloat(0.0f, 1.0f, desiredPos);
+	const float Pos = GetFractionalPosition();
+	float desiredPos = Pos - sign * cv_door_control_sensitivity.GetFloat() * dy;
+	//desiredPos = idMath::ClampFloat(0.0f, 1.0f, desiredPos);
+	if (desiredPos < 0.01f)
+		desiredPos = 0.0f;
+	if (desiredPos > 0.99f)
+		desiredPos = 1.0f;
+	if (Pos != desiredPos)
+	{
+		if (desiredPos == 0.0f)
+			OnClosedPositionReached();
+		else if (Pos == 0.0f)
+			OnStartOpen(true, true);
+	}
 	SetFractionalPosition(desiredPos, false);
 	
 	return FineControlState::Execute;

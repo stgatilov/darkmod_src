@@ -908,8 +908,12 @@ public:
 			Init,
 			ReleaseGrabbedObject,
 			ToggleGrabbedObject,
+			DoorFineControlInit,
 			DoorFineControl,
 			DoorFineControlEnd,
+			DoorMoveRegular,
+			DoorMoveSlow,
+			DoorMoveSlowInterrupt,
 			UseOnFrob,
 			LootUnconsciousBody,
 			LootWorldItem,
@@ -921,11 +925,11 @@ public:
 		};
 
 		/**
-		 * stifu: Try to fine control doors etc
+		 * stifu: Try to holdfrob door control
 		 *
 		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 		 */
-		bool TryDoorFineControl(EButtonState state);
+		bool TryDoorControl(EButtonState state, idEntity* target);
 
 		/**
 		 * stifu: Try to use inventory item on frob highlighted entity
@@ -974,9 +978,10 @@ public:
 		static EImpulseState stateToImpulseState(EButtonState ButtonState);
 
 	private: // members
-		bool m_canToggleEquip{true};      // Toggle only once per frob
-		bool m_canUseWorldItem{true};     // Use only once per frob
+		bool m_canToggleEquip{true};      // Only once per frob
+		bool m_canUseWorldItem{true};     // Only once per frob
 		bool m_isShoulderableBody{false}; // Modifies FrobActionTriggers when using EControlStyle::Thief
+		bool m_canDoorMoveSlow{true};     // Only once per frob
 
 		// Obsttorte: #5984 (multilooting)
 		bool m_multiLoot{false};

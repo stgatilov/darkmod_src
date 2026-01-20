@@ -515,8 +515,6 @@ idCVar cv_tdm_hud_hide_lightgem(	"tdm_hud_hide_lightgem", "0",	CVAR_GAME | CVAR_
 idCVar cv_tdm_inv_hud_pickupmessages(	"tdm_inv_hud_pickupmessages", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,	"If set to 1, the HUD is displaying the item the player has just picked up.");
 idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been acquired.");
 idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' currently selected inventory items will be used on frob.");
-idCVar cv_tdm_door_control("tdm_door_control", "0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Acivates experimental door control.  When active, hold down frob and move mouse to fine-control a door.");
-idCVar cv_tdm_door_control_sensitivity( "tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT, "Sets fine door control mouse sensitivity." );
 idCVar cv_tdm_inv_use_visual_feedback("tdm_inv_use_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' the HUD is giving visual feedback when the currently selected item is used on the highlighted one.");
 idCVar cv_tdm_subtitles(
 	"tdm_subtitles", "1",  CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,
@@ -623,6 +621,13 @@ idCVar cv_bow_aimer("tdm_bow_aimer",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, 
 
 idCVar cv_door_auto_open_on_unlock("tdm_door_auto_open_on_unlock",	"1",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 doors and chests will start to open after being unlocked." );
 idCVar cv_door_ignore_locks("tdm_door_ignore_lock",	"0",	CVAR_GAME | CVAR_BOOL, "If set to 1 doors and chests will open as if unlocked." );
+
+idCVar cv_door_control("tdm_door_control", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, 
+	"Holdfrob door control mode.\n-- 0: disabled\n-- 1: holdfrob and move mouse to control door (experimental)\n-- 2: holdfrob = toggle open slowly\n-- 3: holdfrob = open slowly");
+idCVar cv_door_control_sensitivity("tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE | CVAR_NOCHEAT,
+	"Sets fine door control mouse sensitivity. Only applicable if tdm_door_control = 1.");
+idCVar cv_door_control_movetime_factor_slow("tdm_door_control_movetime_factor_slow", "2.5", CVAR_GAME | CVAR_FLOAT,
+	"If the slow door control is used (tdm_door_control = 2 or 3), the movetime is multiplied by this value. Values > 1 mean slower motion.");
 
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 
