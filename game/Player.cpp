@@ -11980,10 +11980,14 @@ bool idPlayer::FrobHandling::TryDoorControl(EButtonState state, idEntity* target
 				door->FrobAction(true);
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveSlow>(state) 
-				&& m_canDoorMoveSlow && !door->IsMovingSlow() && doorControlAllowed)
+				&& m_canDoorMoveSlow && !door->IsMovingSlow() && doorControlAllowed
+				&& (controlMode != DoorHoldfrob::Open || !door->IsAtOpenPosition()))
 			{
-				door->BufferMovingSlow();
-				//Door->ToggleOpen();
+				if (door->IsMoving())
+					door->Interrupt();
+				door->BufferMovingSlow(controlMode == DoorHoldfrob::Open);
+				// stifu: We are using FrobAction in case any scripting is tied to it. 
+				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
 				door->FrobAction(true);
 				m_canDoorMoveSlow = false;
 			}

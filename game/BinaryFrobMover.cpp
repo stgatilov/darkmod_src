@@ -922,9 +922,11 @@ void CBinaryFrobMover::ToggleOpen()
 	Interrupt();
 }
 
-void CBinaryFrobMover::BufferMovingSlow()
+void CBinaryFrobMover::BufferMovingSlow(bool bForceOpen)
 {
 	m_bIsMovingSlowBuffered = true;
+	if (bForceOpen)
+		m_bIntentOpen = true;
 }
 
 void CBinaryFrobMover::ResetMovingSlow()

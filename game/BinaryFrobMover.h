@@ -130,7 +130,7 @@ public: // methods | stifu: open/close slowly
 
 	bool					IsMovingSlow() const { return m_bIsMovingSlow; }
 	void					Interrupt();
-	void					BufferMovingSlow();
+	void					BufferMovingSlow(bool bForceOpen);
 	void					ResetMovingSlow();
 
 private: // members | stifu: open/close slowly
