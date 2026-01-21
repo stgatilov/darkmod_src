@@ -879,7 +879,7 @@ public:
 		 */
 		void PerformFrob(EButtonState state, idEntity* target, bool executedFromScript = false);
 
-		void Reset();
+		void Reinit(idEntity* target = nullptr);
 
 		void Save(idSaveGame* savefile) const;
 
@@ -921,7 +921,7 @@ public:
 			RepeatMultiLootWorldItem,
 			StopMultiLootWorldItem,
 			InheritedFrobAction,
-			UseWorldItem, // Shoulder body, blow out candle, eat apple, ...
+			UseWorldEntity, // Shoulder body, blow out candle, eat apple, ...
 			GrabWorldItem,
 		};
 
@@ -930,7 +930,7 @@ public:
 		 *
 		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 		 */
-		bool TryDoorControl(EButtonState state, idEntity* target);
+		bool TryControlDoor(EButtonState state, idEntity* target);
 
 		/**
 		 * stifu: Try to use inventory item on frob highlighted entity
@@ -959,14 +959,14 @@ public:
 		 *
 		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 		 */
-		bool TryUseWorldItem(EButtonState state);
+		bool TryUseWorldEntity(EButtonState state);
 
 		/**
 		 * stifu: Try to grab a world item.
 		 *
 		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 		 */
-		bool TryGrab(EButtonState state);
+		bool TryGrabWorldEntity(EButtonState state);
 
 		/**
 		 * stifu: Check if the correct state and all other conditions are met to execute a certain action.
@@ -979,10 +979,10 @@ public:
 		static EImpulseState stateToImpulseState(EButtonState ButtonState);
 
 	private: // members
-		bool m_canToggleEquip{true};      // Only once per frob
-		bool m_canUseWorldItem{true};     // Only once per frob
-		bool m_isShoulderableBody{false}; // Modifies FrobActionTriggers when using EControlStyle::Thief
-		bool m_canDoorMoveSlow{true};     // Only once per frob
+
+		bool m_frobHandlingFinished{false}; // stifu: Some FrobActions do not require further processing while Frob button is held down.
+		bool m_isShoulderableBody{false};   // Modifies FrobActionTriggers when using EControlStyle::Thief
+		bool m_canDoorMoveSlow{true};       // Only once per frob
 		bool m_wasAttackPressed{false};
 		bool m_usedOnFrob{false};
 
