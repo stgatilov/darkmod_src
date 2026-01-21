@@ -11658,7 +11658,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state) cons
 	}
 	else if (Action::DoorMoveRegular == action)
 	{
-		return Frob::ReleasedShort == state;
+		return Frob::ReleasedShort == state && !m_usedOnFrob;
 	}
 	else if (Action::DoorMoveSlow == action)
 	{
@@ -11887,6 +11887,7 @@ void idPlayer::FrobHandling::Reset()
     m_canToggleEquip = true;
     m_canUseWorldItem = true;
     m_isShoulderableBody = false;
+	m_usedOnFrob = false;
 }
 
 void idPlayer::FrobHandling::Save(idSaveGame* savefile) const
@@ -11903,6 +11904,7 @@ void idPlayer::FrobHandling::Save(idSaveGame* savefile) const
 
 void idPlayer::FrobHandling::Restore(idRestoreGame* savefile)
 {
+	Reset();
 	savefile->ReadBool(m_bFrobOnlyUsedByInv);
 	savefile->ReadBool(m_canToggleEquip);
 	savefile->ReadBool(m_canUseWorldItem);
@@ -11911,7 +11913,6 @@ void idPlayer::FrobHandling::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(m_multiLoot_lastFrobTime);
 	savefile->ReadBool(m_canDoorMoveSlow);
 	m_FrobPressedTarget.Restore(savefile);
-	m_wasAttackPressed = false;
 	m_player->SetImmobilization("DoorControl", 0);
 }
 
@@ -12081,6 +12082,10 @@ bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)
 			m_player->m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
 		}
 
+		if (couldBeUsed)
+			m_usedOnFrob = couldBeUsed;
+
+		// TODO Research: Do we maybe have to return couldBeUsed here?
 		return true;
 	}
 	

@@ -984,6 +984,7 @@ public:
 		bool m_isShoulderableBody{false}; // Modifies FrobActionTriggers when using EControlStyle::Thief
 		bool m_canDoorMoveSlow{true};     // Only once per frob
 		bool m_wasAttackPressed{false};
+		bool m_usedOnFrob{false};
 
 		// Obsttorte: #5984 (multilooting)
 		bool m_multiLoot{false};
