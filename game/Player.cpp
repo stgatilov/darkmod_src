@@ -11645,6 +11645,10 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state) cons
 				return Frob::HoldLong == state;
 		}
 	}
+	else if (Action::ReleaseShoulderedBody == action)
+	{
+		return Frob::Pressed == state;
+	}
 	else if (Action::DoorFineControlInit == action)
 	{
 		return Frob::Pressed == state;
@@ -11659,7 +11663,11 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state) cons
 	}
 	else if (Action::DoorMoveRegular == action)
 	{
-		return Frob::ReleasedShort == state && !m_usedOnFrob;
+		if (cv_door_control.GetInteger() == static_cast<int>(CBinaryFrobMover::HoldfrobMode::Disabled))
+		{
+			return Frob::Pressed == state;
+		}
+		return Frob::ReleasedShort == state;
 	}
 	else if (Action::DoorMoveSlow == action)
 	{
@@ -11752,48 +11760,71 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 		Reinit(target);
 	}
 
-	if (m_frobHandlingFinished)
+	if (m_handlingState == EFrobHandlingState::Finished)
 	{
 		return;
 	}
 
-	if (!executedFromScript && (m_player->GetImmobilization() & EIM_FROB) != 0)
+	if (!executedFromScript 
+		&& (m_player->GetImmobilization() & EIM_FROB) != 0)
 	{
-		m_frobHandlingFinished = true;
+		m_handlingState = EFrobHandlingState::Finished;
+		return;
+	}
+
+	switch (m_handlingState)
+	{
+	case EFrobHandlingState::Grabbing:
+		TryReleaseGrabbedObject(state);
+		// No need to run TryToggleGrabbedObject, because we just picked the object up and it can only be toggled after releasing the frob button
+		return;
+
+	case EFrobHandlingState::ControlDoor:
+	case EFrobHandlingState::ControlDoorSlow:
+		TryControlDoor(state, target);
+		return;
+
+	case EFrobHandlingState::MultiLoot:
+		TryPickupInventoryItem(state, target);
+		return;
+
+	case EFrobHandlingState::UseOnFrob:
+		TryUseOnFrob(state, target);
+		return;
+
+	default:
+	case EFrobHandlingState::Undecided:
+		// Frob handling state not yet decided, so try everything...
+		break;
+	}
+
+
+	if (!executedFromScript
+		&& TryReleaseGrabbedObject(state))
+	{
+		m_handlingState = EFrobHandlingState::Finished;
 		return;
 	}
 
 	if (!executedFromScript
-		&& gameLocal.m_Grabber->GetSelected() != nullptr
-		&& IsCorrectFrobActionTrigger<EFrobAction::ReleaseGrabbedObject>(state))
+		&& TryToggleGrabbedObject(state))
 	{
-		gameLocal.m_Grabber->Update(m_player);
-		m_frobHandlingFinished = true;
+		m_handlingState = EFrobHandlingState::Finished;
 		return;
 	}
 
 	if (!executedFromScript
-		&& IsCorrectFrobActionTrigger<EFrobAction::ToggleGrabbedObject>(state)
-		&& gameLocal.m_Grabber->GetSelected() != nullptr)
+		&& TryReleaseShoulderedBody(state, target))
 	{
-		gameLocal.m_Grabber->ToggleEquip();
-		m_frobHandlingFinished = true;
+		m_handlingState = EFrobHandlingState::Finished;
 		return;
 	}
 
-
-	if (EButtonState::Pressed == state)
-	{
+	if (IsCorrectFrobActionTrigger<EFrobAction::Init>(state))
+	{	
 		if (target == nullptr)
 		{
-			// If there is nothing highlighted and shouldering a body,
-			// drop the body.
-			if (!executedFromScript && m_player->m_bShoulderingBody)
-			{
-				gameLocal.m_Grabber->Dequip();
-				m_frobHandlingFinished = true;
-			}
-
+			// We don't set EFrobHandlingState::Finished here, because we could be holding something in the grabber and are waiting for a HoldLong or ReleaseShort event
 			return;
 		}
 
@@ -11801,7 +11832,7 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 		if ((m_player->GetImmobilization() & EIM_FROB_COMPLEX) != 0 && !target->m_bFrobSimple)
 		{
 			m_player->StartSound("snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL);
-			m_frobHandlingFinished = true;
+			m_handlingState = EFrobHandlingState::Finished;
 			return;
 		}
 
@@ -11811,8 +11842,10 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 	}
 
 	// stgatilov #5542: block use-on-frob when frob called from game script	
-	if (!executedFromScript && TryUseOnFrob(state, target))
+	if (!executedFromScript 
+		&& TryUseOnFrob(state, target))
 	{
+		m_handlingState = EFrobHandlingState::UseOnFrob;
 		return;
 	}
 
@@ -11822,44 +11855,47 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 		return;
 	}
 
-	if (!executedFromScript && TryControlDoor(state, target))
+	if (!executedFromScript 
+		&& TryControlDoor(state, target))
 	{
+		m_handlingState = EFrobHandlingState::ControlDoor;
 		return;
 	}
 	
 	if (IsCorrectFrobActionTrigger<EFrobAction::InheritedFrobAction>(state) && target)
 	{
-		// Trigger the frob action script on key down
 		target->FrobAction(true);
+		// No state change here, yet! This could be about any entity...
 	}
 
-	if (TryPickupInventoryItem(state, target) || m_multiLoot)
+	if (TryPickupInventoryItem(state, target))
 	{
-		m_FrobPressedTarget = nullptr;
+		m_handlingState = EFrobHandlingState::MultiLoot;
 		return;
 	}
 
 	if (TryLootUnconsciousBody(state))
 	{
-		m_frobHandlingFinished = true;
+		m_handlingState = EFrobHandlingState::Finished;
 		return;
 	}
 
-	if (!executedFromScript && TryUseWorldEntity(state))
+	if (!executedFromScript 
+		&& TryUseWorldEntity(state))
 	{
-		m_frobHandlingFinished = true;
+		m_handlingState = EFrobHandlingState::Finished;
 		return;
 	}
 
-	TryGrabWorldEntity(state);
+	if (TryGrabWorldEntity(state))
+	{
+		m_handlingState = EFrobHandlingState::Grabbing;
+	}
 }
 
 void idPlayer::FrobHandling::Reinit(idEntity* target /*= nullptr*/)
 {
-    m_multiLoot = false;
-	m_usedOnFrob = false;
-	m_frobHandlingFinished = false;
-	m_canDoorMoveSlow = true;
+	m_handlingState = EFrobHandlingState::Undecided;
 	
 	m_wasAttackPressed = 0 != (m_player->usercmd.buttons & BUTTON_ATTACK);
 
@@ -11904,23 +11940,52 @@ void idPlayer::FrobHandling::Reinit(idEntity* target /*= nullptr*/)
 void idPlayer::FrobHandling::Save(idSaveGame* savefile) const
 {
 	savefile->WriteBool(m_bFrobOnlyUsedByInv);
-	savefile->WriteBool(m_isShoulderableBody);
-	savefile->WriteBool(m_multiLoot);
-	savefile->WriteInt(m_multiLoot_lastFrobTime);
-	savefile->WriteBool(m_canDoorMoveSlow);
-	m_FrobPressedTarget.Save(savefile);
 }
 
 void idPlayer::FrobHandling::Restore(idRestoreGame* savefile)
 {
 	Reinit();
 	savefile->ReadBool(m_bFrobOnlyUsedByInv);
-	savefile->ReadBool(m_isShoulderableBody);
-	savefile->ReadBool(m_multiLoot);
-	savefile->ReadInt(m_multiLoot_lastFrobTime);
-	savefile->ReadBool(m_canDoorMoveSlow);
-	m_FrobPressedTarget.Restore(savefile);
-	m_player->SetImmobilization("DoorControl", 0);
+	m_player->SetImmobilization("DoorControl", 0); // Just in case somebody saved while controlling door
+}
+
+bool idPlayer::FrobHandling::TryReleaseGrabbedObject(EButtonState state)
+{
+	if (gameLocal.m_Grabber->GetSelected() == nullptr
+		|| !IsCorrectFrobActionTrigger<EFrobAction::ReleaseGrabbedObject>(state))
+	{
+		return false;
+	}
+
+	gameLocal.m_Grabber->Update(m_player);
+	m_handlingState = EFrobHandlingState::Finished;
+	return true;
+}
+
+bool idPlayer::FrobHandling::TryToggleGrabbedObject(EButtonState state)
+{
+	if (gameLocal.m_Grabber->GetSelected() == nullptr
+		|| !IsCorrectFrobActionTrigger<EFrobAction::ToggleGrabbedObject>(state))
+	{
+		return false;
+	}
+
+	gameLocal.m_Grabber->ToggleEquip();
+	return true;
+}
+
+bool idPlayer::FrobHandling::TryReleaseShoulderedBody(EButtonState state, idEntity* target)
+{
+	// If there is nothing highlighted and shouldering a body,
+	// drop the body.
+	if (target != nullptr || !m_player->m_bShoulderingBody
+		|| !IsCorrectFrobActionTrigger<EFrobAction::ReleaseShoulderedBody>(state))
+	{
+		return false;
+	}
+
+	gameLocal.m_Grabber->Dequip();
+	return true;
 }
 
 bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target)
@@ -11966,7 +12031,12 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 	{
 	default:
 	case DoorHoldfrob::Disabled:
-		return false;
+		if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state))
+		{
+			door->FrobAction(true);
+			m_handlingState = EFrobHandlingState::Finished;
+		}
+		break;
 
 	case DoorHoldfrob::FineControl:
 		{
@@ -11976,42 +12046,43 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				door->StopFineControl();
 				door->FrobAction(true);
 				m_player->SetImmobilization("DoorControl", 0);
+				m_handlingState = EFrobHandlingState::Finished;
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControlInit>(state))
 			{
 				if (door->InitFineControl() == CBinaryFrobMover::FineControlState::Init)
 				{
 					m_player->SetImmobilization("DoorControl", EIM_ATTACK | EIM_WEAPON_SELECT);
-					return true;
 				}
-				return false;
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorCloseFast>(state) && !door->IsAtClosedPosition())
 			{
+				// TODO: Might we KO AI with this? :)
 				door->StopFineControl();
 				door->BufferClosingFast();
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
 				door->FrobAction(true);
-				m_wasAttackPressed = true;
 				m_player->SetImmobilization("DoorControl", 0);
+				m_handlingState = EFrobHandlingState::Finished;
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControl>(state) && doorControlAllowed)
 			{
 				if (door->ExecuteFineControl() == CBinaryFrobMover::FineControlState::None)
 				{
 					m_player->SetImmobilization("DoorControl", 0);
+					m_handlingState = EFrobHandlingState::Finished;
 					return false;
 				}
-				return true;
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorFineControlEnd>(state) || !doorControlAllowed)
 			{
 				m_player->SetImmobilization("DoorControl", 0);
+				m_handlingState = EFrobHandlingState::Finished;
 				return door->StopFineControl() == CBinaryFrobMover::FineControlState::Stop;
 			}
-			return true;
 		}
+		break;
 
 	case DoorHoldfrob::Open:
 	case DoorHoldfrob::Toggle:
@@ -12019,12 +12090,14 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 		    if (IsCorrectFrobActionTrigger<EFrobAction::Init>(state))
 			{
 				m_player->SetImmobilization("DoorControl", EIM_ATTACK | EIM_WEAPON_SELECT);
+				return true;
 			}
 		    const bool doorControlAllowed = IsDoorControlAllowed();
 			if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state))
 			{
 				door->FrobAction(true);
 				m_player->SetImmobilization("DoorControl", 0);
+				m_handlingState = EFrobHandlingState::Finished;
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorCloseFast>(state) && !door->IsAtClosedPosition())
 			{
@@ -12032,11 +12105,10 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, the door would not necessarily close.
 				door->FrobAction(true);
-				m_canDoorMoveSlow  = false;
-				m_wasAttackPressed = true;
+				m_handlingState = EFrobHandlingState::Finished;
 			}
 			else if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveSlow>(state) 
-				&& m_canDoorMoveSlow && !door->IsMovingSlow() && doorControlAllowed
+				&& m_handlingState != EFrobHandlingState::ControlDoorSlow && !door->IsMovingSlow() && doorControlAllowed
 				&& (controlMode != DoorHoldfrob::Open || !door->IsAtOpenPosition()))
 			{
 				if (door->IsMoving())
@@ -12047,7 +12119,7 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
 				door->FrobAction(true);
-				m_canDoorMoveSlow = false;
+				m_handlingState = EFrobHandlingState::ControlDoorSlow;
 			}
 			else
 			{
@@ -12058,22 +12130,21 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 					{
 						door->Interrupt();
 					}
-					if (interruptInputTrigger)
-					{
-						m_canDoorMoveSlow = true;
-					}
+					m_handlingState = EFrobHandlingState::Finished;
 					m_player->SetImmobilization("DoorControl", 0);
 				}
 			}
-			return true;
 		}
+		break;
 	}
+
+	return true;
 }
 
 bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)
 {
 	// Do we allow use on frob?
-	if (target == nullptr || m_multiLoot || !cv_tdm_inv_use_on_frob.GetBool())
+	if (target == nullptr || !cv_tdm_inv_use_on_frob.GetBool())
 		return false;
 	
 	// Check if we have a "use" relationship with the currently selected inventory item (key => door)
@@ -12089,11 +12160,7 @@ bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)
 			m_player->m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
 		}
 
-		if (couldBeUsed)
-			m_usedOnFrob = couldBeUsed;
-
-		// TODO Research: Do we maybe have to return couldBeUsed here?
-		return true;
+		return couldBeUsed;
 	}
 	
 	return false;
@@ -12103,29 +12170,29 @@ bool idPlayer::FrobHandling::TryPickupInventoryItem(EButtonState state, idEntity
 {
 	// Obsttorte: #5984) multilooting
 	// return, if not enough time has passed since the last pickup
-	if (m_multiLoot && (gameLocal.time - m_multiLoot_lastFrobTime < cv_multiloot_min_interval.GetInteger()))
+	if (m_handlingState == EFrobHandlingState::MultiLoot && (gameLocal.time - m_multiLoot_lastPickupTime < cv_multiloot_min_interval.GetInteger()))
 	{
 		return true;
 	}
 	// disable multiloot and return if too much time has passed since last pickup
-	if (m_multiLoot 
-		&& ((gameLocal.time - m_multiLoot_lastFrobTime > cv_multiloot_max_interval.GetInteger()) 
+	if (m_handlingState == EFrobHandlingState::MultiLoot
+		&& ((gameLocal.time - m_multiLoot_lastPickupTime > cv_multiloot_max_interval.GetInteger()) 
 			|| IsCorrectFrobActionTrigger<EFrobAction::StopMultiLootWorldItem>(state)))
 	{
-		m_multiLoot = false;
-		m_frobHandlingFinished = true;
-		return true;
+		m_handlingState = EFrobHandlingState::Finished;
+		return false;
 	}
 
 	if (target == nullptr)
 	{
-		return m_multiLoot;
+		return m_handlingState == EFrobHandlingState::MultiLoot;
 	}
 
-	const bool repeatMultiloot = m_multiLoot
+	const bool isInventoryItem = target->spawnArgs.GetString("inv_name", nullptr) != nullptr;
+	const bool repeatMultiloot = 
+		m_handlingState == EFrobHandlingState::MultiLoot
 		&& IsCorrectFrobActionTrigger<EFrobAction::RepeatMultiLootWorldItem>(state)
-		// Obsttorte: don't do anything if we are multilooting and this is no inventory item
-		&& target->spawnArgs.GetString("inv_name", nullptr) != nullptr
+		&& isInventoryItem
 		// Daft Mugi #6270: Do not multiloot immobile readables
 		&& !target->spawnArgs.GetBool("is_immobile_readable", "0");
 
@@ -12161,8 +12228,8 @@ bool idPlayer::FrobHandling::TryPickupInventoryItem(EButtonState state, idEntity
 			m_player->m_FrobHilightedEntity = NULL;
 
 			// Obsttorte: start multiloot
-			m_multiLoot = true;
-			m_multiLoot_lastFrobTime = gameLocal.time;
+			m_handlingState = EFrobHandlingState::MultiLoot;
+			m_multiLoot_lastPickupTime = gameLocal.time;
 
 			// grayman #3011 - is anything sitting on this inventory item?
 			target->ActivateContacts();
@@ -12172,7 +12239,7 @@ bool idPlayer::FrobHandling::TryPickupInventoryItem(EButtonState state, idEntity
 		}
 	}
 
-	return m_multiLoot;
+	return m_handlingState == EFrobHandlingState::MultiLoot;
 }
 
 bool idPlayer::FrobHandling::TryLootUnconsciousBody(EButtonState state)
@@ -12248,8 +12315,6 @@ bool idPlayer::FrobHandling::TryGrabWorldEntity(EButtonState state)
 
 	gameLocal.m_Grabber->Update(m_player, false, true); // preservePosition = true #4149
 	m_FrobPressedTarget = nullptr;
-	//if (m_isShoulderableBody)
-	//	m_canToggleEquip = false;
 
 	return true;
 }

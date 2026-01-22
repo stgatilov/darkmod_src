@@ -908,6 +908,7 @@ public:
 			Init,
 			ReleaseGrabbedObject,
 			ToggleGrabbedObject,
+			ReleaseShoulderedBody,
 			DoorFineControlInit,
 			DoorFineControl,
 			DoorFineControlEnd,
@@ -924,6 +925,27 @@ public:
 			UseWorldEntity, // Shoulder body, blow out candle, eat apple, ...
 			GrabWorldItem,
 		};
+
+		/**
+		 * stifu: Try to release a grabbed object
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryReleaseGrabbedObject(EButtonState state);
+
+		/**
+		 * stifu: Try to toggle a grabbed object
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryToggleGrabbedObject(EButtonState state);
+
+		/**
+		 * stifu: Try to drop a shouldered body
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryReleaseShoulderedBody(EButtonState state, idEntity* target);
 
 		/**
 		 * stifu: Try to holdfrob door control
@@ -980,15 +1002,23 @@ public:
 
 	private: // members
 
-		bool m_frobHandlingFinished{false}; // stifu: Some FrobActions do not require further processing while Frob button is held down.
-		bool m_isShoulderableBody{false};   // Modifies FrobActionTriggers when using EControlStyle::Thief
-		bool m_canDoorMoveSlow{true};       // Only once per frob
-		bool m_wasAttackPressed{false};
-		bool m_usedOnFrob{false};
+		enum class EFrobHandlingState
+		{
+			Undecided,
+			MultiLoot,
+			UseOnFrob,
+			ControlDoor,
+			ControlDoorSlow,
+			Finished,
+			Grabbing
+		};
+
+		EFrobHandlingState m_handlingState{EFrobHandlingState::Undecided};
+		bool               m_isShoulderableBody{false};   // Modifies FrobActionTriggers when using EControlStyle::Thief
+		bool               m_wasAttackPressed{false};
 
 		// Obsttorte: #5984 (multilooting)
-		bool m_multiLoot{false};
-		int  m_multiLoot_lastFrobTime{0}; // game time
+		int  m_multiLoot_lastPickupTime{0}; // game time
 
 		/**
 		* Ishtvan: The target that we initially started pressing frob on
