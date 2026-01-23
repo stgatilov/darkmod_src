@@ -903,42 +903,19 @@ public:
 
 	private: // methods
 
-		enum class EFrobAction
-		{
-			Init,
-			ReleaseGrabbedObject,
-			ToggleGrabbedObject,
-			ReleaseShoulderedBody,
-			DoorFineControlInit,
-			DoorFineControl,
-			DoorFineControlEnd,
-			DoorMoveRegular,
-			DoorMoveSlow,
-			DoorMoveSlowInterrupt,
-			DoorCloseFast,
-			UseOnFrob,
-			LootUnconsciousBody,
-			LootWorldItem,
-			RepeatMultiLootWorldItem,
-			StopMultiLootWorldItem,
-			InheritedFrobAction,
-			UseWorldEntity, // Shoulder body, blow out candle, eat apple, ...
-			GrabWorldItem,
-		};
-
 		/**
 		 * stifu: Try to release a grabbed object
 		 *
 		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 		 */
-		bool TryReleaseGrabbedObject(EButtonState state);
+		bool TryReleaseGrabbedEntity(EButtonState state);
 
 		/**
 		 * stifu: Try to toggle a grabbed object
 		 *
 		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
 		 */
-		bool TryToggleGrabbedObject(EButtonState state);
+		bool TryToggleGrabbedEntity(EButtonState state);
 
 		/**
 		 * stifu: Try to drop a shouldered body
@@ -990,35 +967,114 @@ public:
 		 */
 		bool TryGrabWorldEntity(EButtonState state);
 
+		enum class EFrobAction
+		{
+			Init,
+			ReleaseGrabbedEntity,
+			ToggleGrabbedEntity,
+			ReleaseShoulderedBody,
+			DoorControlInit,
+			DoorFineControl,
+			DoorControlEnd,
+			DoorMoveRegular,
+			DoorMoveSlow,
+			DoorMoveSlowEnd,
+			DoorCloseFast,
+			UseOnFrobInit,
+			UseOnFrob,
+			UseOnFrobEnd,
+			LootUnconsciousBody,
+			MultiLootWorldItemInit,
+			MultiLootWorldItem,
+			MultiLootWorldItemEnd,
+			UseWorldEntity, // Shoulder body, blow out candle, eat apple, ...
+			GrabWorldEntity,
+			Finished,
+			PostFinishCleanup // In case a frob action is canceled that needs reverting
+		};
+
+		constexpr const char* FrobActionToString(EFrobAction action)
+		{
+			switch (action)
+			{
+			case EFrobAction::Init:                     return "Init";
+			case EFrobAction::ReleaseGrabbedEntity:     return "ReleaseGrabbedEntity";
+			case EFrobAction::ToggleGrabbedEntity:      return "ToggleGrabbedEntity";
+			case EFrobAction::ReleaseShoulderedBody:    return "ReleaseShoulderedBody";
+			case EFrobAction::DoorControlInit:          return "DoorControlInit";
+			case EFrobAction::DoorFineControl:          return "DoorFineControl";
+			case EFrobAction::DoorControlEnd:           return "DoorControlEnd";
+			case EFrobAction::DoorMoveRegular:          return "DoorMoveRegular";
+			case EFrobAction::DoorMoveSlow:             return "DoorMoveSlow";
+			case EFrobAction::DoorMoveSlowEnd:          return "DoorMoveSlowEnd";
+			case EFrobAction::DoorCloseFast:            return "DoorCloseFast";
+			case EFrobAction::UseOnFrobInit:            return "UseOnFrobInit";
+			case EFrobAction::UseOnFrob:                return "UseOnFrob";
+			case EFrobAction::UseOnFrobEnd:             return "UseOnFrobEnd";
+			case EFrobAction::LootUnconsciousBody:      return "LootUnconsciousBody";
+			case EFrobAction::MultiLootWorldItemInit:   return "MultiLootWorldItemInit";
+			case EFrobAction::MultiLootWorldItem:       return "MultiLootWorldItem";
+			case EFrobAction::MultiLootWorldItemEnd:    return "MultiLootWorldItemEnd";
+			case EFrobAction::UseWorldEntity:           return "UseWorldEntity";
+			case EFrobAction::GrabWorldEntity:          return "GrabWorldEntity";
+			case EFrobAction::Finished:                 return "Finished";
+			case EFrobAction::PostFinishCleanup:        return "PostFinishCleanup";
+			default:                                    return "Unknown";
+			}
+		}
+
 		/**
-		 * stifu: Check if the correct state and all other conditions are met to execute a certain action.
+		 * stifu: Check if the correct inputs are met to execute a certain action.
 		 *
 		 * returns true if all conditions are met.
 		 */
 		template <EFrobAction action>
-		bool IsCorrectFrobActionTrigger(EButtonState state) const;
+		static bool IsCorrectFrobActionTrigger(EButtonState state, bool isTargetShoulderable, bool isAttackPressedAfterFrob);
+
+		template <EFrobAction action>
+		inline bool IsCorrectFrobActionTrigger(EButtonState state)
+		{
+			return IsCorrectFrobActionTrigger<action>(state, m_isShoulderableBody, m_attackPressed == EAttackPressed::AfterFrob);
+		}
+
+		/**
+		 * stifu: Check if the frob action transition from prev to next is legal
+		 *
+		 * returns true if legal
+		 */
+		static bool IsLegalFrobActionTransition(EFrobAction prev, EFrobAction next);
+
+		/**
+		 * stifu: Check inputs and previous frob action to determine if ~next~ can be executed
+		 *
+		 * returns true if legal
+		 */
+		template <EFrobAction next>
+		bool CanExecuteFrobAction(EButtonState state) const;
+
+		/**
+		 * stifu: Clean up the frob action state after cancelling a frob action
+		 */
+		void CleanupFrobActionState();
+
+		bool SetFrobAction(EFrobAction action, bool skipStateCheck = false);
 
 		static EImpulseState stateToImpulseState(EButtonState ButtonState);
 
 	private: // members
 
-		enum class EFrobHandlingState
+		enum class EAttackPressed
 		{
-			Undecided,
-			MultiLoot,
-			UseOnFrob,
-			ControlDoor,
-			ControlDoorSlow,
-			Finished,
-			Grabbing
+			BeforeFrob,
+			No,
+			AfterFrob
 		};
 
-		EFrobHandlingState m_handlingState{EFrobHandlingState::Undecided};
+		EAttackPressed     m_attackPressed{EAttackPressed::No};
+		EFrobAction        m_lastFrobAction{EFrobAction::Init};
+		EFrobAction        m_cleanupFrobAction{EFrobAction::Init};
 		bool               m_isShoulderableBody{false};   // Modifies FrobActionTriggers when using EControlStyle::Thief
-		bool               m_wasAttackPressed{false};
-
-		// Obsttorte: #5984 (multilooting)
-		int  m_multiLoot_lastPickupTime{0}; // game time
+		int                m_multiLoot_lastPickupTime{ 0 }; // #5984 multilooting: game time
 
 		/**
 		* Ishtvan: The target that we initially started pressing frob on
