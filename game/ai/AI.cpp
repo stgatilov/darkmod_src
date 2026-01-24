@@ -1110,6 +1110,7 @@ void idAI::Save(idSaveGame *savefile) const {
 	SAVE_TIMER_HANDLE(aiPointReachableAreaNumTimer, savefile);
 	SAVE_TIMER_HANDLE(aiCanSeeTimer, savefile);
 
+	savefile->WriteString(m_NextIdleAnim.c_str());
 }
 
 /*
@@ -1629,6 +1630,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiGetFloorPosTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiPointReachableAreaNumTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiCanSeeTimer, savefile);
+
+	savefile->ReadString(m_NextIdleAnim);
 }
 
 ai::Subsystem* idAI::GetSubsystem(ai::SubsystemId id)
