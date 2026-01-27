@@ -75,6 +75,7 @@ idBrittleFracture::idBrittleFracture( void ) {
 	m_lossBasePlayer = 0;	// grayman #3042
 
 	m_lastCrackFrameNum = 0;	// SteveL #4180
+
 }
 
 /*
@@ -220,6 +221,8 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 	shards.SetNum( num );
 	for ( i = 0; i < num; i++ ) {
 		shards[i] = new shard_t;
+
+		shards[i]->nextDecalTime = 0.0f; // Amadeus #6588: Restore default value on restore
 	}
 
 	for ( i = 0; i < num; i++ ) {
@@ -342,6 +345,9 @@ void idBrittleFracture::AddShard( idClipModel *clipModel, idFixedWinding &w ) {
 	shard->edgeHasNeighbour.AssureSize( w.GetNumPoints(), false );
 	shard->neighbours.Clear();
 	shard->atEdge = false;
+
+	shard->nextDecalTime = 0.0f; // Amadeus #6588: initialize 
+
 	shards.Append( shard );
 }
 
