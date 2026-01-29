@@ -6129,8 +6129,9 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 			if (cv_tdm_crouch_toggle.GetBool())
 			{
+				const float minHoldTime = cv_tdm_crouch_toggle_hold_time.GetFloat();
 				if ((physicsObj.OnRope() || physicsObj.OnLadder())
-					&& entityNumber == gameLocal.localClientNum && holdTime < cv_tdm_crouch_toggle_hold_time.GetFloat())
+					&& entityNumber == gameLocal.localClientNum && (holdTime < minHoldTime && minHoldTime > 0.0f))
 				{
 					// stifu: toggle crouch-intent on short-release only because long-press is ladder-slide
 					m_CrouchIntent = !m_CrouchIntent;	
