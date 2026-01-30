@@ -327,7 +327,7 @@ idCVar cv_frob_debug_bounds(			"tdm_frob_debug_bounds", "0",			CVAR_GAME | CVAR_
 idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",	CVAR_GAME | CVAR_BOOL,						"Set to 1 to have weapons automatically selected when the respective item is picked up." );
 idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME |CVAR_BOOL,						"Set to 1 to have items automatically selected when the respective item is picked up.");
 idCVar cv_frob_debug_hud(				"tdm_frob_debug_hud", "0",				CVAR_GAME | CVAR_BOOL,						"Set to 1 to show some frobbing info." );
-idCVar cv_frob_control_style(			"tdm_frob_control_style", "2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style:\n\t0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction),\n\t1: Thief/2.12 (Like TDM, but behavior for bodys is swapped),\n\t2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
+idCVar cv_frob_control_style(			"tdm_frob_control_style", "2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style:\n\t-1: Disabled hold-frob\n\t0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction),\n\t1: Thief/2.12 (Like TDM, but behavior for bodys is swapped),\n\t2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
 
 idCVar cv_frobhelper_active(			"tdm_frobhelper_active",			"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,	"Set to 1 to activate the FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_alwaysVisible(     "tdm_frobhelper_alwaysVisible",     "0",    CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,    "Set to 1 to always display the frobhelper like a crosshair.", 0, 1); // stifu #4990
@@ -339,7 +339,7 @@ idCVar cv_frobhelper_ignore_size(		"tdm_frobhelper_ignore_size",		"40.0",	CVAR_G
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 idCVar cv_holdfrob_delay(
-	"tdm_holdfrob_delay", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,
+	"tdm_holdfrob_delay", "200", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,
 	"The hold-frob delay (in ms) before drag body or use world item.\n"
 	"Set to 0 for original TDM behavior.",
 	0, 2000

@@ -11603,23 +11603,25 @@ template<idPlayer::FrobHandling::EFrobAction action>
 bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool isTargetShoulderable, bool isAttackPressedAfterFrob)
 {
 	using Action = EFrobAction;
-	using Frob = EButtonState;
-	using Style = EControlStyle;
+	using Frob   = EButtonState;
+	using Style  = EControlStyle;
 
-	if (Action::Init == action)
+	if constexpr (Action::Init == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if (Action::ReleaseGrabbedEntity == action)
+	else if constexpr (Action::ReleaseGrabbedEntity == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
-		default:
+		case Style::HoldFrobDisabled:
+			return Frob::Pressed == state;
 		case Style::Thief:
 			if (cv_holdfrob_drag_entity_behavior.GetBool() && isTargetShoulderable)
 				return Frob::ReleasedLong == state;
 			else
 				return Frob::ReleasedShort == state;
+		default:
 		case Style::TDM:
 			return Frob::ReleasedShort == state;
 		case Style::TDM_inverted:
@@ -11629,13 +11631,15 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::ReleasedShort == state;
 		}
 	}
-	else if (Action::ToggleGrabbedEntity == action)
+	else if constexpr (Action::ToggleGrabbedEntity == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
-		default:
+		case Style::HoldFrobDisabled:
+			return false;
 		case Style::Thief:
 			return Frob::HoldLong == state && !isTargetShoulderable;
+		default:
 		case Style::TDM:
 			return Frob::HoldLong == state;
 		case Style::TDM_inverted:
@@ -11645,82 +11649,123 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::HoldLong == state;
 		}
 	}
-	else if (Action::ReleaseShoulderedBody == action)
+	else if constexpr (Action::ReleaseShoulderedBody == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if (Action::DoorControlInit == action)
+	else if constexpr (Action::DoorControlInit == action)
 	{
-		return Frob::Pressed == state;
-	}
-	else if (Action::DoorFineControl == action)
-	{
-		return Frob::HoldLong == state;
-	}
-	else if (Action::DoorControlEnd == action)
-	{
-		return Frob::ReleasedLong == state;
-	}
-	else if (Action::DoorMoveRegular == action)
-	{
-		if (cv_door_control.GetInteger() == static_cast<int>(CBinaryFrobMover::HoldfrobMode::Disabled))
+		switch (cv_frob_control_style.GetInteger())
 		{
+		case Style::HoldFrobDisabled:
+			return false;
+		default:
 			return Frob::Pressed == state;
 		}
-		return Frob::ReleasedShort == state;
 	}
-	else if (Action::DoorMoveSlow == action)
+	else if constexpr (Action::DoorFineControl == action)
 	{
-		return Frob::HoldLong == state;
-	}
-	else if (Action::DoorMoveSlowEnd == action)
-	{
-		return Frob::ReleasedLong == state;
-	}
-	else if (Action::DoorCloseFast == action)
-	{
-		if (Frob::HoldLong != state)
+		switch (cv_frob_control_style.GetInteger())
+		{
+		case Style::HoldFrobDisabled:
 			return false;
-		return isAttackPressedAfterFrob;
+		default:
+			return Frob::HoldLong == state;
+		}
 	}
-	else if (Action::UseOnFrobInit == action)
+	else if constexpr (Action::DoorControlEnd == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		case Style::HoldFrobDisabled:
+			return false;
+		default:
+			return Frob::ReleasedLong == state;
+		}
+	}
+	else if constexpr (Action::DoorMoveRegular == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		case Style::HoldFrobDisabled:
+			return false; // we rely on regular frob action to avoid having to deal with tdm_door_control
+		default:
+			if (static_cast<int>(CBinaryFrobMover::HoldfrobMode::Disabled) == cv_door_control.GetInteger())
+				return Frob::Pressed == state;
+			else
+				return Frob::ReleasedLong == state;
+		}
+	}
+	else if constexpr (Action::DoorMoveSlow == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		case Style::HoldFrobDisabled:
+			return false;
+		default:
+			return Frob::HoldLong == state;
+		}
+	}
+	else if constexpr (Action::DoorMoveSlowEnd == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		case Style::HoldFrobDisabled:
+			return false;
+		default:
+			return Frob::ReleasedLong == state;
+		}
+	}
+	else if constexpr (Action::DoorCloseFast == action)
+	{
+		switch (cv_frob_control_style.GetInteger())
+		{
+		case Style::HoldFrobDisabled:
+			return false;
+		default:
+			return Frob::HoldLong == state && isAttackPressedAfterFrob;
+		}
+	}
+	else if constexpr (Action::UseOnFrobInit == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if (Action::UseOnFrob == action)
+	else if constexpr (Action::UseOnFrob == action)
 	{
 		return Frob::HoldLong == state;
 	}
-	else if (Action::UseOnFrobEnd == action)
+	else if constexpr (Action::UseOnFrobEnd == action)
 	{
 		return Frob::ReleasedShort == state 
 			|| Frob::ReleasedLong == state;
 	}
-	else if (Action::LootUnconsciousBody == action)
+	else if constexpr (Action::LootUnconsciousBody == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if (Action::MultiLootWorldItemInit == action)
+	else if constexpr (Action::MultiLootWorldItemInit == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if (Action::MultiLootWorldItem == action)
+	else if constexpr (Action::MultiLootWorldItem == action)
 	{
 		return Frob::HoldLong == state;
 	}
-	else if (Action::MultiLootWorldItemEnd == action)
+	else if constexpr (Action::MultiLootWorldItemEnd == action)
 	{
 		return Frob::ReleasedLong == state;
 	}
-	else if (Action::UseWorldEntity == action)
+	else if constexpr (Action::UseWorldEntity == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
+		case Style::HoldFrobDisabled:
+			return false;
+		default:
 		case Style::TDM:
 			return Frob::HoldLong == state;
 		case Style::TDM_inverted:
 			return Frob::ReleasedShort == state;
-		default:
 		case Style::Thief:
 			if (isTargetShoulderable)
 				return Frob::ReleasedShort == state;
@@ -11728,15 +11773,17 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::HoldLong == state;
 		}
 	}
-	else if (Action::GrabWorldEntity == action)
+	else if constexpr (Action::GrabWorldEntity == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
+		case Style::HoldFrobDisabled:
+			return Frob::Pressed == state;
+		default:
 		case Style::TDM:
 			return Frob::ReleasedShort == state;
 		case Style::TDM_inverted:
 			return Frob::HoldLong == state;
-		default:
 		case Style::Thief:
 			if (isTargetShoulderable)
 				return Frob::HoldLong == state;
@@ -11744,11 +11791,11 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::ReleasedShort == state;
 		}
 	}
-	else if (Action::Finished == action)
+	else if constexpr (Action::Finished == action)
 	{
 		return true;
 	}
-	else if (Action::PostFinishCleanup == action)
+	else if constexpr (Action::PostFinishCleanup == action)
 	{
 		return state == Frob::ReleasedShort || state == Frob::ReleasedLong;
 	}
@@ -11967,7 +12014,7 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 	if (IsCorrectFrobActionTrigger<EFrobAction::Init>(state) && target)
 	{
 		target->FrobAction(true);
-		// No state change here, yet! This could be about any entity...
+		// No state change here, yet! This could be about any type entity...
 	}
 
 	if (TryPickupInventoryItem(state, target))
@@ -12023,8 +12070,7 @@ void idPlayer::FrobHandling::Reinit(idEntity* target /*= nullptr*/)
 
 			const bool holdFrobBodyType = bodyType
 				&& bodyTarget
-				&& bodyTarget->spawnArgs.GetBool("shoulderable", "0")
-				&& IsHoldFrobEnabled();
+				&& bodyTarget->spawnArgs.GetBool("shoulderable", "0");
 
 			if (!holdFrobBodyType)
 				return false;
@@ -12493,6 +12539,7 @@ bool idPlayer::FrobHandling::TryGrabWorldEntity(EButtonState state)
 		}
 	}
 
+	// TODO: When draggin an entity, it would be nice if it slowly converged towards the center of the screen
 	gameLocal.m_Grabber->Update(m_player, false, true); // preservePosition = true #4149
 	m_FrobPressedTarget = nullptr;
 	SetFrobAction(EFrobAction::GrabWorldEntity, true);
@@ -12569,13 +12616,12 @@ EImpulseState idPlayer::FrobHandling::stateToImpulseState(EButtonState ButtonSta
 bool idPlayer::FrobHandling::IsHoldFrobEnabled(void)
 {
     // Hold-frob delay of 0 matches TDM v2.11 (and prior) behavior
-    return cv_holdfrob_delay.GetInteger() > 0;
+    return cv_holdfrob_delay.GetInteger() > 0 || cv_frob_control_style.GetInteger() < 0;
 }
 
 bool idPlayer::FrobHandling::CanHoldFrobAction(int holdtime)
 {
-    const int delay = cv_holdfrob_delay.GetInteger();
-    return delay > 0 && holdtime >= delay;
+    return holdtime >= cv_holdfrob_delay.GetInteger();
 }
 
 
@@ -12586,7 +12632,7 @@ void idPlayer::PerformFrobKeyPressed()
 
 void idPlayer::PerformFrobKeyRepeat(int holdTime)
 {
-	if (!m_FrobHandling.CanHoldFrobAction(holdTime) || !m_FrobHandling.IsHoldFrobEnabled())
+	if (!m_FrobHandling.CanHoldFrobAction(holdTime))
 		return;
 	
 	m_FrobHandling.PerformFrob(FrobHandling::EButtonState::HoldLong, m_FrobHilightedEntity.GetEntity());

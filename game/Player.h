@@ -850,6 +850,7 @@ public:
 
 		enum class EControlStyle // see cv_frob_control_style
 		{
+			HoldFrobDisabled = -1,
 			TDM = 0,
 			Thief = 1,
 			TDM_inverted = 2,
