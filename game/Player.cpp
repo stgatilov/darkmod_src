@@ -11606,11 +11606,11 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	using Frob   = EButtonState;
 	using Style  = EControlStyle;
 
-	if constexpr (Action::Init == action)
+	if (Action::Init == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if constexpr (Action::ReleaseGrabbedEntity == action)
+	else if (Action::ReleaseGrabbedEntity == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11631,7 +11631,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::ReleasedShort == state;
 		}
 	}
-	else if constexpr (Action::ToggleGrabbedEntity == action)
+	else if (Action::ToggleGrabbedEntity == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11649,11 +11649,11 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::HoldLong == state;
 		}
 	}
-	else if constexpr (Action::ReleaseShoulderedBody == action)
+	else if (Action::ReleaseShoulderedBody == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if constexpr (Action::DoorControlInit == action)
+	else if (Action::DoorControlInit == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11663,7 +11663,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 			return Frob::Pressed == state;
 		}
 	}
-	else if constexpr (Action::DoorFineControl == action)
+	else if (Action::DoorFineControl == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11673,7 +11673,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 			return Frob::HoldLong == state;
 		}
 	}
-	else if constexpr (Action::DoorControlEnd == action)
+	else if (Action::DoorControlEnd == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11683,7 +11683,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 			return Frob::ReleasedLong == state;
 		}
 	}
-	else if constexpr (Action::DoorMoveRegular == action)
+	else if (Action::DoorMoveRegular == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11696,7 +11696,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::ReleasedLong == state;
 		}
 	}
-	else if constexpr (Action::DoorMoveSlow == action)
+	else if (Action::DoorMoveSlow == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11706,7 +11706,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 			return Frob::HoldLong == state;
 		}
 	}
-	else if constexpr (Action::DoorMoveSlowEnd == action)
+	else if (Action::DoorMoveSlowEnd == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11716,7 +11716,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 			return Frob::ReleasedLong == state;
 		}
 	}
-	else if constexpr (Action::DoorCloseFast == action)
+	else if (Action::DoorCloseFast == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11726,36 +11726,36 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 			return Frob::HoldLong == state && isAttackPressedAfterFrob;
 		}
 	}
-	else if constexpr (Action::UseOnFrobInit == action)
+	else if (Action::UseOnFrobInit == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if constexpr (Action::UseOnFrob == action)
+	else if (Action::UseOnFrob == action)
 	{
 		return Frob::HoldLong == state;
 	}
-	else if constexpr (Action::UseOnFrobEnd == action)
+	else if (Action::UseOnFrobEnd == action)
 	{
 		return Frob::ReleasedShort == state 
 			|| Frob::ReleasedLong == state;
 	}
-	else if constexpr (Action::LootUnconsciousBody == action)
+	else if (Action::LootUnconsciousBody == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if constexpr (Action::MultiLootWorldItemInit == action)
+	else if (Action::MultiLootWorldItemInit == action)
 	{
 		return Frob::Pressed == state;
 	}
-	else if constexpr (Action::MultiLootWorldItem == action)
+	else if (Action::MultiLootWorldItem == action)
 	{
 		return Frob::HoldLong == state;
 	}
-	else if constexpr (Action::MultiLootWorldItemEnd == action)
+	else if (Action::MultiLootWorldItemEnd == action)
 	{
 		return Frob::ReleasedLong == state;
 	}
-	else if constexpr (Action::UseWorldEntity == action)
+	else if (Action::UseWorldEntity == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11773,7 +11773,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::HoldLong == state;
 		}
 	}
-	else if constexpr (Action::GrabWorldEntity == action)
+	else if (Action::GrabWorldEntity == action)
 	{
 		switch (cv_frob_control_style.GetInteger())
 		{
@@ -11791,11 +11791,11 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::ReleasedShort == state;
 		}
 	}
-	else if constexpr (Action::Finished == action)
+	else if (Action::Finished == action)
 	{
 		return true;
 	}
-	else if constexpr (Action::PostFinishCleanup == action)
+	else if (Action::PostFinishCleanup == action)
 	{
 		return state == Frob::ReleasedShort || state == Frob::ReleasedLong;
 	}
