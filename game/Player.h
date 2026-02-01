@@ -342,18 +342,12 @@ public:
 
 	// ---- Frob-related members (moved from CDarkmodPlayer to here) ----
 
-	/** 
-	* Ishtvan: The target that we initially started pressing frob on
-	* keep track of this for things that react to frob held, so we don't
-	* move from one target to another without first letting go of frob
-	**/
-	idEntityPtr<idEntity>	m_FrobPressedTarget;
 
 	/**
 	 * FrobEntity is NULL when no entity is highlighted. Otherwise it will point 
 	 * to the entity which is currently highlighted.
 	 */
-	idEntityPtr<idEntity>	m_FrobEntity;
+	idEntityPtr<idEntity>	m_FrobHilightedEntity;
 
 	/**
 	* Frobbed joint and frobbed clipmodel ID if an AF has been frobbed
@@ -368,13 +362,7 @@ public:
 	**/
 	trace_t			m_FrobTrace;
 
-	/**
-	* If true, this only allows frobbing of entities that can be used by
-	* the currently selected inventory item.
-	* This also disables normal frob actions on pressing frob,
-	* only allowing the "used by" action.
-	**/
-	bool			m_bFrobOnlyUsedByInv;
+	
 
 	/**
 	* Set to true if the player is holding an item with the Grabber
@@ -754,6 +742,7 @@ public:
 	*/
 	void					PerformKeyRepeat(int impulse, int holdTime);
 
+
 	/**
 	* Ishtvan: Start tracking a mouse gesture that started when the key "impulse" was pressed
 	* Discretizes analog mouse movement into a few different gesture possibilities
@@ -834,14 +823,6 @@ public:
 	bool					IsForcedCrouch( void );
 	void					ResetForcedCrouchMantle( void );
 
-	// Daft Mugi #6316: Hold Frob for alternate interaction
-	bool					IsHoldFrobEnabled( void );
-	bool					CanHoldFrobAction( void );
-	void					SetHoldFrobView( void );
-	float					HoldFrobViewDistance( void );
-	bool					IsAdditionalHoldFrobDraggableType(idEntity* target);
-	bool					IsUsedItemOrJunk(idEntity* target);
-
 	virtual bool			OnLadder( void ) const override;
 	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const override;
 
@@ -856,40 +837,262 @@ public:
 	void					PerformFrobCheck();
 	void					PerformFrobCheckInternal();
 
-	/**
-	 * greebo: Performs a frob action on the given entity. The above method
-	 * PerformFrob() without arguments redirects the call to this one.
-	 * This method might be invoked by scripts as well to simulate 
-	 * a frob action without having the player to hit any buttons.
-	 * 
-	 * @impulseState: the button state of the frob key. Pass EPressed if you
-	 * want to simulate a one-time frob event.
-	 *
-	 * @allowUseCurrentInvItem (#5542): if true, then also try to use currently selected inventory item
-	 * if "Use-by-frobbing" (tdm_inv_use_on_frob) player setting is on.
-	 * This happens e.g. when frobbing door while having lockpick/key selected.
-	 * When run from game script, it must always be false!
-	 *
-	 * Hold time: The amount of time the button has been held, if applicable (0 by default)
-	 */
-	void					PerformFrob(EImpulseState impulseState, idEntity* frobbed, bool allowUseCurrentInvItem);
+	
 
+	class FrobHandling
+	{
+	public: // methods
+		FrobHandling(idPlayer* player) : m_player{ player } {}
+
+		enum class EControlStyle // see cv_frob_control_style
+		{
+			HoldFrobDisabled = -1,
+			TDM = 0,
+			Thief = 1,
+			TDM_inverted = 2,
+		};
+
+		enum class EButtonState
+		{
+			Pressed = EPressed,
+			ReleasedShort = EReleased,
+			HoldLong = ENumImpulseStates + 1,
+			ReleasedLong = ENumImpulseStates + 2,
+			Invalid = -1,
+		};
+		
+		/**
+		 * greebo: Performs a frob action on the given entity. The methods
+		 * PerformFrobKeyPressed(), PerformFrobKeyRepeat() and PerformFrobKeyRelease()
+		 * redirect the call to this one.
+		 * This method might be invoked by scripts as well to simulate
+		 * a frob action without having the player to hit any buttons.
+		 *
+		 * @state: the button state of the frob key. Pass EPressed if you
+		 * want to simulate a one-time frob event.
+		 *
+		 * @executedFromScript: true, if executed from game script
+		 *
+		 */
+		void PerformFrob(EButtonState state, idEntity* target, bool executedFromScript = false);
+
+		void Reinit(idEntity* target = nullptr);
+
+		void Save(idSaveGame* savefile) const;
+
+		void Restore(idRestoreGame* savefile);
+
+		idEntity* GetFrobPressedTarget() const { return m_FrobPressedTarget.GetEntity(); }
+
+		bool IsHoldFrobEnabled();
+
+		bool CanHoldFrobAction(int holdtime);
+
+	public: // members
+
+		/**
+		* If true, this only allows frobbing of entities that can be used by
+		* the currently selected inventory item.
+		* This also disables normal frob actions on pressing frob,
+		* only allowing the "used by" action.
+		**/
+		bool m_bFrobOnlyUsedByInv{ false };
+
+	private: // methods
+
+		/**
+		 * stifu: Try to release a grabbed object
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryReleaseGrabbedEntity(EButtonState state);
+
+		/**
+		 * stifu: Try to toggle a grabbed object
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryToggleGrabbedEntity(EButtonState state);
+
+		/**
+		 * stifu: Try to drop a shouldered body
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryReleaseShoulderedBody(EButtonState state, idEntity* target);
+
+		/**
+		 * stifu: Try to holdfrob door control
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryControlDoor(EButtonState state, idEntity* target);
+
+		/**
+		 * stifu: Try to use inventory item on frob highlighted entity
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryUseOnFrob(EButtonState state, idEntity* target);
+
+		/**
+		 * stifu: Try to pickup an inventory item.
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryPickupInventoryItem(EButtonState state, idEntity* target);
+
+		/**
+		 * stifu: Try to loot an unconscious body.
+		 * Daft Mugi #6257: Auto-Search Bodies
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryLootUnconsciousBody(EButtonState state);
+
+		/**
+		 * stifu: Try to use a world item.
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryUseWorldEntity(EButtonState state);
+
+		/**
+		 * stifu: Try to grab a world item.
+		 *
+		 * returns true, if it was the correct entity type for this function, i.e., the entity does not need to be processed any further
+		 */
+		bool TryGrabWorldEntity(EButtonState state);
+
+		enum class EFrobAction
+		{
+			Init,
+			ReleaseGrabbedEntity,
+			ToggleGrabbedEntity,
+			ReleaseShoulderedBody,
+			DoorControlInit,
+			DoorFineControl,
+			DoorControlEnd,
+			DoorMoveRegular,
+			DoorMoveSlow,
+			DoorMoveSlowEnd,
+			DoorCloseFast,
+			UseOnFrobInit,
+			UseOnFrob,
+			UseOnFrobEnd,
+			LootUnconsciousBody,
+			MultiLootWorldItemInit,
+			MultiLootWorldItem,
+			MultiLootWorldItemEnd,
+			UseWorldEntity, // Shoulder body, blow out candle, eat apple, ...
+			GrabWorldEntity,
+			Finished,
+			PostFinishCleanup // In case a frob action is canceled that needs reverting
+		};
+
+		constexpr const char* FrobActionToString(EFrobAction action)
+		{
+			switch (action)
+			{
+			case EFrobAction::Init:                     return "Init";
+			case EFrobAction::ReleaseGrabbedEntity:     return "ReleaseGrabbedEntity";
+			case EFrobAction::ToggleGrabbedEntity:      return "ToggleGrabbedEntity";
+			case EFrobAction::ReleaseShoulderedBody:    return "ReleaseShoulderedBody";
+			case EFrobAction::DoorControlInit:          return "DoorControlInit";
+			case EFrobAction::DoorFineControl:          return "DoorFineControl";
+			case EFrobAction::DoorControlEnd:           return "DoorControlEnd";
+			case EFrobAction::DoorMoveRegular:          return "DoorMoveRegular";
+			case EFrobAction::DoorMoveSlow:             return "DoorMoveSlow";
+			case EFrobAction::DoorMoveSlowEnd:          return "DoorMoveSlowEnd";
+			case EFrobAction::DoorCloseFast:            return "DoorCloseFast";
+			case EFrobAction::UseOnFrobInit:            return "UseOnFrobInit";
+			case EFrobAction::UseOnFrob:                return "UseOnFrob";
+			case EFrobAction::UseOnFrobEnd:             return "UseOnFrobEnd";
+			case EFrobAction::LootUnconsciousBody:      return "LootUnconsciousBody";
+			case EFrobAction::MultiLootWorldItemInit:   return "MultiLootWorldItemInit";
+			case EFrobAction::MultiLootWorldItem:       return "MultiLootWorldItem";
+			case EFrobAction::MultiLootWorldItemEnd:    return "MultiLootWorldItemEnd";
+			case EFrobAction::UseWorldEntity:           return "UseWorldEntity";
+			case EFrobAction::GrabWorldEntity:          return "GrabWorldEntity";
+			case EFrobAction::Finished:                 return "Finished";
+			case EFrobAction::PostFinishCleanup:        return "PostFinishCleanup";
+			default:                                    return "Unknown";
+			}
+		}
+
+		/**
+		 * stifu: Check if the correct inputs are met to execute a certain action.
+		 *
+		 * returns true if all conditions are met.
+		 */
+		template <EFrobAction action>
+		static bool IsCorrectFrobActionTrigger(EButtonState state, bool isTargetShoulderable, bool isAttackPressedAfterFrob);
+
+		template <EFrobAction action>
+		inline bool IsCorrectFrobActionTrigger(EButtonState state)
+		{
+			return IsCorrectFrobActionTrigger<action>(state, m_isShoulderableBody, m_attackPressed == EAttackPressed::AfterFrob);
+		}
+
+		/**
+		 * stifu: Check if the frob action transition from prev to next is legal
+		 *
+		 * returns true if legal
+		 */
+		static bool IsLegalFrobActionTransition(EFrobAction prev, EFrobAction next);
+
+		/**
+		 * stifu: Check inputs and previous frob action to determine if ~next~ can be executed
+		 *
+		 * returns true if legal
+		 */
+		template <EFrobAction next>
+		bool CanExecuteFrobAction(EButtonState state) const;
+
+		/**
+		 * stifu: Clean up the frob action state after cancelling a frob action
+		 */
+		void CleanupFrobActionState();
+
+		bool SetFrobAction(EFrobAction action, bool skipStateCheck = false);
+
+		static EImpulseState stateToImpulseState(EButtonState ButtonState);
+
+	private: // members
+
+		enum class EAttackPressed
+		{
+			BeforeFrob,
+			No,
+			AfterFrob
+		};
+
+		EAttackPressed     m_attackPressed{EAttackPressed::No};
+		EFrobAction        m_lastFrobAction{EFrobAction::Init};
+		EFrobAction        m_cleanupFrobAction{EFrobAction::Init};
+		bool               m_isShoulderableBody{false};   // Modifies FrobActionTriggers when using EControlStyle::Thief
+		int                m_multiLoot_lastPickupTime{ 0 }; // #5984 multilooting: game time
+
+		/**
+		* Ishtvan: The target that we initially started pressing frob on
+		* keep track of this for things that react to frob held, so we don't
+		* move from one target to another without first letting go of frob
+		**/
+		idEntityPtr<idEntity> m_FrobPressedTarget;
+
+		idPlayer* m_player;
+	} m_FrobHandling;
+	
 	// Gets called when the player hits the frob button.
-	void					PerformFrob();
+	void					PerformFrobKeyPressed();
 	// Gets repeatedly called when the player holds down the frob button
 	void					PerformFrobKeyRepeat(int holdTime);
 	// Gets called when the player releases the frob button
 	void					PerformFrobKeyRelease(int holdTime);
 
-	// Obsttorte: #5984 (multilooting)
-	bool					multiloot;
-	int						multiloot_lastfrob;
+	
 
-	// Daft Mugi #6316: Hold Frob for alternate interaction
-	idEntityPtr<idEntity>   holdFrobEntity;
-	idEntityPtr<idEntity>   holdFrobDraggedEntity;
-	int                     holdFrobStartTime;
-	idMat3                  holdFrobStartViewAxis;
+	
 
 	// angua: Set ideal crouch state
 	void					EvaluateCrouch();
@@ -1544,4 +1747,3 @@ ID_INLINE void idPlayer::SetSelfSmooth( bool b ) {
 }
 
 #endif /* !__GAME_PLAYER_H__ */
-

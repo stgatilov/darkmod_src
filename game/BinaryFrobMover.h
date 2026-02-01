@@ -71,7 +71,7 @@ public:
 	ID_INLINE void			Close()		{ Close(true);	}
 	ID_INLINE void			Lock()		{ Lock(true);	}
 	ID_INLINE void			Unlock()	{ Unlock(true);	}
-	
+
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
 	virtual void			Lock(bool Master);
@@ -91,9 +91,56 @@ public:
 
 	// Ishtvan: Allow for fine control when frob is held
 	virtual void			FrobAction(bool frobMaster, bool isFrobPeerAction = false) override;
-	virtual void			FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0) override;
-	virtual void			FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0) override;
+	
+public: // methods | Ishtvan/stifu: fine control
 
+	enum class FineControlState : int
+	{
+		None,
+		Init,
+		Execute,
+		Stop
+	};
+
+	enum class HoldfrobMode : int
+	{
+		Disabled = 0,
+		FineControl = 1,
+		Toggle = 2,
+		Open = 3
+	};
+
+	FineControlState		InitFineControl();
+	FineControlState		ExecuteFineControl(); // returns true, if fine control is being performed
+	FineControlState		StopFineControl();
+
+private: // members | Ishtvan/stifu: fine control
+	
+/**
+	* Ishtvan: Used for fine control of opening/closing with the mouse
+	**/
+	idVec2						m_mousePosition;
+
+	/**
+	* The state of the fine control
+	**/
+	FineControlState			m_FineControlState;
+
+public: // methods | stifu: open/close slowly, close fast
+
+	bool					IsMovingSlow() const { return m_bIsMovingSlow; }
+	void					Interrupt();
+	void					BufferMovingSlow(bool bForceOpen);
+	void					BufferClosingFast();
+	void					ResetMovingSlowOrFast();
+
+private: // members | stifu: open/close slowly, close fast
+	bool					m_bIsMovingSlowBuffered{ false };
+	bool					m_bIsClosingFastBuffered{ false };
+	bool					m_bIsMovingSlow{ false };
+	int						m_move_time_normal{0};
+
+public:
 	void					RegisterAI(idAI* ai);	// grayman #1145
 	void					TellRegisteredUsers();	// grayman #1145
 	idVec3					GetRotationAxis();		// grayman #2691
@@ -570,16 +617,6 @@ protected:
 	bool						m_LockOnClose;
 
 	/**
-	* Ishtvan: Used for fine control of opening/closing with the mouse
-	**/
-	idVec2						m_mousePosition;
-
-	/**
-	* True when frob is held down but not long enough to initialize fine control
-	**/
-	bool						m_bFineControlStarting;
-
-	/**
 	* grayman #2345 - idBox of the closed mover, used in pathfinding
 	**/
 
@@ -619,6 +656,7 @@ protected:
 	* grayman #3462 - when the door started moving
 	**/
 	int							m_timeDoorStartedMoving;
+
 };
 
 #endif /* !BINARYFROBMOVER */
