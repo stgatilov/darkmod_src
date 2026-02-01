@@ -3029,9 +3029,9 @@ void idEntity::Hide( void )
 	
 		if (player)
 		{
-			if (player->m_FrobEntity.GetEntity() == this)
+			if (player->m_FrobHilightedEntity.GetEntity() == this)
 			{
-				player->m_FrobEntity = NULL;
+				player->m_FrobHilightedEntity = NULL;
 			}
 		}
 
@@ -11105,7 +11105,7 @@ void idEntity::Event_Frob()
 	if (player != NULL)
 	{
 		// Let the player frob this entity.
-		player->PerformFrob(EPressed, this, false);
+		player->m_FrobHandling.PerformFrob(idPlayer::FrobHandling::EButtonState::Pressed, this, true);
 	}
 }
 

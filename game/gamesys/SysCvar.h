@@ -263,6 +263,7 @@ extern idCVar cv_frob_fadetime;
 extern idCVar cv_frob_weapon_selects_weapon;
 extern idCVar cv_frob_item_selects_item;
 extern idCVar cv_frob_debug_hud;
+extern idCVar cv_frob_control_style;
 
 extern idCVar cv_frobhelper_active;
 extern idCVar cv_frobhelper_alwaysVisible;
@@ -274,10 +275,7 @@ extern idCVar cv_frobhelper_ignore_size;
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 extern idCVar cv_holdfrob_delay;
-extern idCVar cv_holdfrob_bounds;
-extern idCVar cv_holdfrob_drag_body_behavior;
-
-extern idCVar cv_holdfrob_drag_all_entities;
+extern idCVar cv_holdfrob_drag_entity_behavior;
 
 //Obsttorte: #5984 (multilooting)
 extern idCVar cv_multiloot_min_interval;
@@ -368,9 +366,6 @@ extern idCVar cv_tdm_inv_use_on_frob;
 extern idCVar cv_tdm_inv_use_visual_feedback;
 extern idCVar cv_tdm_subtitles;
 
-extern idCVar cv_tdm_door_control;
-extern idCVar cv_tdm_door_control_sensitivity;
-
 extern idCVar cv_pm_stepvol_walk;
 extern idCVar cv_pm_stepvol_run;
 extern idCVar cv_pm_stepvol_creep;
@@ -434,6 +429,11 @@ extern idCVar cv_ai_hearing_hardcore;
 
 extern idCVar cv_door_auto_open_on_unlock;
 extern idCVar cv_door_ignore_locks;
+
+extern idCVar cv_door_control;
+extern idCVar cv_door_control_sensitivity;
+extern idCVar cv_door_control_movetime_factor_slow;
+extern idCVar cv_door_control_movetime_factor_fast;
 
 extern idCVar cv_dm_distance;
 
