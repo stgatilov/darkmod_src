@@ -990,7 +990,7 @@ public:
 			PostFinishCleanup // In case a frob action is canceled that needs reverting
 		};
 
-		constexpr const char* FrobActionToString(EFrobAction action)
+		static constexpr const char* FrobActionToString(EFrobAction action)
 		{
 			switch (action)
 			{

@@ -11596,13 +11596,15 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	using Frob   = EButtonState;
 	using Style  = EControlStyle;
 
+	Style frob_control_style = Style(cv_frob_control_style.GetInteger());
+
 	if (Action::Init == action)
 	{
 		return Frob::Pressed == state;
 	}
 	else if (Action::ReleaseGrabbedEntity == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return Frob::Pressed == state;
@@ -11623,7 +11625,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::ToggleGrabbedEntity == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false;
@@ -11645,7 +11647,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::DoorControlInit == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false;
@@ -11655,7 +11657,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::DoorFineControl == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false;
@@ -11665,7 +11667,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::DoorControlEnd == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false;
@@ -11675,7 +11677,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::DoorMoveRegular == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false; // we rely on regular frob action to avoid having to deal with tdm_door_control
@@ -11688,7 +11690,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::DoorMoveSlow == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false;
@@ -11698,7 +11700,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::DoorMoveSlowEnd == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false;
@@ -11708,7 +11710,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::DoorCloseFast == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false;
@@ -11747,7 +11749,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::UseWorldEntity == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return false;
@@ -11765,7 +11767,7 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 	}
 	else if (Action::GrabWorldEntity == action)
 	{
-		switch (cv_frob_control_style.GetInteger())
+		switch (frob_control_style)
 		{
 		case Style::HoldFrobDisabled:
 			return Frob::Pressed == state;
@@ -12215,7 +12217,7 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 			const bool doorControlAllowed = IsDoorControlAllowed();
 			if (CanExecuteFrobAction<EFrobAction::DoorFineControl>(state) && doorControlAllowed)
 			{
-				if (door->ExecuteFineControl() == CBinaryFrobMover::FineControlState::None)
+				if (door->ExecuteFineControl() == CBinaryFrobMover::FineControlState::Inactive)
 				{
 					m_player->SetImmobilization("DoorControl", 0);
 					SetFrobAction(EFrobAction::DoorControlEnd);

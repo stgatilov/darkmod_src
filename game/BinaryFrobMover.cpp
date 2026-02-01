@@ -97,7 +97,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_stopWhenBlocked = false;
 	m_LockOnClose = false;
 	m_mousePosition.Zero();
-	m_FineControlState = FineControlState::None;
+	m_FineControlState = FineControlState::Inactive;
 	m_closedBox = box_zero; // grayman #2345 - holds closed position
 	m_closedBox.Clear();	// grayman #2345
 	m_registeredAI.Clear();	// grayman #1145
@@ -235,7 +235,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_LockOnClose);
 	savefile->ReadBox(m_closedBox); // grayman #2345
 
-	m_FineControlState = FineControlState::None; // It does not make sense to store helddown-button control state
+	m_FineControlState = FineControlState::Inactive; // It does not make sense to store helddown-button control state
 
 	// grayman #1145 - registered AI for a locked door
 	m_registeredAI.Clear();
@@ -1684,7 +1684,7 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::InitFineControl()
 		|| cv_door_control.GetInteger() != static_cast<int>(HoldfrobMode::FineControl) 
 		|| IsLocked())
 	{
-		return FineControlState::None;
+		return FineControlState::Inactive;
 	}
 
 	m_FineControlState = FineControlState::Init;
@@ -1693,8 +1693,8 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::InitFineControl()
 
 CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl()
 {
-	if (m_FineControlState == FineControlState::None)
-		return FineControlState::None;
+	if (m_FineControlState == FineControlState::Inactive)
+		return FineControlState::Inactive;
 
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
@@ -1749,12 +1749,12 @@ CBinaryFrobMover::FineControlState CBinaryFrobMover::ExecuteFineControl()
 
 CBinaryFrobMover::FineControlState CBinaryFrobMover::StopFineControl()
 {
-	if (m_FineControlState == FineControlState::None)
-		return FineControlState::None;
+	if (m_FineControlState == FineControlState::Inactive)
+		return FineControlState::Inactive;
 
 	idPlayer* player = gameLocal.GetLocalPlayer();
 	player->SetImmobilization("door handling", 0);
-	m_FineControlState = FineControlState::None; // Reset for next fine control
+	m_FineControlState = FineControlState::Inactive; // Reset for next fine control
 
 	return FineControlState::Stop;
 }

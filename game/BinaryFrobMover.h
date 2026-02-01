@@ -96,7 +96,7 @@ public: // methods | Ishtvan/stifu: fine control
 
 	enum class FineControlState : int
 	{
-		None,
+		Inactive,
 		Init,
 		Execute,
 		Stop
