@@ -12256,7 +12256,9 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				SetFrobAction(EFrobAction::Finished);
 				return true;
 			}
-			if (CanExecuteFrobAction<EFrobAction::DoorCloseFast>(state) && !door->IsAtClosedPosition())
+			if (CanExecuteFrobAction<EFrobAction::DoorCloseFast>(state) 
+				&& !door->IsAtClosedPosition() 
+				&& door->IsInterruptable())
 			{
 				door->BufferClosingFast();
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
@@ -12274,7 +12276,9 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 			const bool doorControlAllowed = IsDoorControlAllowed();
 			if (CanExecuteFrobAction<EFrobAction::DoorMoveSlow>(state)
 				&& !door->IsMovingSlow() && doorControlAllowed
-				&& (controlMode != DoorHoldfrob::Open || !door->IsAtOpenPosition()))
+				&& (controlMode != DoorHoldfrob::Open || !door->IsAtOpenPosition())
+				&& !door->IsLocked()
+				&& door->IsInterruptable())
 			{
 				if (door->IsMoving())
 				{
@@ -12361,6 +12365,12 @@ bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)
 			SetFrobAction(EFrobAction::Finished);
 		}
 	}
+	else if (frobAction == EFrobAction::UseOnFrobInit)
+	{
+		SetFrobAction(EFrobAction::UseOnFrobEnd);
+		SetFrobAction(EFrobAction::Finished);
+	}
+
 	return couldBeUsed;
 }
 

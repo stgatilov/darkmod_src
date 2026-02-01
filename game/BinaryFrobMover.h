@@ -149,7 +149,7 @@ public:
 	/**
 	* This is the non-script version of GetOpen 
 	*/
-	bool					IsOpen()
+	bool					IsOpen() const
 	{
 		return m_Open;
 	}
@@ -157,17 +157,25 @@ public:
 	/**
 	* This indicates if the door was interrupted in its last action
 	*/
-	bool					WasInterrupted()
+	bool					WasInterrupted() const
 	{
 		return m_bInterrupted;
 	}
 
-	bool					WasStoppedDueToBlock()
+	/**
+	* This indicates if the door is interruptable
+	*/
+	bool                    IsInterruptable() const
+	{
+		return m_bInterruptable;
+	}
+
+	bool					WasStoppedDueToBlock() const
 	{
 		return 	m_StoppedDueToBlock;
 	}
 
-	idEntity* 				GetLastBlockingEnt()
+	idEntity* 				GetLastBlockingEnt() const
 	{
 		return m_LastBlockingEnt.GetEntity();
 	}
