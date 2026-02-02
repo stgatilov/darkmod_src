@@ -236,6 +236,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBox(m_closedBox); // grayman #2345
 
 	m_FineControlState = FineControlState::Inactive; // It does not make sense to store helddown-button control state
+	gameLocal.GetLocalPlayer()->SetImmobilization("door handling", 0);
 
 	// grayman #1145 - registered AI for a locked door
 	m_registeredAI.Clear();

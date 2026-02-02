@@ -12244,19 +12244,21 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 	case DoorHoldfrob::Open:
 	case DoorHoldfrob::Toggle:
 		{		
-		    if (CanExecuteFrobAction<EFrobAction::DoorControlInit>(state))
+			if (CanExecuteFrobAction<EFrobAction::DoorControlInit>(state))
 			{
-				m_player->SetImmobilization("DoorControl", EIM_ATTACK | EIM_WEAPON_SELECT);
+				// Lock frob handling to DoorControl
 				SetFrobAction(EFrobAction::DoorControlInit, true);
 				return true;
 			}
-			if (CanExecuteFrobAction<EFrobAction::DoorMoveRegular>(state))
+			if (IsLegalFrobActionTransition(m_lastFrobAction, EFrobAction::DoorMoveRegular))
 			{
-				door->FrobAction(true);
-				m_player->SetImmobilization("DoorControl", 0);
-				SetFrobAction(EFrobAction::DoorMoveRegular, true);
-				SetFrobAction(EFrobAction::Finished);
-				return true;
+				if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state) || door->IsLocked())
+				{
+					door->FrobAction(true);
+					SetFrobAction(EFrobAction::DoorMoveRegular, true);
+					SetFrobAction(EFrobAction::Finished);
+					return true;
+				}
 			}
 			if (CanExecuteFrobAction<EFrobAction::DoorCloseFast>(state) 
 				&& !door->IsAtClosedPosition() 
@@ -12282,6 +12284,7 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				&& !door->IsLocked()
 				&& door->IsInterruptable())
 			{
+				m_player->SetImmobilization("DoorControl", EIM_ATTACK | EIM_WEAPON_SELECT);
 				if (door->IsMoving())
 				{
 					door->Interrupt();
@@ -12555,9 +12558,15 @@ inline void idPlayer::FrobHandling::CleanupFrobActionState()
 	switch (m_cleanupFrobAction)
 	{
 	case Action::DoorControlInit:
-	case Action::DoorFineControl:
 	case Action::DoorCloseFast:
 		m_player->SetImmobilization("DoorControl", 0);
+		break;
+	case Action::DoorFineControl:
+		{
+			CBinaryFrobMover* door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
+			door->StopFineControl();
+			m_player->SetImmobilization("DoorControl", 0);
+		}
 		break;
 	case Action::DoorMoveSlow:
 		{
