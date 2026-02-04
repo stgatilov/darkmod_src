@@ -3021,6 +3021,19 @@ bool idGameLocal::GetViewPos_Cmd(idVec3 &origin, idMat3 &axis) const {
 	return true;
 }
 
+bool idGameLocal::GetViewPos_Cmd(idStr &text) const {
+	text.Clear();
+
+	idVec3 origin;
+	idMat3 axis;
+	if (!gameLocal.GetViewPos_Cmd(origin, axis))
+		return false;
+
+	idAngles angles = axis.ToAngles();
+	text = va( "%s   %.1f %.1f %.1f", origin.ToString(), angles.pitch, angles.yaw, angles.roll );
+	return true;
+}
+
 /*
 ================
 idGameLocal::SetupClientPVS
@@ -3242,6 +3255,15 @@ idGameLocal::RunFrame
 ================
 */
 gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs, bool minorTic ) {
+	TRACE_CPU_SCOPE( "RunFrame" );
+
+	if ( g_tracingEnabled )	{
+		idStr text;
+		if ( gameLocal.GetViewPos_Cmd(text) ) {
+			TRACE_ATTACH_FORMAT( "viewpos: %s", text.c_str() );
+		}
+	}
+
 	idEntity *	ent;
 	int			num(-1);
 	idTimer		timer_think, timer_events, timer_singlethink;
@@ -3306,6 +3328,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs,
 			time += idMath::Imax(int(timestepMs * g_timeModifier.GetFloat()), 1);
 			realClientTime = time;
 			this->minorTic = minorTic;
+
+			TRACE_ATTACH_FORMAT( "Time: %d .. %d (delta = %d ms) %s", previousTime, time, timestepMs, (minorTic ? "minor" : "major") );
 
 #ifdef GAME_DLL
 			// allow changing SIMD usage on the fly
