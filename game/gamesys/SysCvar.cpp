@@ -326,8 +326,8 @@ idCVar cv_frob_distance_default(		"tdm_frob_distance_default",	"63",	CVAR_GAME |
 idCVar cv_frob_width(					"tdm_frob_width",		"10.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,		"When frobbing, a cube of this dimension is created at the point the frob hit, and things within are frob candidates.  Makes frobbing easier but can go thru solid objects if set too high.  Default is 10.");
 idCVar cv_frob_fadetime(				"tdm_frob_fadetime",	"100",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"Time it takes for frob highlight effect to fade in and out." );
 idCVar cv_frob_debug_bounds(			"tdm_frob_debug_bounds", "0",			CVAR_GAME | CVAR_BOOL,						"Set to 1 to see a visualization of the bounds that are used to check for frobable items within them." );
-idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",	CVAR_GAME | CVAR_BOOL,						"Set to 1 to have weapons automatically selected when the respective item is picked up." );
-idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME |CVAR_BOOL,						"Set to 1 to have items automatically selected when the respective item is picked up.");
+idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE | CVAR_NOCHEAT,	"Set to 1 to have weapons automatically selected when the respective item is picked up." );
+idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME |CVAR_BOOL | CVAR_ARCHIVE | CVAR_NOCHEAT,		"Set to 1 to have items automatically selected when the respective item is picked up.");
 idCVar cv_frob_debug_hud(				"tdm_frob_debug_hud", "0",				CVAR_GAME | CVAR_BOOL,						"Set to 1 to show some frobbing info." );
 idCVar cv_frob_control_style(			"tdm_frob_control_style", "1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style:\n\t-1: Disabled hold-frob\n\t0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction),\n\t1: Thief/2.12 (Like TDM, but behavior for bodys is swapped),\n\t2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
 
