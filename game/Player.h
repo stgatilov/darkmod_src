@@ -350,6 +350,11 @@ public:
 	idEntityPtr<idEntity>	m_FrobHilightedEntity;
 
 	/**
+	 * Indicates whether the FrobHighlightedEntity is an inventory item or not.
+	 */
+	bool                    m_isInventoryEntityHighlighted;
+
+	/**
 	* Frobbed joint and frobbed clipmodel ID if an AF has been frobbed
 	* Set to INVALID and -1 if the frobbed entity is not an AF
 	**/

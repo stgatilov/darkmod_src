@@ -33,10 +33,15 @@ idCVar r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE,
 idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing frob outline" );
 idCVar r_frobDepthOffset( "r_frobDepthOffset", "0.0005", CVAR_FLOAT|CVAR_RENDERER|CVAR_ARCHIVE, "Extra depth offset for frob outline" );
 idCVar r_frobOutline( "r_frobOutline", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
+idCVar r_frobOutlineInv( "r_frobOutlineInv", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "If enabled, separate froboutline colors will be applied to inventory items." );
 idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - red component" );
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
 idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
+idCVar r_frobOutlineColorInvR("r_frobOutlineColorInvR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for inventory items - red component");
+idCVar r_frobOutlineColorInvG("r_frobOutlineColorInvG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for inventory items - green component");
+idCVar r_frobOutlineColorInvB("r_frobOutlineColorInvB", "0.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for inventory items - blue component");
+idCVar r_frobOutlineColorInvA("r_frobOutlineColorInvA", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for inventory items - alpha component");
 idCVar r_frobOutlineExtrusion( "r_frobOutlineExtrusion", "-3.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Thickness of geometric outline in pixels (negative = hard, positive = soft)" );
 idCVar r_frobHighlightColorMulR( "r_frobHighlightColorMulR", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - red component" );
 idCVar r_frobHighlightColorMulG( "r_frobHighlightColorMulG", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - green component" );
@@ -329,7 +334,14 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
 	uniforms->extrusion.Set( extr );
 	uniforms->hard.Set( r_frobOutlineExtrusion.GetFloat() < 0.0f ? 1 : 0 );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
-	uniforms->color.Set( r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat() );
+	if (r_frobOutlineInv.GetBool() && gameLocal.GetLocalPlayer()->m_isInventoryEntityHighlighted)
+	{
+		uniforms->color.Set(r_frobOutlineColorInvR.GetFloat(), r_frobOutlineColorInvG.GetFloat(), r_frobOutlineColorInvB.GetFloat(), r_frobOutlineColorInvA.GetFloat());
+	}
+	else
+	{
+		uniforms->color.Set(r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat());
+	}
 
 	DrawElements( surfs, extrudeShader, true );
 }
@@ -369,7 +381,10 @@ void FrobOutlineStage::DrawImageBasedOutline( idList<drawSurf_t *> &surfs, int s
 	applyUniforms->source.Set( 0 );
 	GL_SelectTexture( 0 );
 	colorTex[0]->Bind();
-	applyUniforms->color.Set( r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat() );
+	if (r_frobOutlineInv.GetBool() && gameLocal.GetLocalPlayer()->m_isInventoryEntityHighlighted)
+		applyUniforms->color.Set(r_frobOutlineColorInvR.GetFloat(), r_frobOutlineColorInvG.GetFloat(), r_frobOutlineColorInvB.GetFloat(), r_frobOutlineColorInvA.GetFloat());
+	else
+		applyUniforms->color.Set(r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat());
 	// perform blend
 	RB_DrawFullScreenTri();
 }

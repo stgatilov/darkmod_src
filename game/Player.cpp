@@ -706,6 +706,7 @@ idPlayer::idPlayer() :
 
 
 	m_FrobHilightedEntity = NULL;
+	m_isInventoryEntityHighlighted = false;
 	m_FrobJoint = INVALID_JOINT;
 	m_FrobID = 0;
 
@@ -2112,6 +2113,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	m_MouseGesture.Save( savefile );
 
 	m_FrobHilightedEntity.Save(savefile);
+	savefile->WriteBool(m_isInventoryEntityHighlighted);
 	savefile->WriteJoint(m_FrobJoint);
 	savefile->WriteInt(m_FrobID);
 	savefile->WriteTrace(m_FrobTrace);
@@ -2425,6 +2427,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	m_MouseGesture.Restore( savefile );
 
 	m_FrobHilightedEntity.Restore(savefile);
+	savefile->ReadBool(m_isInventoryEntityHighlighted);
 	savefile->ReadJoint(m_FrobJoint);
 	savefile->ReadInt(m_FrobID);
 	savefile->ReadTrace(m_FrobTrace);
@@ -11047,10 +11050,9 @@ void idPlayer::PerformFrobCheckInternal()
 			 && !ent->IsHidden() && ( traceDist < ent->m_FrobDistance )
 			 && ( ent != gameLocal.m_Grabber->GetSelected() ) )
 		{
-			// Store the trace for later reference
 			m_FrobTrace = trace;
-			// Store the frob entity
 			m_FrobHilightedEntity = ent;
+			m_isInventoryEntityHighlighted = ent->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 
 			if (!bFrobHelperActive)
 				// we have found our frobbed entity, so exit
@@ -11180,7 +11182,7 @@ void idPlayer::PerformFrobCheckInternal()
 	{
 		// Store the frob entity
 		m_FrobHilightedEntity = bestEnt;
-		// and the trace for reference
+		m_isInventoryEntityHighlighted = bestEnt->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 		m_FrobTrace = trace;
 
 		return; // done
