@@ -2953,17 +2953,18 @@ void idCommonLocal::InitGame( void )
 		if (fileSystem->FindFile(PADBINDS_FILE) != FIND_NO) {
 			cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec " PADBINDS_FILE "\n");
 		}
+
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );
 	}
-
-	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec mission.cfg\n" );
-
-	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );
 
 	// reload the language dictionary now that we've loaded config files
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "reloadLanguage\n" );
 
 	// run cfg execution
 	cmdSystem->ExecuteCommandBuffer();
+
+	// set static mission overrides: they take effect even before game starts
+	cvarSystem->SetMissionOverrides( cvarSystem->ReadMissionCvars() );
 
 	// re-override anything from the config files with command line args
 	StartupVariable( NULL, false );
