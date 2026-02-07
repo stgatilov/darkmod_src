@@ -1932,8 +1932,8 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	gamestate = GAMESTATE_STARTUP;
 
-	// #5453: reset all mission overrides
-	cvarSystem->SetMissionOverrides();
+	// #5453: reset all mission overrides to what's written in mission.cfg
+	cvarSystem->SetMissionOverrides( cvarSystem->ReadMissionCvars() );
 
 	gameRenderWorld = renderWorld;
 	gameSoundWorld = soundWorld;
@@ -2549,8 +2549,8 @@ void idGameLocal::MapShutdown( void ) {
 	gameRenderWorld = NULL;
 	gameSoundWorld = NULL;
 
-	// #5453: reset all mission overrides
-	cvarSystem->SetMissionOverrides();
+	// #5453: reset all mission overrides to what's written in mission.cfg
+	cvarSystem->SetMissionOverrides( cvarSystem->ReadMissionCvars() );
 
 	gamestate = GAMESTATE_NOMAP;
 
