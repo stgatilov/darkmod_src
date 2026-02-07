@@ -120,7 +120,7 @@ idCVar cv_ai_debug_transition_barks(			"tdm_ai_debug_transition_barks",			"0",	C
 idCVar cv_ai_debug_greetings(					"tdm_ai_debug_greetings",			"0",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1, prints to the console the AI greeting and response barks");
 idCVar cv_ai_debug_anims (						"tdm_ai_debug_anims",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), show debug info about AI anims in the console and log file." );
 
-idCVar cv_ai_ko_susceptibility_after_flash_duration("tdm_ai_ko_susceptibility_after_flash_duration", "1500", CVAR_GAME | CVAR_INTEGER, "AI will be susecptible to ko after flash for this duration in ms.");
+idCVar cv_ai_ko_susceptibility_after_flash_duration("tdm_ai_ko_susceptibility_after_flash_duration", "4000", CVAR_GAME | CVAR_INTEGER, "AI will be susecptible to ko after flash for this duration in ms.");
 
 idCVar cv_show_health (							"tdm_show_health",					"0",            CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), show health of entities for debugging." );
 
