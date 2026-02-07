@@ -33,15 +33,15 @@ idCVar r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE,
 idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing frob outline" );
 idCVar r_frobDepthOffset( "r_frobDepthOffset", "0.0005", CVAR_FLOAT|CVAR_RENDERER|CVAR_ARCHIVE, "Extra depth offset for frob outline" );
 idCVar r_frobOutline( "r_frobOutline", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
-idCVar r_frobOutlineInv( "r_frobOutlineInv", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "If enabled, separate froboutline colors will be applied to inventory items." );
+idCVar r_frobOutlineValuables( "r_frobOutlineValuables", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "If enabled, separate frob outline will be appplied to valuables." );
 idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - red component" );
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
 idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
-idCVar r_frobOutlineColorInvR("r_frobOutlineColorInvR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for inventory items - red component");
-idCVar r_frobOutlineColorInvG("r_frobOutlineColorInvG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for inventory items - green component");
-idCVar r_frobOutlineColorInvB("r_frobOutlineColorInvB", "0.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for inventory items - blue component");
-idCVar r_frobOutlineColorInvA("r_frobOutlineColorInvA", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for inventory items - alpha component");
+idCVar r_frobOutlineValuablesColorR("r_frobOutlineValuablesColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - red component");
+idCVar r_frobOutlineValuablesColorG("r_frobOutlineValuablesColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - green component");
+idCVar r_frobOutlineValuablesColorB("r_frobOutlineValuablesColorB", "0.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - blue component");
+idCVar r_frobOutlineValuablesColorA("r_frobOutlineValuablesColorA", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - alpha component");
 idCVar r_frobOutlineExtrusion( "r_frobOutlineExtrusion", "-3.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Thickness of geometric outline in pixels (negative = hard, positive = soft)" );
 idCVar r_frobHighlightColorMulR( "r_frobHighlightColorMulR", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - red component" );
 idCVar r_frobHighlightColorMulG( "r_frobHighlightColorMulG", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - green component" );
@@ -89,6 +89,9 @@ static void FrobOutlinePreset( const idCmdArgs &args ) {
 		common->Printf( "  4 - image-based weak (Kingsal)\n" );
 		common->Printf( "  5 - geometric hard black (Nbohr1more)\n" );
 		common->Printf( "  6 - image-based black (Nbohr1more)\n" );
+		common->Printf( "  7 - geometric, yellow for valuables, grey for junk (STiFU)\n" );
+		common->Printf( "  8 - geometric, yellow valuables, none for junk (STiFU)\n" );
+
 		return;
 	}
 	int preset = atoi( args.Argv( 1 ) );
@@ -140,6 +143,29 @@ static void FrobOutlinePreset( const idCmdArgs &args ) {
 		r_frobOutlineColorG.SetFloat( 0.0f );
 		r_frobOutlineColorB.SetFloat( 0.0f );
 	}
+	else if ( preset == 7 ) {
+		r_frobOutline.SetInteger(2);
+		r_frobOutlineExtrusion.SetInteger(-2);
+		r_frobOutlineColorA.SetFloat(1.0f);
+		r_frobOutlineColorR.SetFloat(0.2f);
+		r_frobOutlineColorG.SetFloat(0.2f);
+		r_frobOutlineColorB.SetFloat(0.25f);
+		r_frobOutlineValuables.SetBool(true);
+		r_frobOutlineValuablesColorA.SetFloat(1.0f);
+		r_frobOutlineValuablesColorR.SetFloat(1.0f);
+		r_frobOutlineValuablesColorG.SetFloat(0.6f);
+		r_frobOutlineValuablesColorB.SetFloat(0.0f);
+	}
+	else if ( preset == 8 ) {
+		r_frobOutline.SetInteger(2);
+		r_frobOutlineExtrusion.SetInteger(-2);
+		r_frobOutlineColorA.SetFloat(0.0f);
+		r_frobOutlineValuables.SetBool(true);
+		r_frobOutlineValuablesColorA.SetFloat(1.0f);
+		r_frobOutlineValuablesColorR.SetFloat(1.0f);
+		r_frobOutlineValuablesColorG.SetFloat(0.6f);
+		r_frobOutlineValuablesColorB.SetFloat(0.0f);
+	}
 	else {
 		common->Printf( "Unknown preset number\n" );
 	}
@@ -183,7 +209,7 @@ void FrobOutlineStage::CreateDrawFbo() {
 	drawFbo->AddColorRenderBuffer( 0, GL_R8 );
 }
 
-void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs ) {
+void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs, bool isfrobbedEntityValuable ) {	
 	// find any surfaces that should be frob-highlighted
 	idList<drawSurf_t *> frobSurfs;
 	for ( int i = 0; i < numDrawSurfs; ++i ) {
@@ -207,16 +233,16 @@ void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs
 
 		GL_ScissorRelative( 0, 0, 1, 1 );
 
-		if ( r_frobOutline.GetInteger() == 1 ) {
+		if ( r_frobOutline.GetInteger() == EFrobOutlineMode_ImageBased ) {
 			if ( r_frobIgnoreDepth.GetBool() ) {
-				DrawFrobImageBasedIgnoreDepth( frobSurfs );
+				DrawFrobImageBasedIgnoreDepth( frobSurfs, isfrobbedEntityValuable );
 			}
 			else {
-				DrawFrobImageBased( frobSurfs );
+				DrawFrobImageBased( frobSurfs, isfrobbedEntityValuable );
 			}
 		}
-		else if ( r_frobOutline.GetInteger() == 2 ) {
-			DrawFrobGeometric( frobSurfs );
+		else if ( r_frobOutline.GetInteger() == EFrobOutlineMode_Geometric ) {
+			DrawFrobGeometric( frobSurfs, isfrobbedEntityValuable );
 		}
 		else {
 			DrawSurfaces( frobSurfs, r_newFrob.GetBool(), true );
@@ -229,7 +255,7 @@ void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs
 	GL_SelectTexture( 0 );
 }
 
-void FrobOutlineStage::DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs ) {
+void FrobOutlineStage::DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs, bool isfrobbedEntityValuable ) {
 	qglClearStencil( 255 );
 	qglClear( GL_STENCIL_BUFFER_BIT );
 
@@ -239,10 +265,10 @@ void FrobOutlineStage::DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs
 	DrawSurfaces( surfs, r_newFrob.GetInteger() == 1, true );
 
 	// create outline image and blend it where there were no surfaces
-	DrawImageBasedOutline( surfs, 255 );
+	DrawImageBasedOutline( surfs, 255, isfrobbedEntityValuable );
 }
 
-void FrobOutlineStage::DrawFrobImageBased( idList<drawSurf_t*> &surfs ) {
+void FrobOutlineStage::DrawFrobImageBased( idList<drawSurf_t*> &surfs, bool isfrobbedEntityValuable ) {
 	qglClearStencil( 0 );
 	qglClear( GL_STENCIL_BUFFER_BIT );
 
@@ -266,10 +292,10 @@ void FrobOutlineStage::DrawFrobImageBased( idList<drawSurf_t*> &surfs ) {
 	MarkOutline( surfs );
 
 	// create outline image and blend it where allowed
-	DrawImageBasedOutline( surfs, 64 );
+	DrawImageBasedOutline( surfs, 64, isfrobbedEntityValuable );
 }
 
-void FrobOutlineStage::DrawFrobGeometric( idList<drawSurf_t*> &surfs ) {
+void FrobOutlineStage::DrawFrobGeometric( idList<drawSurf_t*> &surfs, bool isfrobbedEntityValuable ) {
 	qglClearStencil( 255 );
 	qglClear( GL_STENCIL_BUFFER_BIT );
 
@@ -282,7 +308,7 @@ void FrobOutlineStage::DrawFrobGeometric( idList<drawSurf_t*> &surfs ) {
 	// draw extruded object edges where there were no surfaces
 	qglStencilFunc( GL_EQUAL, 255, 255 );
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
-	DrawGeometricOutline( surfs );
+	DrawGeometricOutline( surfs, isfrobbedEntityValuable );
 }
 
 void FrobOutlineStage::DrawSurfaces( idList<drawSurf_t*> &surfs, bool highlight, bool enableAlphaTest ) {
@@ -320,7 +346,7 @@ void FrobOutlineStage::MarkOutline( idList<drawSurf_t *> &surfs ) {
 	DrawElements( surfs, extrudeShader, false );
 }
 
-void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
+void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs, bool isfrobbedEntityValuable ) {
 	// outline 1) can be occluded by objects in the front, 2) is translucent
 	GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 
@@ -334,9 +360,9 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
 	uniforms->extrusion.Set( extr );
 	uniforms->hard.Set( r_frobOutlineExtrusion.GetFloat() < 0.0f ? 1 : 0 );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
-	if (r_frobOutlineInv.GetBool() && gameLocal.GetLocalPlayer()->m_isInventoryEntityHighlighted)
+	if (r_frobOutlineValuables.GetBool() && isfrobbedEntityValuable)
 	{
-		uniforms->color.Set(r_frobOutlineColorInvR.GetFloat(), r_frobOutlineColorInvG.GetFloat(), r_frobOutlineColorInvB.GetFloat(), r_frobOutlineColorInvA.GetFloat());
+		uniforms->color.Set(r_frobOutlineValuablesColorR.GetFloat(), r_frobOutlineValuablesColorG.GetFloat(), r_frobOutlineValuablesColorB.GetFloat(), r_frobOutlineValuablesColorA.GetFloat());
 	}
 	else
 	{
@@ -346,7 +372,7 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
 	DrawElements( surfs, extrudeShader, true );
 }
 
-void FrobOutlineStage::DrawImageBasedOutline( idList<drawSurf_t *> &surfs, int stencilMask ) {
+void FrobOutlineStage::DrawImageBasedOutline( idList<drawSurf_t *> &surfs, int stencilMask, bool isfrobbedEntityValuable ) {
 	GL_State( GLS_DEPTHFUNC_ALWAYS );
 	// draw to small anti-aliased color buffer
 	FrameBuffer *previousFbo = frameBuffers->activeFbo;
@@ -381,8 +407,8 @@ void FrobOutlineStage::DrawImageBasedOutline( idList<drawSurf_t *> &surfs, int s
 	applyUniforms->source.Set( 0 );
 	GL_SelectTexture( 0 );
 	colorTex[0]->Bind();
-	if (r_frobOutlineInv.GetBool() && gameLocal.GetLocalPlayer()->m_isInventoryEntityHighlighted)
-		applyUniforms->color.Set(r_frobOutlineColorInvR.GetFloat(), r_frobOutlineColorInvG.GetFloat(), r_frobOutlineColorInvB.GetFloat(), r_frobOutlineColorInvA.GetFloat());
+	if (r_frobOutlineValuables.GetBool() && isfrobbedEntityValuable)
+		applyUniforms->color.Set(r_frobOutlineValuablesColorR.GetFloat(), r_frobOutlineValuablesColorG.GetFloat(), r_frobOutlineValuablesColorB.GetFloat(), r_frobOutlineValuablesColorA.GetFloat());
 	else
 		applyUniforms->color.Set(r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat());
 	// perform blend

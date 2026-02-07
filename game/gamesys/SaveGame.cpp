@@ -459,6 +459,8 @@ void idSaveGame::WriteRenderView( const renderView_t &view ) {
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		WriteFloat( view.shaderParms[ i ] );
 	}
+
+	WriteBool(view.isHighlightedEntityValuable);
 }
 
 void idSaveGame::WriteUsercmd( const usercmd_t &usercmd ) {
@@ -1064,6 +1066,8 @@ void idRestoreGame::ReadRenderView( renderView_t &view ) {
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		ReadFloat( view.shaderParms[ i ] );
 	}
+
+	ReadBool(view.isHighlightedEntityValuable);
 }
 
 void idRestoreGame::ReadUsercmd( usercmd_t &usercmd ) {

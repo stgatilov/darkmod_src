@@ -123,7 +123,7 @@ void RenderBackend::DrawView( const viewDef_t *viewDef, bool colorIsBackground )
 	surfacePassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs, beforePostproc );
 
 	if ( (r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && !viewDef->IsLightGem() ) {
-		frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
+		frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs , viewDef->renderView.isHighlightedEntityValuable );
 	}
 
 	LightPassesStage::DrawMask mask;
