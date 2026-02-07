@@ -901,15 +901,6 @@ void idPlayer::Init( void ) {
 	legsForward	= true;
 	oldViewYaw = 0.0f;
 
-	// set the pm_ cvars
-	{
-		kv = spawnArgs.MatchPrefix( "pm_", NULL );
-		while( kv ) {
-			cvarSystem->SetCVarString( kv->GetKey(), kv->GetValue() );
-			kv = spawnArgs.MatchPrefix( "pm_", kv );
-		}
-	}
-
 	// Commented out by Dram. TDM does not use stamina
 /*
 	// disable stamina on hell levels
@@ -2670,14 +2661,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( respawning );
 	savefile->ReadBool( leader );
 	savefile->ReadInt( lastSpectateChange );
-
-	// set the pm_ cvars
-	const idKeyValue	*kv;
-	kv = spawnArgs.MatchPrefix( "pm_", NULL );
-	while( kv ) {
-		cvarSystem->SetCVarString( kv->GetKey(), kv->GetValue() );
-		kv = spawnArgs.MatchPrefix( "pm_", kv );
-	}
 
 	// savefile->ReadFloat( set );
 	// Commented out by Dram. TDM does not use stamina
