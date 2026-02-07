@@ -27,6 +27,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ***********************************************************************/
 
+idRenderModelMD3::~idRenderModelMD3() {
+	Mem_Free(md3);
+}
+
 #define	LL(x) x=LittleInt(x)
 
 /*
@@ -44,7 +48,7 @@ void idRenderModelMD3::InitFromFile( const char *fileName ) {
 	md3St_t				*st;
 	md3XyzNormal_t		*xyz;
 	md3Tag_t			*tag;
-	void				*buffer;
+	void				*buffer = NULL;
 	int					version;
 	int					size;
 
@@ -52,7 +56,10 @@ void idRenderModelMD3::InitFromFile( const char *fileName ) {
 	name = fileName;
 
 	size = fileSystem->ReadFile( fileName, &buffer, NULL );
-	if (!size || size<0 ) {
+	if ( size <= (int)sizeof(md3Header_t) ) {
+		if (buffer != NULL) {
+			fileSystem->FreeFile( buffer );
+		}
 		return;
 	}
 
@@ -154,10 +161,10 @@ void idRenderModelMD3::InitFromFile( const char *fileName ) {
         // register the shaders
         shader = (md3Shader_t *) ( (byte *)surf + surf->ofsShaders );
         for ( j = 0 ; j < surf->numShaders ; j++, shader++ ) {
-            const idMaterial *sh;
-
-            sh = declManager->FindMaterial( shader->name );
-			shader->shader = sh;
+			const idMaterial *sh = declManager->FindMaterial( shader->name );
+			// DG: md3Shader_t must use an index to the material instead of a pointer,
+			//     otherwise the sizes are wrong on 64bit and we get data corruption
+			shader->shaderIndex = (sh != NULL) ? shaders.AddUnique( sh ) : -1;
         }
 
 		// swap all the triangles
@@ -278,17 +285,20 @@ idRenderModel *idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 	}
 
 	staticModel = new idRenderModelStatic;
+	staticModel->InitEmpty("_MD3_Snapshot_");
 	staticModel->bounds.Clear();
 
 	if ( !md3 ) {
 		common->FatalError( "NULL model for entity %s\n", ent->hModel->Name() );
 	}
 
+	int numFrames = md3->numFrames;
+
 	surface = (md3Surface_t *) ((byte *)md3 + md3->ofsSurfaces);
 
 	// TODO: these need set by an entity
-	frame = ent->shaderParms[SHADERPARM_MD3_FRAME];			// probably want to keep frames < 1000 or so
-	oldframe = ent->shaderParms[SHADERPARM_MD3_LASTFRAME];
+	frame = idMath::ClampInt(0, numFrames-1, ent->shaderParms[SHADERPARM_MD3_FRAME]);	// probably want to keep frames < 1000 or so
+	oldframe = idMath::ClampInt(0, numFrames-1, ent->shaderParms[SHADERPARM_MD3_LASTFRAME]);
 	backlerp = ent->shaderParms[SHADERPARM_MD3_BACKLERP];
 
 	for( i = 0; i < md3->numSurfaces; i++ ) {
@@ -306,7 +316,10 @@ idRenderModel *idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 		surf.id = i;
 
 		md3Shader_t* shaders = (md3Shader_t *) ((byte *)surface + surface->ofsShaders);
-		surf.material = shaders->shader;
+		// FIXME: theoretically there can be multiple shaders?
+		// DG: turned md3Shader_t::shader (pointer) into an int (index)
+		int shaderIdx = shaders->shaderIndex;
+		surf.material = (shaderIdx >= 0) ? this->shaders[shaderIdx] : NULL;
 
 		LerpMeshVertexes( tri, surface, backlerp, frame, oldframe );
 
@@ -358,6 +371,8 @@ idBounds idRenderModelMD3::Bounds(const struct renderEntity_s *ent) const {
 	}
 
 	md3Frame_t	*frame = (md3Frame_t *)( (byte *)md3 + md3->ofsFrames );
+	int frameNum = idMath::ClampInt(0, md3->numFrames-1, (int)ent->shaderParms[SHADERPARM_MD3_FRAME]);
+	frame += frameNum; // DG: use bounds of current frame
 
 	ret.AddPoint( frame->bounds[0] );
 	ret.AddPoint( frame->bounds[1] );
