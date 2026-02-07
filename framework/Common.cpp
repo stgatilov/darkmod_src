@@ -3002,9 +3002,11 @@ void idCommonLocal::InitGame( void )
 	// init the session
 	session->Init();
 
-	// tels: #3199: now that the game DLL is loaded, we can execute another config, this
-	// enables it to run f.i. dmap (dmap before DLL load produces no AAS):
-	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autocommands.cfg\n" );
+	if (fileSystem->FindFile("autocommands.cfg") != FIND_NO) {
+		// tels: #3199: now that the game DLL is loaded, we can execute another config, this
+		// enables it to run f.i. dmap (dmap before DLL load produces no AAS):
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autocommands.cfg\n" );
+	}
 }
 
 /*
