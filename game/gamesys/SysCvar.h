@@ -265,12 +265,23 @@ extern idCVar cv_frob_item_selects_item;
 extern idCVar cv_frob_debug_hud;
 extern idCVar cv_frob_control_style;
 
+// #4906: Frobhelper
 extern idCVar cv_frobhelper_active;
 extern idCVar cv_frobhelper_alwaysVisible;
 extern idCVar cv_frobhelper_alpha;
 extern idCVar cv_frobhelper_fadein_delay;
 extern idCVar cv_frobhelper_fadein_duration;
 extern idCVar cv_frobhelper_fadeout_duration;
+
+// #6677: Dynamic HUD
+extern idCVar cv_dynamicHUD;
+extern idCVar cv_dynamicHUD_fadein_duration;
+extern idCVar cv_dynamicHUD_fadeout_delay;
+extern idCVar cv_dynamicHUD_fadeout_duration;
+extern idCVar cv_dynamicHUD_switchWeaponOverride;
+extern idCVar cv_dynamicHUD_showWeaponOnAmmoChange;
+extern idCVar cv_dynamicHUD_switchItemOverride;
+extern idCVar cv_dynamicHUD_showItemOnPickup;
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 extern idCVar cv_holdfrob_delay;
@@ -353,11 +364,6 @@ extern idCVar cv_gui_bigTextSize;		//game saved, new objective, pickup messages
 extern idCVar cv_gui_lightgemSize;	//lightgem and crouch indicator
 extern idCVar cv_gui_barSize;			//breath and health bar
 extern idCVar cv_gui_objectiveTextSize; 
-
-extern idCVar cv_dynamic_hud;
-extern idCVar cv_dynamic_hud_fade_in_duration;
-extern idCVar cv_dynamic_hud_fade_out_delay;
-extern idCVar cv_dynamic_hud_fade_out_duration;
 
 // Daft Mugi #6331: Show viewpos on player HUD
 extern idCVar cv_show_viewpos;

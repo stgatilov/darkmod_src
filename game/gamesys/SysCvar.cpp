@@ -331,12 +331,23 @@ idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME
 idCVar cv_frob_debug_hud(				"tdm_frob_debug_hud", "0",				CVAR_GAME | CVAR_BOOL,						"Set to 1 to show some frobbing info." );
 idCVar cv_frob_control_style(			"tdm_frob_control_style", "1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style:\n\t-1: Disabled hold-frob\n\t0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction),\n\t1: Thief/2.12 (Like TDM, but behavior for bodys is swapped),\n\t2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
 
+// #4906: Frobhelper
 idCVar cv_frobhelper_active(			"tdm_frobhelper_active",			"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,	"Set to 1 to activate the FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_alwaysVisible(     "tdm_frobhelper_alwaysVisible",     "0",    CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,    "Set to 1 to always display the frobhelper like a crosshair.", 0, 1); // stifu #4990
 idCVar cv_frobhelper_alpha(				"tdm_frobhelper_alpha",				"1.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,	"Alpha value of FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_fadein_delay(		"tdm_frobhelper_fadein_delay",		"500",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor fade-in is delayed by this amount specified in ms.", 0.0f, 1000.0f);
 idCVar cv_frobhelper_fadein_duration(	"tdm_frobhelper_fadein_duration",	"1500", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor is faded in for this duration specified in ms.", 0.0f, 5000.0f);
 idCVar cv_frobhelper_fadeout_duration(	"tdm_frobhelper_fadeout_duration",	"500",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor is faded out for this duration specified in ms.", 0.0f, 5000.0f);
+
+// #6677: Dynamic HUD
+idCVar cv_dynamicHUD("tdm_dynamicHUD", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the HUD-elements will hide depending on context.");
+idCVar cv_dynamicHUD_fadein_duration("tdm_dynamicHUD_fadein_duration", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-in duration for the dynamic hud in ms.");
+idCVar cv_dynamicHUD_fadeout_delay("tdm_dynamicHUD_fadeout_delay", "3000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-out delay for the dynamic hud in ms.");
+idCVar cv_dynamicHUD_fadeout_duration("tdm_dynamicHUD_fadeout_duration", "1000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-out duration for the dynamic hud in ms.");
+idCVar cv_dynamicHUD_switchWeaponOverride("tdm_dynamicHUD_switchWeaponOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and weapon HUD is currently not shown, the weapon hud will show on next/prev weapon press instead of switching weapon.");
+idCVar cv_dynamicHUD_showWeaponOnAmmoChange("tdm_dynamicHUD_showWeaponOnAmmoChange", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the weapon hud will show whenever the ammo of the currently selected weapon changes.");
+idCVar cv_dynamicHUD_switchItemOverride("tdm_dynamicHUD_switchItemOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and inventory HUD is currently not shown, the inventory hud will show on next/prev item/inventory group press instead of switching item.");
+idCVar cv_dynamicHUD_showItemOnPickup("tdm_dynamicHUD_showItemOnPickup", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the inventory hud will show after picking up an item.");
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 idCVar cv_holdfrob_delay(
@@ -535,11 +546,6 @@ idCVar  cv_gui_bigTextSize("gui_bigTextSize", "1.0", CVAR_GAME | CVAR_ARCHIVE | 
 idCVar 	cv_gui_lightgemSize("gui_lightgemSize", "1.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Specifies the size of the lightgem");
 idCVar 	cv_gui_barSize("gui_barSize", "1.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Specifies the size of the health and breath bar");
 idCVar	cv_gui_objectiveTextSize("gui_objectiveTextSize", "1.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Specifies the size of the objectives text");
-
-idCVar cv_dynamic_hud("tdm_dynamic_hud", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1', the HUD-elements will hide depending on context.");
-idCVar cv_dynamic_hud_fade_in_duration("tdm_dynamic_hud_fade_in_duration", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "The fade-in duration for the dynamic hud in ms.");
-idCVar cv_dynamic_hud_fade_out_delay("tdm_dynamic_hud_fade_out_delay", "3000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "The fade-out delay for the dynamic hud in ms.");
-idCVar cv_dynamic_hud_fade_out_duration("tdm_dynamic_hud_fade_out_duration", "1000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "The fade-out duration for the dynamic hud in ms.");
 
 // Daft Mugi #6331: Show viewpos on player HUD
 idCVar cv_show_viewpos(

@@ -4146,7 +4146,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateFloat("barSize", cv_gui_barSize.GetFloat());
 		gui->SetStateFloat("objectiveTextSize", cv_gui_objectiveTextSize.GetFloat());
 		gui->SetStateFloat("HUD_Opacity", cv_tdm_hud_opacity.GetFloat());
-		if (!cv_dynamic_hud.GetBool())
+		if (!cv_dynamicHUD.GetBool())
 		{
 			gui->SetStateFloat("Weapon_HUD_Opacity", 1.0f);
 			gui->SetStateFloat("Inventory_HUD_Opacity", 1.0f);

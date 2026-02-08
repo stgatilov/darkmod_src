@@ -411,15 +411,17 @@ public:
 		/**
 		 * DynHUD_WeaponRule1: Never show for weapons without ammo
 		 * DynHUD_WeaponRule2: Briefly show when selecting a weapon not qualifying for rule 1
-		 * DynHUD_WeaponRule3: Briefly show when hidden and next/prev weapon is pressed. Skip actually switching weapons
-		 * DynHUD_WeaponRule4: Briefly show when ammo changes and respective weapon is selected (tied to cvar)
+		 * DynHUD_WeaponRule3: Briefly show when hidden and next/prev weapon is pressed and a weapon is selected that does not qualify for rule 1. Skip actually switching weapons.
+		 * DynHUD_WeaponRule4: Briefly show when ammo changes and respective weapon is selected
 		 */
 		HudFader weapon; // #6677
+		
+		int      selectedWeaponAmmo{0}; // #6677: DynHUD_WeaponRule4
 
 		/**
 		 * DynHUD_InventoryRule1: Briefly show when selecting an item (compass will not fade out because Inventory_HUD_Opacity was simply not defined there)
 		 * DynHUD_InventoryRule2: Briefly show when hidden and next/prev inv item or next/prev inv group is pressed. Skip actually switching items.
-		 * DynHUD_InventoryRule3: Briefly show when picking up a new item (tied to cvar)
+		 * DynHUD_InventoryRule3: Briefly show when picking up a new item
 		 * DynHUD_InventoryRule4: Show when item can be used with world entity
 		 * DynHUD_InventoryRule5: Briefly show when using an item
 		 */

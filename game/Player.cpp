@@ -4026,6 +4026,7 @@ bool idPlayer::SelectWeapon( int num, bool force )
 			weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
 			idealWeapon = num;
 
+			m_dynamicHUD.selectedWeaponAmmo = item->GetAmmo();
 			if (item->IsAllowedEmpty())
 			{
 				m_dynamicHUD.weapon.HideInstantly(); // #6677: DynHUD_WeaponRule1
@@ -5704,6 +5705,17 @@ void idPlayer::PerformImpulse( int impulse ) {
 				return;
 			}
 
+			if (cv_dynamicHUD_switchWeaponOverride.GetBool() 
+				&& m_dynamicHUD.weapon.GetAlpha() == 0.0f)
+			{
+				auto weaponitem = GetCurrentWeaponItem();
+				if (weaponitem != nullptr && weaponitem->NeedsAmmo())
+				{
+					m_dynamicHUD.weapon.Show(); // #6677: DynHUD_WeaponRule3
+					return;
+				}
+			}
+
 			NextWeapon();
 			break;
 		}
@@ -5728,6 +5740,16 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
 			{
 				return;
+			}
+
+			if (cv_dynamicHUD_switchWeaponOverride.GetBool() && m_dynamicHUD.weapon.GetAlpha() == 0.0f)
+			{
+				auto weaponitem = GetCurrentWeaponItem();
+				if (weaponitem != nullptr && weaponitem->NeedsAmmo())
+				{
+					m_dynamicHUD.weapon.Show(); // #6677: DynHUD_WeaponRule3
+					return;
+				}
 			}
 
 			PrevWeapon();
@@ -7165,7 +7187,7 @@ void idPlayer::DynamicHudT::Update()
 	if (player == nullptr)
 		return;
 
-	if (!cv_dynamic_hud.GetBool())
+	if (!cv_dynamicHUD.GetBool())
 	{
 		player->m_overlays.setGlobalStateFloat("Weapon_HUD_Opacity", 1.0f);
 		player->m_overlays.setGlobalStateFloat("Inventory_HUD_Opacity", 1.0f);
@@ -7173,18 +7195,28 @@ void idPlayer::DynamicHudT::Update()
 	}
 	else
 	{
-		if (cv_dynamic_hud_fade_in_duration.IsModified()
-			|| cv_dynamic_hud_fade_out_delay.IsModified()
-			|| cv_dynamic_hud_fade_out_duration.IsModified())
+		if (cv_dynamicHUD_fadein_duration.IsModified()
+			|| cv_dynamicHUD_fadeout_delay.IsModified()
+			|| cv_dynamicHUD_fadeout_duration.IsModified())
 		{
-			cv_dynamic_hud_fade_in_duration.ClearModified();
-			cv_dynamic_hud_fade_out_delay.ClearModified();
-			cv_dynamic_hud_fade_out_duration.ClearModified();
-			const HudFader::FadeParams fadeIn{ 0, cv_dynamic_hud_fade_in_duration.GetInteger() };
-			const HudFader::FadeParams fadeOut{ cv_dynamic_hud_fade_out_delay.GetInteger(), cv_dynamic_hud_fade_out_duration.GetInteger() };
+			cv_dynamicHUD_fadein_duration.ClearModified();
+			cv_dynamicHUD_fadeout_delay.ClearModified();
+			cv_dynamicHUD_fadeout_duration.ClearModified();
+			const HudFader::FadeParams fadeIn{ 0, cv_dynamicHUD_fadein_duration.GetInteger() };
+			const HudFader::FadeParams fadeOut{ cv_dynamicHUD_fadeout_delay.GetInteger(), cv_dynamicHUD_fadeout_duration.GetInteger() };
 			weapon.UpdateParams(fadeIn, fadeOut);
 			inventory.UpdateParams(fadeIn, fadeOut);
 			health.UpdateParams(fadeIn, fadeOut);
+		}
+
+		if (cv_dynamicHUD_showWeaponOnAmmoChange.GetBool())
+		{
+			CInventoryWeaponItemPtr item = player->GetCurrentWeaponItem();
+			if (item != nullptr && item->GetAmmo() != selectedWeaponAmmo)
+			{
+				selectedWeaponAmmo = item->GetAmmo();
+				weapon.Show(true); // #6677: DynHUD_WeaponRule4
+			}
 		}
 
 		player->m_overlays.setGlobalStateFloat("Weapon_HUD_Opacity", weapon.GetAlpha());
