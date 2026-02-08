@@ -5711,7 +5711,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 				auto weaponitem = GetCurrentWeaponItem();
 				if (weaponitem != nullptr && weaponitem->NeedsAmmo())
 				{
-					m_dynamicHUD.weapon.Show(); // #6677: DynHUD_WeaponRule3
+					m_dynamicHUD.weapon.Show(true); // #6677: DynHUD_WeaponRule3
 					return;
 				}
 			}
@@ -5747,7 +5747,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 				auto weaponitem = GetCurrentWeaponItem();
 				if (weaponitem != nullptr && weaponitem->NeedsAmmo())
 				{
-					m_dynamicHUD.weapon.Show(); // #6677: DynHUD_WeaponRule3
+					m_dynamicHUD.weapon.Show(true); // #6677: DynHUD_WeaponRule3
 					return;
 				}
 			}
@@ -5975,6 +5975,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
+			if (cv_dynamicHUD_switchItemOverride.GetBool()
+				&& m_dynamicHUD.inventory.GetAlpha() == 0.0f
+				&& InventoryCursor()->GetCurrentItem() != nullptr)
+			{
+				m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule2
+				return;
+			}
+
 			NextPrevInventoryItem(-1);
 
 			m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule1			
@@ -6001,6 +6009,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
+			if (cv_dynamicHUD_switchItemOverride.GetBool()
+				&& m_dynamicHUD.inventory.GetAlpha() == 0.0f
+				&& InventoryCursor()->GetCurrentItem() != nullptr)
+			{
+				m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule2
+				return;
+			}
+
 			NextPrevInventoryItem(1);
 
 			m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule1
@@ -6025,6 +6041,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
+			if (cv_dynamicHUD_switchItemOverride.GetBool()
+				&& m_dynamicHUD.inventory.GetAlpha() == 0.0f
+				&& InventoryCursor()->GetCurrentItem() != nullptr)
+			{
+				m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule2
+				return;
+			}
+
 			NextPrevInventoryGroup(-1);
 
 			m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule1
@@ -6048,6 +6072,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
+
+			if (cv_dynamicHUD_switchItemOverride.GetBool()
+				&& m_dynamicHUD.inventory.GetAlpha() == 0.0f
+				&& InventoryCursor()->GetCurrentItem() != nullptr)
+			{
+				m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule2
+				return;
+			}
 
 			NextPrevInventoryGroup(1);
 
