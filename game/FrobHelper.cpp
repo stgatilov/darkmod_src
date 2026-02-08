@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "FrobLockHandle.h"
 #include "FrobDoorHandle.h"
 #include <limits>
+#include "HudFader.h"
 
 #pragma hdrstop
 
@@ -36,7 +37,6 @@ CFrobHelper::CFrobHelper()
 CFrobHelper::~CFrobHelper()
 {
 }
-
 
 void CFrobHelper::HideInstantly()
 {

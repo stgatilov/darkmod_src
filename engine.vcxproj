@@ -412,6 +412,7 @@
     <ClInclude Include="game\Http\HttpConnection.h" />
     <ClInclude Include="game\Http\HttpRequest.h" />
     <ClInclude Include="game\Http\MessageTcp.h" />
+    <ClInclude Include="game\HudFader.h" />
     <ClInclude Include="game\IK.h" />
     <ClInclude Include="game\IniFile.h" />
     <ClInclude Include="game\Intersection.h" />
@@ -1064,6 +1065,7 @@
     <ClCompile Include="game\Http\HttpConnection.cpp" />
     <ClCompile Include="game\Http\HttpRequest.cpp" />
     <ClCompile Include="game\Http\MessageTcp.cpp" />
+    <ClCompile Include="game\HudFader.cpp" />
     <ClCompile Include="game\IK.cpp" />
     <ClCompile Include="game\IniFile.cpp" />
     <ClCompile Include="game\Intersection.cpp" />

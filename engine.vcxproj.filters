@@ -1666,6 +1666,9 @@
     <ClInclude Include="idlib\JobChunks.h">
       <Filter>Idlib</Filter>
     </ClInclude>
+    <ClInclude Include="game\HudFader.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3657,6 +3660,9 @@
     </ClCompile>
     <ClCompile Include="idlib\JobChunks.cpp">
       <Filter>Idlib</Filter>
+    </ClCompile>
+    <ClCompile Include="game\HudFader.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -537,6 +537,11 @@ idCVar 	cv_gui_lightgemSize("gui_lightgemSize", "1.0", CVAR_GAME | CVAR_ARCHIVE 
 idCVar 	cv_gui_barSize("gui_barSize", "1.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Specifies the size of the health and breath bar");
 idCVar	cv_gui_objectiveTextSize("gui_objectiveTextSize", "1.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Specifies the size of the objectives text");
 
+idCVar cv_dynamic_hud("tdm_dynamic_hud", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1', the HUD-elements will hide depending on context.");
+idCVar cv_dynamic_hud_fade_in_duration("tdm_dynamic_hud_fade_in_duration", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "The fade-in duration for the dynamic hud in ms.");
+idCVar cv_dynamic_hud_fade_out_delay("tdm_dynamic_hud_fade_out_delay", "3000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "The fade-out delay for the dynamic hud in ms.");
+idCVar cv_dynamic_hud_fade_out_duration("tdm_dynamic_hud_fade_out_duration", "1000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "The fade-out duration for the dynamic hud in ms.");
+
 // Daft Mugi #6331: Show viewpos on player HUD
 idCVar cv_show_viewpos(
 	"tdm_show_viewpos", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,
