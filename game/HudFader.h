@@ -27,12 +27,18 @@ public:
 
 	bool ShouldBeShown() const;
 
+	bool WillAutoToggleBack() const;
+
+	bool ShouldBeShownStatic() const;
+
     float GetAlpha();
 
 private:
 
 	template <bool fadingIn>
     float ExecuteFade(const FadeParams& params);
+
+	bool IsIgnored(bool autoToggleBack, bool fadingIn, bool instantStateChange) const;
 
 private:
 

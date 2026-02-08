@@ -12,15 +12,15 @@ HudFader::HudFader(const FadeParams& fadeIn, const FadeParams& fadeOut)
 
 void HudFader::UpdateParams(const FadeParams& fadeIn, const FadeParams& fadeOut)
 {
-	m_fadeIn = fadeIn;
+	m_fadeIn  = fadeIn;
 	m_fadeOut = fadeOut;
 }
 
 
 void HudFader::Show(bool autoToggleBack)
 {
-    if (m_shouldBeShown && !autoToggleBack)
-        return;
+	if (IsIgnored(autoToggleBack, true, false))
+		return;
     
     m_shouldBeShown = true;
     m_lastStateChangeTime = gameLocal.time;
@@ -32,8 +32,8 @@ void HudFader::Show(bool autoToggleBack)
 
 void HudFader::ShowInstantly(bool autoToggleBack)
 {
-    if (m_currentAlpha >= 1.0f && !autoToggleBack)
-        return;
+	if (IsIgnored(autoToggleBack, true, true))
+		return;
     
     m_currentAlpha = 1.0f;
     m_lastStateChangeAlpha = 1.0f;
@@ -45,8 +45,8 @@ void HudFader::ShowInstantly(bool autoToggleBack)
 
 void HudFader::Hide(bool autoToggleBack)
 {
-    if (!m_shouldBeShown && !autoToggleBack)
-        return;
+	if (IsIgnored(autoToggleBack, false, false))
+		return;
 
     m_shouldBeShown = false;
     m_lastStateChangeTime = gameLocal.time;
@@ -58,8 +58,8 @@ void HudFader::Hide(bool autoToggleBack)
 
 void HudFader::HideInstantly(bool autoToggleBack)
 {
-    if (m_currentAlpha <= 0.0f && !autoToggleBack)
-        return;
+	if (IsIgnored(autoToggleBack, false, true))
+		return;
     
     m_currentAlpha = 0.0f;
     m_lastStateChangeAlpha = 0.0f;
@@ -72,6 +72,18 @@ void HudFader::HideInstantly(bool autoToggleBack)
 bool HudFader::ShouldBeShown() const
 {
 	return m_shouldBeShown;
+}
+
+
+bool HudFader::WillAutoToggleBack() const
+{
+	return m_autoToggleBack;
+}
+
+
+bool HudFader::ShouldBeShownStatic() const
+{
+	return m_shouldBeShown && !m_autoToggleBack;
 }
 
 
@@ -128,6 +140,20 @@ float HudFader::ExecuteFade(const FadeParams& params)
         }
         return targetAlpha;
     }
+}
+
+bool HudFader::IsIgnored(bool autoToggleBack, bool fadingIn, bool instantStateChange) const
+{
+	if (autoToggleBack && !m_autoToggleBack)
+	{
+		// Indefinite state has priority over finite state changes
+		// Meaning: A Show() without autoToggleBack has to be manually resolved by a Hide(). Until then all Show() with autoToggleBack will be ignored.
+		// > Allows us to set a static state without having to worry some other call might overwrite it
+		return fadingIn == m_shouldBeShown;
+	}
+
+	const bool nothingToDo = fadingIn == m_shouldBeShown && !autoToggleBack && !instantStateChange;
+	return nothingToDo;
 }
 
 
