@@ -354,6 +354,7 @@ public:
 
 	virtual idDict			GetMissionOverrides() const override;
 	virtual void			SetMissionOverrides( const idDict &dict = {} ) override;
+	virtual idDict			ReadMissionCvars() const override;
 
 	void					RegisterInternal( idCVar *cvar );
 	idCVar *				FindInternal( const char *name ) const;
@@ -845,6 +846,41 @@ void idCVarSystemLocal::SetMissionOverrides( const idDict &dict ) {
 			internal->InternalMissionSetString( kv->GetValue() );
 		}
 	}
+}
+
+/*
+============
+idCVarSystemLocal::SetMissionOverrides
+============
+*/
+idDict idCVarSystemLocal::ReadMissionCvars() const {
+	idScopedCriticalSection lock( mutex );
+
+	// same rules as in decl files
+	idLexer lexer( "mission.cfg", DECL_LEXER_FLAGS );
+	if ( !lexer.IsLoaded() )
+		return idDict();
+
+	idDict result;
+
+	idToken token, tokValue;
+	while ( lexer.ReadToken( &token ) ) {
+
+		if ( token.Icmp( "set" ) == 0 || token.Icmp( "seta" ) == 0 ) {
+			// skip set/seta command for compatibility with pre-2.14 code
+			// which executed mission.cfg as a list of game console commands
+			lexer.ExpectAnyToken( &token );
+		}
+
+		lexer.ExpectTokenType( TT_STRING, 0, &tokValue );
+
+		if ( lexer.HadError() )
+			return {};
+
+		result.Set( token, tokValue ); 
+	}
+
+	return result;
 }
 
 /*

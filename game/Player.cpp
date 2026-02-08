@@ -900,15 +900,6 @@ void idPlayer::Init( void ) {
 	legsForward	= true;
 	oldViewYaw = 0.0f;
 
-	// set the pm_ cvars
-	{
-		kv = spawnArgs.MatchPrefix( "pm_", NULL );
-		while( kv ) {
-			cvarSystem->SetCVarString( kv->GetKey(), kv->GetValue() );
-			kv = spawnArgs.MatchPrefix( "pm_", kv );
-		}
-	}
-
 	// Commented out by Dram. TDM does not use stamina
 /*
 	// disable stamina on hell levels
@@ -2667,14 +2658,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( respawning );
 	savefile->ReadBool( leader );
 	savefile->ReadInt( lastSpectateChange );
-
-	// set the pm_ cvars
-	const idKeyValue	*kv;
-	kv = spawnArgs.MatchPrefix( "pm_", NULL );
-	while( kv ) {
-		cvarSystem->SetCVarString( kv->GetKey(), kv->GetValue() );
-		kv = spawnArgs.MatchPrefix( "pm_", kv );
-	}
 
 	// savefile->ReadFloat( set );
 	// Commented out by Dram. TDM does not use stamina
@@ -11978,10 +11961,6 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 			SetFrobAction(EFrobAction::Finished);
 			return;
 		}
-
-		// Fire the STIM_FROB response on key down (if defined) on this entity
-		// TODO research: Should this always be executed or only if something actually happens with the entity?
-		target->TriggerResponse(m_player, ST_FROB);
 	}
 
 	// stgatilov #5542: block use-on-frob when frob called from game script	
@@ -11991,25 +11970,18 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 		return;
 	}
 
-	// If FrobUsedOnlyByInv mode is active, we can only perform use_on_frob actions, so skip all the rest
 	if (m_bFrobOnlyUsedByInv)
+	{
+		return;
+	}
+	
+	if (TryPickupInventoryItem(state, target))
 	{
 		return;
 	}
 
 	if (!executedFromScript 
 		&& TryControlDoor(state, target))
-	{
-		return;
-	}
-	
-	if (IsCorrectFrobActionTrigger<EFrobAction::Init>(state) && target)
-	{
-		target->FrobAction(true);
-		// No state change here, yet! This could be about any type entity...
-	}
-
-	if (TryPickupInventoryItem(state, target))
 	{
 		return;
 	}
@@ -12025,7 +11997,17 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 		return;
 	}
 
-	TryGrabWorldEntity(state);
+	if (TryGrabWorldEntity(state))
+	{
+		return;
+	}
+
+	if (IsCorrectFrobActionTrigger<EFrobAction::Init>(state) && target)
+	{
+		// Fallback! Try FrobAction
+		target->TriggerResponse(m_player, ST_FROB);
+		target->FrobAction(true);		
+	}
 }
 
 void idPlayer::FrobHandling::Reinit(idEntity* target /*= nullptr*/)
@@ -12149,18 +12131,20 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 			return ent;
 		};
 
-	idEntity* frobpressed = GetBindMaster(m_FrobPressedTarget.GetEntity());
-	target                = GetBindMaster(target);
+
+	idEntity* frobpressed       = m_FrobPressedTarget.GetEntity();
+	idEntity* frobpressedMaster = GetBindMaster(frobpressed);
+	target                      = GetBindMaster(target);
 	
-	CBinaryFrobMover* door = dynamic_cast<CBinaryFrobMover*>(frobpressed);
+	CBinaryFrobMover* door = dynamic_cast<CBinaryFrobMover*>(frobpressedMaster);
 	if (door == nullptr)
 		return false;
 
-	auto IsDoorControlAllowed = [this, target, frobpressed]
+	auto IsDoorControlAllowed = [this, target, frobpressedMaster]
 		{
-			const int  distanceToEntity   = static_cast<int>((m_player->GetEyePosition() - frobpressed->GetPhysics()->GetOrigin()).Length());
-			const bool insideFrobDistance = distanceToEntity < frobpressed->m_FrobDistance;
-			const bool lookingAtDoor      = target == frobpressed;
+			const int  distanceToEntity   = static_cast<int>((m_player->GetEyePosition() - frobpressedMaster->GetPhysics()->GetOrigin()).Length());
+			const bool insideFrobDistance = distanceToEntity < frobpressedMaster->m_FrobDistance;
+			const bool lookingAtDoor      = target == frobpressedMaster;
 			return insideFrobDistance || lookingAtDoor;
 			/*
 			* stifu: distanceToEntity is not the same as the frob-trace-distance to entity. This
@@ -12179,7 +12163,8 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 	case DoorHoldfrob::Disabled:
 		if (CanExecuteFrobAction<EFrobAction::DoorMoveRegular>(state))
 		{
-			door->FrobAction(true);
+			frobpressed->TriggerResponse(m_player, ST_FROB);
+			frobpressed->FrobAction(true);
 			SetFrobAction(EFrobAction::DoorMoveRegular, true);
 			SetFrobAction(EFrobAction::Finished);
 			return true;
@@ -12197,7 +12182,8 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 			if (CanExecuteFrobAction<EFrobAction::DoorMoveRegular>(state))
 			{
 				door->StopFineControl();
-				door->FrobAction(true);
+				frobpressed->TriggerResponse(m_player, ST_FROB);
+				frobpressed->FrobAction(true);
 				m_player->SetImmobilization("DoorControl", 0);
 				SetFrobAction(EFrobAction::DoorMoveRegular, true);
 				SetFrobAction(EFrobAction::Finished);
@@ -12208,6 +12194,7 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				// TODO: Might we KO AI with this? :)
 				door->StopFineControl();
 				door->BufferClosingFast();
+				door->TriggerResponse(m_player, ST_FROB);
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
 				door->FrobAction(true);
@@ -12217,6 +12204,7 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 			const bool doorControlAllowed = IsDoorControlAllowed();
 			if (CanExecuteFrobAction<EFrobAction::DoorFineControl>(state) && doorControlAllowed)
 			{
+				// We intentionally fire not ST_FROB here because this is considered a silent-open
 				if (door->ExecuteFineControl() == CBinaryFrobMover::FineControlState::Inactive)
 				{
 					m_player->SetImmobilization("DoorControl", 0);
@@ -12244,25 +12232,29 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 	case DoorHoldfrob::Open:
 	case DoorHoldfrob::Toggle:
 		{		
-		    if (CanExecuteFrobAction<EFrobAction::DoorControlInit>(state))
+			if (CanExecuteFrobAction<EFrobAction::DoorControlInit>(state))
 			{
-				m_player->SetImmobilization("DoorControl", EIM_ATTACK | EIM_WEAPON_SELECT);
+				// Lock frob handling to DoorControl
 				SetFrobAction(EFrobAction::DoorControlInit, true);
 				return true;
 			}
-			if (CanExecuteFrobAction<EFrobAction::DoorMoveRegular>(state))
+			if (IsLegalFrobActionTransition(m_lastFrobAction, EFrobAction::DoorMoveRegular))
 			{
-				door->FrobAction(true);
-				m_player->SetImmobilization("DoorControl", 0);
-				SetFrobAction(EFrobAction::DoorMoveRegular, true);
-				SetFrobAction(EFrobAction::Finished);
-				return true;
+				if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state) || door->IsLocked())
+				{
+					frobpressed->TriggerResponse(m_player, ST_FROB);
+					frobpressed->FrobAction(true);
+					SetFrobAction(EFrobAction::DoorMoveRegular, true);
+					SetFrobAction(EFrobAction::Finished);
+					return true;
+				}
 			}
 			if (CanExecuteFrobAction<EFrobAction::DoorCloseFast>(state) 
 				&& !door->IsAtClosedPosition() 
 				&& door->IsInterruptable())
 			{
 				door->BufferClosingFast();
+				door->TriggerResponse(m_player, ST_FROB);
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, the door would not necessarily close.
 				door->FrobAction(true);
@@ -12282,6 +12274,7 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				&& !door->IsLocked()
 				&& door->IsInterruptable())
 			{
+				m_player->SetImmobilization("DoorControl", EIM_ATTACK | EIM_WEAPON_SELECT);
 				if (door->IsMoving())
 				{
 					door->Interrupt();
@@ -12290,6 +12283,7 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
 				door->FrobAction(true);
+				// We intentionally fire not ST_FROB here because this is considered a silent-open
 				SetFrobAction(EFrobAction::DoorMoveSlow, true);
 				return true;
 			}
@@ -12353,10 +12347,16 @@ bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)
 	
 	const bool couldBeUsed = m_player->UseInventoryItem(stateToImpulseState(state), item, USERCMD_MSEC, true); // true => is frob action
 
-	// Give optional visual feedback
-	if (frobAction == EFrobAction::UseOnFrobInit && cv_tdm_inv_use_visual_feedback.GetBool())
+	
+	if (frobAction == EFrobAction::UseOnFrobInit)
 	{
-		m_player->m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
+		target->TriggerResponse(m_player, ST_FROB);
+
+		// Give optional visual feedback
+		if (cv_tdm_inv_use_visual_feedback.GetBool())
+		{
+			m_player->m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
+		}
 	}
 
 	if (couldBeUsed)
@@ -12404,28 +12404,23 @@ bool idPlayer::FrobHandling::TryPickupInventoryItem(EButtonState state, idEntity
 	}
 
 	const bool isInventoryItem = target->spawnArgs.GetString("inv_name", nullptr) != nullptr;
+
 	const bool repeatMultiloot = 
 		isMultilooting
 		&& CanExecuteFrobAction<EFrobAction::MultiLootWorldItem>(state)
-		&& isInventoryItem
 		// Daft Mugi #6270: Do not multiloot immobile readables
 		&& !target->spawnArgs.GetBool("is_immobile_readable", "0");
 
-	if (repeatMultiloot)
-	{
-		// Daft Mugi #6270: STIM_FROB response needs to be triggered when
-		// multiloot is likely to succeed on ERepeat.
-		// TODO research: Should we not rather execute this when we actually know that multiloot will succeed?
-		target->TriggerResponse(m_player, ST_FROB);
-		
-		// Execute frob action on item that is going to be picked up
-		target->FrobAction(true);
-	}
-
 	// Try to add world item to inventory
 	const bool initMultiloot = CanExecuteFrobAction<EFrobAction::MultiLootWorldItemInit>(state);
-	if (initMultiloot || repeatMultiloot)
+	if (isInventoryItem && (initMultiloot || repeatMultiloot))
 	{
+		// Fire the STIM_FROB response on this entity
+		target->TriggerResponse(m_player, ST_FROB);
+
+		// Execute frob action on item that is going to be picked up
+		target->FrobAction(true);
+
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity.
@@ -12555,9 +12550,15 @@ inline void idPlayer::FrobHandling::CleanupFrobActionState()
 	switch (m_cleanupFrobAction)
 	{
 	case Action::DoorControlInit:
-	case Action::DoorFineControl:
 	case Action::DoorCloseFast:
 		m_player->SetImmobilization("DoorControl", 0);
+		break;
+	case Action::DoorFineControl:
+		{
+			CBinaryFrobMover* door = dynamic_cast<CBinaryFrobMover*>(m_FrobPressedTarget.GetEntity());
+			door->StopFineControl();
+			m_player->SetImmobilization("DoorControl", 0);
+		}
 		break;
 	case Action::DoorMoveSlow:
 		{

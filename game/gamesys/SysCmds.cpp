@@ -994,11 +994,9 @@ Cmd_GetViewpos_f
 ==================
 */
 void Cmd_GetViewpos_f( const idCmdArgs &args ) {
-	idVec3		origin;
-	idMat3		axis;
-	if (gameLocal.GetViewPos_Cmd(origin, axis)) {
-		idAngles angles = axis.ToAngles();
-		gameLocal.Printf( "%s   %.1f %.1f %.1f\n", origin.ToString(), angles.pitch, angles.yaw, angles.roll);
+	idStr text;
+	if (gameLocal.GetViewPos_Cmd(text)) {
+		gameLocal.Printf("%s\n", text.c_str());
 	}
 }
 

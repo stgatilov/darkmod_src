@@ -877,6 +877,7 @@ public:
 	idPlayer *				GetLocalPlayer() const;
 	// stgatilov #5819: position reported by "getviewpos" cmd
 	bool					GetViewPos_Cmd(idVec3 &origin, idMat3 &axis) const;
+	bool					GetViewPos_Cmd(idStr &text) const;
 
 	void					SpreadLocations();
 	idLocationEntity *		LocationForPoint( const idVec3 &point );	// May return NULL

@@ -278,7 +278,6 @@ int LightEstimateSystem::ReceiveQueryResults(TrackedEntity &trackedEnt) {
 
 	for (int i = 0; i < trackedEnt.pending.Num(); i++) {
 		PendingSample pend = trackedEnt.pending[i];
-		assert((pend.queryId < 0) == pend.proto.excluded);
 
 		bool finished = false;
 		if (pend.queryId < 0) {
@@ -316,20 +315,42 @@ int LightEstimateSystem::StartNewQueries(TrackedEntity &trackedEnt) {
 		int maxK = (nowTime + msampling->period - msampling->schedule[s]) / msampling->period - 1;
 		int maxEvalTime = msampling->schedule[s] + maxK * msampling->period;
 		assert(maxEvalTime <= nowTime && maxEvalTime + msampling->period > nowTime);
-		if (trackedEnt.samples[s].evalTime >= maxEvalTime)
-			continue;	// fresh enough
 
-		PendingSample pend;
-		pend.sampleIndex = s;
-		pend.proto.evalTime = nowTime;
-		pend.proto.excluded = ShouldSampleBeExcluded(entity, msampling->samples[s]);
-		// don't waste time on excluded sample, don't send query
-		if (!pend.proto.excluded) {
-			idList<qhandle_t> ignoredHandles = GetIgnoredRenderEntityList(entity);
-			pend.queryId = gameRenderWorld->LightAtPointQuery_AddQuery(entity->GetModelDefHandle(), msampling->samples[s], ignoredHandles);
+		// the most recent moment when this sample was evaluated
+		// important: including the pending samples!
+		// this becomes an issue when several game tics happen per frame due to low FPS
+		int lastEvalTime = trackedEnt.samples[s].evalTime;
+		for (int p = 0; p < oldNumPending; p++) {
+			const PendingSample& pold = trackedEnt.pending[p];
+			if (pold.sampleIndex == s)
+				lastEvalTime = idMath::Imax(lastEvalTime, pold.proto.evalTime);
 		}
 
-		trackedEnt.pending.AddGrow(pend);
+		if (lastEvalTime >= maxEvalTime)
+			continue;	// fresh enough
+
+		PendingSample pnew;
+		pnew.sampleIndex = s;
+		pnew.proto.evalTime = nowTime;
+		pnew.proto.excluded = ShouldSampleBeExcluded(entity, msampling->samples[s]);
+		// don't waste time on excluded sample, don't send query
+		if (!pnew.proto.excluded) {
+			idList<qhandle_t> ignoredHandles = GetIgnoredRenderEntityList(entity);
+			pnew.queryId = gameRenderWorld->LightAtPointQuery_AddQuery(entity->GetModelDefHandle(), msampling->samples[s], ignoredHandles);
+		}
+
+		trackedEnt.pending.AddGrow(pnew);
+
+		// note: LQS in renderer frontend processes !all! pending queries in every Think call
+		// so if we already have pending queries for this sample, we can drop the older ones
+		for (int p = 0; p < oldNumPending; p++) {
+			PendingSample &pold = trackedEnt.pending[p];
+			assert(pnew.proto.evalTime >= pold.proto.evalTime);
+			if (pold.sampleIndex == s && pold.queryId >= 0) {
+				gameRenderWorld->LightAtPointQuery_Forget(pold.queryId);
+				pold.queryId = -1;
+			}
+		}
 	}
 
 	return trackedEnt.pending.Num() - oldNumPending;
