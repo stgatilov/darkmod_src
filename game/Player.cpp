@@ -7251,6 +7251,15 @@ void idPlayer::DynamicHudT::Update()
 }
 
 
+void idPlayer::CycleInventoryGroup(const idStr& groupName)
+{
+	idActor::CycleInventoryGroup(groupName);
+	if (InventoryCursor()->GetCurrentItem() != nullptr)
+	{
+		m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule1
+	}
+}
+
 
 /*
 ==============
@@ -11649,14 +11658,17 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 			SelectWeapon(weaponItem->GetWeaponIndex(), false);
 		}
 	}
-	else if (returnValue != NULL && cv_frob_item_selects_item.GetBool())
+	else if (returnValue != NULL)
 	{
 		// Ordinary inventory item, set the cursor onto it
 		prev = InventoryCursor()->GetCurrentItem();
 		// Focus the cursor on the newly added item
 		InventoryCursor()->SetCurrentItem(returnValue);
 
-		m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule3
+		if (cv_dynamicHUD_showItemOnPickup.GetBool())
+		{
+			m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule3
+		}
 
 		// Fire the script events and update the HUD
 		OnInventorySelectionChanged(prev);

@@ -439,6 +439,9 @@ public:
 	} m_dynamicHUD;
 
 
+	void CycleInventoryGroup(const idStr& groupName) override; // #6677: DynHUD_InventoryRule1
+
+
 
 	idEntityPtr<idWeapon>	weapon;
 	idUserInterface *		hud;				// MP: is NULL if not local player
