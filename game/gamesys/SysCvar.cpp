@@ -337,7 +337,6 @@ idCVar cv_frobhelper_alpha(				"tdm_frobhelper_alpha",				"1.0",	CVAR_GAME | CVA
 idCVar cv_frobhelper_fadein_delay(		"tdm_frobhelper_fadein_delay",		"500",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor fade-in is delayed by this amount specified in ms.", 0.0f, 1000.0f);
 idCVar cv_frobhelper_fadein_duration(	"tdm_frobhelper_fadein_duration",	"1500", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor is faded in for this duration specified in ms.", 0.0f, 5000.0f);
 idCVar cv_frobhelper_fadeout_duration(	"tdm_frobhelper_fadeout_duration",	"500",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor is faded out for this duration specified in ms.", 0.0f, 5000.0f);
-idCVar cv_frobhelper_ignore_size(		"tdm_frobhelper_ignore_size",		"40.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,	"The FrobHelper is not activated for entites that are bigger than this ignore size along one dimension. Set to 0, to disable ignoring entities.", 0.0f, 10000.0f);
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 idCVar cv_holdfrob_delay(

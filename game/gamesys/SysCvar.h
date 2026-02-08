@@ -271,7 +271,6 @@ extern idCVar cv_frobhelper_alpha;
 extern idCVar cv_frobhelper_fadein_delay;
 extern idCVar cv_frobhelper_fadein_duration;
 extern idCVar cv_frobhelper_fadeout_duration;
-extern idCVar cv_frobhelper_ignore_size;
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 extern idCVar cv_holdfrob_delay;

@@ -1697,7 +1697,7 @@ void idPlayer::DestroyInventoryGridGUI()
 					if (cv_dynamic_hud.GetBool())
 					{
 						// #6677: DynHUD_InventoryRule1
-						m_inventoryHudFader.Show(true);
+						m_dynamicHUD.inventoryFader.Show(true);
 					}
 					// Trigger an update, passing the previous item along
 					OnInventorySelectionChanged(prev);
@@ -3346,10 +3346,8 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		}
 
 		// STiFU: Cursor reenabled as a FrobHelper
-		if (cursor && m_FrobHelper.IsActive())
+		if (cursor && cv_frobhelper_active.GetBool())
 		{
-			const float alpha = m_FrobHelper.GetAlpha();
-			cursor->SetStateFloat("FrobHelper_Opacity", alpha);
 			cursor->Redraw(gameLocal.realClientTime);
 		}
 
@@ -4035,12 +4033,12 @@ bool idPlayer::SelectWeapon( int num, bool force )
 				if (item->IsAllowedEmpty())
 				{
 					// #6677: DynHUD_WeaponRule1
-					m_weaponHudFader.HideInstantly();
+					m_dynamicHUD.weaponFader.HideInstantly();
 				}
 				else
 				{
 					// #6677: DynHUD_WeaponRule2
-					m_weaponHudFader.Show(true);
+					m_dynamicHUD.weaponFader.Show(true);
 				}
 			}
 
@@ -5967,7 +5965,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if (cv_dynamic_hud.GetBool())
 			{
 				// #6677: DynHUD_InventoryRule1
-				m_inventoryHudFader.Show(true);
+				m_dynamicHUD.inventoryFader.Show(true);
 			}
 		}
 		break;
@@ -5997,7 +5995,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if (cv_dynamic_hud.GetBool())
 			{
 				// #6677: DynHUD_InventoryRule1
-				m_inventoryHudFader.Show(true);
+				m_dynamicHUD.inventoryFader.Show(true);
 			}
 		}
 		break;
@@ -6025,7 +6023,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if (cv_dynamic_hud.GetBool())
 			{
 				// #6677: DynHUD_InventoryRule1
-				m_inventoryHudFader.Show(true);
+				m_dynamicHUD.inventoryFader.Show(true);
 			}
 		}
 		break;
@@ -6053,7 +6051,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if (cv_dynamic_hud.GetBool())
 			{
 				// #6677: DynHUD_InventoryRule1
-				m_inventoryHudFader.Show(true);
+				m_dynamicHUD.inventoryFader.Show(true);
 			}
 		}
 		break;
@@ -6066,7 +6064,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if (cv_dynamic_hud.GetBool())
 			{
 				// #6677: DynHUD_InventoryRule5
-				m_inventoryHudFader.Show(true);
+				m_dynamicHUD.inventoryFader.Show(true);
 			}
 
 			// Pass the call
@@ -7187,6 +7185,68 @@ void idPlayer::Move( void )
 	BobCycle(pushVelocity);
 }
 
+
+void idPlayer::DynamicHudT::Update()
+{
+	auto player = gameLocal.GetLocalPlayer();
+	if (player == nullptr)
+		return;
+
+	if (!cv_dynamic_hud.GetBool())
+	{
+		player->m_overlays.setGlobalStateFloat("Weapon_HUD_Opacity", 1.0f);
+		player->m_overlays.setGlobalStateFloat("Inventory_HUD_Opacity", 1.0f);
+		player->m_overlays.setGlobalStateFloat("Health_HUD_Opacity", 1.0f);
+	}
+	else
+	{
+		if (cv_dynamic_hud_fade_in_duration.IsModified()
+			|| cv_dynamic_hud_fade_out_delay.IsModified()
+			|| cv_dynamic_hud_fade_out_duration.IsModified())
+		{
+			cv_dynamic_hud_fade_in_duration.ClearModified();
+			cv_dynamic_hud_fade_out_delay.ClearModified();
+			cv_dynamic_hud_fade_out_duration.ClearModified();
+			const HudFader::FadeParams fadeIn{ 0, cv_dynamic_hud_fade_in_duration.GetInteger() };
+			const HudFader::FadeParams fadeOut{ cv_dynamic_hud_fade_out_delay.GetInteger(), cv_dynamic_hud_fade_out_duration.GetInteger() };
+			weaponFader.UpdateParams(fadeIn, fadeOut);
+			inventoryFader.UpdateParams(fadeIn, fadeOut);
+			healthFader.UpdateParams(fadeIn, fadeOut);
+		}
+
+		player->m_overlays.setGlobalStateFloat("Weapon_HUD_Opacity", weaponFader.GetAlpha());
+		player->m_overlays.setGlobalStateFloat("Health_HUD_Opacity", healthFader.GetAlpha());
+		player->m_overlays.setGlobalStateFloat("Inventory_HUD_Opacity", inventoryFader.GetAlpha());
+	}
+
+	if (player->cursor != nullptr && cv_frobhelper_active.GetBool())
+	{
+		const float maxAlpha = cv_frobhelper_alpha.GetFloat();
+		if (cv_frobhelper_alwaysVisible.GetBool())
+		{
+			player->cursor->SetStateFloat("FrobHelper_Opacity", maxAlpha);
+		}
+		else
+		{
+			if (cv_frobhelper_fadein_delay.IsModified()
+				|| cv_frobhelper_fadein_duration.IsModified()
+				|| cv_frobhelper_fadeout_duration.IsModified())
+			{
+				cv_frobhelper_fadein_delay.ClearModified();
+				cv_frobhelper_fadein_duration.ClearModified();
+				cv_frobhelper_fadeout_duration.ClearModified();
+				const HudFader::FadeParams fadeIn{ cv_frobhelper_fadein_delay.GetInteger(), cv_frobhelper_fadein_duration.GetInteger()};
+				const HudFader::FadeParams fadeOut{ 0, cv_frobhelper_fadeout_duration.GetInteger() };
+				frobHelperFader.UpdateParams(fadeIn, fadeOut);
+			}
+
+			player->cursor->SetStateFloat("FrobHelper_Opacity", maxAlpha * frobHelperFader.GetAlpha());
+		}
+	}
+}
+
+
+
 /*
 ==============
 idPlayer::UpdateHUD
@@ -7202,32 +7262,9 @@ void idPlayer::UpdateHUD()
 
 	// Broadcast the HUD opacity value
 	m_overlays.setGlobalStateFloat("HUD_Opacity", cv_tdm_hud_opacity.GetFloat());
-	if (!cv_dynamic_hud.GetBool())
-	{
-		m_overlays.setGlobalStateFloat("Weapon_HUD_Opacity", 1.0f);
-		m_overlays.setGlobalStateFloat("Inventory_HUD_Opacity", 1.0f);
-		m_overlays.setGlobalStateFloat("Health_HUD_Opacity", 1.0f);
-	}
-	else
-	{
-		if (cv_dynamic_hud_fade_in_duration.IsModified()
-			|| cv_dynamic_hud_fade_out_delay.IsModified()
-			|| cv_dynamic_hud_fade_out_duration.IsModified())
-		{
-			cv_dynamic_hud_fade_in_duration.ClearModified();
-			cv_dynamic_hud_fade_out_delay.ClearModified();
-			cv_dynamic_hud_fade_out_duration.ClearModified();
-			const HudFader::FadeParams fadeIn{ 0, cv_dynamic_hud_fade_in_duration.GetInteger() };
-			const HudFader::FadeParams fadeOut{ cv_dynamic_hud_fade_out_delay.GetInteger(), cv_dynamic_hud_fade_out_duration.GetInteger() };
-			m_weaponHudFader.UpdateParams(fadeIn, fadeOut);
-			m_inventoryHudFader.UpdateParams(fadeIn, fadeOut);
-			m_healthHudFader.UpdateParams(fadeIn, fadeOut);
-		}
 
-		m_overlays.setGlobalStateFloat("Weapon_HUD_Opacity", m_weaponHudFader.GetAlpha());
-		m_overlays.setGlobalStateFloat("Health_HUD_Opacity", m_healthHudFader.GetAlpha());
-		m_overlays.setGlobalStateFloat("Inventory_HUD_Opacity", m_inventoryHudFader.GetAlpha());
-	}
+	m_dynamicHUD.Update();
+	
 
 	// Obsttorte
 	m_overlays.setGlobalStateFloat("iconSize", cv_gui_iconSize.GetFloat());
@@ -8232,7 +8269,7 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		if (cv_dynamic_hud.GetBool())
 		{
 			// #6677: DynHUD_HealthRule1
-			m_healthHudFader.Show(true);
+			m_dynamicHUD.healthFader.Show(true);
 		}
 
 		// greebo: Update mission statistics, we've taken damage
@@ -10349,7 +10386,7 @@ bool idPlayer::SelectInventoryItem(const idStr& name)
 		if (cv_dynamic_hud.GetBool())
 		{
 			// #6677: DynHUD_InventoryRule1
-			m_inventoryHudFader.Show(true);
+			m_dynamicHUD.inventoryFader.Show(true);
 		}
 
 		// Trigger an update, passing the previous item along
@@ -11001,7 +11038,8 @@ void idPlayer::PerformFrobCheck()
 	PerformFrobCheckInternal();
 
 	idEntity *newFrobbed = m_FrobHilightedEntity.GetEntity();
-	if (newFrobbed != oldFrobbed) {
+	if (newFrobbed != oldFrobbed) 
+	{
 		if (oldFrobbed)
 			oldFrobbed->SetFrobbed(false);
 		if (newFrobbed)
@@ -11011,21 +11049,17 @@ void idPlayer::PerformFrobCheck()
 
 void idPlayer::PerformFrobCheckInternal()
 {
-	const bool bFrobHelperActive = m_FrobHelper.IsActive();
-
 	// greebo: Don't run this when dead
 	if (AI_DEAD)
 	{
-		if (bFrobHelperActive)
-			m_FrobHelper.HideInstantly();
+		m_dynamicHUD.frobHelperFader.HideInstantly();
 		return;
 	}
 
 	// greebo: Don't run the frobcheck when we're dragging items around
 	if (m_bGrabberActive)
 	{
-		if (bFrobHelperActive)
-			m_FrobHelper.Hide();
+		m_dynamicHUD.frobHelperFader.Hide();
 		return;
 	}
 
@@ -11034,8 +11068,7 @@ void idPlayer::PerformFrobCheckInternal()
 	if ( GetImmobilization() & EIM_FROB_HILIGHT )
 	{
 		m_FrobHilightedEntity = NULL;
-		if (bFrobHelperActive)
-			m_FrobHelper.HideInstantly();
+		m_dynamicHUD.frobHelperFader.HideInstantly();
 		return;
 	}	
 
@@ -11057,8 +11090,6 @@ void idPlayer::PerformFrobCheckInternal()
 	gameLocal.clip.TracePoint(trace, start, end, cm, this);
 	
 	float traceDist = g_Global.m_MaxFrobDistance * trace.fraction;
-
-	bool bEntityAlreadyFrobbed = false;
 
 	if ( trace.fraction < 1.0f )
 	{
@@ -11112,7 +11143,7 @@ void idPlayer::PerformFrobCheckInternal()
 
 		// If shouldering a body, we only allow "simple" frobs
 		bool frobAllowed = !m_bShoulderingBody || ent->m_bFrobSimple;
-	
+			
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands
 		if ( ent->m_bFrobable && frobAllowed && lockedItemCheck && bUsedByCheck && !isRopeMaster 
@@ -11123,20 +11154,9 @@ void idPlayer::PerformFrobCheckInternal()
 			m_FrobHilightedEntity = ent;
 			GetRenderView()->isHighlightedEntityValuable = ent->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 
-			if (!bFrobHelperActive)
-				// we have found our frobbed entity, so exit
-				return;
-			
-			if (!m_FrobHelper.IsEntityIgnored(ent))
-			{
-				// Entity is not ignored, so show FrobHelper and return
-				m_FrobHelper.Show();
-				return;
-			} 
-			// else: FrobHelper is not shown for this type of entity, but there
-			//		 could be entites in close proximity that are not ignored. 
-			//		 Check them, although the FrobCheck already succeeded.
-			bEntityAlreadyFrobbed = true;
+			m_dynamicHUD.frobHelperFader.Show();
+
+			return;
 		}
 	}
 
@@ -11222,9 +11242,6 @@ void idPlayer::PerformFrobCheckInternal()
 			}
 		}
 
-		if (!m_FrobHelper.IsEntityIgnored(ent))
-			bEntityRelevantToFrobHelperFound = true;
-
 		delta.NormalizeFast();
 		float currentDot = delta * vecForward;
 		currentDot *= ent->m_FrobBias;
@@ -11236,16 +11253,6 @@ void idPlayer::PerformFrobCheckInternal()
 		}
 	}
 
-	if (bEntityRelevantToFrobHelperFound)
-		m_FrobHelper.Show();
-	else
-		m_FrobHelper.Hide();
-
-	if (bEntityAlreadyFrobbed)
-		// Already frobbed an entity. We only worked until here so that we can
-		// check if FrobHelper is supposed to be shown.
-		return;
-
 	// Activate frobbed state on found entity. We might have alrady
 	if ( ( bestEnt != NULL ) && ( bestEnt != gameLocal.m_Grabber->GetSelected() ) )
 	{
@@ -11254,11 +11261,14 @@ void idPlayer::PerformFrobCheckInternal()
 		GetRenderView()->isHighlightedEntityValuable = bestEnt->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 		m_FrobTrace = trace;
 
+		m_dynamicHUD.frobHelperFader.Show();
+
 		return; // done
 	}
 
 	// No frob entity
 	m_FrobHilightedEntity = NULL;
+	m_dynamicHUD.frobHelperFader.Hide();
 }
 
 int idPlayer::GetImmobilization( const char *source )
@@ -11654,7 +11664,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 		if (cv_dynamic_hud.GetBool())
 		{
 			// #6677: DynHUD_InventoryRule3
-			m_inventoryHudFader.Show(true);
+			m_dynamicHUD.inventoryFader.Show(true);
 		}
 
 		// Fire the script events and update the HUD
@@ -12452,7 +12462,7 @@ bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)
 			if (cv_dynamic_hud.GetBool())
 			{
 				// #6677: DynHUD_InventoryRule5
-				m_player->m_inventoryHudFader.Show(true);
+				m_player->m_dynamicHUD.inventoryFader.Show(true);
 			}
 
 			m_player->m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
