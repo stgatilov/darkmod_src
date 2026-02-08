@@ -438,6 +438,8 @@ public:
 		 */
 		HudFader health; // #6677
 
+		bool     healthShouldBeShown{false};
+
 	} m_dynamicHUD;
 
 

@@ -281,6 +281,8 @@ extern idCVar cv_dynamicHUD_switchWeaponOverride;
 extern idCVar cv_dynamicHUD_showWeaponOnAmmoChange;
 extern idCVar cv_dynamicHUD_switchItemOverride;
 extern idCVar cv_dynamicHUD_showItemOnPickup;
+extern idCVar cv_dynamicHUD_showHealth_healthThreshold;
+extern idCVar cv_dynamicHUD_showHealth_airThreshold;
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 extern idCVar cv_holdfrob_delay;

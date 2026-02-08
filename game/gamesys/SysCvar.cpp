@@ -347,6 +347,8 @@ idCVar cv_dynamicHUD_switchWeaponOverride("tdm_dynamicHUD_switchWeaponOverride",
 idCVar cv_dynamicHUD_showWeaponOnAmmoChange("tdm_dynamicHUD_showWeaponOnAmmoChange", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the weapon hud will show whenever the ammo of the currently selected weapon changes.");
 idCVar cv_dynamicHUD_switchItemOverride("tdm_dynamicHUD_switchItemOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and inventory HUD is currently not shown, the inventory hud will show on next/prev item/inventory group press instead of switching item.");
 idCVar cv_dynamicHUD_showItemOnPickup("tdm_dynamicHUD_showItemOnPickup", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the inventory hud will show after picking up an item.");
+idCVar cv_dynamicHUD_showHealth_healthThreshold("tdm_dynamicHUD_showHealth_healthThreshold", "30", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "If health is below this threshold, the health bar will not fade out anymore.");
+idCVar cv_dynamicHUD_showHealth_airThreshold("tdm_dynamicHUD_showHealth_airThreshold", "360", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "If air is below this threshold, the health bar will not fade out anymore. Air is in tics, see pm_airTics.");
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 idCVar cv_holdfrob_delay(

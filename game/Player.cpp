@@ -7251,6 +7251,18 @@ void idPlayer::DynamicHudT::Update()
 			}
 		}
 
+		if (player->health < cv_dynamicHUD_showHealth_healthThreshold.GetInteger()
+			|| player->airTics < cv_dynamicHUD_showHealth_airThreshold.GetInteger())
+		{
+			healthShouldBeShown = true;
+			health.Show(); // #6677: DynHUD_HealthRule3, DynHUD_HealthRule4
+		}
+		else if (healthShouldBeShown)
+		{
+			healthShouldBeShown = false;
+			health.Hide();
+		}
+
 		player->m_overlays.setGlobalStateFloat("Weapon_HUD_Opacity", weapon.GetAlpha());
 		player->m_overlays.setGlobalStateFloat("Health_HUD_Opacity", health.GetAlpha());
 		player->m_overlays.setGlobalStateFloat("Inventory_HUD_Opacity", inventory.GetAlpha());
@@ -8312,7 +8324,10 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 //		int oldHealth = health;
 		health -= damage;
 
-		m_dynamicHUD.health.Show(true); // #6677: DynHUD_HealthRule1
+		if (!m_dynamicHUD.healthShouldBeShown)
+		{
+			m_dynamicHUD.health.Show(true); // #6677: DynHUD_HealthRule1
+		}
 
 		// greebo: Update mission statistics, we've taken damage
 		gameLocal.m_MissionData->PlayerDamaged(damage);
