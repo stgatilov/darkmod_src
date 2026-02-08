@@ -427,6 +427,8 @@ public:
 		 */
 		HudFader inventory; // #6677
 
+		CInventoryItemPtr useOnFrobItem; // #6677: DynHUD_InventoryRule4
+
 		/**
 		 * DynHUD_HealthRule1: Briefly show after taking damage
 		 * DynHUD_HealthRule2: Show when equipping a weapon intended for making damage (special case: water arrows with holy water flask)

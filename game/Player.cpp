@@ -11049,7 +11049,20 @@ void idPlayer::PerformFrobCheck()
 		if (oldFrobbed)
 			oldFrobbed->SetFrobbed(false);
 		if (newFrobbed)
+		{
 			newFrobbed->SetFrobbed(true);
+
+			auto item = InventoryCursor()->GetCurrentItem();
+			if (item && item->UseOnFrob() && newFrobbed->CanBeUsedByItem(item, true))
+			{
+				m_dynamicHUD.useOnFrobItem = item;
+				m_dynamicHUD.inventory.Show(); // #6677: DynHUD_InventoryRule4
+			}
+		}
+		else if (m_dynamicHUD.useOnFrobItem == InventoryCursor()->GetCurrentItem())
+		{
+			m_dynamicHUD.inventory.Hide(); // #6677: DynHUD_InventoryRule4
+		}
 	}
 }
 
