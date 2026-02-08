@@ -7241,18 +7241,19 @@ void idPlayer::DynamicHudT::Update()
 			health.UpdateParams(fadeIn, fadeOut);
 		}
 
+		const CInventoryWeaponItemPtr weaponItem = player->GetCurrentWeaponItem();
 		if (cv_dynamicHUD_showWeaponOnAmmoChange.GetBool())
 		{
-			CInventoryWeaponItemPtr item = player->GetCurrentWeaponItem();
-			if (item != nullptr && item->GetAmmo() != selectedWeaponAmmo)
+			if (weaponItem != nullptr && weaponItem->GetAmmo() != selectedWeaponAmmo)
 			{
-				selectedWeaponAmmo = item->GetAmmo();
+				selectedWeaponAmmo = weaponItem->GetAmmo();
 				weapon.Show(true); // #6677: DynHUD_WeaponRule4
 			}
 		}
 
 		if (player->health < cv_dynamicHUD_showHealth_healthThreshold.GetInteger()
-			|| player->airTics < cv_dynamicHUD_showHealth_airThreshold.GetInteger())
+			|| player->airTics < cv_dynamicHUD_showHealth_airThreshold.GetInteger()
+			|| weaponItem != nullptr  && weaponItem->CanCauseDamage())
 		{
 			healthShouldBeShown = true;
 			health.Show(); // #6677: DynHUD_HealthRule3, DynHUD_HealthRule4

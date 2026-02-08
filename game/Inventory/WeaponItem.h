@@ -53,6 +53,15 @@ protected:
 	// TRUE if this weapon can be selected.
 	bool	m_Enabled;
 
+	// Indicates whether this weapon can cause damage or not
+	enum class EIsDamagingWeapon : int
+	{
+		Unknown,
+		Yes,
+		No,
+	};
+	mutable EIsDamagingWeapon m_IsDamagingWeapon;
+
 public:
 	// Default constructor, should only be used during restoring from savegames
 	CInventoryWeaponItem();
@@ -97,6 +106,10 @@ public:
 	 * by the given value. Only affects the ammo count of weapons that actually need ammo.
 	 */
 	void UseAmmo(int amount);
+
+	// #6677: Needed for dynamic HUD
+	// Returns TRUE if this weapon can cause damage
+	bool CanCauseDamage() const;
 
 	// Sets/Returns the weapon index (corresponds to the keyboard number keys used to access the weapons)
 	void SetWeaponIndex(int index);
