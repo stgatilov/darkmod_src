@@ -406,7 +406,7 @@ public:
 		/**
 		 * DynHud_FrobHelperRule1: Show while object can be interacted with
 		 */
-		HudFader frobHelperFader;
+		HudFader frobHelper; // #4906
 
 		/**
 		 * DynHUD_WeaponRule1: Never show for weapons without ammo
@@ -414,7 +414,7 @@ public:
 		 * DynHUD_WeaponRule3: Briefly show when hidden and next/prev weapon is pressed. Skip actually switching weapons
 		 * DynHUD_WeaponRule4: Briefly show when ammo changes and respective weapon is selected (tied to cvar)
 		 */
-		HudFader weaponFader;
+		HudFader weapon; // #6677
 
 		/**
 		 * DynHUD_InventoryRule1: Briefly show when selecting an item (compass will not fade out because Inventory_HUD_Opacity was simply not defined there)
@@ -423,7 +423,7 @@ public:
 		 * DynHUD_InventoryRule4: Show when item can be used with world entity
 		 * DynHUD_InventoryRule5: Briefly show when using an item
 		 */
-		HudFader inventoryFader;
+		HudFader inventory; // #6677
 
 		/**
 		 * DynHUD_HealthRule1: Briefly show after taking damage
@@ -432,7 +432,7 @@ public:
 		 * DynHUD_HealthRule4: Show when health is below a certain threshold
 		 * DynHUD_HealthRule5: Show while in combat
 		 */
-		HudFader healthFader;
+		HudFader health; // #6677
 
 	} m_dynamicHUD;
 
