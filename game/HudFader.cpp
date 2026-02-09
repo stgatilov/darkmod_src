@@ -12,13 +12,13 @@ HudFader::HudFader(const FadeParams& fadeIn, const FadeParams& fadeOut)
 
 void HudFader::Reset()
 {
-	m_autoToggleBack       = false;
-	m_shouldBeShown        = false;
-	m_fadeFinished         = false;
-	m_currentAlpha         = 0.0f;
-	m_lastStateChangeAlpha = 0.0f;
-	m_lastStateChangeTime  = 0;
-	m_lastUpdatedTime      = 0;
+	m_currentTargetState      = EState::Hidden;
+	m_restingState            = EState::Hidden;
+	m_fadeFinished            = true;
+	m_currentAlpha            = 0.0f;
+	m_lastStateChangeAlpha    = 0.0f;
+	m_lastStateChangeTime     = 0;
+	m_lastUpdatedTime         = 0;
 }
 
 
@@ -31,49 +31,49 @@ void HudFader::UpdateParams(const FadeParams& fadeIn, const FadeParams& fadeOut)
 
 void HudFader::Show(bool autoToggleBack)
 {
-	InitFade(autoToggleBack, true, false);
+	InitFade(EState::Shown, autoToggleBack, false);
 }
 
 
 void HudFader::ShowInstantly(bool autoToggleBack)
 {
-	InitFade(autoToggleBack, true, true);
+	InitFade(EState::Shown, autoToggleBack, true);
 }
 
 
 void HudFader::Hide(bool autoToggleBack)
 {
-	InitFade(autoToggleBack, false, false);
+	InitFade(EState::Hidden, autoToggleBack, false);
 }
 
 
 void HudFader::HideInstantly(bool autoToggleBack)
 {
-	InitFade(autoToggleBack, false, true);
+	InitFade(EState::Hidden, autoToggleBack, true);
 }
 
 
 bool HudFader::ShouldBeShown() const
 {
-	return m_shouldBeShown;
+	return m_currentTargetState == EState::Shown;
 }
 
 
 bool HudFader::WillAutoToggleBack() const
 {
-	return m_autoToggleBack;
+	return m_currentTargetState != m_restingState;
 }
 
 
 bool HudFader::ShouldBeShownIndefinitely() const
 {
-	return m_shouldBeShown && !m_autoToggleBack;
+	return m_restingState == EState::Shown;
 }
 
 
 bool HudFader::ShouldBeHiddenIndefinitely() const
 {
-	return !m_shouldBeShown && !m_autoToggleBack;
+	return m_restingState == EState::Hidden;
 }
 
 
@@ -82,35 +82,21 @@ float HudFader::GetAlpha()
     if (m_fadeFinished || m_lastUpdatedTime == gameLocal.time)
         return m_currentAlpha;
 
-    if (m_shouldBeShown)
+    if (m_currentTargetState == EState::Shown)
         return ExecuteFade<true>(m_fadeIn);
     else
         return ExecuteFade<false>(m_fadeOut);
 }
 
 
-void HudFader::InitFade(bool autoToggleBack, bool fadingIn, bool instantStateChange)
+void HudFader::InitFade(EState desiredState, bool autoToggleBack, bool instantStateChange)
 {
-	// Indefinite state (e.g. LO->HI) has priority over momentary state (e.g. LO->HI->LO)
-	// > Allows us to Show/Hide without having to worry some other momentary state change might overwrite it
-	if (!m_autoToggleBack)
-	{		
-		if (fadingIn == m_shouldBeShown)
-			return;
-	}
-	else if (!autoToggleBack && m_autoToggleBack)
+	const float targetAlpha = desiredState == EState::Shown ? 1.0f : 0.0f;
+	m_currentTargetState    = desiredState;
+	if (!autoToggleBack)
 	{
-		// Let this call override the state
+		m_restingState = desiredState;
 	}
-	else if (fadingIn == m_shouldBeShown && !autoToggleBack && !instantStateChange)
-	{
-		// We are already doing this fade
-		return;
-	}
-
-	const float targetAlpha = fadingIn ? 1.0f : 0.0f;
-	m_shouldBeShown         = fadingIn;
-	m_autoToggleBack        = autoToggleBack;
 	if (instantStateChange)
 	{
 		m_lastStateChangeAlpha = targetAlpha;
@@ -153,13 +139,11 @@ float HudFader::ExecuteFade(const FadeParams& params)
     else
     {
         m_currentAlpha = targetAlpha;
-        if (m_autoToggleBack)
+        if (m_restingState != m_currentTargetState)
         {
-			m_autoToggleBack = false;
-			if (m_shouldBeShown)
-				Hide();
-			else
-				Show();
+			m_currentTargetState   = m_restingState;
+			m_lastStateChangeAlpha = targetAlpha;
+			m_lastStateChangeTime  = gameLocal.time;
         }
         else
         {

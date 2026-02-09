@@ -41,7 +41,9 @@ public: // Getters
 
 private:
 
-	void InitFade(bool autoToggleBack, bool fadingIn, bool instantStateChange);	
+	enum class EState : bool { Shown = true, Hidden = false };
+
+	void InitFade(EState desiredState, bool autoToggleBack, bool instantStateChange);
 
 	template <bool fadingIn>
     float ExecuteFade(const FadeParams& params);
@@ -51,10 +53,11 @@ private:
 	FadeParams m_fadeIn;  
 	FadeParams m_fadeOut;
 
-    bool m_autoToggleBack{ false };
+	
+	EState m_currentTargetState{ EState::Hidden };
+	EState m_restingState{ EState::Hidden };
 
-    bool m_shouldBeShown{ false };
-    bool m_fadeFinished{ false };
+    bool m_fadeFinished{ true };
 
     float m_currentAlpha{ 0.0f };
     float m_lastStateChangeAlpha{ 0.0f };
