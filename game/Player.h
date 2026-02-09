@@ -418,8 +418,8 @@ public:
 		 * DynHUD_WeaponRule5: Show while a temporal weapon effect is active (e.g. holy water) -> Ensured on assets side
 		 */
 		HudFader weapon; // #6677
-		
-		int      selectedWeaponAmmo{0}; // #6677: DynHUD_WeaponRule4
+
+		int      selectedWeaponAmmo{ 0 }; // #6677: DynHUD_WeaponRule4
 
 		/**
 		 * DynHUD_InventoryRule1: Briefly show when selecting an item (compass will not fade out because Inventory_HUD_Opacity was simply not defined there)
@@ -430,9 +430,6 @@ public:
 		 */
 		HudFader inventory; // #6677
 
-		CInventoryItemPtr useOnFrobItem; // #6677: DynHUD_InventoryRule4
-		idEntity*         useOnFrobWorldEntity{nullptr}; // #6677: DynHUD_InventoryRule4
-
 		/**
 		 * DynHUD_HealthRule1: Briefly show after taking damage
 		 * DynHUD_HealthRule2: Show when equipping a weapon intended for doing damage (special case: water arrows with holy water flask)
@@ -442,6 +439,9 @@ public:
 		 */
 		HudFader health; // #6677
 
+	private:
+		CInventoryItemPtr     useOnFrobItem; // #6677: DynHUD_InventoryRule4
+		idEntityPtr<idEntity> lastFrobHighlightedEntity; // #6677: DynHUD_InventoryRule4
 	} m_dynamicHUD;
 
 
