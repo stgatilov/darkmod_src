@@ -170,6 +170,18 @@ if (WITH_TOOLS)
 	)
 else ()
 	ucm_add_files("tools/guied/GEWindowWrapper_stub.cpp" TO TDM_SOURCE_FILES)
+	# cross-platform debugger server
+	ucm_add_files(
+		tools/debugger/DebuggerBreakpoint.h
+		tools/debugger/DebuggerBreakpoint.cpp
+		tools/debugger/DebuggerServer.h
+		tools/debugger/DebuggerServer.cpp
+		tools/debugger/DebuggerScript.h
+		tools/debugger/DebuggerScript.cpp
+		tools/debugger/DebuggerMessages.h
+		tools/debugger/debugger.cpp
+		TO TDM_SOURCE_FILES
+	)
 	add_compile_definitions(NO_MFC)
 endif ()
 
