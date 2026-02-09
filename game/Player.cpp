@@ -2736,6 +2736,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(usePeekView);			  // grayman #4882
 	savefile->ReadVec3(normalViewOrigin);	  // grayman #4882
 	savefile->ReadVec3(peekEntityViewOrigin); // grayman #4882
+
+	m_dynamicHUD.Reset();
 	
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -7252,7 +7254,7 @@ void idPlayer::DynamicHudT::Update()
 		{
 			idEntity* target = player->m_FrobHilightedEntity.GetEntity();
 			auto item = player->InventoryCursor()->GetCurrentItem();
-			if (inventory.ShouldBeShownStatic())
+			if (inventory.ShouldBeShownIndefinitely())
 			{
 				if (target != useOnFrobWorldEntity || item != useOnFrobItem)
 				{
@@ -7290,7 +7292,7 @@ void idPlayer::DynamicHudT::Update()
 		{
 			health.Show(); // #6677: DynHUD_HealthRule3, DynHUD_HealthRule4
 		}
-		else if (health.ShouldBeShownStatic())
+		else if (health.ShouldBeShownIndefinitely())
 		{
 			health.Hide(); // #6677: DynHUD_HealthRule3, DynHUD_HealthRule4
 		}
@@ -7324,6 +7326,31 @@ void idPlayer::DynamicHudT::Update()
 			player->cursor->SetStateFloat("FrobHelper_Opacity", maxAlpha * frobHelper.GetAlpha());
 		}
 	}
+}
+
+
+void idPlayer::DynamicHudT::Reset()
+{
+	frobHelper.Reset();
+	{
+		const HudFader::FadeParams fadeIn{ cv_frobhelper_fadein_delay.GetInteger(), cv_frobhelper_fadein_duration.GetInteger() };
+		const HudFader::FadeParams fadeOut{ 0, cv_frobhelper_fadeout_duration.GetInteger() };
+		frobHelper.UpdateParams(fadeIn, fadeOut);
+	}
+
+	weapon.Reset();
+	inventory.Reset();
+	health.Reset();
+
+	const HudFader::FadeParams fadeIn{ 0, cv_dynamicHUD_fadein_duration.GetInteger() };
+	const HudFader::FadeParams fadeOut{ cv_dynamicHUD_fadeout_delay.GetInteger(), cv_dynamicHUD_fadeout_duration.GetInteger() };
+	weapon.UpdateParams(fadeIn, fadeOut);
+	inventory.UpdateParams(fadeIn, fadeOut);
+	health.UpdateParams(fadeIn, fadeOut);
+
+	selectedWeaponAmmo = 0;
+	useOnFrobItem = nullptr;
+	useOnFrobWorldEntity = nullptr;
 }
 
 
@@ -11134,14 +11161,20 @@ void idPlayer::PerformFrobCheckInternal()
 	// greebo: Don't run this when dead
 	if (AI_DEAD)
 	{
-		m_dynamicHUD.frobHelper.HideInstantly(); // #4906: DynHud_FrobHelperRule1
+		if (m_dynamicHUD.frobHelper.ShouldBeShown())
+		{
+			m_dynamicHUD.frobHelper.HideInstantly(); // #4906: DynHud_FrobHelperRule1
+		}
 		return;
 	}
 
 	// greebo: Don't run the frobcheck when we're dragging items around
 	if (m_bGrabberActive)
 	{
-		m_dynamicHUD.frobHelper.Hide(); // #4906: DynHud_FrobHelperRule1
+		if (m_dynamicHUD.frobHelper.ShouldBeShown())
+		{
+			m_dynamicHUD.frobHelper.HideInstantly(); // #4906: DynHud_FrobHelperRule1
+		}
 		return;
 	}
 
@@ -11150,7 +11183,10 @@ void idPlayer::PerformFrobCheckInternal()
 	if ( GetImmobilization() & EIM_FROB_HILIGHT )
 	{
 		m_FrobHilightedEntity = NULL;
-		m_dynamicHUD.frobHelper.HideInstantly(); // #4906: DynHud_FrobHelperRule1
+		if (m_dynamicHUD.frobHelper.ShouldBeShown())
+		{
+			m_dynamicHUD.frobHelper.HideInstantly(); // #4906: DynHud_FrobHelperRule1
+		}
 		return;
 	}	
 
@@ -11236,7 +11272,10 @@ void idPlayer::PerformFrobCheckInternal()
 			m_FrobHilightedEntity = ent;
 			GetRenderView()->isHighlightedEntityValuable = ent->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 
-			m_dynamicHUD.frobHelper.Show();  // #4906: DynHud_FrobHelperRule1
+			if (!m_dynamicHUD.frobHelper.ShouldBeShown())
+			{
+				m_dynamicHUD.frobHelper.Show(); // #4906: DynHud_FrobHelperRule1
+			}
 
 			return;
 		}
@@ -11341,14 +11380,20 @@ void idPlayer::PerformFrobCheckInternal()
 		GetRenderView()->isHighlightedEntityValuable = bestEnt->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 		m_FrobTrace = trace;
 
-		m_dynamicHUD.frobHelper.Show(); // #4906: DynHud_FrobHelperRule1
+		if (!m_dynamicHUD.frobHelper.ShouldBeShown())
+		{
+			m_dynamicHUD.frobHelper.Show(); // #4906: DynHud_FrobHelperRule1
+		}
 
 		return; // done
 	}
 
 	// No frob entity
 	m_FrobHilightedEntity = NULL;
-	m_dynamicHUD.frobHelper.Hide(); // #4906: DynHud_FrobHelperRule1
+	if (m_dynamicHUD.frobHelper.ShouldBeShown())
+	{
+		m_dynamicHUD.frobHelper.Hide(); // #4906: DynHud_FrobHelperRule1
+	}
 }
 
 int idPlayer::GetImmobilization( const char *source )

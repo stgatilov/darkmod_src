@@ -15,6 +15,8 @@ public:
 
     HudFader(const FadeParams& fadeIn, const FadeParams& fadeOut);
 
+	void Reset();
+
     void UpdateParams(const FadeParams& fadeIn, const FadeParams& fadeOut);
 
     void Show(bool autoToggleBack = false);
@@ -25,20 +27,24 @@ public:
 
     void HideInstantly(bool autoToggleBack = false);
 
+public: // Getters
+
 	bool ShouldBeShown() const;
 
 	bool WillAutoToggleBack() const;
 
-	bool ShouldBeShownStatic() const;
+	bool ShouldBeShownIndefinitely() const;
+
+	bool ShouldBeHiddenIndefinitely() const;
 
     float GetAlpha();
 
 private:
 
+	void InitFade(bool autoToggleBack, bool fadingIn, bool instantStateChange);	
+
 	template <bool fadingIn>
     float ExecuteFade(const FadeParams& params);
-
-	bool IsIgnored(bool autoToggleBack, bool fadingIn, bool instantStateChange) const;
 
 private:
 

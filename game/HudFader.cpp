@@ -10,6 +10,18 @@ HudFader::HudFader(const FadeParams& fadeIn, const FadeParams& fadeOut)
 }
 
 
+void HudFader::Reset()
+{
+	m_autoToggleBack       = false;
+	m_shouldBeShown        = false;
+	m_fadeFinished         = false;
+	m_currentAlpha         = 0.0f;
+	m_lastStateChangeAlpha = 0.0f;
+	m_lastStateChangeTime  = 0;
+	m_lastUpdatedTime      = 0;
+}
+
+
 void HudFader::UpdateParams(const FadeParams& fadeIn, const FadeParams& fadeOut)
 {
 	m_fadeIn  = fadeIn;
@@ -19,53 +31,25 @@ void HudFader::UpdateParams(const FadeParams& fadeIn, const FadeParams& fadeOut)
 
 void HudFader::Show(bool autoToggleBack)
 {
-	if (IsIgnored(autoToggleBack, true, false))
-		return;
-    
-    m_shouldBeShown = true;
-    m_lastStateChangeTime = gameLocal.time;
-    m_lastStateChangeAlpha = m_currentAlpha;
-    m_fadeFinished = false;
-    m_autoToggleBack = autoToggleBack;
+	InitFade(autoToggleBack, true, false);
 }
 
 
 void HudFader::ShowInstantly(bool autoToggleBack)
 {
-	if (IsIgnored(autoToggleBack, true, true))
-		return;
-    
-    m_currentAlpha = 1.0f;
-    m_lastStateChangeAlpha = 1.0f;
-    m_shouldBeShown = true;
-    m_fadeFinished = true;
-    m_autoToggleBack = autoToggleBack;
+	InitFade(autoToggleBack, true, true);
 }
 
 
 void HudFader::Hide(bool autoToggleBack)
 {
-	if (IsIgnored(autoToggleBack, false, false))
-		return;
-
-    m_shouldBeShown = false;
-    m_lastStateChangeTime = gameLocal.time;
-    m_lastStateChangeAlpha = m_currentAlpha;
-    m_fadeFinished = false;
-    m_autoToggleBack = autoToggleBack;
+	InitFade(autoToggleBack, false, false);
 }
 
 
 void HudFader::HideInstantly(bool autoToggleBack)
 {
-	if (IsIgnored(autoToggleBack, false, true))
-		return;
-    
-    m_currentAlpha = 0.0f;
-    m_lastStateChangeAlpha = 0.0f;
-    m_shouldBeShown = false;
-    m_fadeFinished = true;
-    m_autoToggleBack = autoToggleBack;
+	InitFade(autoToggleBack, false, true);
 }
 
 
@@ -81,9 +65,15 @@ bool HudFader::WillAutoToggleBack() const
 }
 
 
-bool HudFader::ShouldBeShownStatic() const
+bool HudFader::ShouldBeShownIndefinitely() const
 {
 	return m_shouldBeShown && !m_autoToggleBack;
+}
+
+
+bool HudFader::ShouldBeHiddenIndefinitely() const
+{
+	return !m_shouldBeShown && !m_autoToggleBack;
 }
 
 
@@ -96,6 +86,43 @@ float HudFader::GetAlpha()
         return ExecuteFade<true>(m_fadeIn);
     else
         return ExecuteFade<false>(m_fadeOut);
+}
+
+
+void HudFader::InitFade(bool autoToggleBack, bool fadingIn, bool instantStateChange)
+{
+	// Indefinite state (e.g. LO->HI) has priority over momentary state (e.g. LO->HI->LO)
+	// > Allows us to Show/Hide without having to worry some other momentary state change might overwrite it
+	if (!m_autoToggleBack)
+	{		
+		if (fadingIn == m_shouldBeShown)
+			return;
+	}
+	else if (!autoToggleBack && m_autoToggleBack)
+	{
+		// Let this call override the state
+	}
+	else if (fadingIn == m_shouldBeShown && !autoToggleBack && !instantStateChange)
+	{
+		// We are already doing this fade
+		return;
+	}
+
+	const float targetAlpha = fadingIn ? 1.0f : 0.0f;
+	m_shouldBeShown         = fadingIn;
+	m_autoToggleBack        = autoToggleBack;
+	if (instantStateChange)
+	{
+		m_lastStateChangeAlpha = targetAlpha;
+		m_currentAlpha         = targetAlpha;
+		m_fadeFinished         = true;
+	}
+	else
+	{
+		m_lastStateChangeAlpha = m_currentAlpha;
+		m_lastStateChangeTime  = gameLocal.time;
+		m_fadeFinished         = false;
+	}
 }
 
 
@@ -142,18 +169,5 @@ float HudFader::ExecuteFade(const FadeParams& params)
     }
 }
 
-bool HudFader::IsIgnored(bool autoToggleBack, bool fadingIn, bool instantStateChange) const
-{
-	if (autoToggleBack && !m_autoToggleBack)
-	{
-		// Indefinite state has priority over finite state changes
-		// Meaning: A Show() without autoToggleBack has to be manually resolved by a Hide(). Until then all Show() with autoToggleBack will be ignored.
-		// > Allows us to set a static state without having to worry some other call might overwrite it
-		return fadingIn == m_shouldBeShown;
-	}
-
-	const bool nothingToDo = fadingIn == m_shouldBeShown && !autoToggleBack && !instantStateChange;
-	return nothingToDo;
-}
 
 

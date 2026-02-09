@@ -403,6 +403,8 @@ public:
 	{
 		void Update();
 
+		void Reset();
+
 		/**
 		 * DynHud_FrobHelperRule1: Show while object can be interacted with
 		 */
