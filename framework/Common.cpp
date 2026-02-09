@@ -804,7 +804,7 @@ void idCommonLocal::DoError( const char *msg, int code ) {
 	errorList.AddUnique( msg );
 
 	// Dont shut down the session for gui editor or debugger
-	if( !( com_editors & ( EDITOR_GUI ) ) ) {
+	if ( !( com_editors & ( EDITOR_GUI | EDITOR_DEBUGGER ) ) ) {
 		session->Stop();
 	}
 
@@ -813,7 +813,7 @@ void idCommonLocal::DoError( const char *msg, int code ) {
 		throw idException( msg );
 		// The gui editor doesnt want thing to com_error so it handles exceptions instead
 	}
-	else if( com_editors & ( EDITOR_GUI ) ) {
+	} else if( com_editors & ( EDITOR_GUI | EDITOR_DEBUGGER ) ) {
 		com_errorEntered = 0;
 		throw idException( msg );
 	}
@@ -1161,6 +1161,9 @@ void idCommonLocal::CheckToolMode( void ) {
 		if ( !idStr::Icmp( com_consoleLines[ i ].Argv(0), "guieditor" ) ) {
 			com_editors |= EDITOR_GUI;
 		}
+		else if ( !idStr::Icmp( com_consoleLines[ i ].Argv(0), "debugger" ) ) {
+			com_editors |= EDITOR_DEBUGGER;
+		}
 		else if ( !idStr::Icmp( com_consoleLines[ i ].Argv(0), "editor" ) ) {
 			com_editors |= EDITOR_RADIANT;
 		}
@@ -1391,6 +1394,19 @@ Com_Editor_f
 */
 static void Com_Editor_f( const idCmdArgs &args ) {
 	RadiantInit();
+}
+
+/*
+=============
+Com_ScriptDebugger_f
+=============
+*/
+static void Com_ScriptDebugger_f( const idCmdArgs &args ) {
+	// Make sure it wasnt on the command line
+	if ( !( com_editors & EDITOR_DEBUGGER ) ) {
+		common->Printf( "Script debugger is currently disabled\n" );
+		// DebuggerClientLaunch();
+	}
 }
 
 /*
@@ -2335,6 +2351,7 @@ void idCommonLocal::InitCommands( void ) {
 	cmdSystem->AddCommand( "editParticles", Com_EditParticles_f, CMD_FL_TOOL, "launches the in-game Particle Editor" );
 	cmdSystem->AddCommand( "editScripts", Com_EditScripts_f, CMD_FL_TOOL, "launches the in-game Script Editor" );
 	cmdSystem->AddCommand( "editGUIs", Com_EditGUIs_f, CMD_FL_TOOL, "launches the GUI Editor" );
+	cmdSystem->AddCommand( "debugger", Com_ScriptDebugger_f, CMD_FL_TOOL, "launches the Script Debugger" );
 
 	//BSM Nerve: Add support for the material editor
 	cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
