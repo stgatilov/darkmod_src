@@ -5706,7 +5706,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 
 			if (cv_dynamicHUD_switchWeaponOverride.GetBool() 
-				&& m_dynamicHUD.weapon.GetAlpha() == 0.0f)
+				&& m_dynamicHUD.weapon.GetAlpha() == 0.0f
+				&& !m_dynamicHUD.weapon.ShouldBeShown())
 			{
 				auto weaponitem = GetCurrentWeaponItem();
 				if (weaponitem != nullptr && weaponitem->NeedsAmmo())
@@ -5742,7 +5743,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 				return;
 			}
 
-			if (cv_dynamicHUD_switchWeaponOverride.GetBool() && m_dynamicHUD.weapon.GetAlpha() == 0.0f)
+			if (cv_dynamicHUD_switchWeaponOverride.GetBool() 
+				&& m_dynamicHUD.weapon.GetAlpha() == 0.0f
+				&& !m_dynamicHUD.weapon.ShouldBeShown())
 			{
 				auto weaponitem = GetCurrentWeaponItem();
 				if (weaponitem != nullptr && weaponitem->NeedsAmmo())
@@ -5977,6 +5980,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			if (cv_dynamicHUD_switchItemOverride.GetBool()
 				&& m_dynamicHUD.inventory.GetAlpha() == 0.0f
+				&& !m_dynamicHUD.inventory.ShouldBeShown()
 				&& InventoryCursor()->GetCurrentItem() != nullptr)
 			{
 				m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule2
@@ -6011,6 +6015,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			if (cv_dynamicHUD_switchItemOverride.GetBool()
 				&& m_dynamicHUD.inventory.GetAlpha() == 0.0f
+				&& !m_dynamicHUD.inventory.ShouldBeShown()
 				&& InventoryCursor()->GetCurrentItem() != nullptr)
 			{
 				m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule2
@@ -6043,6 +6048,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			if (cv_dynamicHUD_switchItemOverride.GetBool()
 				&& m_dynamicHUD.inventory.GetAlpha() == 0.0f
+				&& !m_dynamicHUD.inventory.ShouldBeShown()
 				&& InventoryCursor()->GetCurrentItem() != nullptr)
 			{
 				m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule2
@@ -6075,6 +6081,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			if (cv_dynamicHUD_switchItemOverride.GetBool()
 				&& m_dynamicHUD.inventory.GetAlpha() == 0.0f
+				&& !m_dynamicHUD.inventory.ShouldBeShown()
 				&& InventoryCursor()->GetCurrentItem() != nullptr)
 			{
 				m_dynamicHUD.inventory.Show(true); // #6677: DynHUD_InventoryRule2
@@ -7241,6 +7248,31 @@ void idPlayer::DynamicHudT::Update()
 			health.UpdateParams(fadeIn, fadeOut);
 		}
 
+		// #6677: DynHUD_InventoryRule4
+		{
+			idEntity* target = player->m_FrobHilightedEntity.GetEntity();
+			auto item = player->InventoryCursor()->GetCurrentItem();
+			if (inventory.ShouldBeShownStatic())
+			{
+				if (target != useOnFrobWorldEntity || item != useOnFrobItem)
+				{
+					useOnFrobWorldEntity = nullptr;
+					useOnFrobItem = nullptr;					
+					inventory.Hide(); // #6677: DynHUD_InventoryRule4
+				}
+			}
+			else
+			{
+				if (item != nullptr && item->UseOnFrob() && target != nullptr && target->CanBeUsedByItem(item, true))
+				{
+					useOnFrobWorldEntity = target;
+					useOnFrobItem = item;
+					inventory.Show(); // #6677: DynHUD_InventoryRule4
+				}
+			}
+		}
+
+		// #6677: DynHUD_WeaponRule4
 		const CInventoryWeaponItemPtr weaponItem = player->GetCurrentWeaponItem();
 		if (cv_dynamicHUD_showWeaponOnAmmoChange.GetBool())
 		{
@@ -7251,17 +7283,16 @@ void idPlayer::DynamicHudT::Update()
 			}
 		}
 
+		// #6677: DynHUD_HealthRule3, DynHUD_HealthRule4
 		if (player->health < cv_dynamicHUD_showHealth_healthThreshold.GetInteger()
 			|| player->airTics < cv_dynamicHUD_showHealth_airThreshold.GetInteger()
 			|| weaponItem != nullptr  && weaponItem->CanCauseDamage())
 		{
-			healthShouldBeShown = true;
 			health.Show(); // #6677: DynHUD_HealthRule3, DynHUD_HealthRule4
 		}
-		else if (healthShouldBeShown)
+		else if (health.ShouldBeShownStatic())
 		{
-			healthShouldBeShown = false;
-			health.Hide();
+			health.Hide(); // #6677: DynHUD_HealthRule3, DynHUD_HealthRule4
 		}
 
 		player->m_overlays.setGlobalStateFloat("Weapon_HUD_Opacity", weapon.GetAlpha());
@@ -8325,10 +8356,7 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 //		int oldHealth = health;
 		health -= damage;
 
-		if (!m_dynamicHUD.healthShouldBeShown)
-		{
-			m_dynamicHUD.health.Show(true); // #6677: DynHUD_HealthRule1
-		}
+		m_dynamicHUD.health.Show(true); // #6677: DynHUD_HealthRule1		
 
 		// greebo: Update mission statistics, we've taken damage
 		gameLocal.m_MissionData->PlayerDamaged(damage);
@@ -11097,20 +11125,7 @@ void idPlayer::PerformFrobCheck()
 		if (oldFrobbed)
 			oldFrobbed->SetFrobbed(false);
 		if (newFrobbed)
-		{
 			newFrobbed->SetFrobbed(true);
-
-			auto item = InventoryCursor()->GetCurrentItem();
-			if (item && item->UseOnFrob() && newFrobbed->CanBeUsedByItem(item, true))
-			{
-				m_dynamicHUD.useOnFrobItem = item;
-				m_dynamicHUD.inventory.Show(); // #6677: DynHUD_InventoryRule4
-			}
-		}
-		else if (m_dynamicHUD.useOnFrobItem == InventoryCursor()->GetCurrentItem())
-		{
-			m_dynamicHUD.inventory.Hide(); // #6677: DynHUD_InventoryRule4
-		}
 	}
 }
 

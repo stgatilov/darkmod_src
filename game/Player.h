@@ -413,6 +413,7 @@ public:
 		 * DynHUD_WeaponRule2: Briefly show when selecting a weapon not qualifying for rule 1
 		 * DynHUD_WeaponRule3: Briefly show when hidden and next/prev weapon is pressed and a weapon is selected that does not qualify for rule 1. Skip actually switching weapons.
 		 * DynHUD_WeaponRule4: Briefly show when ammo changes and respective weapon is selected
+		 * DynHUD_WeaponRule5: Show while a temporal weapon effect is active (e.g. holy water) -> Ensured on assets side
 		 */
 		HudFader weapon; // #6677
 		
@@ -428,17 +429,16 @@ public:
 		HudFader inventory; // #6677
 
 		CInventoryItemPtr useOnFrobItem; // #6677: DynHUD_InventoryRule4
+		idEntity*         useOnFrobWorldEntity{nullptr}; // #6677: DynHUD_InventoryRule4
 
 		/**
 		 * DynHUD_HealthRule1: Briefly show after taking damage
-		 * DynHUD_HealthRule2: Show when equipping a weapon intended for making damage (special case: water arrows with holy water flask)
+		 * DynHUD_HealthRule2: Show when equipping a weapon intended for doing damage (special case: water arrows with holy water flask)
 		 * DynHUD_HealthRule3: Show when breath is running out
 		 * DynHUD_HealthRule4: Show when health is below a certain threshold
-		 * DynHUD_HealthRule5: Show while in combat
+		 * (DynHUD_HealthRule5: Show while in combat?)
 		 */
 		HudFader health; // #6677
-
-		bool     healthShouldBeShown{false};
 
 	} m_dynamicHUD;
 
