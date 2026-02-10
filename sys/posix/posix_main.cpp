@@ -427,6 +427,10 @@ ID_TIME_T Sys_FileTimeStamp(FILE * fp) {
 }
 
 void Sys_Sleep(int msec) {
+#if 0
+	// DG: the following makes no sense to me, Sys_Sleep() on Windows allows any value
+	//     and usleep() on Linux actually has a much better resolution (also in practice)
+	//     than any Windows sleep function
 	if ( msec < 20 ) {
 		static int last = 0;
 		int now = Sys_Milliseconds();
@@ -437,6 +441,7 @@ void Sys_Sleep(int msec) {
 		// ignore that sleep call, keep going
 		return;
 	}
+#endif // 0
 	// use nanosleep? keep sleeping if signal interrupt?
 	if (usleep(msec * 1000) == -1)
 		Sys_Printf("usleep: %s\n", strerror(errno));
