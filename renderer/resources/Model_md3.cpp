@@ -32,7 +32,7 @@ idRenderModelMD3::~idRenderModelMD3() {
 	memset( &tri, 0, sizeof( tri ) );
 
 	for ( int i=0, n=silInfos.Num() ; i < n ; ++i ) {
-		silInfo_t& silInfo = silInfos[i];
+		md3SilInfo_t& silInfo = silInfos[i];
 		// Note: Because tri.sil* was allocated by specialized allocators only available
 		//       in tr.trisurf.cpp, they need to be free'd with them as well.
 		//       The easiest way to do this is by putting them into a srfTriangles_t first
@@ -42,10 +42,8 @@ idRenderModelMD3::~idRenderModelMD3() {
 		R_FreeStaticTriSurfSilIndexes( &tri );
 		R_FreeStaticTriSurfSilEdges( &tri );
 
-		if ( sizeof(md3Triangle_t::indexes[0]) != sizeof(silInfo.indexes[0]) ) {
-			tri.indexes = silInfo.indexes;
-			R_FreeStaticTriSurfIndexes( &tri );
-		} // else silInfos[i].indexes points directly into the corresponding data in this->md3
+		// Note: silInfos[i].indexes points directly into the corresponding data
+		//  in this->md3 so it will be freed together with the rest of this->md3
 	}
 	silInfos.Clear();
 
@@ -327,7 +325,7 @@ idRenderModel *idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 		R_AllocStaticTriSurfVerts( tri, surface->numVerts );
 
 		// DG: set sil edges for shadows
-		silInfo_t& silInfo = silInfos[i];
+		const md3SilInfo_t& silInfo = silInfos[i];
 		tri->numSilEdges = silInfo.numSilEdges;
 		tri->silEdges = silInfo.silEdges;
 		tri->silIndexes = silInfo.silIndexes;
@@ -416,17 +414,18 @@ Note: This is basically the subset of the MD5-centric R_BuildDeformInfo()
 =====================
 */
 
-silInfo_t idRenderModelMD3::BuildSilInfo( md3Surface_t *surf ) {
+md3SilInfo_t idRenderModelMD3::BuildSilInfo( md3Surface_t *surf ) {
 	//
 	// build the information that will be common to all animations of this surface:
 	// silhouette edge connectivity and normal / tangent generation information
 	//
 	int numVerts = surf->numVerts;
-	silInfo_t ret = {0};
+	md3SilInfo_t ret = {0};
 
 	md3XyzNormal_t *xyzs = (md3XyzNormal_t *) ( (byte *)surf + surf->ofsXyzNormals );
 
-	idFlexList<idDrawVert, 10000> verts;
+	idList<idDrawVert> verts;
+	verts.SetNum( numVerts );
 
 	for ( int i=0; i < numVerts; ++i ) {
 		idDrawVert& v = verts[i];
@@ -450,15 +449,12 @@ silInfo_t idRenderModelMD3::BuildSilInfo( md3Surface_t *surf ) {
 	tri.verts = verts.Ptr();
 	tri.numVerts = numVerts;
 	tri.numIndexes = numIndexes;
-	if ( sizeof(triIndexes[0]) == sizeof(tri.indexes[0]) ) {
-		tri.indexes = triIndexes;
-	} else {
-		R_AllocStaticTriSurfIndexes( &tri, numIndexes );
-		// don't memcpy, so we can change the index type from int to short without changing the interface
-		for ( int i = 0 ; i < numIndexes ; i++ ) {
-			tri.indexes[i] = triIndexes[i];
-		}
-	}
+
+	static_assert( sizeof(triIndexes[0]) == sizeof(tri.indexes[0]) , "index sizes don't match!");
+	// if that static_assert triggers, R_AllocStaticTriSurfIndexes( &tri, numIndexes );
+	// and then loop tri.indexes[i] = triIndexes[i] (and free that in destructor)
+	tri.indexes = triIndexes;
+
 	R_CreateSilIndexes(&tri); // allocates and sets tri.silIndexes with triSilIndexAllocator
 	// if there's only one frame (no animation), the omitCoplanarEdges optimization can be used
 	// (otherwise it can't because edges that are coplanar in frame 0 may not be in another frame)
