@@ -28,20 +28,12 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef DEBUGGERSERVER_H_
 #define DEBUGGERSERVER_H_
 
-// FIXME #include "sys/sys_sdl.h"
-
-//#include "sys/platform.h"
+#include "sys/sys_threading.h"
 #include "sys/sys_public.h"
 #include "idlib/Str.h"
 #include "DebuggerMessages.h"
 #include "DebuggerBreakpoint.h"
 #include "game/Game.h"
-
-#if SDL_VERSION_ATLEAST(3, 0, 0)
-  // backwards-compat with SDL <= 2
-  #define SDL_mutex SDL_Mutex
-  #define SDL_cond SDL_Condition
-#endif
 
 class function_t;
 typedef struct prstack_s prstack_t;
@@ -92,11 +84,9 @@ private:
 	netadr_t						mClientAdr;
 	idPort							mPort;
 	idList<rvDebuggerBreakpoint*>	mBreakpoints;
-	SDL_mutex*						mCriticalSection;
+	mutexHandle_t					mCriticalSection;
 
-
-	SDL_cond*						mGameThreadBreakCond;
-	SDL_mutex*						mGameThreadBreakLock;
+	signalHandle_t					mGameThreadBreakSignal;
 	bool							mBreak;
 
 	bool							mBreakNext;
