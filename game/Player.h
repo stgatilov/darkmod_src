@@ -422,11 +422,11 @@ public:
 		int      selectedWeaponAmmo{ 0 }; // #6677: DynHUD_WeaponRule4
 
 		/**
-		 * DynHUD_InventoryRule1: Briefly show when selecting an item (compass will not fade out because Inventory_HUD_Opacity was simply not defined there)
-		 * DynHUD_InventoryRule2: Briefly show when hidden and next/prev inv item or next/prev inv group is pressed. Skip actually switching items.
-		 * DynHUD_InventoryRule3: Briefly show when picking up a new item
-		 * DynHUD_InventoryRule4: Show when item can be used with world entity
-		 * DynHUD_InventoryRule5: Briefly show when using an item
+		 * DynHUD_ItemRule1: Briefly show when selecting an item (compass will not fade out because Inventory_HUD_Opacity was simply not defined there)
+		 * DynHUD_ItemRule2: Briefly show when hidden and next/prev inv item or next/prev inv group is pressed. Skip actually switching items.
+		 * DynHUD_ItemRule3: Briefly show when picking up a new item
+		 * DynHUD_ItemRule4: Show when item can be used with world entity
+		 * DynHUD_ItemRule5: Briefly show when using an item
 		 */
 		HudFader itemInventory; // #6677
 
@@ -435,17 +435,18 @@ public:
 		 * DynHUD_HealthRule2: Show when equipping a weapon intended for doing damage (special case: water arrows with holy water flask)
 		 * DynHUD_HealthRule3: Show when breath is running out
 		 * DynHUD_HealthRule4: Show when health is below a certain threshold
-		 * (DynHUD_HealthRule5: Show while in combat?)
+		 * DynHUD_HealthRule5: Show while healing
+		 * (DynHUD_HealthRule6: Show while in combat?)
 		 */
 		HudFader healthBar; // #6677
 
 	private:
-		CInventoryItemPtr     useOnFrobItem; // #6677: DynHUD_InventoryRule4
-		idEntityPtr<idEntity> lastFrobHighlightedEntity; // #6677: DynHUD_InventoryRule4
+		CInventoryItemPtr     useOnFrobItem; // #6677: DynHUD_ItemRule4
+		idEntityPtr<idEntity> lastFrobHighlightedEntity; // #6677: DynHUD_ItemRule4
 	} m_dynamicHUD;
 
 
-	void CycleInventoryGroup(const idStr& groupName) override; // #6677: DynHUD_InventoryRule1
+	void CycleInventoryGroup(const idStr& groupName) override; // #6677: DynHUD_ItemRule1
 
 
 

@@ -1695,7 +1695,7 @@ void idPlayer::DestroyInventoryGridGUI()
 					CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
 					InventoryCursor()->SetCurrentItem(selected);
 
-					m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule1
+					m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule1
 
 					// Trigger an update, passing the previous item along
 					OnInventorySelectionChanged(prev);
@@ -5985,13 +5985,13 @@ void idPlayer::PerformImpulse( int impulse ) {
 				&& !m_dynamicHUD.itemInventory.ShouldBeShown()
 				&& InventoryCursor()->GetCurrentItem() != nullptr)
 			{
-				m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule2
+				m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule2
 				return;
 			}
 
 			NextPrevInventoryItem(-1);
 
-			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule1			
+			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule1			
 		}
 		break;
 
@@ -6020,13 +6020,13 @@ void idPlayer::PerformImpulse( int impulse ) {
 				&& !m_dynamicHUD.itemInventory.ShouldBeShown()
 				&& InventoryCursor()->GetCurrentItem() != nullptr)
 			{
-				m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule2
+				m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule2
 				return;
 			}
 
 			NextPrevInventoryItem(1);
 
-			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule1
+			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule1
 		}
 		break;
 
@@ -6053,13 +6053,13 @@ void idPlayer::PerformImpulse( int impulse ) {
 				&& !m_dynamicHUD.itemInventory.ShouldBeShown()
 				&& InventoryCursor()->GetCurrentItem() != nullptr)
 			{
-				m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule2
+				m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule2
 				return;
 			}
 
 			NextPrevInventoryGroup(-1);
 
-			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule1
+			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule1
 		}
 		break;
 
@@ -6086,13 +6086,13 @@ void idPlayer::PerformImpulse( int impulse ) {
 				&& !m_dynamicHUD.itemInventory.ShouldBeShown()
 				&& InventoryCursor()->GetCurrentItem() != nullptr)
 			{
-				m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule2
+				m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule2
 				return;
 			}
 
 			NextPrevInventoryGroup(1);
 
-			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule1
+			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule1
 		}
 		break;
 
@@ -6101,7 +6101,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Use key has "hold down" functions
 			m_ButtonStateTracker.StartTracking(impulse);
 
-			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule5
+			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule5
 
 			// Pass the call
 			UseInventoryItem();
@@ -7255,7 +7255,7 @@ void idPlayer::DynamicHudT::Update()
 			healthBar.UpdateParams(fadeIn, fadeOut);
 		}
 
-		// #6677: DynHUD_InventoryRule4
+		// #6677: dynamic HUD itemInventory - DynHUD_ItemRule4
 		enum EHudType { StaticHUD = 0, DynamicHUD = 1, AlwaysHide = 2 };
 		if (cv_dynamicHUD_itemInventory.GetInteger() == DynamicHUD)
 		{
@@ -7279,39 +7279,40 @@ void idPlayer::DynamicHudT::Update()
 				if (itemInventory.ShouldBeHiddenIndefinitely())
 				{
 					useOnFrobItem = item;
-					itemInventory.Show(); // #6677: DynHUD_InventoryRule4
+					itemInventory.Show(); // #6677: DynHUD_ItemRule4
 				}
 			}
 			else if (wasUseOnFrobRelation)
 			{
 				useOnFrobItem = nullptr;
-				itemInventory.Hide(); // #6677: DynHUD_InventoryRule4
+				itemInventory.Hide(); // #6677: DynHUD_ItemRule4
 			}
 		}
 
-		// #6677: DynHUD_WeaponRule4
+		// #6677: dynamic HUD weaponInventory - DynHUD_WeaponRule4
 		if (cv_dynamicHUD_weaponInventory_showOnAmmoChange.GetBool() 
 			&& cv_dynamicHUD_weaponInventory.GetInteger() == DynamicHUD)
 		{
 			const CInventoryWeaponItemPtr weaponItem = player->GetCurrentWeaponItem();
-			if (weaponItem != nullptr && weaponItem->GetAmmo() != selectedWeaponAmmo)
+			if (weaponItem != nullptr && weaponItem->GetAmmo() != selectedWeaponAmmo) // #6677: DynHUD_WeaponRule4
 			{
 				selectedWeaponAmmo = weaponItem->GetAmmo();
 				weaponInventory.Show(true); // #6677: DynHUD_WeaponRule4
 			}
 		}
 
-		// #6677: DynHUD_HealthRule3, DynHUD_HealthRule4
+		// #6677: dynamic HUD healthBar - DynHUD_HealthRule2-5
 		if (cv_dynamicHUD_healthBar.GetInteger() == DynamicHUD)
 		{
 			const CInventoryWeaponItemPtr weaponItem = player->GetCurrentWeaponItem();
-			if (player->health < cv_dynamicHUD_healthBar_healthThreshold.GetInteger()
-				|| player->airTics < cv_dynamicHUD_healthBar_airThreshold.GetInteger()
-				|| weaponItem != nullptr && weaponItem->CanCauseDamage())
+			if (player->health < cv_dynamicHUD_healthBar_healthThreshold.GetInteger() // #6677: DynHUD_HealthRule4
+				|| player->airTics < cv_dynamicHUD_healthBar_airThreshold.GetInteger() // #6677: DynHUD_HealthRule3
+				|| weaponItem != nullptr && weaponItem->CanCauseDamage() // #6677: DynHUD_HealthRule2
+				|| player->healthPool > 0) // #6677: DynHUD_HealthRule5
 			{
 				if (healthBar.ShouldBeHiddenIndefinitely())
 				{
-					healthBar.Show(); // #6677: DynHUD_HealthRule3, DynHUD_HealthRule4
+					healthBar.Show(); // #6677: DynHUD_HealthRule3, DynHUD_HealthRule4, DynHUD_HealthRule5
 				}
 			}
 			else if (healthBar.ShouldBeShownIndefinitely())
@@ -7416,7 +7417,7 @@ void idPlayer::CycleInventoryGroup(const idStr& groupName)
 	idActor::CycleInventoryGroup(groupName);
 	if (InventoryCursor()->GetCurrentItem() != nullptr)
 	{
-		m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule1
+		m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule1
 	}
 }
 
@@ -10553,7 +10554,7 @@ bool idPlayer::SelectInventoryItem(const idStr& name)
 		// Item found, set the cursor to it
 		InventoryCursor()->SetCurrentItem(item);
 
-		m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule1		
+		m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule1		
 
 		// Trigger an update, passing the previous item along
 		OnInventorySelectionChanged(prev);
@@ -11816,7 +11817,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 
 		if (cv_dynamicHUD_itemInventory_showOnPickup.GetBool())
 		{
-			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule3
+			m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule3
 		}
 
 		// Fire the script events and update the HUD
@@ -12611,7 +12612,7 @@ bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)
 		// Give optional visual feedback
 		if (cv_tdm_inv_use_visual_feedback.GetBool())
 		{
-			m_player->m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_InventoryRule5			
+			m_player->m_dynamicHUD.itemInventory.Show(true); // #6677: DynHUD_ItemRule5			
 
 			m_player->m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
 		}
