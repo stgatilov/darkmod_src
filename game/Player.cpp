@@ -7380,6 +7380,7 @@ void idPlayer::DynamicHudT::Update()
 			}
 			
 			player->cursor->SetStateFloat("FrobHelper_Opacity", maxAlpha * frobHelper.GetAlpha());
+			player->cursor->SetStateFloat("FrobHelper_Size", cv_frobhelper_size.GetInteger());
 		}
 	}
 

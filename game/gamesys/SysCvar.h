@@ -266,6 +266,7 @@ extern idCVar cv_frob_control_style;
 
 // #4906: Frobhelper
 extern idCVar cv_frobhelper_active;
+extern idCVar cv_frobhelper_size;
 extern idCVar cv_frobhelper_alwaysVisible;
 extern idCVar cv_frobhelper_alpha;
 extern idCVar cv_frobhelper_fadein_delay;
