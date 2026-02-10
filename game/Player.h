@@ -417,7 +417,7 @@ public:
 		 * DynHUD_WeaponRule4: Briefly show when ammo changes and respective weapon is selected
 		 * DynHUD_WeaponRule5: Show while a temporal weapon effect is active (e.g. holy water) -> Ensured on assets side
 		 */
-		HudFader weapon; // #6677
+		HudFader weaponInventory; // #6677
 
 		int      selectedWeaponAmmo{ 0 }; // #6677: DynHUD_WeaponRule4
 
@@ -428,7 +428,7 @@ public:
 		 * DynHUD_InventoryRule4: Show when item can be used with world entity
 		 * DynHUD_InventoryRule5: Briefly show when using an item
 		 */
-		HudFader inventory; // #6677
+		HudFader itemInventory; // #6677
 
 		/**
 		 * DynHUD_HealthRule1: Briefly show after taking damage
@@ -437,7 +437,7 @@ public:
 		 * DynHUD_HealthRule4: Show when health is below a certain threshold
 		 * (DynHUD_HealthRule5: Show while in combat?)
 		 */
-		HudFader health; // #6677
+		HudFader healthBar; // #6677
 
 	private:
 		CInventoryItemPtr     useOnFrobItem; // #6677: DynHUD_InventoryRule4

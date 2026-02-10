@@ -343,12 +343,19 @@ idCVar cv_dynamicHUD("tdm_dynamicHUD", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL
 idCVar cv_dynamicHUD_fadein_duration("tdm_dynamicHUD_fadein_duration", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-in duration for the dynamic hud in ms.");
 idCVar cv_dynamicHUD_fadeout_delay("tdm_dynamicHUD_fadeout_delay", "3000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-out delay for the dynamic hud in ms.");
 idCVar cv_dynamicHUD_fadeout_duration("tdm_dynamicHUD_fadeout_duration", "1000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-out duration for the dynamic hud in ms.");
-idCVar cv_dynamicHUD_switchWeaponOverride("tdm_dynamicHUD_switchWeaponOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and weapon HUD is currently not shown, the weapon hud will show on next/prev weapon press instead of switching weapon.");
-idCVar cv_dynamicHUD_showWeaponOnAmmoChange("tdm_dynamicHUD_showWeaponOnAmmoChange", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the weapon hud will show whenever the ammo of the currently selected weapon changes.");
-idCVar cv_dynamicHUD_switchItemOverride("tdm_dynamicHUD_switchItemOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and inventory HUD is currently not shown, the inventory hud will show on next/prev item/inventory group press instead of switching item.");
-idCVar cv_dynamicHUD_showItemOnPickup("tdm_dynamicHUD_showItemOnPickup", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the inventory hud will show after picking up an item.");
-idCVar cv_dynamicHUD_showHealth_healthThreshold("tdm_dynamicHUD_showHealth_healthThreshold", "30", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "If health is below this threshold, the health bar will not fade out anymore.");
-idCVar cv_dynamicHUD_showHealth_airThreshold("tdm_dynamicHUD_showHealth_airThreshold", "360", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "If air is below this threshold, the health bar will not fade out anymore. Air is in tics, see pm_airTics.");
+idCVar cv_dynamicHUD_weaponInventory("tdm_dynamicHUD_weaponInventory", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "Displaying the weapon inventory gui.\n 0 -- regular static\n 1 -- dynamic\n 2 -- Hide always");
+idCVar cv_dynamicHUD_weaponInventory_nextPrevOverride("tdm_dynamicHUD_weaponInventory_nextPrevOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and weapon HUD is currently not shown, the weapon hud will show on next/prev weapon press instead of switching weapon.");
+idCVar cv_dynamicHUD_weaponInventory_showName("tdm_dynamicHUD_weaponInventory_showName", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If disabled, the weapon name will not be displayed.");
+idCVar cv_dynamicHUD_weaponInventory_showOnAmmoChange("tdm_dynamicHUD_weaponInventory_showOnAmmoChange", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the weapon hud will show whenever the ammo of the currently selected weapon changes.");
+idCVar cv_dynamicHUD_weaponInventory_showBowOnly("tdm_dynamicHUD_weaponInventory_showBowOnly", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the weapon hud will only show when equipping the bow.");
+idCVar cv_dynamicHUD_itemInventory("tdm_dynamicHUD_itemInventory", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "Displaying the item inventory gui\n 0 -- regular static\n 1 -- dynamic\n 2 -- Hide always");
+idCVar cv_dynamicHUD_itemInventory_nextPrevOverride("tdm_dynamicHUD_itemInventory_nextPrevOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and inventory HUD is currently not shown, the inventory hud will show on next/prev item/inventory group press instead of switching item.");
+idCVar cv_dynamicHUD_itemInventory_showOnPickup("tdm_dynamicHUD_itemInventory_showOnPickup", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the inventory hud will briefly show after picking up an item.");
+idCVar cv_dynamicHUD_itemInventory_showName("tdm_dynamicHUD_itemInventory_showName", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If disabled, the item name will not be displayed.");
+idCVar cv_dynamicHUD_healthBar("tdm_dynamicHUD_healthBar", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "Displaying the healthbar.\n 0 -- regular static\n 1 -- dynamic\n 2 -- Hide always");
+idCVar cv_dynamicHUD_healthBar_healthThreshold("tdm_dynamicHUD_healthBar_healthThreshold", "30", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "If health is below this threshold, the health bar will not fade out anymore.");
+idCVar cv_dynamicHUD_healthBar_airThreshold("tdm_dynamicHUD_healthBar_airThreshold", "360", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "If air is below this threshold, the health bar will not fade out anymore. Air is in tics, see pm_airTics.");
+
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 idCVar cv_holdfrob_delay(
