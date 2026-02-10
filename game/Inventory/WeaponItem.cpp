@@ -35,7 +35,7 @@ CInventoryWeaponItem::CInventoryWeaponItem() :
 	m_WeaponIndex(-1),
 	m_AllowedEmpty(false),
 	m_Enabled(true),
-	m_IsDamagingWeapon(EIsDamagingWeapon::Unknown)
+	m_WeaponIntent(EWeaponIntent::Unknown)
 {
 	SetType(IT_WEAPON);
 }
@@ -47,7 +47,7 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity*
 	m_AllowedEmpty(false),
 	m_IsToggleable(false),
 	m_Enabled(true),
-	m_IsDamagingWeapon(EIsDamagingWeapon::Unknown)
+	m_WeaponIntent(EWeaponIntent::Unknown)
 {
 	SetType(IT_WEAPON);
 
@@ -97,7 +97,7 @@ void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_AllowedEmpty);
 	savefile->ReadBool(m_IsToggleable);
 	savefile->ReadBool(m_Enabled);
-	m_IsDamagingWeapon = EIsDamagingWeapon::Unknown;
+	m_WeaponIntent = EWeaponIntent::Unknown;
 }
 
 bool CInventoryWeaponItem::IsEnabled() const
@@ -180,10 +180,17 @@ void CInventoryWeaponItem::UseAmmo(int amount)
 	SetAmmo(m_Ammo - amount);
 }
 
-bool CInventoryWeaponItem::CanCauseDamage() const
+bool CInventoryWeaponItem::IsIntendedForCombat() const
 {
-	if (m_IsDamagingWeapon == EIsDamagingWeapon::Unknown)
+	if (m_WeaponIntent == EWeaponIntent::Unknown)
 	{
+		if (idStr::Icmp(m_WeaponDefName, "atdm:weapon_ropearrow") == 0)
+		{
+			// Special case for rope arrow needed: It causes damage, but its primary intend is utility, not combat.
+			m_WeaponIntent = EWeaponIntent::Utility;
+			return false;
+		}
+
 		const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName, true);
 		if (weaponDict == nullptr)
 			goto EarlyReturn;
@@ -201,7 +208,7 @@ bool CInventoryWeaponItem::CanCauseDamage() const
 			
 			const char* defDamage = projectileDict->GetString("def_damage");
 			const bool doesNoDamage = idStr::Icmp(defDamage, "atdm:damage_none") == 0;
-			m_IsDamagingWeapon = doesNoDamage ? EIsDamagingWeapon::No : EIsDamagingWeapon::Yes;
+			m_WeaponIntent = doesNoDamage ? EWeaponIntent::Utility : EWeaponIntent::Combat;
 		}
 		else
 		{
@@ -216,14 +223,14 @@ bool CInventoryWeaponItem::CanCauseDamage() const
 
 			static const int minDamage = 5; // Blackjack causes at least SOME damage
 			const int damage = meleeDict->GetInt("damage", "0");
-			m_IsDamagingWeapon = damage >= minDamage ? EIsDamagingWeapon::Yes : EIsDamagingWeapon::No;
+			m_WeaponIntent = damage >= minDamage ? EWeaponIntent::Combat : EWeaponIntent::Utility;
 		}
 	}
 
-	return m_IsDamagingWeapon == EIsDamagingWeapon::Yes;
+	return m_WeaponIntent == EWeaponIntent::Combat;
 
 EarlyReturn:
-	m_IsDamagingWeapon = EIsDamagingWeapon::No;
+	m_WeaponIntent = EWeaponIntent::Utility;
 	return false;
 }
 
@@ -266,7 +273,7 @@ const idStr& CInventoryWeaponItem::GetProjectileDefName() const
 
 void CInventoryWeaponItem::SetProjectileDefName(const idStr& weaponDefName)
 {
-	m_IsDamagingWeapon  = EIsDamagingWeapon::Unknown;
+	m_WeaponIntent  = EWeaponIntent::Unknown;
 	m_ProjectileDefName = weaponDefName;
 }
 
@@ -281,7 +288,7 @@ void CInventoryWeaponItem::ResetProjectileDefName()
 		return;
 	}
 
-	m_IsDamagingWeapon  = EIsDamagingWeapon::Unknown;
+	m_WeaponIntent  = EWeaponIntent::Unknown;
 	m_ProjectileDefName = weaponDict->GetString("def_projectile");
 }
 

@@ -7307,7 +7307,7 @@ void idPlayer::DynamicHudT::Update()
 			const CInventoryWeaponItemPtr weaponItem = player->GetCurrentWeaponItem();
 			if (player->health < cv_dynamicHUD_healthBar_healthThreshold.GetInteger() // #6677: DynHUD_HealthRule4
 				|| player->airTics < cv_dynamicHUD_healthBar_airThreshold.GetInteger() // #6677: DynHUD_HealthRule3
-				|| weaponItem != nullptr && weaponItem->CanCauseDamage() // #6677: DynHUD_HealthRule2
+				|| weaponItem != nullptr && weaponItem->IsIntendedForCombat() // #6677: DynHUD_HealthRule2
 				|| player->healthPool > 0) // #6677: DynHUD_HealthRule5
 			{
 				if (healthBar.ShouldBeHiddenIndefinitely())

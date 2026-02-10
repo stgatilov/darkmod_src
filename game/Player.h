@@ -432,7 +432,7 @@ public:
 
 		/**
 		 * DynHUD_HealthRule1: Briefly show after taking damage
-		 * DynHUD_HealthRule2: Show when equipping a weapon intended for doing damage (special case: water arrows with holy water flask)
+		 * DynHUD_HealthRule2: Show when equipping a weapon intended for combat (special cases: water arrows with holy water flask, rope arrow)
 		 * DynHUD_HealthRule3: Show when breath is running out
 		 * DynHUD_HealthRule4: Show when health is below a certain threshold
 		 * DynHUD_HealthRule5: Show while healing

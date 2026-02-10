@@ -54,13 +54,13 @@ protected:
 	bool	m_Enabled;
 
 	// Indicates whether this weapon can cause damage or not
-	enum class EIsDamagingWeapon : int
+	enum class EWeaponIntent : int
 	{
 		Unknown,
-		Yes,
-		No,
+		Combat,
+		Utility,
 	};
-	mutable EIsDamagingWeapon m_IsDamagingWeapon;
+	mutable EWeaponIntent m_WeaponIntent;
 
 public:
 	// Default constructor, should only be used during restoring from savegames
@@ -108,8 +108,8 @@ public:
 	void UseAmmo(int amount);
 
 	// #6677: Needed for dynamic HUD
-	// Returns TRUE if this weapon can cause damage
-	bool CanCauseDamage() const;
+	// Returns TRUE if this weapon intent is combat focused
+	bool IsIntendedForCombat() const;
 
 	// Sets/Returns the weapon index (corresponds to the keyboard number keys used to access the weapons)
 	void SetWeaponIndex(int index);
