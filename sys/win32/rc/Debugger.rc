@@ -103,6 +103,10 @@ BEGIN
         MENUITEM "&Show Next Statement",        ID_DBG_DEBUG_SHOWNEXTSTATEMENT
 
         MENUITEM "&Run To Cursor",              ID_DBG_DEBUG_RUNTOCURSOR
+        MENUITEM SEPARATOR
+        MENUITEM "&Find Selected",              ID_DBG_EDIT_FINDSELECTED
+        MENUITEM "Find &Next\tF3",              ID_DBG_EDIT_FINDNEXT
+        MENUITEM "Find &Prev\tShift+F3",        ID_DBG_EDIT_FINDPREV
     END
 END
 
