@@ -11960,6 +11960,9 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 			SetFrobAction(EFrobAction::Finished);
 			return;
 		}
+
+		// Fire the STIM_FROB response on key down (if defined) on this entity
+		target->TriggerResponse(m_player, ST_FROB);
 	}
 
 	// stgatilov #5542: block use-on-frob when frob called from game script	
@@ -12004,7 +12007,6 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 	if (IsCorrectFrobActionTrigger<EFrobAction::Init>(state) && target)
 	{
 		// Fallback! Try FrobAction
-		target->TriggerResponse(m_player, ST_FROB);
 		target->FrobAction(true);		
 	}
 }
@@ -12162,7 +12164,6 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 	case DoorHoldfrob::Disabled:
 		if (CanExecuteFrobAction<EFrobAction::DoorMoveRegular>(state))
 		{
-			frobpressed->TriggerResponse(m_player, ST_FROB);
 			frobpressed->FrobAction(true);
 			SetFrobAction(EFrobAction::DoorMoveRegular, true);
 			SetFrobAction(EFrobAction::Finished);
@@ -12181,7 +12182,6 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 			if (CanExecuteFrobAction<EFrobAction::DoorMoveRegular>(state))
 			{
 				door->StopFineControl();
-				frobpressed->TriggerResponse(m_player, ST_FROB);
 				frobpressed->FrobAction(true);
 				m_player->SetImmobilization("DoorControl", 0);
 				SetFrobAction(EFrobAction::DoorMoveRegular, true);
@@ -12193,7 +12193,6 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				// TODO: Might we KO AI with this? :)
 				door->StopFineControl();
 				door->BufferClosingFast();
-				door->TriggerResponse(m_player, ST_FROB);
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
 				door->FrobAction(true);
@@ -12203,7 +12202,6 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 			const bool doorControlAllowed = IsDoorControlAllowed();
 			if (CanExecuteFrobAction<EFrobAction::DoorFineControl>(state) && doorControlAllowed)
 			{
-				// We intentionally fire not ST_FROB here because this is considered a silent-open
 				if (door->ExecuteFineControl() == CBinaryFrobMover::FineControlState::Inactive)
 				{
 					m_player->SetImmobilization("DoorControl", 0);
@@ -12241,7 +12239,6 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 			{
 				if (IsCorrectFrobActionTrigger<EFrobAction::DoorMoveRegular>(state) || door->IsLocked())
 				{
-					frobpressed->TriggerResponse(m_player, ST_FROB);
 					frobpressed->FrobAction(true);
 					SetFrobAction(EFrobAction::DoorMoveRegular, true);
 					SetFrobAction(EFrobAction::Finished);
@@ -12253,7 +12250,6 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				&& door->IsInterruptable())
 			{
 				door->BufferClosingFast();
-				door->TriggerResponse(m_player, ST_FROB);
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, the door would not necessarily close.
 				door->FrobAction(true);
@@ -12282,7 +12278,6 @@ bool idPlayer::FrobHandling::TryControlDoor(EButtonState state, idEntity* target
 				// stifu: We are using FrobAction in case any scripting is tied to it. 
 				// If frobaction does not call ToggleOpen, DoorHoldfrob::Open will not be respected.
 				door->FrobAction(true);
-				// We intentionally fire not ST_FROB here because this is considered a silent-open
 				SetFrobAction(EFrobAction::DoorMoveSlow, true);
 				return true;
 			}
@@ -12349,8 +12344,6 @@ bool idPlayer::FrobHandling::TryUseOnFrob(EButtonState state, idEntity* target)
 	
 	if (frobAction == EFrobAction::UseOnFrobInit)
 	{
-		target->TriggerResponse(m_player, ST_FROB);
-
 		// Give optional visual feedback
 		if (cv_tdm_inv_use_visual_feedback.GetBool())
 		{
@@ -12415,7 +12408,11 @@ bool idPlayer::FrobHandling::TryPickupInventoryItem(EButtonState state, idEntity
 	if (isInventoryItem && (initMultiloot || repeatMultiloot))
 	{
 		// Fire the STIM_FROB response on this entity
-		target->TriggerResponse(m_player, ST_FROB);
+		if (repeatMultiloot) 
+		{
+			// For the case initMultiloot, it was already called before
+			target->TriggerResponse(m_player, ST_FROB);
+		}
 
 		// Execute frob action on item that is going to be picked up
 		target->FrobAction(true);
