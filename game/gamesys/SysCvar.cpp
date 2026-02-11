@@ -628,7 +628,7 @@ idCVar cv_door_control("tdm_door_control", "3", CVAR_GAME | CVAR_ARCHIVE | CVAR_
 	"Holdfrob door control mode.\n-- 0: disabled\n-- 1: holdfrob and move mouse to control door (experimental)\n-- 2: holdfrob = toggle open slowly\n-- 3: holdfrob = open slowly");
 idCVar cv_door_control_sensitivity("tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE | CVAR_NOCHEAT,
 	"Sets fine door control mouse sensitivity. Only applicable if tdm_door_control = 1.");
-idCVar cv_door_control_movetime_factor_slow("tdm_door_control_movetime_factor_slow", "2.5", CVAR_GAME | CVAR_FLOAT,
+idCVar cv_door_control_movetime_factor_slow("tdm_door_control_movetime_factor_slow", "3.5", CVAR_GAME | CVAR_FLOAT,
 	"If the slow door control is used (tdm_door_control = 2 or 3), the movetime is multiplied by this value. Values > 1 mean slower motion.");
 idCVar cv_door_control_movetime_factor_fast("tdm_door_control_movetime_factor_fast", "0.25", CVAR_GAME | CVAR_FLOAT,
 	"Close door fast by holding Frob and pressing attack. Speed is controlled by this value. Values < 1 mean fast motion.");
