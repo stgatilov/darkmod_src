@@ -1181,7 +1181,11 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 	org = player->GetEyePosition() + idAngles( 0, yaw, 0 ).ToForward() * 80; // Spawn in front of eyes, not under floor -- SteveL #3856
 	dict.Set( "origin", org.ToString() );
 
-	if (idStr::Icmp(value, "weapons") == 0)
+	const bool spawnAll     = 0 == idStr::Icmp(value, "all");
+	const bool spawnWeapons = spawnAll || (0 == idStr::Icmp(value, "weapons"));
+	const bool spawnTools   = spawnAll || (0 == idStr::Icmp(value, "weapons"));
+
+	if (spawnWeapons)
 	{
 		// non stackables
 		for (const char* classname : { "atdm:weapon_blackjack", "atdm:weapon_shortsword" })
@@ -1198,7 +1202,8 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 			gameLocal.SpawnEntityDef(dict);
 		}
 	}
-	else if (idStr::Icmp(value, "tools") == 0)
+	
+	if (spawnTools)
 	{
 		// non stackables
 		for (const char* classname : { "atdm:playertools_lockpick_snake", "atdm:playertools_lockpick_triangle", "atdm:playertools_lantern", "atdm:playertools_compass", "atdm:playertools_spyglass", "atdm:playertools_slow_match" })
@@ -1215,18 +1220,19 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 			gameLocal.SpawnEntityDef(dict);
 		}
 	}
-	else
-	{
-		for( i = 2; i < args.Argc() - 1; i += 2 ) {
 
-			key = args.Argv( i );
-			value = args.Argv( i + 1 );
+	if (spawnTools || spawnWeapons)
+		return;
 
-			dict.Set( key, value );
-		}
+	for( i = 2; i < args.Argc() - 1; i += 2 ) {
 
-		gameLocal.SpawnEntityDef( dict );
+		key = args.Argv( i );
+		value = args.Argv( i + 1 );
+
+		dict.Set( key, value );
 	}
+
+	gameLocal.SpawnEntityDef( dict );
 }
 
 void Cmd_ReSpawn_f(const idCmdArgs& args) {
