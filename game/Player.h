@@ -1037,6 +1037,7 @@ public:
 			MultiLootWorldItemEnd,
 			UseWorldEntity, // Shoulder body, blow out candle, eat apple, ...
 			GrabWorldEntity,
+			FrobActionFallback,
 			Finished,
 			PostFinishCleanup // In case a frob action is canceled that needs reverting
 		};

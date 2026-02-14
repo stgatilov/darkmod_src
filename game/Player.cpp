@@ -12025,6 +12025,10 @@ bool idPlayer::FrobHandling::IsCorrectFrobActionTrigger(EButtonState state, bool
 				return Frob::ReleasedShort == state;
 		}
 	}
+	else if (Action::FrobActionFallback == action)
+	{
+		return state == Frob::ReleasedShort || state == Frob::ReleasedLong;
+	}
 	else if (Action::Finished == action)
 	{
 		return true;
@@ -12052,7 +12056,8 @@ bool idPlayer::FrobHandling::IsLegalFrobActionTransition(EFrobAction prev, EFrob
 			|| next == Action::MultiLootWorldItemInit
 			|| next == Action::UseWorldEntity
 			|| next == Action::GrabWorldEntity
-			|| next == Action::Finished;
+			|| next == Action::Finished
+			|| next == Action::FrobActionFallback;
 
 	case Action::ReleaseGrabbedEntity:
 		return next == Action::Finished;
@@ -12128,6 +12133,9 @@ bool idPlayer::FrobHandling::IsLegalFrobActionTransition(EFrobAction prev, EFrob
 			|| next == Action::ToggleGrabbedEntity
 			|| next == Action::Finished;
 		break;
+
+	case Action::FrobActionFallback:
+		return next == Action::Finished;
 
 	case Action::Finished:
 		return next == Action::Init
@@ -12264,10 +12272,11 @@ void idPlayer::FrobHandling::PerformFrob(EButtonState state, idEntity* target, b
 		return;
 	}
 
-	if (IsCorrectFrobActionTrigger<EFrobAction::Init>(state) && target)
+	if (CanExecuteFrobAction<EFrobAction::FrobActionFallback>(state) && target)
 	{
-		// Fallback! Try FrobAction
-		target->FrobAction(true);		
+		target->FrobAction(true);
+		SetFrobAction(EFrobAction::FrobActionFallback, true);
+		SetFrobAction(EFrobAction::Finished);
 	}
 }
 
@@ -12747,6 +12756,7 @@ bool idPlayer::FrobHandling::TryLootUnconsciousBody(EButtonState state)
 	const bool looted = bodyTarget->AddAttachmentsToInventory(m_player);
 	if (looted)
 	{
+		bodyTarget->FrobAction(true);
 		SetFrobAction(EFrobAction::LootUnconsciousBody, true);
 		SetFrobAction(EFrobAction::Finished);
 	}
@@ -12762,6 +12772,9 @@ bool idPlayer::FrobHandling::TryUseWorldEntity(EButtonState state)
 	const bool used = gameLocal.m_Grabber->EquipFrobEntity(m_player);
 	if (used)
 	{
+		idEntity* target = m_FrobPressedTarget.GetEntity();
+		if (target != nullptr)
+			target->FrobAction(true);
 		SetFrobAction(EFrobAction::UseWorldEntity, true);
 		SetFrobAction(EFrobAction::Finished);
 	}
@@ -12796,6 +12809,7 @@ bool idPlayer::FrobHandling::TryGrabWorldEntity(EButtonState state)
 
 	// TODO: When draggin an entity, it would be nice if it slowly converged towards the center of the screen
 	gameLocal.m_Grabber->Update(m_player, false, true); // preservePosition = true #4149
+	target->FrobAction(true);
 	m_FrobPressedTarget = nullptr;
 	SetFrobAction(EFrobAction::GrabWorldEntity, true);
 
