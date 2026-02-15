@@ -43,7 +43,7 @@ const char *ui_teamArgs[]			= { "Red", "Blue", NULL };
 * DarkMod Cvars - see text description in declaration below for descriptions
 **/
 idCVar cv_player_spawnclass(		"tdm_player_spawnclass",	"atdm:player_thief",	CVAR_GAME, "The player's classname." );
-idCVar cv_player_waituntilready(	"tdm_player_wait_until_ready",	"1", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 (default), the player must be ready before the map is started.");
+idCVar cv_player_wait_until_ready(	"tdm_player_wait_until_ready",	"1", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 (default), the player must be ready before the map is started.");
 
 idCVar cv_default_mission_info_file("tdm_default_mission_info_file", "fms/missions.tdminfo",	CVAR_GAME, "The filename relative to darkmod/fms/ where all the persistent mission data is stored." );
 
@@ -628,7 +628,7 @@ idCVar cv_door_control("tdm_door_control", "3", CVAR_GAME | CVAR_ARCHIVE | CVAR_
 	"Holdfrob door control mode.\n-- 0: disabled\n-- 1: holdfrob and move mouse to control door (experimental)\n-- 2: holdfrob = toggle open slowly\n-- 3: holdfrob = open slowly");
 idCVar cv_door_control_sensitivity("tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE | CVAR_NOCHEAT,
 	"Sets fine door control mouse sensitivity. Only applicable if tdm_door_control = 1.");
-idCVar cv_door_control_movetime_factor_slow("tdm_door_control_movetime_factor_slow", "2.5", CVAR_GAME | CVAR_FLOAT,
+idCVar cv_door_control_movetime_factor_slow("tdm_door_control_movetime_factor_slow", "3.5", CVAR_GAME | CVAR_FLOAT,
 	"If the slow door control is used (tdm_door_control = 2 or 3), the movetime is multiplied by this value. Values > 1 mean slower motion.");
 idCVar cv_door_control_movetime_factor_fast("tdm_door_control_movetime_factor_fast", "0.25", CVAR_GAME | CVAR_FLOAT,
 	"Close door fast by holding Frob and pressing attack. Speed is controlled by this value. Values < 1 mean fast motion.");

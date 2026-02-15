@@ -20,7 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 * DarkMod cvars - See text description in syscvar.cpp for descriptions
 **/
 extern idCVar cv_player_spawnclass;
-extern idCVar cv_player_waituntilready;
+extern idCVar cv_player_wait_until_ready;
 
 extern idCVar cv_default_mission_info_file;
 

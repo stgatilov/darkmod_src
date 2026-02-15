@@ -11537,6 +11537,7 @@ bool idEntity::AddAttachmentsToInventory( idPlayer* player )
 	GetTeamChildren(&children);
 	for (int i = 0 ; i < children.Num() ; i++) {
 		idEntity* child = children[i];
+		// Don't we have to call frobAction here on all children?
 		child->TriggerResponse(player, ST_FROB);
 		if (child && player->AddToInventory(child))
 			didAddItem = true;

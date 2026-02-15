@@ -599,14 +599,33 @@ Cmd_ReloadScript_f
 ===================
 */
 void Cmd_ReloadScript_f( const idCmdArgs &args ) {
+	idStr mapName = gameLocal.GetMapFileName();
+	idStr viewposStr;
+	bool setViewpos = gameLocal.GetViewPos_Cmd( viewposStr );
+
+	gameLocal.Warning( "Restarting map '%s' to reload scripts", mapName.c_str() );
+
+	if ( mapName.IstartsWith("maps/") ) {
+		// see currentMapName in idSessionLocal::ExecuteMapChange
+		mapName = mapName.Right( mapName.Length() - 5 );
+	} else {
+		mapName.Clear();
+	}
+
 	// shutdown the map because entities may point to script objects
 	gameLocal.MapShutdown();
 
 	// recompile the scripts
 	gameLocal.program.Startup( SCRIPT_DEFAULT );
 
-	// error out so that the user can rerun the scripts
-	gameLocal.Error( "Exiting map to reload scripts" );
+	// execute map restart/exit (delayed)
+	if ( mapName.IsEmpty() ) {
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "disconnect\n" );
+	} else {
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va( "map %s\n", mapName.c_str() ) );
+		if ( setViewpos )
+			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va( "setviewpos %s\n", viewposStr.c_str() ) );
+	}
 }
 
 /*
