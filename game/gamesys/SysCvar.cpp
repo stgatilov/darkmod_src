@@ -43,7 +43,7 @@ const char *ui_teamArgs[]			= { "Red", "Blue", NULL };
 * DarkMod Cvars - see text description in declaration below for descriptions
 **/
 idCVar cv_player_spawnclass(		"tdm_player_spawnclass",	"atdm:player_thief",	CVAR_GAME, "The player's classname." );
-idCVar cv_player_waituntilready(	"tdm_player_wait_until_ready",	"1", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 (default), the player must be ready before the map is started.");
+idCVar cv_player_wait_until_ready(	"tdm_player_wait_until_ready",	"1", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 (default), the player must be ready before the map is started.");
 
 idCVar cv_default_mission_info_file("tdm_default_mission_info_file", "fms/missions.tdminfo",	CVAR_GAME, "The filename relative to darkmod/fms/ where all the persistent mission data is stored." );
 

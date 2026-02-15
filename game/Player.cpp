@@ -1397,7 +1397,7 @@ void idPlayer::NextInventoryMap()
 
 bool idPlayer::WaitUntilReady()
 {
-	if (IsReady() || !cv_player_waituntilready.GetBool())
+	if (IsReady() || !cv_player_wait_until_ready.GetBool())
 	{
 		ready = true;
 		return true;
