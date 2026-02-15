@@ -60,3 +60,6 @@ private:
 
 extern idCVar r_newFrob;
 extern idCVar r_frobOutline;
+extern idCVar r_frobOutlineMode;
+
+void SetFrobOutlineMode(int mode);

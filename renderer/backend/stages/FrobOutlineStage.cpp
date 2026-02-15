@@ -30,16 +30,19 @@ idCVar r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE,
 	"Note: outline is controlled by r_frobOutline"
 );
 
-idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing frob outline" );
+// TODO: consider removing r_frobIgnoreDepth. IgnoreDepth is disabled in all presets
+idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing image based frob outline" );
 idCVar r_frobDepthOffset( "r_frobDepthOffset", "0.0005", CVAR_FLOAT|CVAR_RENDERER|CVAR_ARCHIVE, "Extra depth offset for frob outline" );
+// TODO: if the user modifies any frobOutline-cvars without setting r_frobOutlineMode to -1 (Custom), they will lose their settings eventually
+idCVar r_frobOutlineMode( "r_frobOutlineMode", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "FrobOutlineMode (will override other frobOutline-cvars unless set to -1):\n  -1 - Custom\n  0 - Disabled\n  1 - geometric hard\n  2 - geometric soft\n  3 - image - based\n  4 - image - based weak(Kingsal)\n  5 - geometric hard black(Nbohr1more)\n  6 - image - based black(Nbohr1more)\n  7 - thin geometric grey(STiFU)\n");
 idCVar r_frobOutline( "r_frobOutline", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
-idCVar r_frobOutlineValuables( "r_frobOutlineValuables", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "If enabled, separate frob outline will be appplied to valuables." );
+idCVar r_frobOutlineValuables( "r_frobOutlineValuables", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Separate frob outline for valuables? 0 = same as junk, 1 = yellow for valuables, 2 = yellow for valuables and none for junk." );
 idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - red component" );
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
 idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
 idCVar r_frobOutlineValuablesColorR("r_frobOutlineValuablesColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - red component");
-idCVar r_frobOutlineValuablesColorG("r_frobOutlineValuablesColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - green component");
+idCVar r_frobOutlineValuablesColorG("r_frobOutlineValuablesColorG", "0.6", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - green component");
 idCVar r_frobOutlineValuablesColorB("r_frobOutlineValuablesColorB", "0.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - blue component");
 idCVar r_frobOutlineValuablesColorA("r_frobOutlineValuablesColorA", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Color of the frob outline for valuable items - alpha component");
 idCVar r_frobOutlineExtrusion( "r_frobOutlineExtrusion", "-3.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Thickness of geometric outline in pixels (negative = hard, positive = soft)" );
@@ -80,94 +83,98 @@ namespace {
 	};
 }
 
-static void FrobOutlinePreset( const idCmdArgs &args ) {
-	if ( args.Argc() < 2 ) {
-		common->Printf( "Pass number of preset to use:\n" );
-		common->Printf( "  1 - geometric hard\n" );
-		common->Printf( "  2 - geometric soft\n" );
-		common->Printf( "  3 - image-based\n" );
-		common->Printf( "  4 - image-based weak (Kingsal)\n" );
-		common->Printf( "  5 - geometric hard black (Nbohr1more)\n" );
-		common->Printf( "  6 - image-based black (Nbohr1more)\n" );
-		common->Printf( "  7 - geometric, yellow for valuables, grey for junk (STiFU)\n" );
-		common->Printf( "  8 - geometric, yellow valuables, none for junk (STiFU)\n" );
+void SetFrobOutlineMode( int mode ) 
+{
+	enum { 
+		EOutlineModeCustom = -1, 
+		EOutlineModeDisabled = 0,
+		EOutlineModeGeometricHardWhite = 1,
+		EOutlineModeGeometricSoftGray = 2,
+		EOutlineModeImagebasedWhite = 3,
+		EOutlineModeImagebasedSubtleGray = 4,
+		EOutlineModeGeometricHardBlack = 5,
+		EOutlineModeImagebasedBlack = 6,
+		EOutlineModeGeometricThinGray = 7,
+	};
+	switch (mode)
+	{
+	case EOutlineModeCustom:
+		// Do not alter any cvars
+		break;
 
-		return;
-	}
-	int preset = atoi( args.Argv( 1 ) );
-	r_frobOutlineColorR.SetFloat( 1.0f );
-	r_frobOutlineColorG.SetFloat( 1.0f );
-	r_frobOutlineColorB.SetFloat( 1.0f );
-	if ( preset == 1 ) {
-		//geometric hard
+	case EOutlineModeDisabled:
+		r_frobOutline.SetInteger( 0 );
+		break;
+
+	case EOutlineModeGeometricHardWhite:
 		r_frobOutline.SetInteger( 2 );
 		r_frobOutlineColorA.SetFloat( 1.0f );
+		r_frobOutlineColorR.SetFloat( 1.0f );
+		r_frobOutlineColorG.SetFloat( 1.0f );
+		r_frobOutlineColorB.SetFloat( 1.0f );
 		r_frobOutlineExtrusion.SetFloat( -3.0f );
-	}
-	else if ( preset == 2 ) {
-		//geometric soft
+		break;
+
+	case EOutlineModeGeometricSoftGray:
 		r_frobOutline.SetInteger( 2 );
 		r_frobOutlineColorA.SetFloat( 0.5f );
+		r_frobOutlineColorR.SetFloat( 1.0f );
+		r_frobOutlineColorG.SetFloat( 1.0f );
+		r_frobOutlineColorB.SetFloat( 1.0f );
 		r_frobOutlineExtrusion.SetFloat( 10.0f );
-	}
-	else if ( preset == 3 ) {
-		//image-based depth-aware
+		break;
+
+	case EOutlineModeImagebasedWhite:
 		r_frobOutline.SetInteger( 1 );
-		r_frobOutlineColorA.SetFloat( 1.2f );
+		r_frobOutlineColorA.SetFloat( 1.2f ); // Alpha > 1.0 ?!
+		r_frobOutlineColorR.SetFloat( 1.0f );
+		r_frobOutlineColorG.SetFloat( 1.0f );
+		r_frobOutlineColorB.SetFloat( 1.0f );
 		r_frobIgnoreDepth.SetBool( false );
 		r_frobOutlineBlurPasses.SetInteger( 2 );
-	}
-	else if ( preset == 4 ) {
-		//image-based depth-aware (tweaked by Kingsal)
+		break;
+
+	case EOutlineModeImagebasedSubtleGray: // tweaked by Kingsal
 		r_frobOutline.SetInteger( 1 );
 		r_frobOutlineColorA.SetFloat( 0.7f );
+		r_frobOutlineColorR.SetFloat( 1.0f );
+		r_frobOutlineColorG.SetFloat( 1.0f );
+		r_frobOutlineColorB.SetFloat( 1.0f );
 		r_frobIgnoreDepth.SetBool( false );
 		r_frobOutlineBlurPasses.SetInteger( 1 );
-	}
-	else if ( preset == 5 ) {
-		//geometric hard black (tweaked by Nbohr1more)
+		break;
+
+	case EOutlineModeGeometricHardBlack: // tweaked by Nbohr1more
 		r_frobOutline.SetInteger( 2 );
 		r_frobOutlineColorA.SetFloat( 1.0f );
-		r_frobOutlineExtrusion.SetFloat( -8.0f );
 		r_frobOutlineColorR.SetFloat( 0.0f );
 		r_frobOutlineColorG.SetFloat( 0.0f );
 		r_frobOutlineColorB.SetFloat( 0.0f );
-	}
-	else if ( preset == 6 ) {
-		//image-based depth-aware black (tweaked by Nbohr1more)
+		r_frobOutlineExtrusion.SetFloat( -8.0f );
+		break;
+
+	case EOutlineModeImagebasedBlack: // tweaked by Nbohr1more
 		r_frobOutline.SetInteger( 1 );
 		r_frobOutlineColorA.SetFloat( 2.5f );
-		r_frobIgnoreDepth.SetBool( false );
-		r_frobOutlineBlurPasses.SetInteger( 2 );
 		r_frobOutlineColorR.SetFloat( 0.0f );
 		r_frobOutlineColorG.SetFloat( 0.0f );
 		r_frobOutlineColorB.SetFloat( 0.0f );
-	}
-	else if ( preset == 7 ) {
+		r_frobIgnoreDepth.SetBool( false );
+		r_frobOutlineBlurPasses.SetInteger( 2 );
+		break;
+
+	case EOutlineModeGeometricThinGray: // tweaked by STiFU -> Best combined with r_frobOutlineValuables
 		r_frobOutline.SetInteger(2);
-		r_frobOutlineExtrusion.SetInteger(-2);
 		r_frobOutlineColorA.SetFloat(1.0f);
 		r_frobOutlineColorR.SetFloat(0.2f);
 		r_frobOutlineColorG.SetFloat(0.2f);
 		r_frobOutlineColorB.SetFloat(0.25f);
-		r_frobOutlineValuables.SetBool(true);
-		r_frobOutlineValuablesColorA.SetFloat(1.0f);
-		r_frobOutlineValuablesColorR.SetFloat(1.0f);
-		r_frobOutlineValuablesColorG.SetFloat(0.6f);
-		r_frobOutlineValuablesColorB.SetFloat(0.0f);
-	}
-	else if ( preset == 8 ) {
-		r_frobOutline.SetInteger(2);
 		r_frobOutlineExtrusion.SetInteger(-2);
-		r_frobOutlineColorA.SetFloat(0.0f);
-		r_frobOutlineValuables.SetBool(true);
-		r_frobOutlineValuablesColorA.SetFloat(1.0f);
-		r_frobOutlineValuablesColorR.SetFloat(1.0f);
-		r_frobOutlineValuablesColorG.SetFloat(0.6f);
-		r_frobOutlineValuablesColorB.SetFloat(0.0f);
-	}
-	else {
+		break;
+
+	default:
 		common->Printf( "Unknown preset number\n" );
+		break;
 	}
 }
 
@@ -184,12 +191,6 @@ void FrobOutlineStage::Init() {
 	fbo[0] = frameBuffers->CreateFromGenerator( "frob_0", [this](FrameBuffer *) { this->CreateFbo( 0 ); } );
 	fbo[1] = frameBuffers->CreateFromGenerator( "frob_1", [this](FrameBuffer *) { this->CreateFbo( 1 ); } );
 	drawFbo = frameBuffers->CreateFromGenerator( "frob_draw", [this](FrameBuffer *) { this->CreateDrawFbo(); } );
-
-	cmdSystem->AddCommand(
-		"r_frobOutlinePreset", FrobOutlinePreset,
-		CMD_FL_RENDERER, "Change frob outline cvars according to specified preset",
-		idCmdSystem::ArgCompletion_Integer<1, 3>
-	);
 }
 
 void FrobOutlineStage::Shutdown() {}
@@ -209,7 +210,7 @@ void FrobOutlineStage::CreateDrawFbo() {
 	drawFbo->AddColorRenderBuffer( 0, GL_R8 );
 }
 
-void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs, bool isfrobbedEntityValuable ) {	
+void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs, bool isfrobbedEntityValuable ) {
 	// find any surfaces that should be frob-highlighted
 	idList<drawSurf_t *> frobSurfs;
 	for ( int i = 0; i < numDrawSurfs; ++i ) {
@@ -360,13 +361,13 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs, bool is
 	uniforms->extrusion.Set( extr );
 	uniforms->hard.Set( r_frobOutlineExtrusion.GetFloat() < 0.0f ? 1 : 0 );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
-	if (r_frobOutlineValuables.GetBool() && isfrobbedEntityValuable)
+	if (r_frobOutlineValuables.GetInteger() > 0 && isfrobbedEntityValuable)
 	{
 		uniforms->color.Set(r_frobOutlineValuablesColorR.GetFloat(), r_frobOutlineValuablesColorG.GetFloat(), r_frobOutlineValuablesColorB.GetFloat(), r_frobOutlineValuablesColorA.GetFloat());
 	}
 	else
 	{
-		uniforms->color.Set(r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat());
+		uniforms->color.Set(r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineValuables.GetInteger() == 2 ? 0.0f : r_frobOutlineColorA.GetFloat());
 	}
 
 	DrawElements( surfs, extrudeShader, true );
@@ -407,10 +408,10 @@ void FrobOutlineStage::DrawImageBasedOutline( idList<drawSurf_t *> &surfs, int s
 	applyUniforms->source.Set( 0 );
 	GL_SelectTexture( 0 );
 	colorTex[0]->Bind();
-	if (r_frobOutlineValuables.GetBool() && isfrobbedEntityValuable)
+	if (r_frobOutlineValuables.GetInteger() > 0 && isfrobbedEntityValuable)
 		applyUniforms->color.Set(r_frobOutlineValuablesColorR.GetFloat(), r_frobOutlineValuablesColorG.GetFloat(), r_frobOutlineValuablesColorB.GetFloat(), r_frobOutlineValuablesColorA.GetFloat());
 	else
-		applyUniforms->color.Set(r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat());
+		applyUniforms->color.Set(r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineValuables.GetInteger() == 2 ? 0.0f : r_frobOutlineColorA.GetFloat());
 	// perform blend
 	RB_DrawFullScreenTri();
 }
