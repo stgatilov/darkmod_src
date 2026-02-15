@@ -225,6 +225,7 @@ void R_ToggleSmpFrame( void ) {
 	if (com_smp.GetBool()) {
 		backendFrameData = frameData;
 		frameData = &smpFrameData[smpFrame % NUM_FRAME_DATA];
+		assert(frameData != backendFrameData);
 	} else {
 		frameData = backendFrameData = &smpFrameData[0];
 	}
@@ -274,6 +275,7 @@ void R_InitFrameData( void ) {
 	}
 
 	// must be set before calling R_ToggleSmpFrame()
+	smpFrame = 0;
 	frameData = &smpFrameData[0];
 	backendFrameData = &smpFrameData[1];
 
