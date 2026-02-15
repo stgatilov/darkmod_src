@@ -255,10 +255,18 @@ R_ShutdownFrameData
 */
 void R_ShutdownFrameData( void ) {
 	R_FreeDeferredTriSurfs( frameData );
+
 	frameData = NULL;
+	backendFrameData = NULL;
+
 	for ( int i = 0; i < NUM_FRAME_DATA; i++ ) {
 		Mem_Free16( smpFrameData[i].frameMemory );
 		smpFrameData[i].frameMemory = NULL;
+		// note: we leak memory of these backend deferred surfaces
+		// trying to free this memory results in a crash:
+		// tri->ambientSurface is inaccessible because it was deleted earlier
+		// it only on "reloadEngine" from in-game, so I'll better just allow the leak...
+		smpFrameData[i].firstDeferredFreeTriSurf = smpFrameData[i].lastDeferredFreeTriSurf = NULL;
 	}
 }
 
