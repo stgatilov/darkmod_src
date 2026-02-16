@@ -817,7 +817,6 @@ idPlayer::Init
 */
 void idPlayer::Init( void ) {
 	const char			*value;
-	const idKeyValue	*kv;
 
 	noclip					= false;
 	godmode					= false;
@@ -12057,7 +12056,8 @@ bool idPlayer::FrobHandling::IsLegalFrobActionTransition(EFrobAction prev, EFrob
 			|| next == Action::UseWorldEntity
 			|| next == Action::GrabWorldEntity
 			|| next == Action::Finished
-			|| next == Action::FrobActionFallback;
+			|| next == Action::FrobActionFallback
+			|| next == Action::ReleaseShoulderedBody;
 
 	case Action::ReleaseGrabbedEntity:
 		return next == Action::Finished;
@@ -12125,8 +12125,7 @@ bool idPlayer::FrobHandling::IsLegalFrobActionTransition(EFrobAction prev, EFrob
 		return next == Action::Finished;
 
 	case Action::UseWorldEntity:
-		return next == Action::ReleaseShoulderedBody
-			|| next == Action::Finished;
+		return next == Action::Finished;
 
 	case Action::GrabWorldEntity:
 		return next == Action::ReleaseGrabbedEntity 
@@ -12284,8 +12283,6 @@ void idPlayer::FrobHandling::Reinit(idEntity* target /*= nullptr*/)
 {
 	if (gameLocal.m_Grabber->GetSelected() != nullptr)
 		m_lastFrobAction = EFrobAction::GrabWorldEntity;
-	else if (m_player->IsShoulderingBody())
-		m_lastFrobAction = EFrobAction::UseWorldEntity;
 	else
 		m_lastFrobAction = EFrobAction::Init;
 	m_cleanupFrobAction = EFrobAction::Init;
