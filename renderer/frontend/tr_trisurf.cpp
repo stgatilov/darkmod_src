@@ -695,6 +695,17 @@ void R_FreeStaticTriSurfSilIndexes( srfTriangles_t *tri ) {
 }
 
 /*
+=================
+R_FreeStaticTriSurfSilEdges
+=================
+*/
+void R_FreeStaticTriSurfSilEdges( srfTriangles_t *tri ) {
+	triSilEdgeAllocator.Free( tri->silEdges );
+	tri->silEdges = NULL;
+	tri->numSilEdges = 0;
+}
+
+/*
 ===============
 R_RangeCheckIndexes
 

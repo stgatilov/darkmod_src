@@ -208,6 +208,14 @@ private:
 struct md3Header_s;
 struct md3Surface_s;
 
+struct md3SilInfo_t {
+	int numIndexes;
+	int numSilEdges;
+	glIndex_t* indexes;
+	glIndex_t* silIndexes;
+	silEdge_t* silEdges;
+};
+
 class idRenderModelMD3 : public idRenderModelStatic {
 public:
 	idRenderModelMD3() : index(-1), dataSize(0), md3( nullptr ), numLods(0) {}
@@ -223,6 +231,11 @@ private:
 	struct md3Header_s *		md3;			// only if type == MOD_MESH
 	int							numLods;
 	idList<const idMaterial*>	shaders;		// DG: md3Shader_t::shaderIndex indexes into this array
+
+	// DG: added the following so we can generate/store sil edges for shadows
+	idList<md3SilInfo_t>		silInfos;		// used to create srfTriangles_t from base frames and new vertexes (md3->numSurfaces entries)
+
+	md3SilInfo_t				BuildSilInfo( struct md3Surface_s* surf );
 
 	void						LerpMeshVertexes( srfTriangles_t *tri, const struct md3Surface_s *surf, const float backlerp, const int frame, const int oldframe ) const;
 };
