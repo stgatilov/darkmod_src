@@ -1202,7 +1202,7 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 
 	const bool spawnAll     = 0 == idStr::Icmp(value, "all");
 	const bool spawnWeapons = spawnAll || (0 == idStr::Icmp(value, "weapons"));
-	const bool spawnTools   = spawnAll || (0 == idStr::Icmp(value, "weapons"));
+	const bool spawnTools   = spawnAll || (0 == idStr::Icmp(value, "tools"));
 
 	if (spawnWeapons)
 	{
