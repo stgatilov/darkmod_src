@@ -718,6 +718,7 @@ idPlayer::idPlayer() :
 
 	m_IdealCrouchState		= false;
 	m_CrouchIntent			= false;
+	m_CrouchToggleBypassed	= false;
 
 	m_prevMantleOrigin        = vec3_zero;
 	m_bMantleViewAtCrouchView = false;
@@ -2672,6 +2673,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( m_IdealCrouchState );
 	savefile->ReadBool( m_CrouchIntent );
+	// stgatilov: no need to save it, but better reset it on load
+	m_CrouchToggleBypassed = false;
 
 	savefile->ReadVec3( m_prevMantleOrigin );
 	savefile->ReadBool( m_bMantleViewAtCrouchView );
@@ -5777,11 +5780,20 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			if (cv_tdm_crouch_toggle.GetBool())
 			{
-				if (!physicsObj.OnRope() && !physicsObj.OnLadder() && entityNumber == gameLocal.localClientNum)
+				if (physicsObj.OnRope() || physicsObj.OnLadder())
+				{
+					// Climbing; use regular crouch behavior
+					m_CrouchToggleBypassed = true;
+					m_CrouchIntent = true;
+				}
+				else
 				{
 					// Not climbing; toggle crouch
-					// For climbing, we need to distinguish short-press and long-press, so wait until we are certain
-					m_CrouchIntent = !m_CrouchIntent;
+					if (entityNumber == gameLocal.localClientNum)
+					{
+						m_CrouchToggleBypassed = false;
+						m_CrouchIntent = !m_CrouchIntent;
+					}
 				}
 			}		
 			else
@@ -6173,12 +6185,10 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 			if (cv_tdm_crouch_toggle.GetBool())
 			{
-				const float minHoldTime = cv_tdm_crouch_toggle_hold_time.GetFloat();
-				if ((physicsObj.OnRope() || physicsObj.OnLadder())
-					&& entityNumber == gameLocal.localClientNum && (holdTime < minHoldTime && minHoldTime > 0.0f))
+				if (physicsObj.OnRope() || physicsObj.OnLadder() || m_CrouchToggleBypassed)
 				{
-					// stifu: toggle crouch-intent on short-release only because long-press is ladder-slide
-					m_CrouchIntent = !m_CrouchIntent;	
+					// Climbing or initiated crouch while climbing; use regular crouch behavior
+					m_CrouchIntent = false;
 				}
 			}
 			else

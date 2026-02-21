@@ -382,6 +382,10 @@ public:
 	// or toggle crouch is active
 	bool					m_CrouchIntent;
 
+	// Daft Mugi: For new toggle crouch, this is set to true when the
+	// player has pressed toggle crouch while on a rope or ladder/vine.
+	bool					m_CrouchToggleBypassed;
+
 	// Daft Mugi: Keep track of forced-crouch mantle state. This is needed
 	// to ensure the player view does not clip through the ceiling.
 	idVec3					m_prevMantleOrigin;
