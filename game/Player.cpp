@@ -12766,10 +12766,21 @@ bool idPlayer::FrobHandling::TryUseWorldEntity(EButtonState state)
 	{
 		return false;
 	}
+
+	// Do not use (shoulder) live, conscious AI
+	idEntity* target = m_FrobPressedTarget.GetEntity();
+	if (target->IsType(idAI::Type))
+	{
+		idAI* AItarget = static_cast<idAI*>(target);
+		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
+		{
+			return false;
+		}
+	}
+
 	const bool used = gameLocal.m_Grabber->EquipFrobEntity(m_player);
 	if (used)
 	{
-		idEntity* target = m_FrobPressedTarget.GetEntity();
 		if (target != nullptr)
 			target->FrobAction(true);
 		SetFrobAction(EFrobAction::UseWorldEntity, true);
