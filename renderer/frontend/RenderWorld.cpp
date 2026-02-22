@@ -683,6 +683,10 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 				continue;
 			}
 
+			if ( model->NumSurfaces() == 0 ) {
+				continue;	// stgatilov: no target geometry to project to
+			}
+
 			idBounds bounds;
 			bounds.FromTransformedBounds( model->Bounds( &def->parms ), def->parms.origin, def->parms.axis );
 
