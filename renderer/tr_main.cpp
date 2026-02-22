@@ -225,6 +225,7 @@ void R_ToggleSmpFrame( void ) {
 	if (com_smp.GetBool()) {
 		backendFrameData = frameData;
 		frameData = &smpFrameData[smpFrame % NUM_FRAME_DATA];
+		assert(frameData != backendFrameData);
 	} else {
 		frameData = backendFrameData = &smpFrameData[0];
 	}
@@ -254,10 +255,18 @@ R_ShutdownFrameData
 */
 void R_ShutdownFrameData( void ) {
 	R_FreeDeferredTriSurfs( frameData );
+
 	frameData = NULL;
+	backendFrameData = NULL;
+
 	for ( int i = 0; i < NUM_FRAME_DATA; i++ ) {
 		Mem_Free16( smpFrameData[i].frameMemory );
 		smpFrameData[i].frameMemory = NULL;
+		// note: we leak memory of these backend deferred surfaces
+		// trying to free this memory results in a crash:
+		// tri->ambientSurface is inaccessible because it was deleted earlier
+		// it only on "reloadEngine" from in-game, so I'll better just allow the leak...
+		smpFrameData[i].firstDeferredFreeTriSurf = smpFrameData[i].lastDeferredFreeTriSurf = NULL;
 	}
 }
 
@@ -274,6 +283,7 @@ void R_InitFrameData( void ) {
 	}
 
 	// must be set before calling R_ToggleSmpFrame()
+	smpFrame = 0;
 	frameData = &smpFrameData[0];
 	backendFrameData = &smpFrameData[1];
 

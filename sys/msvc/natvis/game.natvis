@@ -166,6 +166,20 @@
       <ExpandedItem Condition="commandId==4">*(copyRenderCommand_t*)this</ExpandedItem>
     </Expand>
   </Type>
+  <Type Name="frameData_t">
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[deferredFreeSurfs]">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>firstDeferredFreeTriSurf</HeadPointer>
+            <NextPointer>nextDeferredFree</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
 
   <Type Name="activeSmokeStage_t">
     <Expand>

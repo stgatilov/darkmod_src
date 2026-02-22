@@ -718,6 +718,7 @@ idPlayer::idPlayer() :
 
 	m_IdealCrouchState		= false;
 	m_CrouchIntent			= false;
+	m_CrouchToggleBypassed	= false;
 
 	m_prevMantleOrigin        = vec3_zero;
 	m_bMantleViewAtCrouchView = false;
@@ -817,7 +818,6 @@ idPlayer::Init
 */
 void idPlayer::Init( void ) {
 	const char			*value;
-	const idKeyValue	*kv;
 
 	noclip					= false;
 	godmode					= false;
@@ -2668,6 +2668,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( m_IdealCrouchState );
 	savefile->ReadBool( m_CrouchIntent );
+	// stgatilov: no need to save it, but better reset it on load
+	m_CrouchToggleBypassed = false;
 
 	savefile->ReadVec3( m_prevMantleOrigin );
 	savefile->ReadBool( m_bMantleViewAtCrouchView );
@@ -5739,11 +5741,20 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			if (cv_tdm_crouch_toggle.GetBool())
 			{
-				if (!physicsObj.OnRope() && !physicsObj.OnLadder() && entityNumber == gameLocal.localClientNum)
+				if (physicsObj.OnRope() || physicsObj.OnLadder())
+				{
+					// Climbing; use regular crouch behavior
+					m_CrouchToggleBypassed = true;
+					m_CrouchIntent = true;
+				}
+				else
 				{
 					// Not climbing; toggle crouch
-					// For climbing, we need to distinguish short-press and long-press, so wait until we are certain
-					m_CrouchIntent = !m_CrouchIntent;
+					if (entityNumber == gameLocal.localClientNum)
+					{
+						m_CrouchToggleBypassed = false;
+						m_CrouchIntent = !m_CrouchIntent;
+					}
 				}
 			}		
 			else
@@ -6088,12 +6099,10 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 			if (cv_tdm_crouch_toggle.GetBool())
 			{
-				const float minHoldTime = cv_tdm_crouch_toggle_hold_time.GetFloat();
-				if ((physicsObj.OnRope() || physicsObj.OnLadder())
-					&& entityNumber == gameLocal.localClientNum && (holdTime < minHoldTime && minHoldTime > 0.0f))
+				if (physicsObj.OnRope() || physicsObj.OnLadder() || m_CrouchToggleBypassed)
 				{
-					// stifu: toggle crouch-intent on short-release only because long-press is ladder-slide
-					m_CrouchIntent = !m_CrouchIntent;	
+					// Climbing or initiated crouch while climbing; use regular crouch behavior
+					m_CrouchIntent = false;
 				}
 			}
 			else
@@ -11798,7 +11807,8 @@ bool idPlayer::FrobHandling::IsLegalFrobActionTransition(EFrobAction prev, EFrob
 			|| next == Action::UseWorldEntity
 			|| next == Action::GrabWorldEntity
 			|| next == Action::Finished
-			|| next == Action::FrobActionFallback;
+			|| next == Action::FrobActionFallback
+			|| next == Action::ReleaseShoulderedBody;
 
 	case Action::ReleaseGrabbedEntity:
 		return next == Action::Finished;
@@ -11866,8 +11876,7 @@ bool idPlayer::FrobHandling::IsLegalFrobActionTransition(EFrobAction prev, EFrob
 		return next == Action::Finished;
 
 	case Action::UseWorldEntity:
-		return next == Action::ReleaseShoulderedBody
-			|| next == Action::Finished;
+		return next == Action::Finished;
 
 	case Action::GrabWorldEntity:
 		return next == Action::ReleaseGrabbedEntity 
@@ -12025,8 +12034,6 @@ void idPlayer::FrobHandling::Reinit(idEntity* target /*= nullptr*/)
 {
 	if (gameLocal.m_Grabber->GetSelected() != nullptr)
 		m_lastFrobAction = EFrobAction::GrabWorldEntity;
-	else if (m_player->IsShoulderingBody())
-		m_lastFrobAction = EFrobAction::UseWorldEntity;
 	else
 		m_lastFrobAction = EFrobAction::Init;
 	m_cleanupFrobAction = EFrobAction::Init;
@@ -12508,10 +12515,21 @@ bool idPlayer::FrobHandling::TryUseWorldEntity(EButtonState state)
 	{
 		return false;
 	}
+
+	// Do not use (shoulder) live, conscious AI
+	idEntity* target = m_FrobPressedTarget.GetEntity();
+	if (target->IsType(idAI::Type))
+	{
+		idAI* AItarget = static_cast<idAI*>(target);
+		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
+		{
+			return false;
+		}
+	}
+
 	const bool used = gameLocal.m_Grabber->EquipFrobEntity(m_player);
 	if (used)
 	{
-		idEntity* target = m_FrobPressedTarget.GetEntity();
 		if (target != nullptr)
 			target->FrobAction(true);
 		SetFrobAction(EFrobAction::UseWorldEntity, true);

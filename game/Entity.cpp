@@ -11817,27 +11817,17 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty item from category.\r");
 		
 		category->RemoveItem(item);
+		
+		if (category->IsEmpty())
+		{
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty inventory category.\r");
+			inventory->RemoveCategory(category);
+		}
 
-		// Advance the cursor (after removal, otherwise we stick to an invalid id)
-		InventoryCursor()->GetNextItem();
+		InventoryCursor()->ClearItem();
 
 		// Call the selection changed event, passing the removed item as previously selected item
 		OnInventorySelectionChanged(item);
-	}
-	
-	// Check for empty categories after the item has been removed
-	if (category->IsEmpty()) 
-	{
-		// Remove empty category from inventory
-		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty inventory category.\r");
-		
-		inventory->RemoveCategory(category);
-		
-		// Switch the cursor to the next category (after removal)
-		InventoryCursor()->GetNextCategory();
-
-		// There shouldn't be a need to call OnInventorySelectionChanged(), as this
-		// has already been done by the code above.
 	}
 }
 
