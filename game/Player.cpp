@@ -12779,7 +12779,7 @@ bool idPlayer::FrobHandling::TryUseWorldEntity(EButtonState state)
 
 	// Do not use (shoulder) live, conscious AI
 	idEntity* target = m_FrobPressedTarget.GetEntity();
-	if (target->IsType(idAI::Type))
+	if (target && target->IsType(idAI::Type))
 	{
 		idAI* AItarget = static_cast<idAI*>(target);
 		if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
