@@ -154,12 +154,14 @@ void idSessionLocal::StartMenu( bool playIntro ) {
 	// start playing the menu sounds
 	soundSystem->SetPlayingSoundWorld( menuSoundWorld );
 
-	// stgatilov #6608: save last game frame in case mission wants to use it as background in menu
-	byte *imgData = nullptr;
-	int width, height;
-	CaptureGameScreenshot( imgData, width, height );
-	globalImages->menuLastGameFrame->UploadScratch( imgData, width, height);
-	Mem_Free( imgData );
+	if ( mapSpawned ) {
+		// stgatilov #6608: save last game frame in case mission wants to use it as background in menu
+		byte *imgData = nullptr;
+		int width, height;
+		CaptureGameScreenshot( imgData, width, height );
+		globalImages->menuLastGameFrame->UploadScratch( imgData, width, height);
+		Mem_Free( imgData );
+	}
 
 	// make sure guiMainMenu is alive
 	CreateMainMenu();
