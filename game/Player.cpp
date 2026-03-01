@@ -13440,10 +13440,12 @@ void idPlayer::Event_ProcessInterMissionTriggers()
 }
 
 // Obsttorte: Event to save the game
-
 void idPlayer::Event_saveGame(const char* name)
 {
-	cvarSystem->SetCVarString("saveGameName",name);
+	// stgatilov #6470: schedule savegame console command to be executed soon
+	// note that we cannot save game right here because we are at frontend thread!
+	// we also pass special flag to mark this as programmatic save which bypasses restrictions
+	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va( "savegame unrestricted %s", name) );
 }
 
 void idPlayer::Event_setSavePermissions(int sp)
