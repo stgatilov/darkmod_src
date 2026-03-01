@@ -53,9 +53,6 @@ idCVar	idSessionLocal::com_aviDemoTics( "com_aviDemoTics", "2", CVAR_SYSTEM | CV
 idCVar	idSessionLocal::com_wipeSeconds( "com_wipeSeconds", "0.1", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_guid( "com_guid", "", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_ROM, "" );
 
-//Obsttorte
-idCVar	idSessionLocal::saveGameName( "saveGameName", "", CVAR_GAME | CVAR_ROM, "");
-
 // SteveL #4161: Support > 1 quicksave
 idCVar	idSessionLocal::com_numQuickSaves( "com_numQuickSaves", "2", CVAR_GAME | CVAR_NOCHEAT | CVAR_INTEGER | CVAR_ARCHIVE, 
 	"How many quicksaves to retain. Reducing the number won't delete any that you already have.", 1.0f, 100000.0f );
@@ -2993,14 +2990,6 @@ void idSessionLocal::RunGameTic(int timestepMs, bool minorTic) {
 	// stgatilov: allow automation to intercept gameplay controls
 	if (com_automation.GetBool()) {
 		bool automationRules = Auto_GetUsercmd(cmd);
-	}
-
-	// Obsttorte - check if we should save the game
-
-	idStr saveGameName = game->triggeredSave();
-	if (!saveGameName.IsEmpty())
-	{
-		SaveGame(saveGameName.c_str(), true, true);
 	}
 
 	// run the game logic every player move
