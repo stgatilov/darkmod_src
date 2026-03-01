@@ -1744,12 +1744,15 @@ LoadGame_f
 */
 void LoadGame_f( const idCmdArgs &args ) {
 	console->Close();
+
+	idStr saveName;
 	if ( args.Argc() < 2 || idStr::Icmp(args.Argv(1), "quick" ) == 0 ) {
-		idStr saveName = GetMostRecentQuicksaveFilename();
-		sessLocal.LoadGame( saveName );
+		saveName = GetMostRecentQuicksaveFilename();
 	} else {
-		sessLocal.LoadGame( args.Argv(1) );
+		saveName = args.Argv(1);
 	}
+
+	sessLocal.LoadGame( saveName );
 }
 
 /*
@@ -1758,16 +1761,27 @@ SaveGame_f
 ===============
 */
 void SaveGame_f( const idCmdArgs &args ) {
-	if ( args.Argc() < 2 || idStr::Icmp( args.Argv(1), "quick" ) == 0 ) {
-		idStr saveName = GetNextQuicksaveFilename();
-		if ( sessLocal.SaveGame( saveName ) ) {
-			common->Printf( "%s\n", saveName.c_str() );
-		}
-	} else {
-		if ( sessLocal.SaveGame( args.Argv(1) ) ) {
-			common->Printf( "Saved %s\n", args.Argv(1) );
+	idStr saveName;
+	bool unrestricted = false;
+
+	for ( int i = 1; i < args.Argc(); i++) {
+		const char *arg = args.Argv(i);
+		if ( idStr::Icmp( arg, "quick" ) == 0 ) {
+			saveName = GetNextQuicksaveFilename();
+		} else if ( idStr::Icmp( arg, "unrestricted" ) == 0 ) {
+			unrestricted = true;
+		} else {
+			saveName = arg;
 		}
 	}
+	if ( saveName.IsEmpty() ) {
+		saveName = GetNextQuicksaveFilename();
+	}
+
+	if ( sessLocal.SaveGame( saveName, false, unrestricted ) ) {
+		common->Printf( "Saved %s\n", saveName.c_str() );
+	}
+
 	qglFinish();
 }
 
@@ -3286,7 +3300,7 @@ void idSessionLocal::Init() {
 
 	cmdSystem->AddCommand( "saveGame", SaveGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "saves a game" );
 	cmdSystem->AddCommand( "loadGame", LoadGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "loads a game", idCmdSystem::ArgCompletion_SaveGame );
-
+	
 	cmdSystem->AddCommand( "rescanSI", Session_RescanSI_f, CMD_FL_SYSTEM, "internal - rescan serverinfo cvars and tell game" );
 
 	cmdSystem->AddCommand( "hitch", Session_Hitch_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "hitches the game" );
