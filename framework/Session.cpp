@@ -2986,16 +2986,7 @@ void idSessionLocal::RunGameTic(int timestepMs, bool minorTic) {
 	idStr saveGameName = game->triggeredSave();
 	if (!saveGameName.IsEmpty())
 	{
-		if (cvarSystem->GetCVarBool("tdm_nosave"))
-		{
-			cvarSystem->SetCVarBool("tdm_nosave",false);
-			SaveGame(saveGameName.c_str());
-			cvarSystem->SetCVarBool("tdm_nosave",true);
-		}
-		else
-		{
-			SaveGame(saveGameName.c_str(), true, true);
-		}
+		SaveGame(saveGameName.c_str(), true, true);
 	}
 
 	// run the game logic every player move
