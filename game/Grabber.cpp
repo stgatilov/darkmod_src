@@ -633,7 +633,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID, bool p
 	// If an entity was not explictly passed in, use the frob entity
 	if ( !newEnt ) 
 	{
-		FrobEnt = player->m_FrobHandling.GetFrobPressedTarget();
+		FrobEnt = player->m_FrobEntity.GetEntity();
 		if ( !FrobEnt )
 		{
 			return;
@@ -1614,7 +1614,7 @@ bool CGrabber::ToggleEquip( void )
 
 bool CGrabber::EquipFrobEntity( idPlayer *player )
 {
-	idEntity* frobEnt = player->m_FrobHandling.GetFrobPressedTarget();
+	idEntity* frobEnt = player->m_FrobEntity.GetEntity();
 
 	// If attachment, such as head, get its body.
 	idEntity* ent = (frobEnt && frobEnt->IsType(idAFAttachment::Type))

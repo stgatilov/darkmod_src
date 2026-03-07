@@ -329,7 +329,6 @@ idCVar cv_frob_debug_bounds(			"tdm_frob_debug_bounds", "0",			CVAR_GAME | CVAR_
 idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE | CVAR_NOCHEAT,	"Set to 1 to have weapons automatically selected when the respective item is picked up." );
 idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME |CVAR_BOOL | CVAR_ARCHIVE | CVAR_NOCHEAT,		"Set to 1 to have items automatically selected when the respective item is picked up.");
 idCVar cv_frob_debug_hud(				"tdm_frob_debug_hud", "0",				CVAR_GAME | CVAR_BOOL,						"Set to 1 to show some frobbing info." );
-idCVar cv_frob_control_style(			"tdm_frob_control_style", "1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style:\n\t-1: Disabled hold-frob\n\t0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction),\n\t1: Thief/2.12 (Like TDM, but behavior for bodys is swapped),\n\t2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
 
 idCVar cv_frobhelper_active(			"tdm_frobhelper_active",			"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,	"Set to 1 to activate the FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_alwaysVisible(     "tdm_frobhelper_alwaysVisible",     "0",    CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,    "Set to 1 to always display the frobhelper like a crosshair.", 0, 1); // stifu #4990
@@ -341,16 +340,26 @@ idCVar cv_frobhelper_ignore_size(		"tdm_frobhelper_ignore_size",		"40.0",	CVAR_G
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 idCVar cv_holdfrob_delay(
-	"tdm_holdfrob_delay", "200", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,
+	"tdm_holdfrob_delay", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,
 	"The hold-frob delay (in ms) before drag body or use world item.\n"
 	"Set to 0 for original TDM behavior.",
 	0, 2000
 );
-idCVar cv_holdfrob_drag_entity_behavior(
-	"tdm_holdfrob_drag_entity_behavior", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,
-	"Which drag entity behavior?\n"
+idCVar cv_holdfrob_bounds(
+	"tdm_holdfrob_bounds", "7", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,
+	"The view position must stay within the bounds in order to perform an interaction.",
+	0.0f, 1000.0f
+);
+idCVar cv_holdfrob_drag_body_behavior(
+	"tdm_holdfrob_drag_body_behavior", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,
+	"Which drag body behavior?\n"
 	"  1 --- on first frob release (key up), let go of body.\n"
 	"  0 --- on second frob, let go of body. (original TDM behavior)"
+);
+
+idCVar cv_holdfrob_drag_all_entities(
+	"tdm_holdfrob_drag_all_entities", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,
+	"If enabled, all possible entities will be grabbed on long-press frob."
 );
 
 // Obsttorte: #5984 (multilooting)
@@ -517,6 +526,8 @@ idCVar cv_tdm_hud_hide_lightgem(	"tdm_hud_hide_lightgem", "0",	CVAR_GAME | CVAR_
 idCVar cv_tdm_inv_hud_pickupmessages(	"tdm_inv_hud_pickupmessages", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,	"If set to 1, the HUD is displaying the item the player has just picked up.");
 idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been acquired.");
 idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' currently selected inventory items will be used on frob.");
+idCVar cv_tdm_door_control("tdm_door_control", "0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Acivates experimental door control.  When active, hold down frob and move mouse to fine-control a door.");
+idCVar cv_tdm_door_control_sensitivity( "tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT, "Sets fine door control mouse sensitivity." );
 idCVar cv_tdm_inv_use_visual_feedback("tdm_inv_use_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' the HUD is giving visual feedback when the currently selected item is used on the highlighted one.");
 idCVar cv_tdm_subtitles(
 	"tdm_subtitles", "1",  CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,
@@ -623,15 +634,6 @@ idCVar cv_bow_aimer("tdm_bow_aimer",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, 
 
 idCVar cv_door_auto_open_on_unlock("tdm_door_auto_open_on_unlock",	"1",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 doors and chests will start to open after being unlocked." );
 idCVar cv_door_ignore_locks("tdm_door_ignore_lock",	"0",	CVAR_GAME | CVAR_BOOL, "If set to 1 doors and chests will open as if unlocked." );
-
-idCVar cv_door_control("tdm_door_control", "3", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, 
-	"Holdfrob door control mode.\n-- 0: disabled\n-- 1: holdfrob and move mouse to control door (experimental)\n-- 2: holdfrob = toggle open slowly\n-- 3: holdfrob = open slowly");
-idCVar cv_door_control_sensitivity("tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE | CVAR_NOCHEAT,
-	"Sets fine door control mouse sensitivity. Only applicable if tdm_door_control = 1.");
-idCVar cv_door_control_movetime_factor_slow("tdm_door_control_movetime_factor_slow", "3.5", CVAR_GAME | CVAR_FLOAT,
-	"If the slow door control is used (tdm_door_control = 2 or 3), the movetime is multiplied by this value. Values > 1 mean slower motion.");
-idCVar cv_door_control_movetime_factor_fast("tdm_door_control_movetime_factor_fast", "0.25", CVAR_GAME | CVAR_FLOAT,
-	"Close door fast by holding Frob and pressing attack. Speed is controlled by this value. Values < 1 mean fast motion.");
 
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 

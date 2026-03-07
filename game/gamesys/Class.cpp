@@ -1062,9 +1062,9 @@ void idClass::Event_Remove( void )
 	
 	if (player != NULL)
 	{
-		if (player->m_FrobHilightedEntity.GetEntity() == this)
+		if (player->m_FrobEntity.GetEntity() == this)
 		{
-			player->m_FrobHilightedEntity = NULL;
+			player->m_FrobEntity = NULL;
 		}
 	}
 	
