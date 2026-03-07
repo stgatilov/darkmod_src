@@ -388,6 +388,7 @@
     <ClInclude Include="game\FrobDoor.h" />
     <ClInclude Include="game\FrobDoorHandle.h" />
     <ClInclude Include="game\FrobHandle.h" />
+    <ClInclude Include="game\FrobHelper.h" />
     <ClInclude Include="game\FrobLever.h" />
     <ClInclude Include="game\FrobLock.h" />
     <ClInclude Include="game\FrobLockHandle.h" />
@@ -411,7 +412,6 @@
     <ClInclude Include="game\Http\HttpConnection.h" />
     <ClInclude Include="game\Http\HttpRequest.h" />
     <ClInclude Include="game\Http\MessageTcp.h" />
-    <ClInclude Include="game\HudFader.h" />
     <ClInclude Include="game\IK.h" />
     <ClInclude Include="game\IniFile.h" />
     <ClInclude Include="game\Intersection.h" />
@@ -1044,6 +1044,7 @@
     <ClCompile Include="game\FrobDoor.cpp" />
     <ClCompile Include="game\FrobDoorHandle.cpp" />
     <ClCompile Include="game\FrobHandle.cpp" />
+    <ClCompile Include="game\FrobHelper.cpp" />
     <ClCompile Include="game\FrobLever.cpp" />
     <ClCompile Include="game\FrobLock.cpp" />
     <ClCompile Include="game\FrobLockHandle.cpp" />
@@ -1063,7 +1064,6 @@
     <ClCompile Include="game\Http\HttpConnection.cpp" />
     <ClCompile Include="game\Http\HttpRequest.cpp" />
     <ClCompile Include="game\Http\MessageTcp.cpp" />
-    <ClCompile Include="game\HudFader.cpp" />
     <ClCompile Include="game\IK.cpp" />
     <ClCompile Include="game\IniFile.cpp" />
     <ClCompile Include="game\Intersection.cpp" />

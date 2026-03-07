@@ -1165,6 +1165,9 @@
     <ClInclude Include="sound\snd_efxpresets.h">
       <Filter>Sound</Filter>
     </ClInclude>
+    <ClInclude Include="game\FrobHelper.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="game\Listener.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -1662,9 +1665,6 @@
     </ClInclude>
     <ClInclude Include="idlib\JobChunks.h">
       <Filter>Idlib</Filter>
-    </ClInclude>
-    <ClInclude Include="game\HudFader.h">
-      <Filter>Game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -3145,6 +3145,9 @@
     <ClCompile Include="sound\snd_efxpresets.cpp">
       <Filter>Sound</Filter>
     </ClCompile>
+    <ClCompile Include="game\FrobHelper.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="game\Listener.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -3654,9 +3657,6 @@
     </ClCompile>
     <ClCompile Include="idlib\JobChunks.cpp">
       <Filter>Idlib</Filter>
-    </ClCompile>
-    <ClCompile Include="game\HudFader.cpp">
-      <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

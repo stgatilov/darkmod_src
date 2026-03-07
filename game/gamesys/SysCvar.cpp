@@ -327,36 +327,17 @@ idCVar cv_frob_width(					"tdm_frob_width",		"10.0",			CVAR_GAME | CVAR_ARCHIVE 
 idCVar cv_frob_fadetime(				"tdm_frob_fadetime",	"100",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"Time it takes for frob highlight effect to fade in and out." );
 idCVar cv_frob_debug_bounds(			"tdm_frob_debug_bounds", "0",			CVAR_GAME | CVAR_BOOL,						"Set to 1 to see a visualization of the bounds that are used to check for frobable items within them." );
 idCVar cv_frob_weapon_selects_weapon(	"tdm_frob_weapon_selects_weapon", "0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE | CVAR_NOCHEAT,	"Set to 1 to have weapons automatically selected when the respective item is picked up." );
+idCVar cv_frob_item_selects_item(		"tdm_frob_item_selects_item", "1",		CVAR_GAME |CVAR_BOOL | CVAR_ARCHIVE | CVAR_NOCHEAT,		"Set to 1 to have items automatically selected when the respective item is picked up.");
 idCVar cv_frob_debug_hud(				"tdm_frob_debug_hud", "0",				CVAR_GAME | CVAR_BOOL,						"Set to 1 to show some frobbing info." );
 idCVar cv_frob_control_style(			"tdm_frob_control_style", "1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"Frob control style:\n\t-1: Disabled hold-frob\n\t0: TDM/Original (Short-Press: Grab, Long-Press: Use-Interaction),\n\t1: Thief/2.12 (Like TDM, but behavior for bodys is swapped),\n\t2: TDM-Inverted (Short-Press: Use-Interaction, Hold: Grab)");
 
-// #4906: Frobhelper
-idCVar cv_frobhelper_active(		  	"tdm_frobhelper_active",			"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,	"Set to 1 to activate the FrobHelper cursor.", 0, 1);
-idCVar cv_frobhelper_size(			    "tdm_frobhelper_size",			    "3",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT,	"The size of the frobhelper", 0, 480);
+idCVar cv_frobhelper_active(			"tdm_frobhelper_active",			"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,	"Set to 1 to activate the FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_alwaysVisible(     "tdm_frobhelper_alwaysVisible",     "0",    CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT,    "Set to 1 to always display the frobhelper like a crosshair.", 0, 1); // stifu #4990
 idCVar cv_frobhelper_alpha(				"tdm_frobhelper_alpha",				"1.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,	"Alpha value of FrobHelper cursor.", 0.0f, 1.0f);
 idCVar cv_frobhelper_fadein_delay(		"tdm_frobhelper_fadein_delay",		"500",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor fade-in is delayed by this amount specified in ms.", 0.0f, 1000.0f);
 idCVar cv_frobhelper_fadein_duration(	"tdm_frobhelper_fadein_duration",	"1500", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor is faded in for this duration specified in ms.", 0.0f, 5000.0f);
 idCVar cv_frobhelper_fadeout_duration(	"tdm_frobhelper_fadeout_duration",	"500",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor is faded out for this duration specified in ms.", 0.0f, 5000.0f);
-
-// #6677: Dynamic HUD
-idCVar cv_dynamicHUD("tdm_dynamicHUD", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the HUD-elements will hide depending on context.");
-idCVar cv_dynamicHUD_fadein_duration("tdm_dynamicHUD_fadein_duration", "300", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-in duration for the dynamic hud in ms.");
-idCVar cv_dynamicHUD_fadeout_delay("tdm_dynamicHUD_fadeout_delay", "3000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-out delay for the dynamic hud in ms.");
-idCVar cv_dynamicHUD_fadeout_duration("tdm_dynamicHUD_fadeout_duration", "1000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The fade-out duration for the dynamic hud in ms.");
-idCVar cv_dynamicHUD_weaponInventory("tdm_dynamicHUD_weaponInventory", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "Displaying the weapon inventory gui.\n 0 -- regular static\n 1 -- dynamic\n 2 -- Hide always");
-idCVar cv_dynamicHUD_weaponInventory_nextPrevOverride("tdm_dynamicHUD_weaponInventory_nextPrevOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and weapon HUD is currently not shown, the weapon hud will show on next/prev weapon press instead of switching weapon.");
-idCVar cv_dynamicHUD_weaponInventory_showName("tdm_dynamicHUD_weaponInventory_showName", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If disabled, the weapon name will not be displayed.");
-idCVar cv_dynamicHUD_weaponInventory_showOnAmmoChange("tdm_dynamicHUD_weaponInventory_showOnAmmoChange", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the weapon hud will show whenever the ammo of the currently selected weapon changes.");
-idCVar cv_dynamicHUD_weaponInventory_showBowOnly("tdm_dynamicHUD_weaponInventory_showBowOnly", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the weapon hud will only show when equipping the bow.");
-idCVar cv_dynamicHUD_itemInventory("tdm_dynamicHUD_itemInventory", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "Displaying the item inventory gui\n 0 -- regular static\n 1 -- dynamic\n 2 -- Hide always");
-idCVar cv_dynamicHUD_itemInventory_nextPrevOverride("tdm_dynamicHUD_itemInventory_nextPrevOverride", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled and inventory HUD is currently not shown, the inventory hud will show on next/prev item/inventory group press instead of switching item.");
-idCVar cv_dynamicHUD_itemInventory_showOnPickup("tdm_dynamicHUD_itemInventory_showOnPickup", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If enabled, the inventory hud will briefly show after picking up an item.");
-idCVar cv_dynamicHUD_itemInventory_showName("tdm_dynamicHUD_itemInventory_showName", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "If disabled, the item name will not be displayed.");
-idCVar cv_dynamicHUD_healthBar("tdm_dynamicHUD_healthBar", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "Displaying the healthbar.\n 0 -- regular static\n 1 -- dynamic\n 2 -- Hide always");
-idCVar cv_dynamicHUD_healthBar_healthThreshold("tdm_dynamicHUD_healthBar_healthThreshold", "30", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "If health is below this threshold, the health bar will not fade out anymore.");
-idCVar cv_dynamicHUD_healthBar_airThreshold("tdm_dynamicHUD_healthBar_airThreshold", "360", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "If air is below this threshold, the health bar will not fade out anymore. Air is in tics, see pm_airTics.");
-
+idCVar cv_frobhelper_ignore_size(		"tdm_frobhelper_ignore_size",		"40.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,	"The FrobHelper is not activated for entites that are bigger than this ignore size along one dimension. Set to 0, to disable ignoring entities.", 0.0f, 10000.0f);
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 idCVar cv_holdfrob_delay(
