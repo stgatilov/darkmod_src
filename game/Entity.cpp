@@ -3029,9 +3029,9 @@ void idEntity::Hide( void )
 	
 		if (player)
 		{
-			if (player->m_FrobHilightedEntity.GetEntity() == this)
+			if (player->m_FrobEntity.GetEntity() == this)
 			{
-				player->m_FrobHilightedEntity = NULL;
+				player->m_FrobEntity = NULL;
 			}
 		}
 
@@ -11105,7 +11105,7 @@ void idEntity::Event_Frob()
 	if (player != NULL)
 	{
 		// Let the player frob this entity.
-		player->m_FrobHandling.PerformFrob(idPlayer::FrobHandling::EButtonState::Pressed, this, true);
+		player->PerformFrob(EPressed, this, false);
 	}
 }
 
@@ -11537,8 +11537,6 @@ bool idEntity::AddAttachmentsToInventory( idPlayer* player )
 	GetTeamChildren(&children);
 	for (int i = 0 ; i < children.Num() ; i++) {
 		idEntity* child = children[i];
-		// Don't we have to call frobAction here on all children?
-		child->TriggerResponse(player, ST_FROB);
 		if (child && player->AddToInventory(child))
 			didAddItem = true;
 	}
