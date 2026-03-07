@@ -254,8 +254,6 @@ typedef struct renderView_s {
 	bool					forceUpdate;		// for an update 
 	bool					isOverlay;			// stgatilov: rendered on top of previous color contents, don't clear
 
-	bool					isHighlightedEntityValuable; // stifu: if true, the frob highlighted object is valuable and might be colored differently
-
 	// time in milliseconds for shader effects and other time dependent rendering issues
 	int						time;
 	float					shaderParms[MAX_GLOBAL_SHADER_PARMS];		// can be used in any way by shader
