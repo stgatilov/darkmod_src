@@ -721,7 +721,6 @@ public:
 	virtual const idDict &	GetPersistentPlayerInfo( int clientNum ) override;
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo ) override;
 	// Obsttorte
-	virtual idStr			triggeredSave() override;
 	virtual bool			savegamesDisallowed() override;
 	virtual bool			quicksavesDisallowed() override;
 	virtual bool			PlayerReady() override;	// SteveL #4139. Prevent saving before player has clicked "ready" to start the map

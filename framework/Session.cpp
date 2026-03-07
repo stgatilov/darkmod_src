@@ -53,9 +53,6 @@ idCVar	idSessionLocal::com_aviDemoTics( "com_aviDemoTics", "2", CVAR_SYSTEM | CV
 idCVar	idSessionLocal::com_wipeSeconds( "com_wipeSeconds", "0.1", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_guid( "com_guid", "", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_ROM, "" );
 
-//Obsttorte
-idCVar	idSessionLocal::saveGameName( "saveGameName", "", CVAR_GAME | CVAR_ROM, "");
-
 // SteveL #4161: Support > 1 quicksave
 idCVar	idSessionLocal::com_numQuickSaves( "com_numQuickSaves", "2", CVAR_GAME | CVAR_NOCHEAT | CVAR_INTEGER | CVAR_ARCHIVE, 
 	"How many quicksaves to retain. Reducing the number won't delete any that you already have.", 1.0f, 100000.0f );
@@ -1744,12 +1741,15 @@ LoadGame_f
 */
 void LoadGame_f( const idCmdArgs &args ) {
 	console->Close();
+
+	idStr saveName;
 	if ( args.Argc() < 2 || idStr::Icmp(args.Argv(1), "quick" ) == 0 ) {
-		idStr saveName = GetMostRecentQuicksaveFilename();
-		sessLocal.LoadGame( saveName );
+		saveName = GetMostRecentQuicksaveFilename();
 	} else {
-		sessLocal.LoadGame( args.Argv(1) );
+		saveName = args.Argv(1);
 	}
+
+	sessLocal.LoadGame( saveName );
 }
 
 /*
@@ -1758,16 +1758,27 @@ SaveGame_f
 ===============
 */
 void SaveGame_f( const idCmdArgs &args ) {
-	if ( args.Argc() < 2 || idStr::Icmp( args.Argv(1), "quick" ) == 0 ) {
-		idStr saveName = GetNextQuicksaveFilename();
-		if ( sessLocal.SaveGame( saveName ) ) {
-			common->Printf( "%s\n", saveName.c_str() );
-		}
-	} else {
-		if ( sessLocal.SaveGame( args.Argv(1) ) ) {
-			common->Printf( "Saved %s\n", args.Argv(1) );
+	idStr saveName;
+	bool unrestricted = false;
+
+	for ( int i = 1; i < args.Argc(); i++) {
+		const char *arg = args.Argv(i);
+		if ( idStr::Icmp( arg, "quick" ) == 0 ) {
+			saveName = GetNextQuicksaveFilename();
+		} else if ( idStr::Icmp( arg, "unrestricted" ) == 0 ) {
+			unrestricted = true;
+		} else {
+			saveName = arg;
 		}
 	}
+	if ( saveName.IsEmpty() ) {
+		saveName = GetNextQuicksaveFilename();
+	}
+
+	if ( sessLocal.SaveGame( saveName, false, unrestricted ) ) {
+		common->Printf( "Saved %s\n", saveName.c_str() );
+	}
+
 	qglFinish();
 }
 
@@ -2981,23 +2992,6 @@ void idSessionLocal::RunGameTic(int timestepMs, bool minorTic) {
 		bool automationRules = Auto_GetUsercmd(cmd);
 	}
 
-	// Obsttorte - check if we should save the game
-
-	idStr saveGameName = game->triggeredSave();
-	if (!saveGameName.IsEmpty())
-	{
-		if (cvarSystem->GetCVarBool("tdm_nosave"))
-		{
-			cvarSystem->SetCVarBool("tdm_nosave",false);
-			SaveGame(saveGameName.c_str());
-			cvarSystem->SetCVarBool("tdm_nosave",true);
-		}
-		else
-		{
-			SaveGame(saveGameName.c_str(), true, true);
-		}
-	}
-
 	// run the game logic every player move
 	int	start = Sys_Milliseconds();
 	gameReturn_t	ret = game->RunFrame( &cmd, timestepMs, minorTic );
@@ -3295,7 +3289,7 @@ void idSessionLocal::Init() {
 
 	cmdSystem->AddCommand( "saveGame", SaveGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "saves a game" );
 	cmdSystem->AddCommand( "loadGame", LoadGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "loads a game", idCmdSystem::ArgCompletion_SaveGame );
-
+	
 	cmdSystem->AddCommand( "rescanSI", Session_RescanSI_f, CMD_FL_SYSTEM, "internal - rescan serverinfo cvars and tell game" );
 
 	cmdSystem->AddCommand( "hitch", Session_Hitch_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "hitches the game" );

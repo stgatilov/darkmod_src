@@ -197,9 +197,6 @@ public:
 
 	static idCVar		gui_configServerRate;
 
-	//Obsttorte: cvar for disabling manual saves
-	static idCVar		saveGameName;
-
 	// SteveL #4161: Support > 1 quicksave
 	static idCVar		com_numQuickSaves;
 

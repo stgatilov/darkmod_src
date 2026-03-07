@@ -1134,19 +1134,6 @@ void idGameLocal::SetPersistentPlayerInfo( int clientNum, const idDict &playerIn
 }
 
 /*
-===========
-idGameLocal::triggeredSave
-===========
-*/
-
-idStr idGameLocal::triggeredSave()
-{
-	idStr sgn = cvarSystem->GetCVarString("saveGameName");
-	cvarSystem->SetCVarString("saveGameName","");
-	return sgn;	
-}
-
-/*
 =========
 idGameLocal::saveGamesDisallowed
 =========
