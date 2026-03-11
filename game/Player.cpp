@@ -12620,7 +12620,11 @@ void idPlayer::Event_saveGame(const char* name)
 	// stgatilov #6470: schedule savegame console command to be executed soon
 	// note that we cannot save game right here because we are at frontend thread!
 	// we also pass special flag to mark this as programmatic save which bypasses restrictions
-	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va( "savegame unrestricted %s", name) );
+	idCmdArgs args;
+	args.AppendArg( "savegame" );
+	args.AppendArg( "unrestricted" );
+	args.AppendArg( name );
+	cmdSystem->BufferCommandArgs( CMD_EXEC_APPEND, args );
 }
 
 void idPlayer::Event_setSavePermissions(int sp)
