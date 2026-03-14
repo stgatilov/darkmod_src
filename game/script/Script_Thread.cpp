@@ -974,7 +974,7 @@ idThread::IsWaiting
 Checks if thread is still waiting for some event to occur.
 ================
 */
-bool idThread::IsWaiting( void ) {
+bool idThread::IsWaiting( void ) const {
 	if ( waitingForThread || ( waitingFor != ENTITYNUM_NONE ) ) {
 		return true;
 	}
@@ -2939,11 +2939,11 @@ bool idGameEdit::ThreadIsDying(const idThread* thread) const
 
 void idGameEdit::MSG_WriteThreadInfo(idBitMsg* msg, const idThread* thread, const idInterpreter* interpreter)
 {
-	msg->WriteString(const_cast<idThread*>(thread)->GetThreadName());
-	msg->WriteInt(const_cast<idThread*>(thread)->GetThreadNum());
+	msg->WriteString(thread->GetThreadName());
+	msg->WriteInt(thread->GetThreadNum());
 
 	msg->WriteBits((int)(thread == interpreter->GetThread()), 1);
-	msg->WriteBits((int)const_cast<idThread*>(thread)->IsDoneProcessing(), 1);
-	msg->WriteBits((int)const_cast<idThread*>(thread)->IsWaiting(), 1);
-	msg->WriteBits((int)const_cast<idThread*>(thread)->IsDying(), 1);
+	msg->WriteBits((int)thread->IsDoneProcessing(), 1);
+	msg->WriteBits((int)thread->IsWaiting(), 1);
+	msg->WriteBits((int)thread->IsDying(), 1);
 }

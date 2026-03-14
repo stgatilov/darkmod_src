@@ -271,8 +271,8 @@ public:
 								
 	static idList<idThread*>&	GetThreads ( void );
 	
-	bool						IsDoneProcessing ( void );
-	bool						IsDying			 ( void );	
+	bool						IsDoneProcessing ( void ) const;
+	bool						IsDying			 ( void ) const;
 								
 	void						End( void );
 	static void					KillThread( const char *name );
@@ -283,7 +283,7 @@ public:
 	void						ContinueProcessing( void ) { interpreter.doneProcessing = false; };
 	bool						ThreadDying( void ) { return interpreter.threadDying; };
 	void						EndThread( void ) { interpreter.threadDying = true; };
-	bool						IsWaiting( void );
+	bool						IsWaiting( void ) const;
 	void						ClearWaitFor( void );
 	bool						IsWaitingFor( idEntity *obj );
 	void						ObjectMoveDone( idEntity *obj );
@@ -292,9 +292,9 @@ public:
 	bool						Start( void );
 	idThread					*WaitingOnThread( void );
 	void						SetThreadNum( int num );
-	int 						GetThreadNum( void );
+	int 						GetThreadNum( void ) const;
 	void						SetThreadName( const char *name );
-	const char					*GetThreadName( void );
+	const char					*GetThreadName( void ) const;
 
 	void						Error( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
 
@@ -336,7 +336,7 @@ ID_INLINE void idThread::SetThreadNum( int num ) {
 idThread::GetThreadNum
 ================
 */
-ID_INLINE int idThread::GetThreadNum( void ) {
+ID_INLINE int idThread::GetThreadNum( void ) const {
 	return threadNum;
 }
 
@@ -345,7 +345,7 @@ ID_INLINE int idThread::GetThreadNum( void ) {
 idThread::GetThreadName
 ================
 */
-ID_INLINE const char *idThread::GetThreadName( void ) {
+ID_INLINE const char *idThread::GetThreadName( void ) const {
 	return threadName.c_str();
 }
 
@@ -363,7 +363,7 @@ ID_INLINE idList<idThread*>& idThread::GetThreads ( void ) {
 idThread::IsDoneProcessing
 ================
 */
-ID_INLINE bool idThread::IsDoneProcessing ( void ) {
+ID_INLINE bool idThread::IsDoneProcessing ( void ) const {
 	return interpreter.doneProcessing;
 }
 
@@ -372,7 +372,7 @@ ID_INLINE bool idThread::IsDoneProcessing ( void ) {
 idThread::IsDying
 ================
 */
-ID_INLINE bool idThread::IsDying ( void ) {
+ID_INLINE bool idThread::IsDying ( void ) const {
 	return interpreter.threadDying;
 }
 
