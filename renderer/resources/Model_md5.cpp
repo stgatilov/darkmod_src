@@ -965,18 +965,20 @@ idRenderModelMD5::GenerateSamples
 void idRenderModelMD5::GenerateSamples( idList<samplePointOnModel_t> &samples, const modelSamplingParameters_t &params, idRandom &rnd ) const {
 	// convert T-pose: joint quaternions to joint matrices
 	int jn = defaultPose.Num();
-	idList<idJointMat> jointMats;
-	jointMats.SetNum( jn );
-	SIMDProcessor->ConvertJointQuatsToJointMats( jointMats.Ptr(), defaultPose.Ptr(), jn );
+
+	idJointMat *jointMats = (idJointMat*)Mem_Alloc16( jn * sizeof(idJointMat) );
+	SIMDProcessor->ConvertJointQuatsToJointMats( jointMats, defaultPose.Ptr(), jn );
 
 	// fake render entity: only a few properties will be read from it
 	renderEntity_t rent;
 	memset( &rent, 0, sizeof(rent) );
-	rent.joints = jointMats.Ptr();
+	rent.joints = jointMats;
 	rent.numJoints = defaultPose.Num();
 	// generate static model in T-pose
 	idRenderModel *model = const_cast<idRenderModelMD5*>(this)->InstantiateDynamicModel( &rent, nullptr, nullptr );
 	assert( dynamic_cast<idRenderModelStatic*>( model ) );
+
+	Mem_Free16(jointMats);
 
 	// sample static surface
 	model->GenerateSamples( samples, params, rnd );
