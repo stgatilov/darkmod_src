@@ -1225,8 +1225,6 @@ void idPlayer::Spawn( void )
 	// Clear the lightgem modifiers
 	m_LightgemModifierList.clear();
 
-	//FIX: Set the walkspeed back to the stored value.
-	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 	SetupInventory();
 
 	// greebo: Set the player variable on the grabber

@@ -629,12 +629,6 @@ public:
 	// stgatilov #6546: aka "lightgem for bodies"
 	LightEstimateSystem *m_LightEstimateSystem;
 
-	/**
-	* Temporary storage of the walkspeed.  This is a workaround
-	*	because the walkspeed keeps getting reset.
-	**/
-	float					m_walkSpeed;
-
 	// The highest used unique stim/response id
 	int						m_HighestSRId;
 

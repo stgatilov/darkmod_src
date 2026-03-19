@@ -541,10 +541,6 @@ void idGameLocal::Init( void ) {
 	// load the soundprop globals from the def file
 	m_sndPropLoader->GlobalsFromDef();
 
-	//FIX: pm_walkspeed keeps getting reset whenever a map loads.
-	// Copy the old value here and set it when the map starts up.
-	m_walkSpeed = pm_walkspeed.GetFloat();
-
 	// grayman #3355 - Initialize the AI message tag
 	m_uniqueMessageTag = 0;
 
@@ -2377,9 +2373,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	gamestate = GAMESTATE_ACTIVE;
 
-	//FIX: Set the walkspeed back to the stored value.
-	pm_walkspeed.SetFloat( m_walkSpeed );
-
 	// Restore the physics pointer in the grabber.
 	gameLocal.m_Grabber->SetPhysicsFromDragEntity();
 
@@ -2540,9 +2533,6 @@ void idGameLocal::MapShutdown( void ) {
 	cvarSystem->SetMissionOverrides( cvarSystem->ReadMissionCvars() );
 
 	gamestate = GAMESTATE_NOMAP;
-
-	// Save the current walkspeed
-	m_walkSpeed = pm_walkspeed.GetFloat();
 
 	Printf( "--------- Game Map Shutdown done -----\n" );
 }
