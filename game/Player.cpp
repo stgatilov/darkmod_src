@@ -6220,6 +6220,13 @@ idPlayer::GetImmobilization
 */
 int idPlayer::GetImmobilization()
 {
+	if ( !IsReady() )
+	{
+		// game has not started yet, no player controls can be used
+		// this actually helps to avoid enabling lantern/spyglass at "attack when ready" screen
+		return EIM_ALL;
+	}
+
 	// Has something changed since the cache was last calculated?
 	if ( m_immobilizationCache & EIM_UPDATE )
 	{
