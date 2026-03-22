@@ -21,7 +21,7 @@ public:
 	void Init();
 	void Shutdown();
 
-	void DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs );
+	void DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs, bool isfrobbedEntityValuable );
 
 private:
 	GLSLProgram *silhouetteShader = nullptr;
@@ -38,14 +38,21 @@ private:
 	void CreateFbo( int idx );
 	void CreateDrawFbo();
 
-	void DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs );
-	void DrawFrobImageBased( idList<drawSurf_t*> &surfs );
-	void DrawFrobGeometric( idList<drawSurf_t*> &surfs );
+	enum EFrobOutlineMode
+	{
+		EFrobOutlineMode_Disabled = 0,
+		EFrobOutlineMode_ImageBased = 1,
+		EFrobOutlineMode_Geometric = 2
+	};
+
+	void DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs, bool isfrobbedEntityValuable );
+	void DrawFrobImageBased( idList<drawSurf_t*> &surfs, bool isfrobbedEntityValuable );
+	void DrawFrobGeometric( idList<drawSurf_t*> &surfs, bool isfrobbedEntityValuable );
 
 	void DrawSurfaces( idList<drawSurf_t*> &surfs, bool highlight, bool enableAlphaTest );
 	void MarkOutline( idList<drawSurf_t*> &surfs );
-	void DrawImageBasedOutline( idList<drawSurf_t*> &surfs, int stencilMask );
-	void DrawGeometricOutline( idList<drawSurf_t*> &surfs );
+	void DrawImageBasedOutline( idList<drawSurf_t*> &surfs, int stencilMask, bool isfrobbedEntityValuable );
+	void DrawGeometricOutline( idList<drawSurf_t*> &surfs, bool isfrobbedEntityValuable );
 
 	void DrawElements( idList<drawSurf_t *> &surfs, GLSLProgram *shader, bool enableAlphaTest );
 	void ApplyBlur();
@@ -53,3 +60,6 @@ private:
 
 extern idCVar r_newFrob;
 extern idCVar r_frobOutline;
+extern idCVar r_frobOutlineMode;
+
+void SetFrobOutlineMode(int mode);

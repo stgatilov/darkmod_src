@@ -11200,10 +11200,9 @@ void idPlayer::PerformFrobCheckInternal()
 			 && !ent->IsHidden() && ( traceDist < ent->m_FrobDistance )
 			 && ( ent != gameLocal.m_Grabber->GetSelected() ) )
 		{
-			// Store the trace for later reference
 			m_FrobTrace = trace;
-			// Store the frob entity
 			m_FrobEntity = ent;
+			GetRenderView()->isHighlightedEntityValuable = ent->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 
 			if (!bFrobHelperActive)
 				// we have found our frobbed entity, so exit
@@ -11333,7 +11332,7 @@ void idPlayer::PerformFrobCheckInternal()
 	{
 		// Store the frob entity
 		m_FrobEntity = bestEnt;
-		// and the trace for reference
+		GetRenderView()->isHighlightedEntityValuable = bestEnt->spawnArgs.GetString("inv_name", nullptr) != nullptr;
 		m_FrobTrace = trace;
 
 		return; // done
