@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "ButtonStateTracker.h"
 #include "Listener.h"
-#include "FrobHelper.h"
+#include "HudFader.h"
 
 class CInventoryItem;
 typedef std::shared_ptr<CInventoryItem> CInventoryItemPtr;
@@ -407,18 +407,69 @@ public:
 	// player is holding the creep button or toggle creep is active.
 	bool					m_CreepIntent;
 
-	// STiFU: FrobHelper alpha calculation
-	CFrobHelper				m_FrobHelper;
-
-
 	/**
 	* Hack to fix the leaning test of key-releases
 	* Timestamp to wait a few frames before testing for button release
 	**/
 	int						m_LeanButtonTimeStamp;
 
+
+	// #6677: Dynamic HUD
+	struct DynamicHudT 
+	{
+		void Update();
+
+		void Reset();
+
+		/**
+		 * DynHud_FrobHelperRule1: Show while object can be interacted with
+		 */
+		HudFader frobHelper; // #4906
+
+		/**
+		 * DynHUD_WeaponRule1: Never show for weapons without ammo
+		 * DynHUD_WeaponRule2: Briefly show when selecting a weapon not qualifying for rule 1
+		 * DynHUD_WeaponRule3: Briefly show when hidden and next/prev weapon is pressed and a weapon is selected that does not qualify for rule 1. Skip actually switching weapons.
+		 * DynHUD_WeaponRule4: Briefly show when ammo changes and respective weapon is selected
+		 * DynHUD_WeaponRule5: Show while a temporal weapon effect is active (e.g. holy water) -> Ensured on assets side
+		 */
+		HudFader weaponInventory; // #6677
+
+		int      selectedWeaponAmmo{ 0 }; // #6677: DynHUD_WeaponRule4
+
+		/**
+		 * DynHUD_ItemRule1: Briefly show when selecting an item (compass will not fade out because Inventory_HUD_Opacity was simply not defined there)
+		 * DynHUD_ItemRule2: Briefly show when hidden and next/prev inv item or next/prev inv group is pressed. Skip actually switching items.
+		 * DynHUD_ItemRule3: Briefly show when picking up a new item
+		 * DynHUD_ItemRule4: Show when item can be used with world entity
+		 * DynHUD_ItemRule5: Briefly show when using an item
+		 */
+		HudFader itemInventory; // #6677
+
+		/**
+		 * DynHUD_HealthRule1: Briefly show after taking damage
+		 * DynHUD_HealthRule2: Show when equipping a weapon intended for combat (special cases: water arrows with holy water flask, rope arrow)
+		 * DynHUD_HealthRule3: Show when breath is running out
+		 * DynHUD_HealthRule4: Show when health is below a certain threshold
+		 * DynHUD_HealthRule5: Show while healing
+		 * (DynHUD_HealthRule6: Show while in combat?)
+		 */
+		HudFader healthBar; // #6677
+
+	private:
+		CInventoryItemPtr     useOnFrobItem; // #6677: DynHUD_ItemRule4
+		idEntityPtr<idEntity> lastFrobHighlightedEntity; // #6677: DynHUD_ItemRule4
+	} m_dynamicHUD;
+
+
+	void CycleInventoryGroup(const idStr& groupName) override; // #6677: DynHUD_ItemRule1
+
+
+
 	idEntityPtr<idWeapon>	weapon;
 	idUserInterface *		hud;				// MP: is NULL if not local player
+
+	
 
 	// greebo: This is true if the inventory HUD needs a refresh
 	bool					inventoryHUDNeedsUpdate;

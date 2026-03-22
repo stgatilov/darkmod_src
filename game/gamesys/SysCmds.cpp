@@ -1193,11 +1193,55 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 	yaw = player->viewAngles.yaw;
 
 	value = args.Argv( 1 );
-	dict.Set( "classname", value );
+
+	dict.Set( "classname", value);
 	dict.Set( "angle", va( "%f", yaw + 180 ) );
 
 	org = player->GetEyePosition() + idAngles( 0, yaw, 0 ).ToForward() * 80; // Spawn in front of eyes, not under floor -- SteveL #3856
 	dict.Set( "origin", org.ToString() );
+
+	const bool spawnAll     = 0 == idStr::Icmp(value, "all");
+	const bool spawnWeapons = spawnAll || (0 == idStr::Icmp(value, "weapons"));
+	const bool spawnTools   = spawnAll || (0 == idStr::Icmp(value, "tools"));
+
+	if (spawnWeapons)
+	{
+		// non stackables
+		for (const char* classname : { "atdm:weapon_blackjack", "atdm:weapon_shortsword" })
+		{
+			dict.Set("classname", classname);
+			gameLocal.SpawnEntityDef(dict);
+		}
+
+		// stackables
+		dict.Set("inv_ammo_amount", "50");
+		for (const char* classname : { "atdm:ammo_broadhead", "atdm:ammo_firearrow", "atdm:ammo_gasarrow", "atdm:ammo_mossarrow", "atdm:ammo_noisemaker", "atdm:ammo_ropearrow", "atdm:ammo_waterarrow", "atdm:ammo_vinearrow"})
+		{
+			dict.Set("classname", classname);
+			gameLocal.SpawnEntityDef(dict);
+		}
+	}
+	
+	if (spawnTools)
+	{
+		// non stackables
+		for (const char* classname : { "atdm:playertools_lockpick_snake", "atdm:playertools_lockpick_triangle", "atdm:playertools_lantern", "atdm:playertools_compass", "atdm:playertools_spyglass", "atdm:playertools_slow_match" })
+		{
+			dict.Set("classname", classname);
+			gameLocal.SpawnEntityDef(dict);
+		}
+		
+		// stackables
+		dict.Set("inv_count", "50");
+		for (const char* classname : { "atdm:playertools_health_potion", "atdm:playertools_breath_potion", "atdm:playertools_holywater", "atdm:playertools_flashbomb", "atdm:playertools_flashmine", "atdm:playertools_gasmine", "atdm:playertools_invisibility_potion", "atdm:playertools_mine", "atdm:playertools_slowfall_potion" })
+		{
+			dict.Set("classname", classname);
+			gameLocal.SpawnEntityDef(dict);
+		}
+	}
+
+	if (spawnTools || spawnWeapons)
+		return;
 
 	for( i = 2; i < args.Argc() - 1; i += 2 ) {
 

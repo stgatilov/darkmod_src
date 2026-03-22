@@ -261,16 +261,34 @@ extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;
 extern idCVar cv_frob_fadetime;
 extern idCVar cv_frob_weapon_selects_weapon;
-extern idCVar cv_frob_item_selects_item;
 extern idCVar cv_frob_debug_hud;
 
+// #4906: Frobhelper
 extern idCVar cv_frobhelper_active;
+extern idCVar cv_frobhelper_size;
 extern idCVar cv_frobhelper_alwaysVisible;
 extern idCVar cv_frobhelper_alpha;
 extern idCVar cv_frobhelper_fadein_delay;
 extern idCVar cv_frobhelper_fadein_duration;
 extern idCVar cv_frobhelper_fadeout_duration;
-extern idCVar cv_frobhelper_ignore_size;
+
+// #6677: Dynamic HUD
+extern idCVar cv_dynamicHUD;
+extern idCVar cv_dynamicHUD_fadein_duration;
+extern idCVar cv_dynamicHUD_fadeout_delay;
+extern idCVar cv_dynamicHUD_fadeout_duration;
+extern idCVar cv_dynamicHUD_weaponInventory;
+extern idCVar cv_dynamicHUD_weaponInventory_nextPrevOverride;
+extern idCVar cv_dynamicHUD_weaponInventory_showName;
+extern idCVar cv_dynamicHUD_weaponInventory_showOnAmmoChange;
+extern idCVar cv_dynamicHUD_weaponInventory_showBowOnly;
+extern idCVar cv_dynamicHUD_itemInventory;
+extern idCVar cv_dynamicHUD_itemInventory_nextPrevOverride;
+extern idCVar cv_dynamicHUD_itemInventory_showOnPickup;
+extern idCVar cv_dynamicHUD_itemInventory_showName;
+extern idCVar cv_dynamicHUD_healthBar;
+extern idCVar cv_dynamicHUD_healthBar_healthThreshold;
+extern idCVar cv_dynamicHUD_healthBar_airThreshold;
 
 // Daft Mugi #6316: Hold Frob for alternate interaction
 extern idCVar cv_holdfrob_delay;

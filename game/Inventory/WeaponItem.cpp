@@ -34,7 +34,8 @@ CInventoryWeaponItem::CInventoryWeaponItem() :
 	m_Ammo(0),
 	m_WeaponIndex(-1),
 	m_AllowedEmpty(false),
-	m_Enabled(true)
+	m_Enabled(true),
+	m_WeaponIntent(EWeaponIntent::Unknown)
 {
 	SetType(IT_WEAPON);
 }
@@ -45,7 +46,8 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity*
 	m_WeaponIndex(-1),
 	m_AllowedEmpty(false),
 	m_IsToggleable(false),
-	m_Enabled(true)
+	m_Enabled(true),
+	m_WeaponIntent(EWeaponIntent::Unknown)
 {
 	SetType(IT_WEAPON);
 
@@ -95,6 +97,7 @@ void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_AllowedEmpty);
 	savefile->ReadBool(m_IsToggleable);
 	savefile->ReadBool(m_Enabled);
+	m_WeaponIntent = EWeaponIntent::Unknown;
 }
 
 bool CInventoryWeaponItem::IsEnabled() const
@@ -177,6 +180,60 @@ void CInventoryWeaponItem::UseAmmo(int amount)
 	SetAmmo(m_Ammo - amount);
 }
 
+bool CInventoryWeaponItem::IsIntendedForCombat() const
+{
+	if (m_WeaponIntent == EWeaponIntent::Unknown)
+	{
+		if (idStr::Icmp(m_WeaponDefName, "atdm:weapon_ropearrow") == 0)
+		{
+			// Special case for rope arrow needed: It causes damage, but its primary intend is utility, not combat.
+			m_WeaponIntent = EWeaponIntent::Utility;
+			return false;
+		}
+
+		const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName, true);
+		if (weaponDict == nullptr)
+			goto EarlyReturn;
+
+		if (weaponDict->GetBool(WEAPON_AMMO_REQUIRED, "1"))
+		{
+			const char* projectileDefName = m_ProjectileDefName.IsEmpty() ?
+				weaponDict->GetString("def_projectile") : m_ProjectileDefName.c_str();
+			if (projectileDefName == nullptr)
+				goto EarlyReturn;
+
+			const idDict* projectileDict = gameLocal.FindEntityDefDict(projectileDefName, true);
+			if (projectileDict == nullptr)
+				goto EarlyReturn;
+			
+			const char* defDamage = projectileDict->GetString("def_damage");
+			const bool doesNoDamage = idStr::Icmp(defDamage, "atdm:damage_none") == 0;
+			m_WeaponIntent = doesNoDamage ? EWeaponIntent::Utility : EWeaponIntent::Combat;
+		}
+		else
+		{
+			// Melee
+			const char* meleeDefName = weaponDict->GetString("def_melee");
+			if (meleeDefName == nullptr)
+				goto EarlyReturn;
+
+			const idDict* meleeDict = gameLocal.FindEntityDefDict(meleeDefName, true);
+			if (meleeDict == nullptr)
+				goto EarlyReturn;
+
+			static const int minDamage = 5; // Blackjack causes at least SOME damage
+			const int damage = meleeDict->GetInt("damage", "0");
+			m_WeaponIntent = damage >= minDamage ? EWeaponIntent::Combat : EWeaponIntent::Utility;
+		}
+	}
+
+	return m_WeaponIntent == EWeaponIntent::Combat;
+
+EarlyReturn:
+	m_WeaponIntent = EWeaponIntent::Utility;
+	return false;
+}
+
 void CInventoryWeaponItem::SetWeaponIndex(int index)
 {
 	m_WeaponIndex = index;
@@ -216,6 +273,7 @@ const idStr& CInventoryWeaponItem::GetProjectileDefName() const
 
 void CInventoryWeaponItem::SetProjectileDefName(const idStr& weaponDefName)
 {
+	m_WeaponIntent  = EWeaponIntent::Unknown;
 	m_ProjectileDefName = weaponDefName;
 }
 
@@ -230,6 +288,7 @@ void CInventoryWeaponItem::ResetProjectileDefName()
 		return;
 	}
 
+	m_WeaponIntent  = EWeaponIntent::Unknown;
 	m_ProjectileDefName = weaponDict->GetString("def_projectile");
 }
 
