@@ -284,10 +284,10 @@ idVec4 imageBlock_s::Sample(float s, float t, textureFilter_t filter, textureRep
 		float ft = t - it;
 
 		idVec4 res(0.0f);
-		res += (1.0f - fs) * (1.0 - ft) * GetPixelRepeat(is - 1, it - 1);
-		res += (       fs) * (1.0 - ft) * GetPixelRepeat(is    , it - 1);
-		res += (1.0f - fs) * (      ft) * GetPixelRepeat(is - 1, it    );
-		res += (       fs) * (      ft) * GetPixelRepeat(is    , it    );
+		res += (1.0f - fs) * (1.0f - ft) * GetPixelRepeat(is - 1, it - 1);
+		res += (       fs) * (1.0f - ft) * GetPixelRepeat(is    , it - 1);
+		res += (1.0f - fs) * (       ft) * GetPixelRepeat(is - 1, it    );
+		res += (       fs) * (       ft) * GetPixelRepeat(is    , it    );
 		return res;
 	}
 	else {
