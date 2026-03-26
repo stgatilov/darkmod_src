@@ -36,9 +36,10 @@ if(TDM_THIRDPARTY_ARTEFACTS)
 	include(ThirdParty/use_artefacts.cmake)
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_C_STANDARD 11)
 
 cmake_dependent_option(WITH_TOOLS "Compile with Tools" ON "MSVC" OFF)
 set(GAME_DIR "${PROJECT_SOURCE_DIR}/../darkmod" CACHE STRING "The directory where the game assets are stored")
@@ -68,7 +69,7 @@ if (UNIX)
 			-fno-omit-frame-pointer         # crashdumps!
 			-fmessage-length=0
 			-fvisibility=hidden
-			-std=c++14
+			-std=c++17
 	)
 	# enable SSE2 if supported (mainly 32-bit x86)
 	check_cxx_compiler_flag(-msse2 MSSE2_SUPPORTED)
