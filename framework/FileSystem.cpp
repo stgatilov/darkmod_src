@@ -43,6 +43,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 	#define ExtLibs
 #endif
 
+#include <random>
+
 /*
 =============================================================================
 
@@ -1876,7 +1878,7 @@ void idFileSystemLocal::TestThreads_f( const idCmdArgs& args ) {
 	common->Printf( "Testing %d files\n", testFiles.Num() );
 	auto testFileFunc = [&] {
 		auto fileList = testFiles;
-		std::random_shuffle(fileList.begin(), fileList.end());
+		std::shuffle(fileList.begin(), fileList.end(), std::minstd_rand());
 		for ( auto & testFile : fileList ) {
 			auto f = fileSystemLocal.OpenFileRead( testFile.name );
 			if ( !f ) {
