@@ -5,7 +5,6 @@
 
 struct MHD_Daemon;
 struct MHD_Connection;
-enum MHD_Result;
 
 //workaround for ssize_t-included errors on MSVC
 #ifdef _MSC_VER
@@ -60,26 +59,16 @@ public:
     void Stop();
     void StartButIgnoreConnections();   //for testing connection timeout
 
-private:
-    class FileDownload;
-    class MultipartDownload;
-
-    static MHD_Result MhdFunction(
-        void *cls,
-        MHD_Connection *connection,
-        const char *url,
-        const char *method,
-        const char *version,
-        const char *upload_data,
-        size_t *upload_data_size,
-        void **ptr
-    );
-    MHD_Result AcceptCallback(
+    // (internal)
+    int/*MHD_Result*/ AcceptCallback(
         MHD_Connection *connection,
         const char *url,
         const char *method,
         const char *version
     ) const;
+private:
+    class FileDownload;
+    class MultipartDownload;
 
     void CloseSuspendedSocket();
 };

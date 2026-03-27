@@ -67,6 +67,40 @@ void HttpServer::CloseSuspendedSocket() {
     }
 }
 
+struct ThreadState {
+    int callCount = 0;
+};
+thread_local ThreadState threadState;
+
+static MHD_Result MhdFunction(
+    void *cls,
+    MHD_Connection *connection,
+    const char *url,
+    const char *method,
+    const char *version,
+    const char *upload_data,
+    size_t *upload_data_size,
+    void **ptr
+) {
+    //only accept GET requests
+    if (0 != strcmp(method, "GET"))
+        return MHD_NO;
+
+    //clear thread state and associate it with request
+    if (*ptr == NULL)
+        threadState = ThreadState();
+    *ptr = &threadState;
+
+    threadState.callCount++;
+    if (threadState.callCount == 1) {
+        //first call only shows headers
+        return MHD_YES;
+    }
+
+    int ret = ((HttpServer*)cls)->AcceptCallback(connection, url, method, version);
+    return (MHD_Result)ret;
+}
+
 void HttpServer::Stop() {
     if (!_daemon)
         return;
@@ -96,39 +130,6 @@ void HttpServer::StartButIgnoreConnections() {
     ZipSyncAssertF(socket != (~0), "Failed to stop daemon listening");
     CloseSuspendedSocket();
     _suspendedSocket = new MHD_socket(socket);
-}
-
-struct ThreadState {
-    int callCount = 0;
-};
-thread_local ThreadState threadState;
-
-MHD_Result HttpServer::MhdFunction(
-    void *cls,
-    MHD_Connection *connection,
-    const char *url,
-    const char *method,
-    const char *version,
-    const char *upload_data,
-    size_t *upload_data_size,
-    void **ptr
-) {
-    //only accept GET requests
-    if (0 != strcmp(method, "GET"))
-        return MHD_NO;
-
-    //clear thread state and associate it with request
-    if (*ptr == NULL)
-        threadState = ThreadState();
-    *ptr = &threadState;
-
-    threadState.callCount++;
-    if (threadState.callCount == 1) {
-        //first call only shows headers
-        return MHD_YES;
-    }
-
-    return ((HttpServer*)cls)->AcceptCallback(connection, url, method, version);
 }
 
 class PauseState {
@@ -293,7 +294,7 @@ static MHD_Result ReturnWithErrorResponse(MHD_Connection *connection, int httpCo
     return ret;
 }
 
-MHD_Result HttpServer::AcceptCallback(
+int HttpServer::AcceptCallback(
     MHD_Connection *connection,
     const char *url,
     const char *method,

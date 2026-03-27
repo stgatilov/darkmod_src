@@ -10,9 +10,11 @@ class Blake2Conan(ConanFile):
     description = "BLAKE2 cryptographic hash function."
     settings = "os", "compiler", "build_type", "arch"
     options = {
+        "shared": [True, False],
         "SSE": ["None", "SSE2"]
     }
     default_options = {
+        "shared": False,
         "SSE": "None"
     }
     exports_sources = "src/CMakeLists.txt"
@@ -49,4 +51,5 @@ class Blake2Conan(ConanFile):
         files.copy(self, "COPYING", src=self.source_folder, dst=path.join(self.package_folder, "licenses"), keep_path=False)
 
     def package_info(self):
-        self.cpp_info.libs = ["blake2"]
+        self.cpp_info.includedirs.append("include")
+        self.cpp_info.libs = files.collect_libs(self)
