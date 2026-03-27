@@ -1,22 +1,9 @@
 #include "StdFilesystem.h"
 
-#if defined(_MSC_VER) && _MSC_VER < 1910
-    //STL-based implementation for MSVC2013
-    #include <filesystem>
-    namespace stdfsys = std::tr2::sys;
-    //TODO: support later versions of MSVC
-#else
-    //it should be here for both GCC and Clang
-    //MSVC2017 is also OK with it
-    #if _HAS_CXX17
-        #include <filesystem>
-        namespace stdfsys = std::filesystem;
-    #else
-        #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-        #include <experimental/filesystem>
-        namespace stdfsys = std::experimental::filesystem;
-    #endif
-#endif
+// TODO: switch to std::filesystem when it includes something like file_time_type::clock::to_time_t
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#include <experimental/filesystem>
+namespace stdfsys = std::experimental::filesystem;
 
 namespace stdext {
     struct path_impl : public stdfsys::path {

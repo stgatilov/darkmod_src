@@ -15,12 +15,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "StdFilesystem.h"
 
-//for MSVC: I know it will be removed, but don't want to fix last_write_time now
+// TODO: switch to std::filesystem when it includes something like file_time_type::clock::to_time_t
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-//it should be here for both GCC and Clang
 #include <experimental/filesystem>
-namespace stdfsys = std::experimental::filesystem::v1;
-
+namespace stdfsys = std::experimental::filesystem;
 
 namespace stdext {
 	struct path_impl : public stdfsys::path {
