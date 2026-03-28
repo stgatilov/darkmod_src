@@ -2,13 +2,6 @@
 import os, platform, subprocess, sys, re
 
 
-def get_file_contents(fp):
-    try:
-        return open(fp, 'rt').read()
-    except:
-        return ''
-
-
 def check_msvc_env():
     try:
         cl_out = subprocess.run('cl', capture_output=True).stderr.decode()
@@ -33,9 +26,6 @@ def create_build_cmd(*, os, arch_host, build_libs, build_tdm):
     cmd += ' -of artefacts/%s_%s' % (os, arch_host)
     cmd += ' -d tdm_deploy'
     cmd += ' -b missing'
-
-    # only for CI hacks, not used normally
-    cmd += ' ' + get_file_contents('~/tdm_conan_extra.txt')
 
     return cmd
 

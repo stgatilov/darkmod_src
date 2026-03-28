@@ -9,4 +9,6 @@ build_type=Release
 compiler.version=5
 
 [platform_tool_requires]
+# workaround for conan downloading m4 binary from server with glibc version requirements too high
+# see: https://github.com/conan-io/conan-center-index/issues/21150#issuecomment-4145166641
 m4/1.4.19

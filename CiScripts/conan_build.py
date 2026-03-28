@@ -4,12 +4,6 @@ def execute(cmd):
     print("CMD: " + cmd)
     assert os.system(cmd) == 0
 
-def get_file_contents(fp):
-    try:
-        return open(fp, 'rt').read()
-    except:
-        return ''
-
 try:
     bitness = sys.argv[1]
 except:
@@ -39,7 +33,6 @@ for config in ['release', 'debug']:
     cmd += ' -o thedarkmod/*:build_game=True'
     cmd += ' -o thedarkmod/*:build_installer=True'
     cmd += ' -o thedarkmod/*:build_packager=True'
-    cmd += ' ' + get_file_contents('~/tdm_conan_extra.txt')
     execute(cmd)
 
 os.chdir('../CiScripts')
