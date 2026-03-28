@@ -33,6 +33,7 @@ for config in ['release', 'debug']:
     cmd += ' -o thedarkmod/*:build_game=True'
     cmd += ' -o thedarkmod/*:build_installer=True'
     cmd += ' -o thedarkmod/*:build_packager=True'
+    cmd += ' ' + os.environ.get('TDM_CONAN_EXTRA', '')
     execute(cmd)
 
 os.chdir('../CiScripts')

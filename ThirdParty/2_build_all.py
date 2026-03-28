@@ -27,6 +27,9 @@ def create_build_cmd(*, os, arch_host, build_libs, build_tdm):
     cmd += ' -d tdm_deploy'
     cmd += ' -b missing'
 
+    # only for CI hacks, not used normally
+    cmd += ' ' + os.environ.get('TDM_CONAN_EXTRA', '')
+
     return cmd
 
 

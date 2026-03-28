@@ -12,15 +12,6 @@ if 'windows' not in sysname:
     os.system('sudo apt-get -y install mesa-common-dev libglu1-mesa-dev xorg-dev libxcb-*-dev libx11-xcb-dev libxxf86vm-dev libxext-dev uuid-dev')
     # workaround for FLTK build broken due to: https://github.com/appveyor/ci/issues/3842
     os.system('sudo rm -f /usr/local/bin/doxygen')
-
     # workaround for conan downloading m4 binary from server with glibc version requirements too high
     # see: https://github.com/conan-io/conan-center-index/issues/21150#issuecomment-4145166641
-    os.chdir('../ThirdParty')
-    for config in ['release', 'debug']:
-        cmd = 'conan install --requires m4/1.4.19 --build="*"'
-        cmd += f' -pr:b profiles/base_linux'
-        cmd += f' -pr profiles/os_linux'
-        cmd += f' -pr profiles/arch_64'
-        cmd += f' -pr profiles/build_{config}'
-        os.system(cmd)  # will fail on conan-less builds, we don't care
-    os.chdir('../CiScripts')
+    os.system(r'export TDM_CONAN_EXTRA=--build=\"m4/*\"')
