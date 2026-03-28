@@ -14,4 +14,4 @@ if 'windows' not in sysname:
     os.system('sudo rm -f /usr/local/bin/doxygen')
     # workaround for conan downloading m4 binary from server with glibc version requirements too high
     # see: https://github.com/conan-io/conan-center-index/issues/21150#issuecomment-4145166641
-    os.system(r'export TDM_CONAN_EXTRA=--build=\"m4/*\"')
+    open('~/tdm_conan_extra.txt', 'wt').write('--build="m4/*"')
