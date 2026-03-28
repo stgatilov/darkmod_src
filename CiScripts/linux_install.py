@@ -15,6 +15,7 @@ if 'windows' not in sysname:
 
     # workaround for conan downloading m4 binary from server with glibc version requirements too high
     # see: https://github.com/conan-io/conan-center-index/issues/21150#issuecomment-4145166641
+    os.chdir('../ThirdParty')
     for config in ['release', 'debug']:
         cmd = 'conan install --requires m4/1.4.19 --build="*"'
         cmd += f' -pr:b profiles/base_linux'
@@ -22,3 +23,4 @@ if 'windows' not in sysname:
         cmd += f' -pr profiles/arch_64'
         cmd += f' -pr profiles/build_{config}'
         os.system(cmd)  # will fail on conan-less builds, we don't care
+    os.chdir('../CiScripts')
