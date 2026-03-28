@@ -21,3 +21,4 @@ if 'windows' not in sysname:
         cmd += f' -pr profiles/os_linux'
         cmd += f' -pr profiles/arch_64'
         cmd += f' -pr profiles/build_{config}'
+        os.system(cmd)  # will fail on conan-less builds, we don't care
