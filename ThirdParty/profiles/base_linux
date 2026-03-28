@@ -5,5 +5,11 @@ compiler=gcc
 arch=x86_64
 build_type=Release
 
-# wanted by AppVeyor CI =(
-compiler.version=5
+# without this, I get the following error on AppVeyor:
+# libtool/2.4.7: Invalid: 'settings.compiler.version' value not defined
+compiler.version=9
+
+[platform_tool_requires]
+# workaround for conan downloading m4 binary from server with glibc version requirements too high
+# see: https://github.com/conan-io/conan-center-index/issues/21150#issuecomment-4145166641
+m4/1.4.19
