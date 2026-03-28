@@ -4,7 +4,7 @@ shallow_clone: true
 
 # configure matrix of builds
 image:
-  - Visual Studio 2022
+#  - Visual Studio 2022
   - Ubuntu2004
 platform:
   - 64
