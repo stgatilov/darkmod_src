@@ -128,12 +128,8 @@ namespace stdext {
     std::time_t last_write_time(const path& p) {
         std::time_t res;
         try {
-            #if defined(_MSC_VER) && _MSC_VER <= 1800
-                res = stdfsys::last_write_time(get(p));
-            #else
-                auto tt = stdfsys::last_write_time(get(p));
-                res = stdfsys::file_time_type::clock::to_time_t(tt);
-            #endif
+            auto tt = stdfsys::last_write_time(get(p));
+            res = stdfsys::file_time_type::clock::to_time_t(tt);
         }
         catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
         return res;
@@ -158,11 +154,7 @@ namespace stdext {
     path current_path() {
         path_impl res;
         try {
-            #if defined(_MSC_VER) && _MSC_VER <= 1800
-                res = stdfsys::current_path<stdfsys::path>();
-            #else
-                res = stdfsys::current_path();
-            #endif
+            res = stdfsys::current_path();
         }
         catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
         return path(res);
