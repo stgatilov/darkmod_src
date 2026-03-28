@@ -7,3 +7,6 @@ build_type=Release
 
 # wanted by AppVeyor CI =(
 compiler.version=5
+
+[platform_tool_requires]
+m4/1.4.19
