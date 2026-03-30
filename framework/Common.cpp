@@ -120,8 +120,12 @@ idCVar com_makingBuild( "com_makingBuild", "0", CVAR_BOOL | CVAR_SYSTEM, "1 when
 idCVar com_updateLoadSize( "com_updateLoadSize", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "update the load size after loading a map" );
 //idCVar com_videoRam( "com_videoRam", "128", CVAR_INTEGER | CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "holds the last amount of detected video ram" );
 
-idCVar com_product_lang_ext( "com_product_lang_ext", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Extension to use when creating language files." );
+// DG: script debugger from dhewm3
+idCVar com_enableDebuggerServer( "com_enableDebuggerServer", "0", CVAR_BOOL | CVAR_SYSTEM, "toggle debugger server and try to connect to com_dbgClientAdr" );
+idCVar com_dbgClientAdr( "com_dbgClientAdr", "localhost", CVAR_SYSTEM | CVAR_ARCHIVE, "debuggerApp client address" );
+idCVar com_dbgServerAdr( "com_dbgServerAdr", "localhost", CVAR_SYSTEM | CVAR_ARCHIVE, "debugger server address" );
 
+idCVar com_product_lang_ext( "com_product_lang_ext", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Extension to use when creating language files." );
 
 // com_speeds times
 int				time_gameFrame;
@@ -420,8 +424,19 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 	// echo to dedicated console and early console
 	Sys_Printf( "%s", msg );
 
-	// print to script debugger server
-	// DebuggerServerPrint( msg );
+	if ( com_enableDebuggerServer.GetBool( ) )      {
+		// print to script debugger server
+		if ( com_editors & EDITOR_DEBUGGER ) {
+			DebuggerServerPrint( msg );
+		} else {
+			// only echo to dedicated console and early console when debugger is not running so no
+			// deadlocks occur if engine functions called from the debuggerthread trace stuff..
+			Sys_Printf( "%s", msg );
+		}
+	} else {
+		// echo to dedicated console and early console
+		Sys_Printf( "%s", msg );
+	}
 
 #if 0	// !@#
 #if defined(_DEBUG) && defined(WIN32)
@@ -812,7 +827,6 @@ void idCommonLocal::DoError( const char *msg, int code ) {
 		com_errorEntered = 0;
 		throw idException( msg );
 		// The gui editor doesnt want thing to com_error so it handles exceptions instead
-	}
 	} else if( com_editors & ( EDITOR_GUI | EDITOR_DEBUGGER ) ) {
 		com_errorEntered = 0;
 		throw idException( msg );
@@ -1404,8 +1418,12 @@ Com_ScriptDebugger_f
 static void Com_ScriptDebugger_f( const idCmdArgs &args ) {
 	// Make sure it wasnt on the command line
 	if ( !( com_editors & EDITOR_DEBUGGER ) ) {
-		common->Printf( "Script debugger is currently disabled\n" );
-		// DebuggerClientLaunch();
+		// start debugger server if needed
+		if ( !com_enableDebuggerServer.GetBool() )
+			com_enableDebuggerServer.SetBool( true );
+
+		// start debugger client.
+		DebuggerClientLaunch();
 	}
 }
 
@@ -2450,6 +2468,14 @@ void idCommonLocal::Frame( void ) {
 			InitSIMD();
 		}
 
+		if ( com_enableDebuggerServer.IsModified() ) {
+			if ( com_enableDebuggerServer.GetBool() ) {
+				DebuggerServerInit();
+			} else {
+				DebuggerServerShutdown();
+			}
+		}
+
 		eventLoop->RunEventLoop();
 
 		static int64_t com_frameTimeMicro = 0;		//same as com_frameTime, but in microseconds
@@ -3009,13 +3035,14 @@ void idCommonLocal::InitGame( void )
 	// initialize the user interfaces
 	uiManager->Init();
 
-	// startup the script debugger
-	// DebuggerServerInit();
-
 	// load the game dll
 	LoadGameDLL();
 	// stgatilov #5661: notify MissionManager about already accepted new FMs
 	gameLocal.m_MissionManager->AddToNewModList(newModsList);
+
+	// startup the script debugger
+	if ( com_enableDebuggerServer.GetBool( ) )
+		DebuggerServerInit();
 	
 	// init the session
 	session->Init();
@@ -3041,7 +3068,8 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 	}
 
 	// shutdown the script debugger
-	// DebuggerServerShutdown();
+	if ( com_enableDebuggerServer.GetBool() )
+		DebuggerServerShutdown();
 
 	// shut down the session
 	session->Shutdown();

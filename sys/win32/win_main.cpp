@@ -1092,7 +1092,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	// Launch the script debugger
 	if ( strstr( lpCmdLine, "+debugger" ) ) {
-		// DebuggerClientInit( lpCmdLine );
+#ifdef ID_ALLOW_TOOLS
+		DebuggerClientInit(GetCommandLine());
+#endif
 		return 0;
 	}
 

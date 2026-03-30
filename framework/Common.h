@@ -67,6 +67,10 @@ extern idCVar		com_updateLoadSize;
 extern idCVar		com_timescale;
 //extern idCVar		com_videoRam;
 
+extern idCVar		com_enableDebuggerServer;
+extern idCVar		com_dbgClientAdr;
+extern idCVar		com_dbgServerAdr;
+
 extern int			time_gameFrame;			// game logic time
 extern int			time_gameDraw;			// game present time
 extern int			time_frontend;			// renderer frontend time

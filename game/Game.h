@@ -194,6 +194,11 @@ class idMD5Anim;
 typedef struct renderLight_s renderLight_t;
 typedef struct renderEntity_s renderEntity_t;
 class idRenderModel;
+class idThread;
+class function_t;
+class idProgram;
+class idInterpreter;
+typedef struct prstack_s prstack_t;
 
 // FIXME: this interface needs to be reworked but it properly separates code for the time being
 class idGameEdit {
@@ -282,6 +287,36 @@ public:
 	virtual void				MapRemoveEntity( const char *name ) const;
 	virtual void				MapEntityTranslate( const char *name, const idVec3 &v ) const;
 
+	// ##### Script Debugger #####
+
+	// IdProgram
+	virtual void				GetLoadedScripts( idStrList ** result );
+	virtual bool				IsLineCode( const char* filename, int linenumber) const;
+	virtual const char *		GetFilenameForStatement( idProgram* program, int index ) const;
+	virtual int					GetLineNumberForStatement( idProgram* program, int index ) const;
+
+	// idInterpreter
+	virtual bool				CheckForBreakPointHit( const idInterpreter* interpreter, const function_t* function1, const function_t* function2, int depth ) const;
+	virtual bool				ReturnedFromFunction( const idProgram* program, const idInterpreter* interpreter, int index ) const;
+	virtual bool				GetRegisterValue( const idInterpreter* interpreter, const char* name, idStr& out, int scopeDepth ) const;
+	virtual const idThread*		GetThread( const idInterpreter* interpreter ) const;
+	virtual int					GetInterpreterCallStackDepth( const idInterpreter* interpreter );
+	virtual const function_t*	GetInterpreterCallStackFunction( const idInterpreter* interpreter, int stackDepth = -1 );
+
+	// IdThread
+	virtual const char *		ThreadGetName( const idThread* thread ) const;
+	virtual int					ThreadGetNum( const idThread* thread ) const;
+	virtual bool				ThreadIsDoneProcessing( const idThread* thread ) const;
+	virtual bool				ThreadIsWaiting( const idThread* thread ) const;
+	virtual bool				ThreadIsDying( const idThread* thread ) const;
+	virtual int					GetTotalScriptThreads( ) const;
+	virtual const idThread*		GetThreadByIndex( int index ) const;
+
+	// MSG helpers
+	virtual void				MSG_WriteThreadInfo( idBitMsg* msg, const idThread* thread, const idInterpreter* interpreter );
+	virtual void				MSG_WriteCallstackFunc( idBitMsg* msg, const prstack_t* stack, const idProgram* program, int instructionPtr );
+	virtual void				MSG_WriteInterpreterInfo( idBitMsg* msg, const idInterpreter* interpreter, const idProgram* program, int instructionPtr );
+	virtual void				MSG_WriteScriptList( idBitMsg* msg );
 };
 
 extern idGameEdit *				gameEdit;

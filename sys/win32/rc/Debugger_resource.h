@@ -63,6 +63,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define ID_DBG_EDIT_FINDPREV                     22022
 #define ID_DBG_EDIT_FINDSELECTEDPREV             22023
 #define ID_DBG_HELP_ABOUT                        22024
+#define ID_DBG_SEND_COMMAND                      22025
 
 // Next default values for new objects
 // 
