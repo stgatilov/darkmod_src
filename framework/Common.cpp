@@ -421,10 +421,7 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 	// remove any color codes
 	idStr::RemoveColors( msg );
 
-	// echo to dedicated console and early console
-	Sys_Printf( "%s", msg );
-
-	if ( com_enableDebuggerServer.GetBool( ) )      {
+	if ( com_enableDebuggerServer.GetBool( ) ) {
 		// print to script debugger server
 		if ( com_editors & EDITOR_DEBUGGER ) {
 			DebuggerServerPrint( msg );
