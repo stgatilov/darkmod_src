@@ -149,7 +149,7 @@ void idCVar::UpdateValue( void ) {
 				clamped = true;
 			}
 		}
-		if ( clamped || !idStr::IsNumeric( value ) || idStr::FindChar( value, '.' ) ) {
+		if ( clamped || !idStr::IsNumeric( value ) || idStr::FindChar( value, '.' ) != -1 ) {
 			*pActiveValue = idStr( integerValue );
 			value = pActiveValue->c_str();
 		}
