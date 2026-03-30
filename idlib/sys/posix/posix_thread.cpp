@@ -252,9 +252,10 @@ void Sys_DestroyThread( uintptr_t threadHandle )
 #endif
 #endif
 	
-	if( pthread_join( ( pthread_t )threadHandle, NULL ) != 0 )
+	int e = pthread_join( ( pthread_t )threadHandle, NULL );
+	if( e != 0 )
 	{
-		idLib::common->FatalError( "ERROR: pthread_join %s failed\n", name );
+		idLib::common->FatalError( "ERROR: pthread_join %s failed: %s (%d)\n", name, strerror(e), e );
 	}
 }
 
