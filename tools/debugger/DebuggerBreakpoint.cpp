@@ -26,7 +26,6 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 #if defined( ID_ALLOW_TOOLS )
-#include "tools/edit_gui_common.h"
 #include "DebuggerApp.h"
 #else
 #include "debugger_common.h"

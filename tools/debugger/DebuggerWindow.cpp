@@ -26,9 +26,6 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "tools/edit_gui_common.h"
-
-
 #include "../../sys/win32/rc/debugger_resource.h"
 #include "DebuggerApp.h"
 #include "../Common/OpenFileDialog.h"
@@ -54,6 +51,13 @@ If you have questions concerning this license or the applicable additional terms
 #define IDC_DBG_BREAKLIST		31012
 
 #define ID_DBG_FILE_MRU1		10000
+
+// Hack: dhewm3 supports scaling all MFC GUIs for display DPI
+//  and has Win_GetWindowScalingFactor() for getting the required factor.
+//  TDM doesn't have this, so for now provide a stub so the script debugger works
+static float Win_GetWindowScalingFactor(HWND window) {
+	return 1.0f;
+}
 
 /*
 ================
@@ -298,7 +302,7 @@ LRESULT CALLBACK rvDebuggerWindow::ScriptWndProc ( HWND wnd, UINT msg, WPARAM wp
 				ti.hwnd   = wnd;
 				ti.uId    = 0;
 				SendMessage ( window->mWndToolTips, TTM_DELTOOL, 0, (LPARAM) (LPTOOLINFO) &ti );
-				window->mTooltipVar.Empty ( );
+				window->mTooltipVar.Clear();
 			}
 
 			// If there is no word then ignore it
@@ -2529,7 +2533,7 @@ int rvDebuggerWindow::GetSelectedText ( idStr& text )
 	int			end;
 	char*		temp;
 
-	text.Empty ( );
+	text.Clear();
 
 	if ( mScripts.Num ( ) )
 	{

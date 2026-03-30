@@ -32,7 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 
 
 #if defined( ID_ALLOW_TOOLS )
-#include "tools/edit_gui_common.h"
 #include "DebuggerServer.h"
 #include "DebuggerApp.h"
 #else
@@ -410,7 +409,6 @@ void rvDebuggerServer::HandleInspectThreads ( idBitMsg* msg )
 {
 	idBitMsg	msgOut;
 	byte		buffer[MAX_MSGLEN];
-	int			i;
 
 	// Initialize the message
 	msgOut.Init( buffer, sizeof( buffer ) );
@@ -422,9 +420,12 @@ void rvDebuggerServer::HandleInspectThreads ( idBitMsg* msg )
 	msgOut.WriteShort ((short)gameEdit->GetTotalScriptThreads() );
 
 	// Loop through all of the threads and write their name and number to the message
-	for ( i = 0; i < gameEdit->GetTotalScriptThreads(); i ++ )
+	for ( int i = 0, n=gameEdit->GetTotalScriptThreads(); i < n; i++ )
 	{
-		gameEdit->MSG_WriteThreadInfo(&msgOut, gameEdit->GetThreadByIndex(i), mBreakInterpreter);
+		const idThread* t = gameEdit->GetThreadByIndex(i);
+		if ( t != NULL ) {
+			gameEdit->MSG_WriteThreadInfo(&msgOut, t, mBreakInterpreter);
+		}
 	}
 
 	// Send off the inspect threads packet to the debugger client
