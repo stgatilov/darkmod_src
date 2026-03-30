@@ -44,7 +44,7 @@ static HWND						gDebuggerWindow = NULL;
 #endif
 
 static rvDebuggerServer*		gDebuggerServer			= NULL;
-static SDL_Thread*				gDebuggerServerThread   = NULL;
+static uintptr_t				gDebuggerServerThread = 0;
 static bool						gDebuggerServerQuit     = false;
 
 #if defined( ID_ALLOW_TOOLS )
@@ -127,14 +127,14 @@ DebuggerServerThread
 Thread proc for the debugger server
 ================
 */
-static int SDLCALL DebuggerServerThread ( void *param )
+static unsigned int DebuggerServerThread ( void *param )
 {
 	assert ( gDebuggerServer );
 
 	while ( !gDebuggerServerQuit )
 	{
 		gDebuggerServer->ProcessMessages ( );
-		SDL_Delay( 1 );
+		Sys_Sleep(1);
 	}
 
 	return 0;
@@ -150,12 +150,6 @@ Starts up the debugger server
 bool DebuggerServerInit ( void )
 {
 	com_enableDebuggerServer.ClearModified( );
-
-	if ( !com_debuggerSupported )
-	{
-		common->Warning( "Called DebuggerServerInit() without the gameDLL supporting it!\n" );
-		return false;
-	}
 
 	// Dont do this if we are in the debugger already
 	if ( gDebuggerServer != NULL 
@@ -180,11 +174,7 @@ bool DebuggerServerInit ( void )
 	}
 	
 	// Start the debugger server thread
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	gDebuggerServerThread = SDL_CreateThread( DebuggerServerThread, "DebuggerServer", NULL );
-#else // SDL 1.2
-	gDebuggerServerThread = SDL_CreateThread( DebuggerServerThread, NULL );
-#endif
+	gDebuggerServerThread = Sys_CreateThread(DebuggerServerThread, NULL, THREAD_NORMAL, "DebuggerServer");
 
 	return true;
 }
@@ -198,14 +188,14 @@ Shuts down the debugger server
 */
 void DebuggerServerShutdown ( void )
 {
-	if ( gDebuggerServerThread != NULL )
+	if ( gDebuggerServerThread != 0 )
 	{
 		// Signal the debugger server to quit
 		gDebuggerServerQuit = true;
 
 		// Wait for the thread to finish
-		SDL_WaitThread( gDebuggerServerThread, NULL );
-		gDebuggerServerThread = NULL;
+		Sys_DestroyThread( gDebuggerServerThread );
+		gDebuggerServerThread = 0;
 
 		// Shutdown the server now
 		gDebuggerServer->Shutdown();
