@@ -2256,18 +2256,16 @@ void rvDebuggerWindow::CreateToolbar ( void )
 	SendMessage( mWndToolbar, TB_ADDBITMAP, (WPARAM)4, (LPARAM) &tbab );
 
 	// Add the buttons to the toolbar
-	// FIXME:  warning C4838: conversion from 'int' to 'BYTE' requires a narrowing conversion
-	// most probably because TBBUTTON has 4 more bytes in bReserved for alignment on _WIN64
-	TBBUTTON tbb[] = { { 0, 0,					TBSTATE_ENABLED, BTNS_SEP,    0, 0, -1 },
-					   { 8, ID_DBG_FILE_OPEN,	TBSTATE_ENABLED, BTNS_BUTTON, 0, 0, -1 },
-					   { 0, 0,					TBSTATE_ENABLED, BTNS_SEP,    0, 0, -1 },
-					   { 0, ID_DBG_DEBUG_RUN,	TBSTATE_ENABLED, BTNS_BUTTON, 0, 0, -1 },
-					   { 1, ID_DBG_DEBUG_BREAK, TBSTATE_ENABLED, BTNS_BUTTON, 0, 0, -1 },
-					   { 0, 0,					TBSTATE_ENABLED, BTNS_SEP,    0, 0, -1 },
-					   { 4, ID_DBG_DEBUG_STEPINTO, TBSTATE_ENABLED, BTNS_BUTTON, 0, 0, -1 },
-					   { 5, ID_DBG_DEBUG_STEPOVER, TBSTATE_ENABLED, BTNS_BUTTON, 0, 0, -1 },
-					   { 6, ID_DBG_DEBUG_STEPOUT, TBSTATE_ENABLED, BTNS_BUTTON, 0, 0, -1 },
-					   { 0, 0,					TBSTATE_ENABLED, BTNS_SEP,    0, 0, -1 } };
+	TBBUTTON tbb[] = { { 0, 0,					TBSTATE_ENABLED, BTNS_SEP,    {0, 0}, size_t(-1) },
+					   { 8, ID_DBG_FILE_OPEN,	TBSTATE_ENABLED, BTNS_BUTTON, {0, 0}, size_t(-1) },
+					   { 0, 0,					TBSTATE_ENABLED, BTNS_SEP,    {0, 0}, size_t(-1) },
+					   { 0, ID_DBG_DEBUG_RUN,	TBSTATE_ENABLED, BTNS_BUTTON, {0, 0}, size_t(-1) },
+					   { 1, ID_DBG_DEBUG_BREAK, TBSTATE_ENABLED, BTNS_BUTTON, {0, 0}, size_t(-1) },
+					   { 0, 0,					TBSTATE_ENABLED, BTNS_SEP,    {0, 0}, size_t(-1) },
+					   { 4, ID_DBG_DEBUG_STEPINTO, TBSTATE_ENABLED, BTNS_BUTTON, {0, 0}, size_t(-1) },
+					   { 5, ID_DBG_DEBUG_STEPOVER, TBSTATE_ENABLED, BTNS_BUTTON, {0, 0}, size_t(-1) },
+					   { 6, ID_DBG_DEBUG_STEPOUT, TBSTATE_ENABLED, BTNS_BUTTON, {0, 0}, size_t(-1) },
+					   { 0, 0,					TBSTATE_ENABLED, BTNS_SEP,    {0, 0}, size_t(-1) } };
 
 	SendMessage( mWndToolbar, TB_ADDBUTTONS, (WPARAM)sizeof(tbb)/sizeof(TBBUTTON), (LPARAM) tbb );
 }
