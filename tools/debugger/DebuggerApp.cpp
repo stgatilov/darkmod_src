@@ -12,6 +12,8 @@ or (at your option) any later version. For details, see LICENSE.TXT.
 Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
+#include "precompiled.h"
+
 #include "../../sys/win32/rc/debugger_resource.h"
 #include "DebuggerApp.h"
 
