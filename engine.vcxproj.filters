@@ -181,6 +181,9 @@
     <Filter Include="Sys\RenderDoc">
       <UniqueIdentifier>{27feb915-f8c0-4c61-8299-fd2596465176}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tools\Debugger">
+      <UniqueIdentifier>{c9109e47-7262-4071-96b8-4b5e94267c0c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1665,6 +1668,36 @@
     </ClInclude>
     <ClInclude Include="game\HudFader.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\debugger_common.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerApp.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerBreakpoint.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerClient.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerFindDlg.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerMessages.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerQuickWatchDlg.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerScript.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerServer.h">
+      <Filter>Tools\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\debugger\DebuggerWindow.h">
+      <Filter>Tools\Debugger</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -3657,6 +3690,33 @@
     </ClCompile>
     <ClCompile Include="game\HudFader.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\debugger.cpp">
+      <Filter>Tools\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\DebuggerApp.cpp">
+      <Filter>Tools\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\DebuggerBreakpoint.cpp">
+      <Filter>Tools\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\DebuggerClient.cpp">
+      <Filter>Tools\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\DebuggerFindDlg.cpp">
+      <Filter>Tools\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\DebuggerQuickWatchDlg.cpp">
+      <Filter>Tools\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\DebuggerScript.cpp">
+      <Filter>Tools\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\DebuggerServer.cpp">
+      <Filter>Tools\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\debugger\DebuggerWindow.cpp">
+      <Filter>Tools\Debugger</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
