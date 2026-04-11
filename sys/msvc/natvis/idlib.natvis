@@ -202,16 +202,6 @@
       <Item Condition="sizeof(equalFunc) &gt; 1" Name="[equalFunc]">equalFunc</Item>
     </Expand>
   </Type>
-
-  <Type Name="idDenseHash&lt;*,*,*&gt;">
-    <DisplayString>DenseHash: size = {count}/{size1 + 1}</DisplayString>
-    <Expand>
-      <ArrayItems>
-        <Size>size1 + 1</Size>
-        <ValuePointer>table</ValuePointer>
-      </ArrayItems>
-    </Expand>
-  </Type>
   
   <Type Name="idLinkList&lt;*&gt;">
     <Expand>
