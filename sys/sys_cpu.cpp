@@ -63,18 +63,18 @@ static bool HasCPUID( void ) {
 CPUID
 ================
 */
-static void CPUID( int func, unsigned regs[4] ) {
+static void CPUID( int leaf, unsigned regs[4], int subleaf = 0 ) {
 #if defined(_MSC_VER)
 	// greebo: Use intrinsics on VC++
 	int values[4];
-	__cpuid( values, func );
+	__cpuidex( values, leaf, subleaf );
 	regs[_REG_EAX] = values[0];
 	regs[_REG_EBX] = values[1];
 	regs[_REG_ECX] = values[2];
 	regs[_REG_EDX] = values[3];
 #elif defined(__i386__) || defined (__x86_64__)
 	// stgatilov: use macro from cpuid.h on GCC (and possibly Clang)
-	__cpuid( func, regs[_REG_EAX], regs[_REG_EBX], regs[_REG_ECX], regs[_REG_EDX] );
+	__cpuid_count( leaf, subleaf, regs[_REG_EAX], regs[_REG_EBX], regs[_REG_ECX], regs[_REG_EDX] );
 #else
 	regs[0] = regs[1] = regs[2] = regs[3] = 0;
 #endif
@@ -262,7 +262,7 @@ static bool HasAVX2( void ) {
 	}
 
 	// get CPU feature bits
-	CPUID( 7, regs );
+	CPUID( 7, regs, 0 );
 
 	// check if CPU supports AVX2 instructions
 	bool cpuAVX2Support = ( regs[_REG_EBX] & ( 1 << 5 ) ) != 0;
