@@ -74,7 +74,8 @@ target_include_directories(tdm_installer PRIVATE zipsync)
 target_link_libraries(tdm_installer PRIVATE libzipsync libzipsyncextra fltk::fltk)
 
 if(UNIX)
-    target_link_libraries(tdm_installer PRIVATE m dl X11 Xext pthread)  # fltk -> *
+    target_link_libraries(fltk::fltk INTERFACE X11)             # make sure CMake links X11 after fltk
+    target_link_libraries(tdm_installer PRIVATE m dl pthread)   # fltk -> *
 elseif(MSVC)
     set_property(TARGET tdm_installer libzipsync libzipsyncextra PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     target_compile_definitions(tdm_installer PRIVATE _CRT_SECURE_NO_DEPRECATE)
