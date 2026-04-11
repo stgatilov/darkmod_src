@@ -7,6 +7,8 @@ required_conan_version = ">=1.50.0"
 
 
 def filter_list(elements, excluded_str):
+    if excluded_str == 'ALL':
+        return []
     excluded_list = str(excluded_str).split(',')
     return [x for x in elements if x not in excluded_list]
 
@@ -49,8 +51,9 @@ class XorgConan(ConanFile):
                      "libxcb-xinerama0-dev", "libxcb-dri3-dev", "uuid-dev", "libxcb-cursor-dev", "libxcb-dri2-0-dev",
                      "libxcb-dri3-dev", "libxcb-present-dev", "libxcb-composite0-dev", "libxcb-ewmh-dev",
                      "libxcb-res0-dev"], self.options.exclude_install), update=True, check=True)
-        apt.install_substitutes(
-            ["libxcb-util-dev"], ["libxcb-util0-dev"], update=True, check=True)
+        if filter_list(["libxcb-util-dev", "libxcb-util0-dev"], self.options.exclude_install):
+            apt.install_substitutes(
+                ["libxcb-util-dev"], ["libxcb-util0-dev"], update=True, check=True)
 
         yum = package_manager.Yum(self)
         yum.install(filter_list(["libxcb-devel", "libfontenc-devel", "libXaw-devel", "libXcomposite-devel",
@@ -117,5 +120,5 @@ class XorgConan(ConanFile):
             self.cpp_info.components[name].set_property("pkg_config_custom_content",
                                                         "\n".join(f"{key}={value}" for key, value in pkg_config.variables.items() if key not in ["pcfiledir","prefix", "includedir"]))
 
-        if self.settings.os == "Linux":
+        if "sm" in components_list and self.settings.os == "Linux":
             self.cpp_info.components["sm"].requires.append("uuid")
