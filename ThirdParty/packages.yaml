@@ -45,7 +45,8 @@ options:
   libcurl:
     with_ssl: "mbedtls"
   xorg:
-    # stock recipe uses some X11 libs which can't be installed both 32-bit and 64-bit at once
-    # so don't install any libraries and hope glfw builds fine
-    exclude_lib: "xres,xi,xtst,xcomposite,xcb-cursor"
-    exclude_install: "libxres-dev,libxi-dev,libxtst-dev,libxcomposite-dev,libxcb-cursor-dev"
+    # completely block xorg conan recipe from adding dependencies
+    # it adds way too many, some of them also block 32-bit builds
+    # we'll better add the X libs we need manually
+    exclude_lib: "ALL"
+    exclude_install: "ALL"
