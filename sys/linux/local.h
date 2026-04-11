@@ -17,8 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 extern glconfig_t glConfig;
 
-// glimp.cpp
-
+/*  (no longer needed after migration to GLFW)
 //#define ID_ENABLE_DGA
 
 #if defined( ID_ENABLE_DGA )
@@ -27,6 +26,7 @@ extern glconfig_t glConfig;
 #include <X11/Xlib.h>
 #include <X11/extensions/xf86vmode.h>
 #include <X11/XKBlib.h>
+
 
 extern Display *dpy;
 extern int scrnum;
@@ -42,5 +42,6 @@ void Sys_XUninstallGrabs();
 #define KEY_MASK (KeyPressMask | KeyReleaseMask)
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask )
 #define X_MASK (KEY_MASK | MOUSE_MASK | VisibilityChangeMask | StructureNotifyMask )
+*/
 
 #endif
