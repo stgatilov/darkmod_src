@@ -1301,7 +1301,7 @@ idSessionLocal::DownloadProgressBox
 =================
 */
 void idSessionLocal::DownloadProgressBox( backgroundDownload_t *bgl, const char *title, int progress_start, int progress_end ) {
-	int dlnow = 0, dltotal = 0;
+	int64 dlnow = 0, dltotal = 0;
 	int startTime = Sys_Milliseconds();
 	int lapsed;
 	idStr sNow, sTotal, sBW, sETA, sMsg;
@@ -1360,7 +1360,7 @@ void idSessionLocal::DownloadProgressBox( backgroundDownload_t *bgl, const char 
 					}
 				}
 				if ( dltotal ) {
-					guiMsg->SetStateString( "progress", va( "%d", progress_start + dlnow * ( progress_end - progress_start ) / dltotal ) );
+					guiMsg->SetStateString( "progress", va( "%lld", progress_start + dlnow * ( progress_end - progress_start ) / dltotal ) );
 				} else {
 					guiMsg->SetStateString( "progress", "0" );
 				}

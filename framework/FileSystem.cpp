@@ -341,7 +341,7 @@ private:
 
 	static size_t			CurlWriteFunction( void *ptr, size_t size, size_t nmemb, void *stream );
 							// curl_progress_callback in curl.h
-	static int				CurlProgressFunction( void *clientp, double dltotal, double dlnow, double ultotal, double ulnow );
+	static int				CurlProgressFunction( void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow );
 };
 
 idCVar	idFileSystemLocal::fs_debug( "fs_debug", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
@@ -3255,7 +3255,7 @@ size_t idFileSystemLocal::CurlWriteFunction( void *ptr, size_t size, size_t nmem
 idFileSystemLocal::CurlProgressFunction
 =================
 */
-int idFileSystemLocal::CurlProgressFunction( void *clientp, double dltotal, double dlnow, double ultotal, double ulnow ) {
+int idFileSystemLocal::CurlProgressFunction( void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow ) {
 	backgroundDownload_t *bgl = (backgroundDownload_t *)clientp;
 
 	if ( bgl->url.status == DL_ABORTING ) {
@@ -3349,7 +3349,7 @@ void BackgroundDownloadThread(void *parms) {
 				bgl->completed = true;
 				continue;
 			}
-			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_PROGRESSFUNCTION, idFileSystemLocal::CurlProgressFunction );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_XFERINFOFUNCTION, idFileSystemLocal::CurlProgressFunction );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;

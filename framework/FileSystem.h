@@ -76,8 +76,8 @@ typedef enum {
 typedef struct urlDownload_s {
 	idStr				url;
 	char				dlerror[ MAX_STRING_CHARS ];
-	int					dltotal;
-	int					dlnow;
+	int64				dltotal;
+	int64				dlnow;
 	int					dlstatus;
 	dlStatus_t			status;
 } urlDownload_t;
