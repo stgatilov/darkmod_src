@@ -15,9 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma hdrstop
 #include "../../precompiled.h"
 
-#ifndef _WIN32
 #include <sched.h>
-#endif
 
 #ifdef __APPLE__
 #include "../../../sys/posix/posix_public.h"
@@ -266,11 +264,7 @@ Sys_Yield
 */
 void Sys_Yield()
 {
-#if defined(__ANDROID__) || defined(__APPLE__)
 	sched_yield();
-#else
-	pthread_yield();
-#endif
 }
 
 /*
