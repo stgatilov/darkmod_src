@@ -126,14 +126,14 @@ void CHttpRequest::InitRequest()
 	ExtLibs::curl_easy_setopt( _handle, CURLOPT_USERAGENT, agent.c_str() );
 
 	// Tels: #3261: only allow FTP, FTPS, HTTP and HTTPS (HTTPS and FTPS need SSL support compiled in)
-	ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS );
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROTOCOLS_STR, "FTP,FTPS,HTTP,HTTPS" );
 
 	// Tels: #3261: allow redirects on the server, with a limit of 10 redirects, and limit
 	// 	 the protocols to FTP, FTPS, HTTP, HTTPS to avoid rogue servers giving us random
 	//	 things like Telnet or POP3 on random targets.
 	ExtLibs::curl_easy_setopt( _handle, CURLOPT_FOLLOWLOCATION, true );
 	ExtLibs::curl_easy_setopt( _handle, CURLOPT_MAXREDIRS, 10 );
-	ExtLibs::curl_easy_setopt( _handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS );
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_REDIR_PROTOCOLS_STR, "FTP,FTPS,HTTP,HTTPS" );
 
     // #3418: we need to provide the ca bundle
     idStr capath = g_Global.GetDarkmodPath().c_str();
@@ -250,9 +250,9 @@ XmlDocumentPtr CHttpRequest::GetResultXml()
 
 void CHttpRequest::UpdateProgress()
 {
-	double size;
-	double downloaded;
-	CURLcode result = ExtLibs::curl_easy_getinfo( _handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &size );
+	curl_off_t size;
+	curl_off_t downloaded;
+	CURLcode result = ExtLibs::curl_easy_getinfo( _handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &size );
 
 	if (result != CURLE_OK) 
 	{
@@ -260,7 +260,7 @@ void CHttpRequest::UpdateProgress()
 		return;
 	}
 
-	result = ExtLibs::curl_easy_getinfo( _handle, CURLINFO_SIZE_DOWNLOAD, &downloaded );
+	result = ExtLibs::curl_easy_getinfo( _handle, CURLINFO_SIZE_DOWNLOAD_T, &downloaded );
 
 	if (result != CURLE_OK) 
 	{
@@ -268,7 +268,7 @@ void CHttpRequest::UpdateProgress()
 		return;
 	}
 
-	_progress = downloaded / size;
+	_progress = double(downloaded) / size;
 
 	if (_progress > 1.0)
 	{
