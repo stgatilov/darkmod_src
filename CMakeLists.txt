@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 
 get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(NOT is_multi_config AND NOT CMAKE_BUILD_TYPE)
@@ -24,7 +24,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/sys/cmake")
 
 include(CMakeDependentOption)
 include(ucm)
-include(PrecompiledHeader)
 include(SvnVersion)
 include(CheckCXXCompilerFlag)
 include(CheckPIESupported)
@@ -222,14 +221,12 @@ if (MSVC)
 endif ()
 
 # configure precompiled header
-# note TypeInfo.cpp must be excluded from precompiled header because it uses some dirty hacks
-add_precompiled_header(TheDarkMod
-		"idlib/precompiled.h" "idlib/precompiled.cpp" "precompiled.h"
-		EXCLUDE
-		"sys/win32/win_shared.cpp"
-		"sys/win32/rc/CreateResourceIDs.cpp"
-		"framework/TracingEmbeddedSourceCode.cpp"
-)
+target_precompile_headers(TheDarkMod PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:idlib/precompiled.h>")
+set_source_files_properties(
+	"sys/win32/win_shared.cpp"
+	"framework/TracingEmbeddedSourceCode.cpp"
+PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+
 
 add_compile_definitions(
 		"ExtLibs="
