@@ -140,7 +140,6 @@ ucm_add_dirs(
 		"renderer"
 		"sound"
 		"tests"
-		"TypeInfo"
 		"ui"
 		"tools/compilers"
 		TO TDM_SOURCE_FILES RECURSIVE
@@ -205,7 +204,8 @@ endif ()
 # blacklist dead code files that unfortunately still hang around the repository
 ucm_remove_directories("framework/async" FROM TDM_SOURCE_FILES)
 ucm_remove_files(
-		"TypeInfo/main.cpp"
+		"game/gamesys/TypeInfo.cpp"
+		"game/gamesys/TypeInfo_GenHelper.cpp"
 		"game/Game_network.cpp"
 		"game/MultiplayerGame.cpp"
 		"game/gamesys/Callbacks.cpp"
@@ -226,8 +226,6 @@ endif ()
 add_precompiled_header(TheDarkMod
 		"idlib/precompiled.h" "idlib/precompiled.cpp" "precompiled.h"
 		EXCLUDE
-		"game/gamesys/TypeInfo.cpp"
-		"idlib/Token.cpp"
 		"sys/win32/win_shared.cpp"
 		"sys/win32/rc/CreateResourceIDs.cpp"
 		"framework/TracingEmbeddedSourceCode.cpp"
