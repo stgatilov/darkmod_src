@@ -194,7 +194,7 @@ void CDownload::Perform()
 			}
 			else
 			{
-				gameLocal.Warning("Connection Error (status = %i) for URL '%s'.", _request->GetStatus(), url.c_str());
+				gameLocal.Warning("Connection Error (status = %i, curl = %i) for URL '%s'.", _request->GetStatus(), _request->GetLastCurlError(), url.c_str());
 			}
 
 			// Proceed to the next URL

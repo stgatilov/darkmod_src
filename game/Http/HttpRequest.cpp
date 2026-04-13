@@ -187,7 +187,7 @@ void CHttpRequest::Perform()
 		sha256_init(_sha256state.get());
 	}
 
-	CURLcode result = ExtLibs::curl_easy_perform( _handle );
+	_lastCurlError = ExtLibs::curl_easy_perform( _handle );
 
 	if (!_destFilename.empty())
 	{
@@ -201,14 +201,14 @@ void CHttpRequest::Perform()
 	}
 	else
 	{
-		switch (result)
+		switch (_lastCurlError)
 		{
 		case CURLE_OK:
 			_status = OK;
 			_progress = 1.0;
 			break;
 		default:
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download from '%s' failed with curl status %i.", _url.c_str(), result);
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download from '%s' failed with curl status %i.", _url.c_str(), _lastCurlError);
 			_status = FAILED;
 		};
 	}
@@ -224,9 +224,14 @@ void CHttpRequest::Cancel()
 	_cancelFlag = true;
 }
 
-CHttpRequest::RequestStatus CHttpRequest::GetStatus()
+CHttpRequest::RequestStatus CHttpRequest::GetStatus() const
 {
 	return _status;
+}
+
+int CHttpRequest::GetLastCurlError() const
+{
+	return _lastCurlError;
 }
 
 double CHttpRequest::GetProgressFraction()

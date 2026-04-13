@@ -61,6 +61,7 @@ private:
 
 	// The current state
 	RequestStatus _status;
+	int _lastCurlError = 0;
 
 	std::string _destFilename;
 
@@ -89,7 +90,8 @@ public:
 
 	static int TDMHttpProgressFunc(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
 
-	RequestStatus GetStatus();
+	RequestStatus GetStatus() const;
+	int GetLastCurlError() const;
 
 	// Perform the request
 	void Perform();
