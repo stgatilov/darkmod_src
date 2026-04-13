@@ -92,6 +92,10 @@ void CHttpRequest::InitRequest()
 	// Init the curl session
 	_handle = ExtLibs::curl_easy_init();
 
+	// stgatilov: detailed libcurl error message should go here
+	_lastCurlErrorText.assign(CURL_ERROR_SIZE + 1, 0);
+	curl_easy_setopt( _handle, CURLOPT_ERRORBUFFER, _lastCurlErrorText.data() );
+
 	// specify URL to get
 	ExtLibs::curl_easy_setopt( _handle, CURLOPT_URL, _url.c_str() );
 
@@ -232,6 +236,11 @@ CHttpRequest::RequestStatus CHttpRequest::GetStatus() const
 int CHttpRequest::GetLastCurlError() const
 {
 	return _lastCurlError;
+}
+
+std::string CHttpRequest::GetLastCurlErrorText() const
+{
+	return _lastCurlErrorText.data();
 }
 
 double CHttpRequest::GetProgressFraction()

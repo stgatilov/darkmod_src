@@ -62,6 +62,7 @@ private:
 	// The current state
 	RequestStatus _status;
 	int _lastCurlError = 0;
+	std::vector<char> _lastCurlErrorText;
 
 	std::string _destFilename;
 
@@ -92,6 +93,7 @@ public:
 
 	RequestStatus GetStatus() const;
 	int GetLastCurlError() const;
+	std::string GetLastCurlErrorText() const;
 
 	// Perform the request
 	void Perform();

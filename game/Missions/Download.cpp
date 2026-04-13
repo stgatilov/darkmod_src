@@ -195,6 +195,9 @@ void CDownload::Perform()
 			else
 			{
 				gameLocal.Warning("Connection Error (status = %i, curl = %i) for URL '%s'.", _request->GetStatus(), _request->GetLastCurlError(), url.c_str());
+				std::string message = _request->GetLastCurlErrorText();
+				if (message.size() > 0)
+					gameLocal.Printf("%s\n", message.c_str());
 			}
 
 			// Proceed to the next URL
