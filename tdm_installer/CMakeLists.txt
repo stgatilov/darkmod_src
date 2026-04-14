@@ -76,6 +76,9 @@ target_link_libraries(tdm_installer PRIVATE libzipsync libzipsyncextra fltk::flt
 if(UNIX)
     target_link_libraries(fltk::fltk INTERFACE X11)             # make sure CMake links X11 after fltk
     target_link_libraries(tdm_installer PRIVATE m dl pthread)   # fltk -> *
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        target_link_libraries(tdm_installer PRIVATE -static-libgcc -static-libstdc++)   # static runtime, except for glibc
+    endif()
 elseif(MSVC)
     set_property(TARGET tdm_installer libzipsync libzipsyncextra PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     target_compile_definitions(tdm_installer PRIVATE _CRT_SECURE_NO_DEPRECATE)
