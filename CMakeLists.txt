@@ -255,9 +255,16 @@ elseif (MSVC)
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "TheDarkMod")
 	endif ()
 endif ()
+
 # ffmpeg dep was compiled without -fPIC, so need to disable PIE on 64bit builds
 set_target_properties(TheDarkMod PROPERTIES POSITION_INDEPENDENT_CODE OFF)	# see also CMP0083
-ucm_set_runtime(STATIC)
+
+# use static runtime (except for glibc)
+if (MSVC)
+	set_property(TARGET TheDarkMod PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+	target_link_libraries(TheDarkMod -static-libgcc -static-libstdc++)
+endif()
 
 include_directories(
 		"${PROJECT_SOURCE_DIR}"
