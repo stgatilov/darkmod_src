@@ -12,7 +12,7 @@ required_conan_version = ">=2.1"
 
 
 class OpenALSoftConan(ConanFile):
-    name = "openal"     # "openal-soft"  (TheDarkMod: don't like hyphens in the name)
+    name = "openal-soft"
     description = "OpenAL Soft is a software implementation of the OpenAL 3D audio API."
     topics = ("openal", "audio", "api")
     url = "https://github.com/conan-io/conan-center-index"
@@ -133,10 +133,7 @@ class OpenALSoftConan(ConanFile):
         self.cpp_info.set_property("cmake_find_mode", "both")
         self.cpp_info.set_property("cmake_file_name", "OpenAL")
         self.cpp_info.set_property("cmake_target_name", "OpenAL::OpenAL")
-        # TheDarkMod: our system for storing prebuilt binaries in SVN does not like this
-        # because it moves "lib" directory into subdirectory (e.g. "windows64_rel"), and this path link is broken
-        # besides, everything work perfectly fine without this .cmake file
-        #self.cpp_info.set_property("cmake_build_modules", [self._module_file_rel_path])
+        self.cpp_info.set_property("cmake_build_modules", [self._module_file_rel_path])
         self.cpp_info.set_property("pkg_config_name", "openal")
 
         self.cpp_info.libs = collect_libs(self)
@@ -149,11 +146,6 @@ class OpenALSoftConan(ConanFile):
                 self.cpp_info.frameworks.append("ApplicationServices")
         elif self.settings.os == "Windows":
             self.cpp_info.system_libs.extend(["winmm", "ole32", "shell32", "user32"])
-            # TheDarkMod: this dependency on avrt was added in 1.24.0,
-            # but the base recipe was taken from conan-center for 1.23.1
-            # so we have to add this dependency ourselves...
-            if Version(self.version) >= "1.24.0":
-                self.cpp_info.system_libs.extend(["avrt"])
         if not self.options.shared:
             libcxx = stdcpp_library(self)
             if libcxx:

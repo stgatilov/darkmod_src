@@ -99,10 +99,6 @@ if (UNIX)
 		add_compile_options(-fsanitize=address)
 	endif()
 
-	# TODO: do we really want to keep using this
-	# use old ABI for std::string and std::list to allow TDM to run on distros with old
-	# glibcxx (e.g. Ubuntu 14.04). the old ABI is not fully compliant with C++11 standard.
-	add_compile_definitions("_GLIBCXX_USE_CXX11_ABI=0")
 	# ensure threading support in X
 	add_compile_definitions(XTHREADS)
 elseif (MSVC)

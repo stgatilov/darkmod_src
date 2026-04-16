@@ -2,6 +2,11 @@ sources:
   "0.10":
     url: https://github.com/wolfpld/tracy/archive/refs/tags/v0.10.tar.gz
     sha256: a76017d928f3f2727540fb950edd3b736caa97b12dbb4e5edce66542cbea6600
+  "0.13.1":
+    url: "https://github.com/wolfpld/tracy/archive/refs/tags/v0.13.1.tar.gz"
+    sha256: "d4efc50ebcb0bfcfdbba148995aeb75044c0d80f5d91223aebfaa8fa9e563d2b"
 patches:
   "0.10":
+    - patch_file: patches/0.10/RecreateQueries.patch
+  "0.13.1":
     - patch_file: patches/0.10/RecreateQueries.patch

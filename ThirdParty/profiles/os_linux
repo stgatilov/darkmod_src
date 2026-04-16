@@ -1,5 +1,5 @@
 [settings]
 os=Linux
 compiler=gcc
-compiler.version=5
-compiler.libcxx=libstdc++
+compiler.version=9
+compiler.libcxx=libstdc++11

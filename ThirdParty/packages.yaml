@@ -17,23 +17,23 @@
 packages:
   - { name: tinyformat  , version: "2.3.0"    , local: True   , bintype: header }
   - { name: doctest     , version: "2.4.11"   , local: False  , bintype: header }
-  - { name: tracy       , version: "0.10"     , local: True   , bintype: header }
+  - { name: tracy       , version: "0.13.1"   , local: True   , bintype: header }
   - { name: zlib        , version: "1.3.1"    , local: False  , bintype: release, incltype: os }
   - { name: minizip     , version: "1.3.1"    , local: False  , bintype: release }
-  - { name: libcurl     , version: "8.6.0"    , local: True   , bintype: release }
-  - { name: mbedtls     , version: "3.6.0"    , local: False  , bintype: release }
+  - { name: libcurl     , version: "8.19.0"   , local: False  , bintype: release }
+  - { name: mbedtls     , version: "3.6.6"    , local: False  , bintype: release }
   - { name: libjpeg     , version: "9f"       , local: True   , bintype: release, incltype: os }
-  - { name: libpng      , version: "1.6.43"   , local: False  , bintype: release }
-  - { name: ffmpeg      , version: "6.1"      , local: True   , bintype: release }
+  - { name: libpng      , version: "1.6.57"   , local: False  , bintype: release }
+  - { name: ffmpeg      , version: "7.1.3"    , local: True   , bintype: release }
   - { name: vorbis      , version: "1.3.7"    , local: False  , bintype: release }
   - { name: ogg         , version: "1.3.5"    , local: False  , bintype: release }
-  - { name: fltk        , version: "1.3.9"    , local: True   , bintype: release }
+  - { name: fltk        , version: "1.3.11"   , local: True   , bintype: release }
   - { name: blake2      , version: "20190724" , local: True   , bintype: release }
   - { name: glfw        , version: "3.4"      , local: False  , bintype: release }
-  - { name: openal      , version: "1.22.2"   , local: True   , bintype: vcdebug }
-  - { name: pugixml     , version: "1.14"     , local: False  , bintype: vcdebug }
+  - { name: openal      , version: "1.24.1"   , local: True   , bintype: vcdebug }
+  - { name: pugixml     , version: "1.15"     , local: False  , bintype: vcdebug }
   - { name: xorg        , version: "system"   , local: True   , bintype: header, os: ["Linux", "FreeBSD"] }
-  - { name: libalsa     , version: "1.2.7.2"  , local: False  , bintype: release, os: ["Linux"] }
+  - { name: libalsa     , version: "1.2.10"   , local: False  , bintype: release, os: ["Linux"] }
 
 options:
   minizip:
