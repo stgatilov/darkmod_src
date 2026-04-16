@@ -136,6 +136,15 @@ void idSoundWorldLocal::Shutdown() {
 
 	AVIClose();
 
+	// delete emitters before deletign the listenerSlot, so their sources aren't
+	// associated with the listenerSlot anymore
+	for ( i = 0; i < emitters.Num(); i++ ) {
+		if ( emitters[i] ) {
+			delete emitters[i];
+			emitters[i] = NULL;
+		}
+	}
+
 	if (idSoundSystemLocal::useEFXReverb) {
 		if (soundSystemLocal.alIsAuxiliaryEffectSlot(listenerSlot)) {
 			soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECTSLOT_NULL);
@@ -149,14 +158,8 @@ void idSoundWorldLocal::Shutdown() {
 		}
 	}
 
-	for ( i = 0; i < emitters.Num(); i++ ) {
-		if ( emitters[i] ) {
-			delete emitters[i];
-			emitters[i] = NULL;
-		}
-		//nbohr1more: #5587 Reverb volume control
-		listenerSlotReverbGain = 1.0f;
-	}
+	//nbohr1more: #5587 Reverb volume control
+	listenerSlotReverbGain = 1.0f;
 	localSound = NULL;
 	secondarySound = NULL; // grayman #4882
 
