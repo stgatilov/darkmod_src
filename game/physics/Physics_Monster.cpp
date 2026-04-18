@@ -59,7 +59,7 @@ void idPhysics_Monster::CheckGround( monsterPState_t &state ) {
 		// of gravity-induced vertical velocity, which leads to death once you get free and
 		// fall to the ground, where Crashland() thinks you fell from a great height.
 
-		idVec3 prevMove = static_cast<idAI*>(self)->movementSubsystem->GetLastMove();
+		idVec3 prevMove = static_cast<idAI*>(self)->movementSubsystem->GetLastTraveled(true);
 		if (prevMove.z < 0) // are you truly falling?
 		{
 			state.onGround = false;

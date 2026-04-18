@@ -69,11 +69,11 @@ MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 	_historyBounds.Clear();
 
 	_originHistory.SetNum(HISTORY_SIZE);
-	_frameHistory.SetNum(HISTORY_SIZE); // grayman #2345
+	_timeHistory.SetNum(HISTORY_SIZE); // grayman #2345
 	// stgatilov: initialize contents, considering that AI was standing still
 	for (int i = 0; i < HISTORY_SIZE; i++) {
 		_originHistory[i] = owner->GetPhysics()->GetOrigin();
-		_frameHistory[i] = 0;
+		_timeHistory[i] = 0;
 	}
 }
 
@@ -589,26 +589,37 @@ bool MovementSubsystem::AttemptToExtricate()
 	return false;
 }
 
-idVec3 MovementSubsystem::GetPrevTraveled(bool includeVertical) // grayman #3647
+idVec3 MovementSubsystem::GetLastTraveled(bool includeVertical) const	// grayman #2356 - used to help determine true falling near func_statics
+{
+	int i = _curHistoryIndex - 1;
+	if (i < 0) i += _originHistory.Num();
+
+	idVec3 vecTraveled = (_owner.GetEntity()->GetPhysics()->GetOrigin() - _originHistory[i]);
+	vecTraveled /= (gameLocal.time - _timeHistory[i]); // normalize to a per-frame value
+	// stgatilov #6701: movement per 16ms tic (backwards compatibility)
+	vecTraveled *= USERCMD_MSEC;
+	
+	if (!includeVertical)
+		vecTraveled.z = 0.0; // ignore vertical component
+
+	return vecTraveled;
+}
+
+idVec3 MovementSubsystem::GetPrevTraveled(bool includeVertical) const // grayman #3647
 {
 	int i = _curHistoryIndex - 2;
-	if (i < 0)
-	{
-		i = _originHistory.Num() + i;
-	}
 	int j = _curHistoryIndex - 1;
-	if (j < 0)
-	{
-		j = _originHistory.Num() + j;
-	}
-	const idVec3& originI = _originHistory[i];
-	const idVec3& originJ = _originHistory[j];
-	idVec3 vecTraveled = originJ - originI;
+	if (i < 0) i += _originHistory.Num();
+	if (j < 0) j += _originHistory.Num();
+
+	idVec3 vecTraveled = (_originHistory[j] - _originHistory[i]);
+	vecTraveled /= (_timeHistory[j] - _timeHistory[i]); // normalize to a per-frame value
+	// stgatilov #6701: movement per 16ms tic (backwards compatibility)
+	vecTraveled *= USERCMD_MSEC;
+
 	if (!includeVertical) // grayman #3647
-	{
 		vecTraveled.z = 0.0; // ignore vertical component
-	}
-	vecTraveled /= (_frameHistory[j] - _frameHistory[i]); // normalize to a per-frame value
+
 	return vecTraveled;
 }
 
@@ -618,17 +629,10 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 	// even when the AI is standing still. A history of origins should reflect
 	// standing still.
 
-	const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
-	int prevIndex = _curHistoryIndex-1;
-	if (prevIndex < 0)
-	{
-		prevIndex = _originHistory.Num() - 1;
-	}
-	_originHistory[_curHistoryIndex] = ownerOrigin;
-	_frameHistory[_curHistoryIndex++] = gameLocal.framenum;
-
-	// Wrap the index around if needed
-	_curHistoryIndex %= _originHistory.Num();
+	// record this state in history
+	_originHistory[_curHistoryIndex] = owner->GetPhysics()->GetOrigin();
+	_timeHistory[_curHistoryIndex] = gameLocal.time;
+	_curHistoryIndex = (_curHistoryIndex + 1) % _originHistory.Num();
 
 	// Calculate the new bounds
 	_historyBounds.FromPoints(_originHistory.Ptr(), _originHistory.Num());
@@ -649,13 +653,8 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		// but are you getting closer to your goal? Check current yaw against your ideal yaw
 		// to see how far off you are.
 
-		idVec3 prevOrigin = _originHistory[prevIndex];
-		int prevFrame = _frameHistory[prevIndex];
-		idVec3 currentOrigin = ownerOrigin;
-		currentOrigin.z = prevOrigin.z = 0.0; // ignore vertical components
-		idVec3 vecTraveled = currentOrigin - prevOrigin;
-		float traveledPrev = vecTraveled.LengthFast();
-		traveledPrev /= (gameLocal.framenum - prevFrame); // normalize to a per-frame value
+		idVec3 traveledVector = GetPrevTraveled(false);
+		float traveledPrev = traveledVector.LengthFast();
 
 		float yawDiff = idMath::AngleNormalize180(owner->GetCurrentYaw() - owner->GetIdealYaw()); // how close are you to your ideal yaw?
 		idEntity *tactileEntity = owner->GetTactileEntity(); // grayman #2345
@@ -901,18 +900,6 @@ bool MovementSubsystem::IsResolvingBlock()
 	return _state == EResolvingBlock;
 }*/
 
-idVec3 MovementSubsystem::GetLastMove(void)	// grayman #2356 - used to help determine true falling near func_statics
-{
-	int prevIndex = _curHistoryIndex-1;
-	if (prevIndex < 0)
-	{
-		prevIndex = _originHistory.Num() - 1;
-	}
-	const idVec3& prevOrigin = _originHistory[prevIndex];
-	const idVec3& ownerOrigin = _owner.GetEntity()->GetPhysics()->GetOrigin();
-	return (ownerOrigin - prevOrigin);
-}
-
 // Save/Restore methods
 void MovementSubsystem::Save(idSaveGame* savefile) const
 {
@@ -929,11 +916,11 @@ void MovementSubsystem::Save(idSaveGame* savefile) const
 
 	// grayman #2345 - save frame history
 
-	savefile->WriteInt(_frameHistory.Num());
+	savefile->WriteInt(_timeHistory.Num());
 
-	for (int i = 0; i < _frameHistory.Num(); i++)
+	for (int i = 0; i < _timeHistory.Num(); i++)
 	{
-		savefile->WriteInt(_frameHistory[i]);
+		savefile->WriteInt(_timeHistory[i]);
 	}
 
 	savefile->WriteInt(_curHistoryIndex);
@@ -966,11 +953,11 @@ void MovementSubsystem::Restore(idRestoreGame* savefile)
 	// grayman #2345 - restore frame history
 
 	savefile->ReadInt(num);
-	_frameHistory.SetNum(num);
+	_timeHistory.SetNum(num);
 
 	for (int i = 0; i < num; i++)
 	{
-		savefile->ReadInt(_frameHistory[i]);
+		savefile->ReadInt(_timeHistory[i]);
 	}
 
 	savefile->ReadInt(_curHistoryIndex);

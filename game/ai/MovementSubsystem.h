@@ -46,8 +46,8 @@ protected:
 	// The origin history, contains the origin position of the last few frames
 	idList<idVec3> _originHistory;
 
-	// grayman #2345 - The frame history, contains the frames where origins were recorded
-	idList<int> _frameHistory;
+	// grayman #2345 - The frame history, contains the gameplay time when origins were recorded
+	idList<int> _timeHistory;
 
 	// Currently active list index
 	int _curHistoryIndex;
@@ -117,9 +117,10 @@ public:
 
 	bool IsNotBlocked();	// grayman #2345
 
-	idVec3 GetLastMove();	// grayman #2356
-
-	idVec3 GetPrevTraveled(bool includeVertical); // grayman #2345 // grayman #3647
+	// velocity during this frame, normalized to "shift per 16 ms"
+	idVec3 GetLastTraveled(bool includeVertical) const;	// grayman #2356
+	// velocity during previous frame, normalized to "shift per 16 ms"
+	idVec3 GetPrevTraveled(bool includeVertical) const;	// grayman #2345 // grayman #3647
 
 	/**
 	 * grayman #2345 - Called when the AI tries to extricate itself from a stuck position
