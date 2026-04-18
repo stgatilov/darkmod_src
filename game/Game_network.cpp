@@ -975,10 +975,8 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 
 	InitLocalClient( clientNum );
 
-	// clear any debug lines from a previous frame
+	// clear any debug lines and polygons from a previous frame
 	gameRenderWorld->DebugClearLines( time );
-
-	// clear any debug polygons from a previous frame
 	gameRenderWorld->DebugClearPolygons( time );
 
 	// update the game time

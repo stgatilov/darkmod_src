@@ -3327,11 +3327,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs,
 				}
 			}
 
-			// clear any debug lines from a previous frame
-			gameRenderWorld->DebugClearLines( time );
-
-			// clear any debug polygons from a previous frame
-			gameRenderWorld->DebugClearPolygons( time );
+			if (!minorTic) {
+				// clear any debug lines and polygon from a previous frame
+				gameRenderWorld->DebugClearLines( time );
+				gameRenderWorld->DebugClearPolygons( time );
+			}
 
 			// set the user commands for this frame
 			memcpy( &usercmds, clientCmds, sizeof( usercmds ) );
