@@ -12383,7 +12383,7 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 idAI::FOVDebugDraw
 =====================
 */
-void idAI::FOVDebugDraw( void )
+void idAI::FOVDebugDraw( bool cones, bool samples )
 {
 	if( AI_KNOCKEDOUT || AI_DEAD || m_HeadJointID == INVALID_JOINT )
 		return;
@@ -12397,40 +12397,75 @@ void idAI::FOVDebugDraw( void )
 	if ( !GetFovCoordinateSystem( origin, axis ) )
 		return;
 
-	idVec3 coneDir = axis[0];
+	gameRenderWorld->DebugAxis( origin, axis );
 
-	// Diverge to keep reasonable cone size
-	float radius, coneLength;
-	if (angVert >= (idMath::PI / 4.0f))
+	if ( cones )
 	{
-		// Fix radius and calculate length
-		radius = 60.0f;
-		coneLength = radius / idMath::Tan(angVert);
-	}
-	else
-	{
-		// Fix length and calculate radius
-		coneLength = 60.0f;
-		// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
-		radius = idMath::Tan(angVert) * coneLength;
-	}
-	gameRenderWorld->DebugCone( colorBlue, origin, coneLength * coneDir, 0, radius );
+		idVec3 coneDir = axis[0];
+
+		// Diverge to keep reasonable cone size
+		float radius, coneLength;
+		if (angVert >= (idMath::PI / 4.0f))
+		{
+			// Fix radius and calculate length
+			radius = 60.0f;
+			coneLength = radius / idMath::Tan(angVert);
+		}
+		else
+		{
+			// Fix length and calculate radius
+			coneLength = 60.0f;
+			// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
+			radius = idMath::Tan(angVert) * coneLength;
+		}
+		gameRenderWorld->DebugCone( colorBlue, origin, coneLength * coneDir, 0, radius );
 	
-	// now do the same for horizontal FOV angle, orange cone
-	if (angHoriz >= (idMath::PI / 4.0f))
-	{
-		// Fix radius and calculate length
-		radius = 60.0f;
-		coneLength = radius / idMath::Tan(angHoriz);
+		// now do the same for horizontal FOV angle, orange cone
+		if (angHoriz >= (idMath::PI / 4.0f))
+		{
+			// Fix radius and calculate length
+			radius = 60.0f;
+			coneLength = radius / idMath::Tan(angHoriz);
+		}
+		else
+		{
+			// Fix length and calculate radius
+			coneLength = 60.0f;
+			// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
+			radius = idMath::Tan(angHoriz) * coneLength;
+		}
+		gameRenderWorld->DebugCone( colorOrange, origin, coneLength * coneDir, 0, radius );
 	}
-	else
+
+	if ( samples )
 	{
-		// Fix length and calculate radius
-		coneLength = 60.0f;
-		// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
-		radius = idMath::Tan(angHoriz) * coneLength;
+		static const int VerticalResolution = 50;
+
+		for ( int v = 0; v <= VerticalResolution; v++ )
+		{
+			float vertAngle = idMath::PI * ( float(v) / VerticalResolution - 0.5f );
+			float vertSin, vertCos;
+			idMath::SinCos( vertAngle, vertSin, vertCos );
+
+			int horizResolution = idMath::Imax( 2 * VerticalResolution * vertCos, 1 );
+			for ( int u = 0; u < horizResolution; u++ )
+			{
+				float horizAngle = idMath::TWO_PI * ( float(u) / horizResolution - 0.5f );
+				float horizSin, horizCos;
+				idMath::SinCos( horizAngle, horizSin, horizCos );
+
+				idVec3 dir( vertCos * horizCos, vertCos * horizSin, vertSin );
+				dir = axis * dir;
+				idVec3 sample = origin + dir * 60.0f;
+				if ( !CheckFOV(sample) )
+					continue;
+
+				idVec3 start = origin + dir * 55.0f;
+				idVec4 color( float(v) / VerticalResolution, float(u) / horizResolution, 1.0f - float(u) / horizResolution, 1.0 );
+				gameRenderWorld->DebugLine( color, start, sample );
+			}
+		}
 	}
-	gameRenderWorld->DebugCone( colorOrange, origin, coneLength * coneDir, 0, radius );
 }
 
 moveStatus_t idAI::GetMoveStatus() const
@@ -13173,9 +13208,11 @@ void idAI::ShowDebugInfo()
 		KnockoutDebugDraw();
 	}
 
-	if( cv_ai_fov_show.GetBool() )
+	if( cv_ai_fov_show.GetInteger() > 0 )
 	{
-		FOVDebugDraw();
+		float distToPlayer = ( gameLocal.GetLocalPlayer()->GetEyePosition() - GetPhysics()->GetOrigin() ).Length();
+		bool samples = ( cv_ai_fov_show.GetInteger() == 2 && distToPlayer < 300.0f );
+		FOVDebugDraw( !samples, samples );
 	}
 	
 	if ( cv_ai_dest_show.GetBool() )

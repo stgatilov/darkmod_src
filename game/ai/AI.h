@@ -1882,9 +1882,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	/**
 	* Draw the debug cone representing the FOV
-	* Called every frame when cvar cv_ai_fov_show is set to true.
+	* Called every frame when cvar cv_ai_fov_show is set.
 	**/
-	void FOVDebugDraw( void );
+	void FOVDebugDraw( bool cones, bool samples );
 
 	/**
 	* This method calculates the maximum distance from a given

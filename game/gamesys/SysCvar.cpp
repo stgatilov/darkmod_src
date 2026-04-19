@@ -58,7 +58,11 @@ idCVar cv_ai_sight_combat_cutoff(	"tdm_ai_sight_combat_cutoff",	"20.0",		CVAR_GA
 idCVar cv_ai_tactalert(				"tdm_ai_tact",				"20.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The default tactile alert if an AI bumps an enemy or an enemy bumps an AI.  Default value is 20 alert units (pretty much full alert)." );
 idCVar cv_ai_bumpobject_impulse(	"tdm_ai_bumpobject_impulse", "250",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Impulse applied when an AI bumps into an object with its AF when animating.  Different from the kick force it applies to an object blocking its path." ); // grayman #2568? - 1500->250
 idCVar cv_ai_debug(					"tdm_ai_debug",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, AI alert events will be sent to the console for debugging purposes." );
-idCVar cv_ai_fov_show (				"tdm_ai_showfov",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the field of vision of the AI will be drawn.  Blue cone represents the vertical FOV, orange cone represents the horizontal.");
+idCVar cv_ai_fov_show (
+	"tdm_ai_showfov", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,
+	"Draw a debug graphic of the field of vision of the AI.\n"
+	"If set to 1, then blue cone represents the vertical FOV, orange cone represents the horizontal.\n"
+	"If set to 2, then sample lines are displayed along the whole area (slow, only for close objects).");
 idCVar cv_ai_ko_show (				"tdm_ai_showko",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the knockout region of the AI will be drawn.  The green cone shows the vertical admittance angle, the red cone shows the horizontal angle.");
 idCVar cv_ai_animstate_show (		"tdm_ai_showanimstate",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the name of the AI's current animation state will be shown.");
 idCVar cv_ai_task_show (			"tdm_ai_showtasks",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the name of the AI's current tasks will be shown.");
