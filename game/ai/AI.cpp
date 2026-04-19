@@ -12329,6 +12329,26 @@ bool idAI::CheckOutgoingMessages( ai::CommMessage::TCommType type, idActor* rece
 
 /*
 =====================
+idAI::GetFovCoordinateSystem
+=====================
+*/
+bool idAI::GetFovCoordinateSystem( idVec3& origin, idMat3& axis ) const
+{
+	idVec3 HeadCenter;
+	idMat3 HeadAxis;
+	// ugliness
+	if ( !const_cast<idAI *>(this)->GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis ) )	{
+		// stgatilov: ai_arx_fish from Seeking Lady Leicester has no head joint...
+		return false;
+	}
+
+	origin = HeadCenter + HeadAxis * m_HeadCenterOffset;
+	axis = m_FOVRot * HeadAxis;
+	return true;
+}
+
+/*
+=====================
 idAI::CheckFOV
 =====================
 */
@@ -12336,95 +12356,81 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 {
 	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::CheckFOV called \r");
 
-	float	dotHoriz, dotVert, lenDelta, lenDeltaH;
-	idVec3	delta, deltaH, HeadCenter;
-	idMat3	HeadAxis;
-
-	// ugliness
-	if ( !const_cast<idAI *>(this)->GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis ) )	{
-		// stgatilov: ai_arx_fish from Seeking Lady Leicester has no head joint...
+	idVec3 origin;
+	idMat3 axis;
+	if ( !GetFovCoordinateSystem( origin, axis ) )
 		return false;
-	}
-	idMat3 HeadAxisR = m_FOVRot * HeadAxis;
 
-	// Offset to get the center of the head
-	HeadCenter += HeadAxis * m_HeadCenterOffset;
-	delta = pos - HeadCenter;
-	lenDelta = delta.Length(); // Consider LengthFast if error is not too bad
+	idVec3 delta = pos - origin;
+	float lenDelta = delta.Length();
 
 	// First, project delta into the horizontal plane of the head
 	// Assume HeadAxis[1] is the up direction in head coordinates
-	deltaH = delta - HeadAxisR[1] * (HeadAxisR[1] * delta);
-	lenDeltaH = deltaH.Normalize(); // Consider NormalizeFast
+	idVec3 deltaH = delta - axis[1] * (axis[1] * delta);
+	float lenDeltaH = deltaH.Normalize(); // Consider NormalizeFast
 
-	dotHoriz = HeadAxisR[ 0 ] * deltaH;
+	float dotHoriz = axis[ 0 ] * deltaH;
 	// cos (90-zenith) = adjacent / hypotenuse, applied to these vectors
 	// Technically this lets them see things behind them, but they won't because 
 	// of the horizontal check.
-	dotVert = idMath::Fabs( lenDeltaH / lenDelta );
+	float dotVert = idMath::Fabs( lenDeltaH / lenDelta );
 
 	return ( dotHoriz >= m_fovDotHoriz && dotVert >= m_fovDotVert );
 }
 
+/*
+=====================
+idAI::FOVDebugDraw
+=====================
+*/
 void idAI::FOVDebugDraw( void )
 {
-	float AngVert(0), AngHoriz(0), radius(0);
-	idVec3 HeadCenter(vec3_zero), ConeDir(vec3_zero);
-	idMat3 HeadAxis(mat3_zero);
-
 	if( AI_KNOCKEDOUT || AI_DEAD || m_HeadJointID == INVALID_JOINT )
-	{
 		return;
-	}
 
 	// probably expensive, but that's okay since this is just for debug mode
+	float angVert = idMath::ACos( m_fovDotVert );
+	float angHoriz = idMath::ACos( m_fovDotHoriz );
 
-	AngVert = idMath::ACos( m_fovDotVert );
-	AngHoriz = idMath::ACos( m_fovDotHoriz );
+	idVec3 origin;
+	idMat3 axis;
+	if ( !GetFovCoordinateSystem( origin, axis ) )
+		return;
 
-	// store head joint base position to HeadCenter, axis to HeadAxis
-	GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
-	idMat3 HeadAxisR =  m_FOVRot * HeadAxis;
-	// offset from head joint position to get the true head center
-	HeadCenter += HeadAxis * m_HeadCenterOffset;
-
-	ConeDir = HeadAxisR[0];
+	idVec3 coneDir = axis[0];
 
 	// Diverge to keep reasonable cone size
-	float coneLength;
-
-	if (AngVert >= (idMath::PI / 4.0f))
+	float radius, coneLength;
+	if (angVert >= (idMath::PI / 4.0f))
 	{
 		// Fix radius and calculate length
 		radius = 60.0f;
-		coneLength = radius / idMath::Tan(AngVert);
+		coneLength = radius / idMath::Tan(angVert);
 	}
 	else
 	{
 		// Fix length and calculate radius
 		coneLength = 60.0f;
 		// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
-		radius = idMath::Tan(AngVert) * coneLength;
+		radius = idMath::Tan(angVert) * coneLength;
 	}
-
-	gameRenderWorld->DebugCone( colorBlue, HeadCenter, coneLength * ConeDir, 0, radius );
+	gameRenderWorld->DebugCone( colorBlue, origin, coneLength * coneDir, 0, radius );
 	
 	// now do the same for horizontal FOV angle, orange cone
-	if (AngHoriz >= (idMath::PI / 4.0f))
+	if (angHoriz >= (idMath::PI / 4.0f))
 	{
 		// Fix radius and calculate length
 		radius = 60.0f;
-		coneLength = radius / idMath::Tan(AngHoriz);
+		coneLength = radius / idMath::Tan(angHoriz);
 	}
 	else
 	{
 		// Fix length and calculate radius
 		coneLength = 60.0f;
 		// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
-		radius = idMath::Tan(AngHoriz) * coneLength;
+		radius = idMath::Tan(angHoriz) * coneLength;
 	}
-
-	gameRenderWorld->DebugCone( colorOrange, HeadCenter, coneLength * ConeDir, 0, radius );
+	gameRenderWorld->DebugCone( colorOrange, origin, coneLength * coneDir, 0, radius );
 }
 
 moveStatus_t idAI::GetMoveStatus() const

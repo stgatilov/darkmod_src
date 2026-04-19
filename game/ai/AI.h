@@ -1647,6 +1647,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	}
 
 	void					BlockedFailSafe( void );
+
+
+	// stgatilov: get coordinate system used for FOV checks
+	bool					GetFovCoordinateSystem( idVec3& origin, idMat3& axis ) const;
+
 	/**
 	* Overloaded idActor::CheckFOV with FOV check that depends on head joint orientation
 	**/
