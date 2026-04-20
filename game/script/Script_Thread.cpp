@@ -170,8 +170,8 @@ const idEventDef EV_Thread_RadiusDamage( "radiusDamage",
 	"causing the damage and can be the same as the attacker (in the case \n " \
 	"of projectiles, the projectile is the inflictor, while the attacker is the character \n" \
 	"that fired the projectile).");
-const idEventDef EV_Thread_GetFrameTime( "getFrameTime", EventArgs(), 'f', "returns the length of time between game frames.  this is not related to renderer frame rate." );
-const idEventDef EV_Thread_GetTicsPerSecond( "getTicsPerSecond", EventArgs(), 'f', "returns the number of game frames per second.  this is not related to renderer frame rate." );
+const idEventDef EV_Thread_GetFrameTime( "getFrameTime", EventArgs(), 'f', "returns 0.016: seconds in one game tic in the legacy 'capped FPS mode'" );
+const idEventDef EV_Thread_GetTicsPerSecond( "getTicsPerSecond", EventArgs(), 'f', "returns 60: number of game tics per second in the legacy 'capped FPS mode'" );
 
 const idEventDef EV_Thread_DebugLine( "debugLine", 
 	EventArgs('v', "color", "", 'v', "start", "", 'v', "end", "", 'f', "lifetime", ""), EV_RETURNS_VOID, 
