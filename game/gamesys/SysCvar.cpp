@@ -172,28 +172,34 @@ idCVar cv_tdm_allow_http_access(
 	"If nonzero, then TDM is allowed to send HTTP request to the TDM servers to check for updates, missions, etc. "
 	"Setting this to zero disables all web functionality."
 );
+idCVar cv_tdm_downgrade_https_to_http(
+	"tdm_downgrade_https_to_http", "0", CVAR_GAME | CVAR_BOOL,
+	"If nonzero, then HTTPS downloads will be redirected to unsecure HTTP. "
+	"Note: this makes downloads susceptible to man-in-the-middle attack. "
+	"Use it at your own risk!"
+);
 idCVar cv_tdm_mission_list_urls(
 	"tdm_mission_list_urls",
-	"http://missions.thedarkmod.com/get_available_missions.php;"
-	"http://missions.thedarkmod.com/available_missions.xml",
+	"https://missions.thedarkmod.com/get_available_missions.php;"
+	"https://missions.thedarkmod.com/available_missions.xml",
 	CVAR_GAME,
 	"The URLs to check for the mission list XML."
 );
 idCVar cv_tdm_mission_details_url(
 	"tdm_mission_details_url",
-	"http://missions.thedarkmod.com/get_mission_details.php?id=%d",
+	"https://missions.thedarkmod.com/get_mission_details.php?id=%d",
 	CVAR_GAME,
 	"The URLs to check for the mission details XML."
 );
 idCVar cv_tdm_mission_screenshot_url(
 	"tdm_mission_screenshot_url",
-	"http://missions.thedarkmod.com/%s",
+	"https://missions.thedarkmod.com/%s",
 	CVAR_GAME,
 	"The URL template to download the mission screenshots."
 );
 idCVar cv_tdm_version_check_url(
 	"tdm_version_check_url",
-	"http://update.thedarkmod.com/tdm_version.xml",
+	"https://update.thedarkmod.com/tdm_version.xml",
 	CVAR_GAME,
 	"The URL to check for the current TDM version."
 );
@@ -201,8 +207,6 @@ idCVar cv_tdm_version_check_url(
 /**
 * DarkMod DEBUG related CVARs
 **/
-idCVar cv_tdm_http_base_url( "tdm_http_base_url", "", CVAR_GAME, "If set, this URL will be used instead of the actual download URL when downloading FMs. Useful for testing downloading FMs from temp. servers." );
-
 idCVar cv_debug_aastype( "tdm_debug_aastype", "aas32", CVAR_GAME | CVAR_ARCHIVE, "Sets the AAS type used for visualisation with impulse 27");
 
 idCVar cv_las_showtraces( "tdm_las_showtraces", "0", CVAR_GAME | CVAR_BOOL, "If true (nonzero), traces from light origin to testpoints used for visibility testiung are drawn." );

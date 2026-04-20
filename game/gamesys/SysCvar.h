@@ -99,11 +99,11 @@ extern idCVar cv_tdm_proxy;
 extern idCVar cv_tdm_proxy_user;
 extern idCVar cv_tdm_proxy_pass;
 extern idCVar cv_tdm_allow_http_access;
+extern idCVar cv_tdm_downgrade_https_to_http;
 extern idCVar cv_tdm_mission_list_urls;
 extern idCVar cv_tdm_mission_details_url;
 extern idCVar cv_tdm_mission_screenshot_url;
 extern idCVar cv_tdm_version_check_url;
-extern idCVar cv_tdm_http_base_url;
 
 extern idCVar cv_debug_aastype;
 

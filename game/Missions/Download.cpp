@@ -126,7 +126,15 @@ void CDownload::Perform()
 		// Remove any previous temporary file
 		CMissionManager::DoRemoveFile(_tempFilename.c_str());
 
-		const idStr& url = _urls[_curUrl];
+		idStr url = _urls[_curUrl];
+
+		if (cv_tdm_downgrade_https_to_http.GetBool() && url.IstartsWith("https:"))
+		{
+			// this is pretty crude an unreliable, but we hope nobody will need to do it anyway
+			// in the worst case, the user can always edit individual cvars with TDM website URLs
+			url = idStr("http:") + &url[6];
+		}
+
 		gameLocal.Printf("Performing download from '%s'\n", url.c_str());
 
 		// Create a new request
@@ -151,6 +159,11 @@ void CDownload::Perform()
 					_status = MALFORMED;
 					break;
 				}
+			}
+			else if (!url.IstartsWith("https:"))
+			{
+				// we should either use HTTPS or verify checksum, otherwise let us know
+				common->Warning("No HTTPS and no checksum verification for URL %s", url.c_str());
 			}
 
 			// Check that downloaded file is a zip indeed
