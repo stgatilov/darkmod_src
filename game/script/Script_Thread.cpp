@@ -1192,6 +1192,13 @@ void idThread::WaitSec( float time ) {
 	WaitMS( SEC2MS( time ) );
 }
 
+idCVar g_scriptWaitFrameMode(
+	"g_scriptWaitFrameMode", "0", CVAR_GAME | CVAR_BOOL,
+	"For troubleshooting only: how does waitFrame work in game scripts?\n"
+	"  0 --- wait one game tic\n"
+	"  1 --- wait 16 ms (except for actor threads)"
+);
+
 /*
 ================
 idThread::WaitFrame
@@ -1203,7 +1210,10 @@ void idThread::WaitFrame( void ) {
 	// manual control threads don't set waitingUntil so that they can be run again
 	// that frame if necessary.
 	if ( !manualControl ) {
-		waitingUntil = gameLocal.time + USERCMD_MSEC;
+		if ( g_scriptWaitFrameMode.GetBool() )
+			waitingUntil = gameLocal.time + USERCMD_MSEC;
+		else
+			waitingUntil = gameLocal.time + 1;
 	}
 }
 
