@@ -27,4 +27,6 @@ void State::Reset() {
 	_updater.reset();
 	_oldConfigFilename.clear();
 	_preferredMirror.clear();
+	_blockMultipart = false;
+	_disableTls = false;
 }

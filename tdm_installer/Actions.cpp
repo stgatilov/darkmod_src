@@ -25,12 +25,16 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Constants.h"
 #include "StoredState.h"
 #include "State.h"
+#include "CaBundle.h"
 
 
 //small wrapper to share common initialization
 struct Downloader : public ZipSync::Downloader {
 	Downloader(ZipSync::ProgressIndicator *progress = nullptr) {
 		SetUserAgent(TDM_INSTALLER_USERAGENT);
+		SetCertificates(GetCaBundle());
+		SetMultipartBlocked(g_state->_blockMultipart);
+		SetDowngradeHttps(g_state->_disableTls);
 		if (progress)
 			SetProgressCallback(progress->GetDownloaderCallback());
 	}
@@ -447,6 +451,11 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	int n = versions.size();
 	urls.resize(n);
 
+	//always download target manifest via HTTPS
+	//this protects us from MitM attack, since downloaded data is hash-verified against it
+	if (stdext::istarts_with(urls[0], "http://"))
+		urls[0] = "https://" + urls[0].substr(7);
+
 	//see which manifests were not loaded in this updater session
 	for (int i = 0; i < n; i++) {
 		bool isLoaded = g_state->_loadedManifests.count(versions[i]);
@@ -631,14 +640,16 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	return info;
 }
 
-void Actions::PerformInstallDownload(ZipSync::ProgressIndicator *progressDownload, ZipSync::ProgressIndicator *progressVerify, bool blockMultipart) {
+void Actions::PerformInstallDownload(ZipSync::ProgressIndicator *progressDownload, ZipSync::ProgressIndicator *progressVerify) {
 	g_logger->infof("Starting installation: download");
 	ZipSync::UpdateProcess *updater = g_state->_updater.get();
 	ZipSyncAssert(updater);
 
-	auto callback1 = (progressDownload ? progressDownload->GetDownloaderCallback() : ZipSync::GlobalProgressCallback());
+	Downloader downloader(progressDownload);
 	auto callback2 = (progressVerify ? progressVerify->GetDownloaderCallback() : ZipSync::GlobalProgressCallback());
-	uint64_t totalBytesDownloaded = updater->DownloadRemoteFiles(callback1, callback2, TDM_INSTALLER_USERAGENT, blockMultipart);
+	updater->DownloadRemoteFiles(downloader, callback2);
+
+	uint64_t totalBytesDownloaded = downloader.TotalBytesDownloaded();
 	g_logger->infof("Downloaded bytes: %lld", totalBytesDownloaded);
 
 	g_logger->infof("");

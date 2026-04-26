@@ -85,6 +85,14 @@ void Downloader::SetMultipartBlocked(bool blocked) {
     _blockMultipart = blocked;
 }
 
+void Downloader::SetCertificates(const std::string &content) {
+    _certificates = content;
+}
+
+void Downloader::SetDowngradeHttps(bool enabled) {
+    _downgradeHttps = enabled;
+}
+
 void Downloader::DownloadAll() {
     if (_progressCallback)
         _progressCallback(0.0, "Downloading started");
@@ -221,7 +229,8 @@ void Downloader::DownloadAllForUrl(const std::string &url) {
     }
 }
 
-bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<SubTask> &subtasks, int lowSpeedTime, int connectTimeout) {
+bool Downloader::DownloadOneRequest(const std::string &urlRef, const std::vector<SubTask> &subtasks, int lowSpeedTime, int connectTimeout) {
+    std::string url = urlRef;
     if (subtasks.empty())
         return true;    //scheduling algorithm should never even create such requests...
 
@@ -306,6 +315,11 @@ bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<Su
     };
 //-------------------- CURL callbacks: end --------------------
 
+    if (stdext::istarts_with(url, "https://") && _downgradeHttps) {
+        url = "http://" + url.substr(8);
+        g_logger->infof("HTTPS downgraded: %s", url.c_str());
+    }
+
     //prepare temporary structure for response
     _currResponse.reset(new CurlResponse());
     _currResponse->url = url;
@@ -334,6 +348,13 @@ bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<Su
     if (_useragent) {
         curl_easy_setopt(curl, CURLOPT_USERAGENT, _useragent->c_str());
         reprocmd += formatMessage(" -A \"%s\"", _useragent->c_str());
+    }
+    if (stdext::istarts_with(url, "https://") && !_certificates.empty()) {
+        curl_blob blob;
+        blob.data = (void*)_certificates.data();
+        blob.len = _certificates.size();
+        blob.flags = CURL_BLOB_NOCOPY;
+        curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &blob);
     }
     //log request as CURL command
     //it can be used to save and reproduce the problematic request with curl executable

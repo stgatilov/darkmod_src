@@ -42,6 +42,8 @@ class Downloader {
     bool _silentErrors = false;
     std::unique_ptr<std::string> _useragent;
     bool _blockMultipart = false;
+    std::string _certificates;
+    bool _downgradeHttps = false;
     GlobalProgressCallback _progressCallback;
 
     //user-specified chunk of data to be downloaded
@@ -109,6 +111,11 @@ public:
     void SetUserAgent(const char *useragent);
     //blocked = true: only use ordinary byterange requests, never use multipart ones
     void SetMultipartBlocked(bool blocked);
+    //set root certificates ("Certificate Authority") for HTTPS downloads
+    //in PEM format as accepted by libcurl
+    void SetCertificates(const std::string &content);
+    //enabled = true: all HTTPS urls are replaced with HTTP automatically
+    void SetDowngradeHttps(bool enabled);
 
     //when everything is set up, call this method to actually perform all downloads
     //it blocks until the job is done (progress callback is the only way to interrupt it)

@@ -622,9 +622,21 @@ void UpdateProcess::RepackZips(const GlobalProgressCallback &progressCallback) {
 
 uint64_t UpdateProcess::DownloadRemoteFiles(
     const GlobalProgressCallback &progressDownloadCallback,
-    const GlobalProgressCallback &progressPostprocessCallback,
-    const char *useragent,
-    bool blockMultipart
+    const GlobalProgressCallback &progressPostprocessCallback
+) {
+    Downloader downloader;
+    downloader.SetProgressCallback([this,&progressDownloadCallback](double ratio, const char *message) -> int {
+        if (progressDownloadCallback)
+            return progressDownloadCallback(ratio, message);
+        return 0;
+    });
+    DownloadRemoteFiles(downloader, progressPostprocessCallback);
+    return downloader.TotalBytesDownloaded();
+}
+
+void UpdateProcess::DownloadRemoteFiles(
+    Downloader &downloader,
+    const GlobalProgressCallback &progressPostprocessCallback
 ) {
     struct UrlData {
         PathAR path;
@@ -634,9 +646,6 @@ uint64_t UpdateProcess::DownloadRemoteFiles(
         UrlData() : file(nullptr) {}
     };
     std::map<std::string, UrlData> urlStates;
-    Downloader downloader;
-    downloader.SetUserAgent(useragent);
-    downloader.SetMultipartBlocked(blockMultipart);
     std::map<int, std::vector<int>> provIdxToMatchIds;
 
     std::set<std::string> downloadedFilenames;
@@ -687,11 +696,6 @@ uint64_t UpdateProcess::DownloadRemoteFiles(
         });
     }
 
-    downloader.SetProgressCallback([this,&progressDownloadCallback](double ratio, const char *message) -> int {
-        if (progressDownloadCallback)
-            return progressDownloadCallback(ratio, message);
-        return 0;
-    });
     downloader.DownloadAll();
 
     double totalBytesToPostprocess = 1e-20;
@@ -775,8 +779,6 @@ uint64_t UpdateProcess::DownloadRemoteFiles(
 
     if (progressPostprocessCallback)
         progressPostprocessCallback(1.0, "Verifying finished");
-
-    return downloader.TotalBytesDownloaded();
 }
 
 }

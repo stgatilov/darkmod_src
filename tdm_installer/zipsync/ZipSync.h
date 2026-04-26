@@ -8,6 +8,7 @@
 namespace ZipSync {
 
 class LocalCache;
+class Downloader;
 
 //called to report progress: returning nonzero value interrupts processing
 typedef std::function<int(double, const char*)> GlobalProgressCallback;
@@ -62,12 +63,16 @@ public:
     bool DevelopPlan(UpdateType type);
 
     //download all remote files which are necessary for update
+    //uses preconfigured external downloader to do that
+    void DownloadRemoteFiles(
+        Downloader &downloader,
+        const GlobalProgressCallback &progressPostprocessCallback
+    );
+    //download all remote files which are necessary for update
     //returns total number of bytes downloaded
     uint64_t DownloadRemoteFiles(
         const GlobalProgressCallback &progressDownloadCallback = GlobalProgressCallback(),
-        const GlobalProgressCallback &progressPostprocessCallback = GlobalProgressCallback(),
-        const char *useragent = nullptr,
-        bool blockMultipart = false
+        const GlobalProgressCallback &progressPostprocessCallback = GlobalProgressCallback()
     );
 
     //having all matches available locally, perform the update

@@ -57,6 +57,8 @@ set(sources
     LogUtils.h
     GuiUtils.cpp
     GuiUtils.h
+    CaBundle.c
+    CaBundle.h
 )
 
 if(MSVC)

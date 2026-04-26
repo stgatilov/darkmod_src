@@ -46,6 +46,9 @@ struct State {
 	std::string _oldConfigFilename;
 	//name of preferred mirror (or empty if auto)
 	std::string _preferredMirror;
+	//some global GUI settings affecting downloader
+	bool _blockMultipart = false;
+	bool _disableTls = false;
 
 	void Reset();
 	~State();

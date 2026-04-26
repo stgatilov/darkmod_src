@@ -124,6 +124,7 @@ void cb_Settings_CheckAdvancedSettings(Fl_Widget *self) {
 		g_Settings_CheckForceScan->activate();
 		g_Settings_CheckBitwiseExact->activate();
 		g_Settings_CheckNoMultipartByteranges->activate();
+		g_Settings_CheckDisableTLS->activate();
 	}
 	else {
 		g_Settings_CheckSkipSelfUpdate->deactivate();
@@ -131,15 +132,20 @@ void cb_Settings_CheckAdvancedSettings(Fl_Widget *self) {
 		g_Settings_CheckForceScan->deactivate();
 		g_Settings_CheckBitwiseExact->deactivate();
 		g_Settings_CheckNoMultipartByteranges->deactivate();
+		g_Settings_CheckDisableTLS->deactivate();
 		g_Settings_CheckSkipSelfUpdate->value(false);
 		g_Settings_CheckSkipConfigDownload->value(false);
 		g_Settings_CheckForceScan->value(false);
 		g_Settings_CheckBitwiseExact->value(false);
 		g_Settings_CheckNoMultipartByteranges->value(false);
+		g_Settings_CheckDisableTLS->value(false);
 	}
 }
 
 void cb_Settings_ButtonNext(Fl_Widget *self) {
+	g_state->_blockMultipart = g_Settings_CheckNoMultipartByteranges->value();
+	g_state->_disableTls = g_Settings_CheckDisableTLS->value();
+
 	try {
 		auto warnings = Actions::CheckSpaceAndPermissions(OsUtils::GetCwd());
 		for (const std::string &message : warnings) {
