@@ -2235,7 +2235,7 @@
     <ClCompile Include="tools\radiant\ConsoleDlg.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\CSG.CPP">
+    <ClCompile Include="tools\radiant\csg.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\CurveDlg.cpp">
@@ -2256,10 +2256,10 @@
     <ClCompile Include="tools\radiant\DlgEvent.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\DRAG.CPP">
+    <ClCompile Include="tools\radiant\drag.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\ECLASS.CPP">
+    <ClCompile Include="tools\radiant\eclass.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\EditorBrush.cpp">
@@ -2310,7 +2310,7 @@
     <ClCompile Include="tools\radiant\MediaPreviewDlg.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\MRU.CPP">
+    <ClCompile Include="tools\radiant\mru.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\NewProjDlg.cpp">
@@ -2319,7 +2319,7 @@
     <ClCompile Include="tools\radiant\NewTexWnd.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\PARSE.CPP">
+    <ClCompile Include="tools\radiant\parse.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\PatchDensityDlg.cpp">
@@ -2328,7 +2328,7 @@
     <ClCompile Include="tools\radiant\PatchDialog.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\PMESH.CPP">
+    <ClCompile Include="tools\radiant\pmesh.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\PointFile.cpp">
@@ -2343,7 +2343,7 @@
     <ClCompile Include="tools\radiant\PropertyList.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\QE3.CPP">
+    <ClCompile Include="tools\radiant\qe3.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\Radiant.cpp">
@@ -2355,7 +2355,7 @@
     <ClCompile Include="tools\radiant\ScaleDialog.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\SELECT.CPP">
+    <ClCompile Include="tools\radiant\select.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\splines.cpp">
@@ -2376,7 +2376,7 @@
     <ClCompile Include="tools\radiant\Undo.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\VERTSEL.CPP">
+    <ClCompile Include="tools\radiant\vertsel.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\WaitDlg.cpp">
@@ -2385,16 +2385,16 @@
     <ClCompile Include="tools\radiant\WaveOpen.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\WIN_DLG.CPP">
+    <ClCompile Include="tools\radiant\win_dlg.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\WIN_QE3.CPP">
+    <ClCompile Include="tools\radiant\win_qe3.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\XYWnd.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
-    <ClCompile Include="tools\radiant\Z.CPP">
+    <ClCompile Include="tools\radiant\z.cpp">
       <Filter>Tools\Radiant</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\ZClip.cpp">
@@ -4306,7 +4306,7 @@
     <ClInclude Include="tools\radiant\MediaPreviewDlg.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
-    <ClInclude Include="tools\radiant\MRU.H">
+    <ClInclude Include="tools\radiant\mru.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
     <ClInclude Include="tools\radiant\NewProjDlg.h">
@@ -4315,7 +4315,7 @@
     <ClInclude Include="tools\radiant\NewTexWnd.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
-    <ClInclude Include="tools\radiant\PARSE.H">
+    <ClInclude Include="tools\radiant\parse.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
     <ClInclude Include="tools\radiant\PatchDensityDlg.h">
@@ -4324,7 +4324,7 @@
     <ClInclude Include="tools\radiant\PatchDialog.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
-    <ClInclude Include="tools\radiant\PMESH.H">
+    <ClInclude Include="tools\radiant\pmesh.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
     <ClInclude Include="tools\radiant\PrefsDlg.h">
@@ -4336,13 +4336,13 @@
     <ClInclude Include="tools\radiant\PropertyList.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
-    <ClInclude Include="tools\radiant\QE3.H">
+    <ClInclude Include="tools\radiant\qe3.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
-    <ClInclude Include="tools\radiant\QEDEFS.H">
+    <ClInclude Include="tools\radiant\qedefs.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
-    <ClInclude Include="tools\radiant\QERTYPES.H">
+    <ClInclude Include="tools\radiant\qertypes.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
     <ClInclude Include="tools\radiant\Radiant.h">
@@ -4354,7 +4354,7 @@
     <ClInclude Include="tools\radiant\ScaleDialog.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
-    <ClInclude Include="tools\radiant\SELECT.H">
+    <ClInclude Include="tools\radiant\select.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
     <ClInclude Include="tools\radiant\splines.h">
@@ -4387,7 +4387,7 @@
     <ClInclude Include="tools\radiant\XYWnd.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
-    <ClInclude Include="tools\radiant\Z.H">
+    <ClInclude Include="tools\radiant\z.h">
       <Filter>Tools\Radiant</Filter>
     </ClInclude>
     <ClInclude Include="tools\radiant\ZClip.h">
