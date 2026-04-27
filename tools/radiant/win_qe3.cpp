@@ -451,7 +451,7 @@ void SaveAsDialog(bool bRegion) {
 }
 
 /*
- * Menu modifications £
+ * Menu modifications
  * FillBSPMenu
  */
 const char	*bsp_commands[256];

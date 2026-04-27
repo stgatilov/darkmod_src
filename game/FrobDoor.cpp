@@ -2118,7 +2118,7 @@ void CFrobDoor::GetBehindPos()
 	if ( contents || (areaNum == 0) || (GetOpenPeersNum() > 0) )
 	{
 		// this position is either blocked, in the void or can't be used since the door has open peers
-		// try at 45° swinging angle
+		// try at 45 degrees swinging angle
 		parallelTowardOffset = dirNorm;
 
 		normalTowardOffset = openDirNorm;

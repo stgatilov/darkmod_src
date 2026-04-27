@@ -2721,7 +2721,7 @@ bool CXYWnd::XY_MouseMoved(int x, int y, int buttons) {
 
 /*
  =======================================================================================================================
-    DRAWING £
+    DRAWING
     XY_DrawGrid
  =======================================================================================================================
  */
@@ -3290,7 +3290,7 @@ bool FilterBrush(brush_t *pb) {
 
 /*
  =======================================================================================================================
-    PATH LINES £
+    PATH LINES
     DrawPathLines Draws connections between entities. Needs to consider all entities, not just ones on screen, because
     the lines can be visible when neither end is. Called for both camera view and xy view.
  =======================================================================================================================

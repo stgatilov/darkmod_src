@@ -303,7 +303,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 	{
 		// calculate the "real time" velocity as if the framerate was constantly 60fps
 		// idPhysics_RigidBody::Evaluate (-> idODE_*::Evaluate) already takes account of the frametime
-		// just applying current.velocity would cause the actual movement to be velocity*frametime² per frame, while it should be velocity*frametime.
+		// just applying current.velocity would cause the actual movement to be velocity*frametime^2 per frame, while it should be velocity*frametime.
 		idVec3 realtimeVelocity = current.velocity;
 		// prevent potential division by zero (minimum frametime should be 1ms)
 		if (frametime > 0.0001F)

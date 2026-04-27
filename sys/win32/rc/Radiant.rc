@@ -1058,7 +1058,7 @@ BEGIN
     LTEXT           "Version:\t\t1.1",IDC_ABOUT_GLVERSION,10,111,249,10
     LTEXT           "Renderer:\tWHATEVER",IDC_ABOUT_GLRENDERER,10,121,253,24
     GROUPBOX        "OpenGL Extensions",IDC_STATIC,5,152,265,65
-    CONTROL         "DOOM Radiant 1.0 build 199\nCopyright ©1999, 2003 Id Software, Inc.\n\n",
+    CONTROL         "DOOM Radiant 1.0 build 199\nCopyright 1999, 2003 Id Software, Inc.\n\n",
                     IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,99,7,
                     132,78
     EDITTEXT        IDC_ABOUT_GLEXTENSIONS,10,162,256,53,ES_MULTILINE | 

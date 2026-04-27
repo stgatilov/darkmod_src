@@ -233,7 +233,7 @@ void idTurret::Think( void )
 		currentAngles	= GetPhysics()->GetAxis().ToAngles();
 		idAngles delta	= ( targetAngles - currentAngles ).Normalize180();
 
-		//update turret angles if not fully pointed at the target. Accept up to 0.1° of divergence
+		//update turret angles if not fully pointed at the target. Accept up to 0.1 degree of divergence
 		if( !currentAngles.Compare(targetAngles, 0.1f) )
 		{	
 			//adjust turret angles by one increment, based on speed * time elapsed since last check

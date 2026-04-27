@@ -528,7 +528,7 @@ BEGIN
             VALUE "FileDescription", "qe3\0"
             VALUE "FileVersion", "1, 0, 0, 1\0"
             VALUE "InternalName", "qe3\0"
-            VALUE "LegalCopyright", "Copyright © 1996\0"
+            VALUE "LegalCopyright", "Copyright 1996\0"
             VALUE "OriginalFilename", "qe3.exe\0"
             VALUE "ProductName", "Id Software qe3\0"
             VALUE "ProductVersion", "1, 0, 0, 1\0"

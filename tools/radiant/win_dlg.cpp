@@ -574,7 +574,7 @@ INT_PTR CALLBACK AboutDlgProc(HWND hwndDlg,
 	case WM_INITDIALOG:
 		{
 			char buffer[1024];
-			idStr::snPrintf(buffer, 1024, "DOOM Radiant Build %d\nCopyright ©1999-2004 Id Software, Inc.\n", RevisionTracker::Instance().GetHighestRevision());
+			idStr::snPrintf(buffer, 1024, "DOOM Radiant Build %d\nCopyright 1999-2004 Id Software, Inc.\n", RevisionTracker::Instance().GetHighestRevision());
 //			SetDlgItemText( hwndDlg, IDC_ABOUT_INFO, buffer);
 
 			idStr::snPrintf( buffer, 1024, "Renderer:\t%s", qglGetString( GL_RENDERER ) );
