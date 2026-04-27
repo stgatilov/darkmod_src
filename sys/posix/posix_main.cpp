@@ -455,16 +455,6 @@ char *Sys_GetClipboardData(void) {
 void Sys_SetClipboardData( const char *string ) {
 	Sys_Printf( "TODO: Sys_SetClipboardData\n" );
 }
-	
-
-// stub pretty much everywhere - heavy calling
-void Sys_FlushCacheMemory(void *base, int bytes)
-{
-//  Sys_Printf("Sys_FlushCacheMemory stub\n");
-}
-
-void Sys_FPU_ClearStack( void ) {
-}
 
 /*
 ================
