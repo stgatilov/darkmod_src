@@ -29,6 +29,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <signal.h>
 #include <fcntl.h>
 
+#include <GLFW/glfw3.h>
+
 #include "posix_public.h"
 
 #define					MAX_OSPATH 256
@@ -448,12 +450,21 @@ void Sys_Sleep(int msec) {
 }
 
 char *Sys_GetClipboardData(void) {
-	Sys_Printf( "TODO: Sys_GetClipboardData\n" );
-	return NULL;
+	const char *str = glfwGetClipboardString( nullptr );
+	if ( !str )
+		return nullptr;
+
+	char *result = ( char * )Mem_Alloc( strlen( str ) + 1 );
+	strcpy( result, str );
+
+	// compatibility with Windows implementation: strip by first EOL
+	strtok( result, "\n\r\b" );
+
+	return result;
 }
 
 void Sys_SetClipboardData( const char *string ) {
-	Sys_Printf( "TODO: Sys_SetClipboardData\n" );
+	glfwSetClipboardString( nullptr, string );
 }
 
 /*
