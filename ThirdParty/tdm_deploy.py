@@ -45,7 +45,7 @@ def deploy(graph, output_folder, **kwargs):
     conanfile = graph.root.conanfile
     rootdestdir = path.join(output_folder, "..", "tdm_deploy")
     conanfile.output.info(f"TheDarkMod custom deployer to {rootdestdir}")
-    with open("packages.yaml", "r") as f:
+    with open("packages.yml", "r") as f:
         doc = yaml.safe_load(f)
 
     for dep in conanfile.dependencies.values():
@@ -58,7 +58,7 @@ def deploy(graph, output_folder, **kwargs):
                 if yamldep["name"] == pkgname:
                     yamlpkg = yamldep
             # make sure to declare all packages in yaml so that we know e.g. how to treat headers
-            assert yamlpkg is not None, f"Package {pkgname} is missing from packages.yaml"
+            assert yamlpkg is not None, f"Package {pkgname} is missing from packages.yml"
 
             relocate_directory(conanfile, dep, destdir, 'licenses', 'licenses', copyfiles = True)
 

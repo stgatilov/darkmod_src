@@ -28,7 +28,7 @@ class TdmDepends(ConanFile):
         self.folders.source = "."
 
     def set_requirements(self, do_require):
-        with open("packages.yaml", "r") as f:
+        with open("packages.yml", "r") as f:
             doc = yaml.safe_load(f)
 
         for dep in doc["packages"]:

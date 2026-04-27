@@ -3,7 +3,7 @@
 #
 # First of all, we enable compiler optimizations.
 # In case of MSVC we also tweak runtime/CRT that libs are compiled against:
-#  * C++ libs (marked as 'vcdebug' in packages.yaml) are compiled against Debug runtime as usual.
+#  * C++ libs (marked as 'vcdebug' in packages.yml) are compiled against Debug runtime as usual.
 #  * C and header-only libs are compiled against Release runtime.
 # For GCC there is no runtime differences.
 #

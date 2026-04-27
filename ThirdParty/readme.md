@@ -25,7 +25,7 @@ Here are the contents of this directory:
  * `profiles/*` --- conan settings for building artefacts for main platforms
  * `1_export_custom.py` --- script to export custom recipes into active conan cache
  * `2_build_all.py` --- script to build standalone artefacts for main platforms
- * `packages.yaml` --- data file which lists all libraries, their versions and options, and some metainfo
+ * `packages.yml` --- data file which lists all libraries, their versions and options, and some metainfo
  * `conanfile.py` --- the main file which explains to conan how to install TDM dependencies
  * `tdm_deploy.py` --- custom conan deployer which is used to generate standalone artefacts for main platforms
  * `use_artefacts.cmake` --- cmake glue which is included to use prebuilt artefacts on main platforms
@@ -173,7 +173,7 @@ You can search for recipes of a library like this:
 
 It might be useful to add asterisk at the beginning and at the ending of the library name.
 
-If you manage to find the library, then choose one of the printed references and add it to the list in `packages.yaml`.
+If you manage to find the library, then choose one of the printed references and add it to the list in `packages.yml`.
 After that you can do usual build and your library will get downloaded and built.
 
 If you fail to find ready-to-use conan recipe, then you have to add a custom one.
@@ -193,7 +193,7 @@ But it would be really hard to cover all main platforms and generate glue proper
 
 ## Update library
 
-Look into `packages.yaml` and find the library reference there.
+Look into `packages.yml` and find the library reference there.
 Now do `conan search` for a newer version of the library.
 
 If you find one, change the reference in `conanfile.py` and rebuild.

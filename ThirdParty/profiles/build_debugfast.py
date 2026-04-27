@@ -1,7 +1,7 @@
-# Updates the part of build_debugfast from packages.yaml
+# Updates the part of build_debugfast from packages.yml
 import yaml
 
-with open("../packages.yaml", "r") as f:
+with open("../packages.yml", "r") as f:
     doc = yaml.safe_load(f)
 with open("build_debugfast", "r") as f:
     template = f.readlines()

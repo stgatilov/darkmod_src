@@ -4,7 +4,7 @@ import yaml
 
 # load list of used packages from yaml file
 # this is necessary in order to set proper version on export
-with open("packages.yaml", "r") as f:
+with open("packages.yml", "r") as f:
     doc = yaml.safe_load(f)
 def get_export_destination_parameters(pkgname):
     for dep in doc["packages"]:
