@@ -462,7 +462,7 @@ Sys_LockMemory
 ================
 */
 bool Sys_LockMemory( void *ptr, int bytes ) {
-	return true;
+	return mlock( ptr, bytes ) == 0;
 }
 
 /*
@@ -471,7 +471,7 @@ Sys_UnlockMemory
 ================
 */
 bool Sys_UnlockMemory( void *ptr, int bytes ) {
-	return true;
+	return munlock( ptr, bytes ) == 0;
 }
 
 /*
