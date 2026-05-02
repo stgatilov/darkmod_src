@@ -32,7 +32,6 @@ packages:
   - { name: glfw        , version: "3.4"      , local: False  , bintype: release }
   - { name: openal      , version: "1.24.1"   , local: True   , bintype: vcdebug }
   - { name: pugixml     , version: "1.15"     , local: False  , bintype: vcdebug }
-  - { name: xorg        , version: "system"   , local: True   , bintype: header, os: ["Linux", "FreeBSD"] }
   - { name: libalsa     , version: "1.2.10"   , local: False  , bintype: release, os: ["Linux"] }
 
 options:
@@ -44,9 +43,6 @@ options:
     SSE: "SSE2"
   libcurl:
     with_ssl: "mbedtls"
-  xorg:
-    # completely block xorg conan recipe from adding dependencies
-    # it adds way too many, some of them also block 32-bit builds
-    # we'll better add the X libs we need manually
-    exclude_lib: "ALL"
-    exclude_install: "ALL"
+  glfw:
+    with_x11: true
+    with_wayland: true

@@ -73,10 +73,12 @@ class FltkConan(ConanFile):
             if self.options.with_gl:
                 self.requires("opengl/system")
                 self.requires("glu/system")
-#            self.requires("fontconfig/2.15.0")
-            self.requires("xorg/system")
-            if self.options.with_xft:
-                self.requires("libxft/2.3.8")
+            # disabled since its appearence in 1.3.5->1.3.8 upgrade due to some issues
+            #self.requires("fontconfig/2.15.0")
+            # we assume that xorg and wayland are present in environment and linked explicitly
+            #self.requires("xorg/system")
+            #if self.options.with_xft:
+            #    self.requires("libxft/2.3.8")
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)

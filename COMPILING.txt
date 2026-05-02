@@ -46,6 +46,8 @@ Here is some of them:
   sudo apt-get install subversion               //embedding revision number into code
   sudo apt-get install mesa-common-dev          //OpenGL
   sudo apt-get install xorg-dev                 //various X-related stuff
+  sudo apt-get install libwayland-dev           //wayland libraries
+  sudo apt-get install libxkbcommon-dev         //GLFW+wayland needs this
 
 Now run CMake as instructed above.
 
