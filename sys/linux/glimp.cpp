@@ -110,6 +110,13 @@ int GLX_Init(glimpParms_t a) {
 
 	common->Printf( "Initializing OpenGL display\n" );
 
+	int platform = glfwGetPlatform();
+	const char *platName = "unknown";
+	if (platform == GLFW_PLATFORM_WIN32) platName = "Win32";
+	if (platform == GLFW_PLATFORM_WAYLAND) platName = "Wayland";
+	if (platform == GLFW_PLATFORM_X11) platName = "X11";
+	common->Printf("GLFW platform used: %s (%d)\n", platName, platform);
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, QGL_REQUIRED_VERSION_MAJOR);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, QGL_REQUIRED_VERSION_MINOR);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, r_glCoreProfile.GetInteger() == 0 ? GLFW_OPENGL_COMPAT_PROFILE : GLFW_OPENGL_CORE_PROFILE);
