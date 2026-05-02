@@ -9,4 +9,6 @@ sysname = platform.system().lower()
 if 'windows' not in sysname:
     # this is enough for 64 bit 
     os.system('sudo apt-get update')
-    os.system('sudo apt-get -y install mesa-common-dev libglu1-mesa-dev xorg-dev libxcb-*-dev libx11-xcb-dev libxxf86vm-dev libxext-dev uuid-dev')
+    os.system('sudo apt-get -y install xorg-dev libwayland-dev libxkbcommon-dev')
+    os.system('sudo apt-get -y mesa-common-dev libglu1-mesa-dev')
+    os.system('sudo apt-get -y libxcb-*-dev libx11-xcb-dev libxxf86vm-dev libxext-dev uuid-dev')
