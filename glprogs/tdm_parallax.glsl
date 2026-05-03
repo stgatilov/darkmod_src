@@ -98,7 +98,10 @@ float computeParallaxShadow(
 	// trace linearly to check for obstacles
 	float step = (hgtRange.y - hgtRange.x) / shadowSteps;
 	float maxDiff = -1.0;
-	for (float deltaH = step * randomizer; tcTotal.z + deltaH < hgtRange.y; deltaH += step) {
+	for (int s = 0; s < shadowSteps * 10; s++) {
+		float deltaH = step * (s + randomizer);
+		if (tcTotal.z + deltaH >= hgtRange.y)
+			break;
 		vec2 tc = tcTotal.xy + deltaH * (lightDirLocal.xy / lightDirLocal.z);
 		float obstH = mix(heightScale.x, heightScale.y, textureLod(heightmap, tc, lod).r);
 		float diff = obstH - (tcTotal.z + deltaH);
