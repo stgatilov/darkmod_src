@@ -878,7 +878,7 @@ void idConsoleLocal::Linefeed() {
 
 	x = 0;
 	idConsoleLine s( SCREEN_WIDTH / SMALLCHAR_WIDTH - 1 );
-	text.Append( s );
+	text.AddGrow( s );
 
 	if ( display == text.Num() - 2 ) {
 		display++;
