@@ -387,6 +387,10 @@ private:
 idCVarSystemLocal			localCVarSystem;
 idCVarSystem *				cvarSystem = &localCVarSystem;
 
+int CompareCvarsByName( idCVar* const *a, idCVar* const *b ) {
+	return idStr::Icmp( (*a)->GetName(), (*b)->GetName() );
+}
+
 #define NUM_COLUMNS				77		// 78 - 1
 #define NUM_NAME_CHARS			33
 #define NUM_DESCRIPTION_CHARS	( NUM_COLUMNS - NUM_NAME_CHARS )
@@ -760,8 +764,14 @@ idCVarSystemLocal::WriteArchivedCVars
 void idCVarSystemLocal::WriteArchivedCVars( idFile *f ) {
 	idScopedCriticalSection lock( mutex );
 
-	for( int i = 0; i < cvars.Num(); i++ ) {
-		idCVar *cvar = cvars[i];
+	// stgatilov: write cvars sorted lexicographically
+	// their natural order depends on the order of globals initialization
+	// which makes it inconvenient to diff configs across machines
+	idList<idCVar *> cvarList = cvars;
+	cvarList.Sort( &CompareCvarsByName );
+
+	for( int i = 0; i < cvarList.Num(); i++ ) {
+		idCVar *cvar = cvarList[i];
 		if ( cvar->GetFlags() & CVAR_ARCHIVE ) {
 			f->Printf( "seta %s \"%s\"\n", cvar->GetName(), cvar->valueString.c_str() );
 		}
@@ -1059,12 +1069,6 @@ void idCVarSystemLocal::UnSetM_f( const idCmdArgs &args ) {
 idCVarSystemLocal::ListByFlags
 ============
 */
-// NOTE: the const wonkyness is required to make msvc happy
-template<>
-ID_INLINE int idListSortCompare( const idCVar * const *a, const idCVar * const *b ) {
-	return idStr::Icmp( (*a)->GetName(), (*b)->GetName() );
-}
-
 void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) {
 	int i, argNum;
 	idStr match, indent, string;
@@ -1105,9 +1109,9 @@ void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) 
 	}
 
 	idScopedCriticalSection lock( localCVarSystem.mutex );
-	idList<const idCVar *>cvarList;
+	idList<idCVar *> cvarList;
 	for ( i = 0; i < localCVarSystem.cvars.Num(); i++ ) {
-		const idCVar *cvar = localCVarSystem.cvars[i];
+		idCVar *cvar = localCVarSystem.cvars[i];
 
 		if ( !( cvar->GetFlags() & flags ) ) {
 			continue;
@@ -1122,7 +1126,7 @@ void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) 
 		cvarList.Append( cvar );
 	}
 
-	cvarList.Sort();
+	cvarList.Sort( &CompareCvarsByName );
 
 	switch( show ) {
 		case SHOW_VALUE: {
