@@ -47,6 +47,7 @@ static void ClearGeoBufferSet( geoBufferSet_t &gbs ) {
 }
 
 static void SwitchFrameGeoBufferSet( geoBufferSet_t &gbs ) {
+	TRACE_CPU_SCOPE( "SwitchFrameGeoBufferSet" );
 	int commitVertexBytes = Min( gbs.vertexMemUsed.GetValue(), (int)gbs.vertexBuffer.BytesRemaining() );
 	gbs.vertexBuffer.Commit( commitVertexBytes );
 	gbs.vertexBuffer.SwitchFrame();
@@ -210,6 +211,8 @@ idVertexCache::EndFrame
 ===========
 */
 void idVertexCache::EndFrame() {
+	TRACE_CPU_SCOPE( "VertexCache:EndFrame" );
+
 	// display debug information
 	if ( r_showVertexCache.GetBool() ) {
 		common->Printf( "vertex: %d times totaling %d kB, index: %d times totaling %d kB\n", vertexAllocCount, dynamicData.vertexMemUsed.GetValue() / 1024, indexAllocCount, dynamicData.indexMemUsed.GetValue() / 1024 );
@@ -237,6 +240,7 @@ void idVertexCache::EndFrame() {
 		(int)dynamicData.vertexBuffer.BytesRemaining() < currentVertexCacheSize ||
 		(int)dynamicData.indexBuffer.BytesRemaining() < currentIndexCacheSize
 	) {
+		TRACE_CPU_SCOPE( "VertexCache:ResizeDynamic" );
 		common->Printf( "Resizing dynamic VertexCache: index %d kb -> %d kb, vertex %d kb -> %d kb\n", dynamicData.indexBuffer.BytesRemaining() / 1024, currentIndexCacheSize / 1024, dynamicData.indexBuffer.BytesRemaining() / 1024, currentVertexCacheSize / 1024 );
 		FreeGeoBufferSet( dynamicData );
 		AllocGeoBufferSet( dynamicData, currentVertexCacheSize, currentIndexCacheSize );

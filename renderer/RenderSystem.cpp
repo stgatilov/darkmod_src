@@ -35,6 +35,8 @@ only be called when the back end thread is idle.
 =====================
 */
 static void R_PerformanceCounters( void ) {
+	TRACE_CPU_SCOPE( "R_PerformanceCounters" );
+	
 	if ( r_showPrimitives.GetInteger() != 0 ) {
 
 		int numUsed = -1;
@@ -839,6 +841,7 @@ PurgeOldSubviewImages
 =====================
 */
 void idRenderSystemLocal::PurgeOldSubviewImages() {
+	TRACE_CPU_SCOPE( "PurgeOldSubviewImages" );
 	// this method should be called outside parallel section
 	assert(!session->IsFrontend());
 

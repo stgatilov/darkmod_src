@@ -3191,6 +3191,8 @@ void idSessionLocal::StartFrontendThread() {
 
 
 void idSessionLocal::ExecuteFrameCommand(const char *command, bool delayed) {
+	TRACE_CPU_SCOPE_FORMAT( "ExecuteFrameCommand", "%s %d", command, int(delayed) );
+	
 	if (delayed) {
 		delayedFrameCommands.Append(command);
 		return;

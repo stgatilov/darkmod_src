@@ -215,6 +215,8 @@ R_ToggleSmpFrame
 ====================
 */
 void R_ToggleSmpFrame( void ) {
+	TRACE_CPU_SCOPE( "R_ToggleSmpFrame" );
+
 	// update the highwater mark
 	if ( frameData->frameMemoryAllocated > frameData->memoryHighwater ) {
 		frameData->memoryHighwater = frameData->frameMemoryAllocated;

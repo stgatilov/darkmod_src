@@ -1584,6 +1584,7 @@ UpdateSingleThreaded
 ===============
 */
 void idImageManager::UpdateSingleThreaded() {
+	TRACE_CPU_SCOPE_FORMAT( "Image:UpdateSingleThreaded", "%d", delayedFunctionsQueue.Num() );
 	// note: taking lock is excessive: no other thread must be active!
 	idScopedCriticalSection lock( delayedFunctionsMutex );
 	assert( !session->IsFrontend() );

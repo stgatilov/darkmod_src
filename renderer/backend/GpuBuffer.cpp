@@ -138,15 +138,19 @@ void GpuBuffer::SwitchFrame() {
 	bytesCommittedInCurrentFrame = 0;
 
 	if ( frameFences[currentWritingFrame] != nullptr ) {
+		TRACE_CPU_SCOPE_COLOR( "glClientWaitSync", TRACE_COLOR_IDLE );
 		// await lock for next frame region to ensure that data is not used by the GPU anymore
 		GLenum result = qglClientWaitSync( frameFences[currentWritingFrame], 0, 0 );
+		int extraWaits = 0;
 		while( result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED ) {
 			result = qglClientWaitSync( frameFences[currentWritingFrame], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000 );
+			extraWaits++;
 			if( result == GL_WAIT_FAILED ) {
 				assert( !"glClientWaitSync failed" );
 				break;
 			}
 		}
+		TRACE_ATTACH_FORMAT( "+%d waits", extraWaits );
 		qglDeleteSync( frameFences[currentWritingFrame] );
 		frameFences[currentWritingFrame] = nullptr;
 	}

@@ -2449,6 +2449,8 @@ idCommonLocal::Frame
 =================
 */
 void idCommonLocal::Frame( void ) {
+	TRACE_CPU_SCOPE( "idCommonLocal::Frame" );
+
 	try {
 
 		// pump all the events
@@ -2478,6 +2480,8 @@ void idCommonLocal::Frame( void ) {
 		static int64_t com_frameTimeMicro = 0;		//same as com_frameTime, but in microseconds
 		static int64_t lastFrameAstroTime = Sys_Microseconds();
 		if (sessLocal.com_fixedTic.GetBool()) {
+			TRACE_CPU_SCOPE_COLOR( "FpsLimit:BusyWait", TRACE_COLOR_IDLE );
+
 			//stgatilov #4865: impose artificial FPS limit
 			int64_t minDeltaTime = int64_t(1000000 / sessLocal.com_maxFPS.GetFloat());
 			int64_t currFrameAstroTime;
@@ -2495,6 +2499,9 @@ void idCommonLocal::Frame( void ) {
 			//see how much passed in microseconds
 			int deltaTime = currFrameAstroTime - lastFrameAstroTime;
 			lastFrameAstroTime = currFrameAstroTime;
+			TRACE_ATTACH_FORMAT( "%d wait", deltaTime );
+			TRACE_ATTACH_FORMAT( "%d thres", int(minDeltaTime) );
+			TRACE_ATTACH_FORMAT( "%zd timestamp", ptrdiff_t(lastFrameAstroTime) );
 
 			//update precise time in microseconds, then round it to milliseconds
 			com_frameTimeMicro += deltaTime * com_timescale.GetFloat();
