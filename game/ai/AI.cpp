@@ -9337,7 +9337,11 @@ bool idAI::UpdateAnimationControllers( void ) {
 		focusPos = focusEnt->GetPhysics()->GetOrigin();
 	}
 
-	currentFocusPos = currentFocusPos + ( focusPos - currentFocusPos ) * eyeFocusRate;
+	// stgatilov: focus rates were originally set "per frame"
+	// so we need to rescale them based on how much time delta is larger than the old 16 ms frame
+	float deltaTimeOver16ms = ( gameLocal.time - m_lastThinkTime ) / 16.0f;
+
+	currentFocusPos = currentFocusPos + ( focusPos - currentFocusPos ) * eyeFocusRate * deltaTimeOver16ms;
 
 	// determine yaw from origin instead of from focus joint since joint may be offset, which can cause us to bounce between two angles
 	dir = focusPos - orientationJointPos;
@@ -9394,7 +9398,7 @@ bool idAI::UpdateAnimationControllers( void ) {
 			diff.yaw += 360.0f;
 		}
 	}
-	lookAng = lookAng + diff * headFocusRate;
+	lookAng = lookAng + diff * headFocusRate * deltaTimeOver16ms;
 	lookAng.Normalize180();
 
 	jointAng.roll = 0.0f;
