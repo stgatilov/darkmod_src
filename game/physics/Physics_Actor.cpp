@@ -42,7 +42,6 @@ idPhysics_Actor::idPhysics_Actor( void ) {
 	previousWaterLevel = waterLevel = WATERLEVEL_NONE;	// MOD_WATERPHYSICS
 	waterType = 0;					// MOD_WATERPHYSICS
 	waterLevelChanged = true;
-	submerseFrame = 0;
 	submerseTime = -1;
 #endif		// MOD_WATERPHYSICS
 }
@@ -81,7 +80,6 @@ void idPhysics_Actor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt((int)previousWaterLevel);
 	savefile->WriteInt( waterType );		// MOD_WATERPHYSICS
 	savefile->WriteBool(waterLevelChanged);
-	savefile->WriteInt(submerseFrame);
 	savefile->WriteInt(submerseTime);
 #endif 		// MOD_WATERPHYSICS
 
@@ -115,7 +113,6 @@ void idPhysics_Actor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)previousWaterLevel );
 	savefile->ReadInt( waterType );				// MOD_WATERPHYSICS
 	savefile->ReadBool(waterLevelChanged);
-	savefile->ReadInt(submerseFrame);
 	savefile->ReadInt(submerseTime);
 #endif 		// MOD_WATERPHYSICS
 
@@ -460,7 +457,6 @@ void idPhysics_Actor::SetWaterLevel( bool updateWaterLevelChanged ) {
 
 		if (waterLevel == WATERLEVEL_HEAD && waterLevelChanged)
 		{
-			submerseFrame = gameLocal.framenum;
 			submerseTime = gameLocal.time;
 		}
 	}

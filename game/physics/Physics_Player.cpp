@@ -793,7 +793,7 @@ void idPhysics_Player::WaterMove()
 		if (waterLevel >= WATERLEVEL_HEAD)
 		{
 			// greebo: Player is completely submersed, apply upwards velocity, but let it raise over time
-			float factor = (gameLocal.framenum - submerseFrame) / 60;
+			float factor = (gameLocal.time - submerseTime) / 1000.0f;
 			if (factor > 1) {
 				factor = 1;
 			}
