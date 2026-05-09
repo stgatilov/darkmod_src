@@ -113,6 +113,14 @@ idCVar cv_ai_opt_interleavethinkskippvscheck (	"tdm_ai_opt_interleavethinkskipPV
 idCVar cv_ai_opt_interleavethinkframes (		"tdm_ai_opt_interleavethinkframes",			"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "If true (nonzero), this is the maximum interleaved thinking frame number." );
 idCVar cv_ai_opt_update_enemypos_interleave (	"tdm_ai_opt_update_enemypos_interleave",	"48",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time to pass between enemy position updates. Set this to 0 for updates each frame." );
 
+idCVar cv_ai_opt_interleave_subsystems(
+	"tdm_ai_opt_interleave_subsystems", "0", CVAR_BOOL,
+	"How are subsystems of AI mind executed (#6703):\n"
+	"  0 --- all subsystems every frame (2.15 and later)\n"
+	"  1 --- one subsystem per think, round-robin"
+);
+
+
 idCVar cv_ai_opt_nomind (						"tdm_ai_opt_nomind",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI has its Mind thinking routines disabled." );
 idCVar cv_ai_opt_novisualstim (					"tdm_ai_opt_novisualstim",			"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not process any incoming visual stimuli." );
 idCVar cv_ai_opt_nolipsync (					"tdm_ai_opt_nolipsync",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If true (nonzero), AI will not play lipsync animations." );

@@ -100,20 +100,29 @@ void Mind::Think()
 		state->Think(owner);
 	}
 
-	// Try to perform the subsystem tasks, skipping inactive subsystems
-	// Maximum number of tries is SubsystemCount.
-	for ( int i = 0 ; i < static_cast<int>(SubsystemCount) ; i++ )
+	if (cv_ai_opt_interleave_subsystems.GetBool())
 	{
-		// Increase the iterator and wrap around, if necessary
-		_subsystemIterator = static_cast<SubsystemId>(
-			(static_cast<int>(_subsystemIterator) + 1) % static_cast<int>(SubsystemCount)
-		);
-
-		// Subsystems return TRUE when their task was executed
-		if (owner->GetSubsystem(_subsystemIterator)->PerformTask())
+		// Try to perform the subsystem tasks, skipping inactive subsystems
+		// Maximum number of tries is SubsystemCount.
+		for ( int i = 0 ; i < int(SubsystemCount) ; i++ )
 		{
-			// Task performed, break, iterator will be increased next round
-			break;
+			// Increase the iterator and wrap around, if necessary
+			_subsystemIterator = SubsystemId( (int(_subsystemIterator) + 1) % int(SubsystemCount) );
+
+			// Subsystems return TRUE when their task was executed
+			if (owner->GetSubsystem(_subsystemIterator)->PerformTask())
+			{
+				// Task performed, break, iterator will be increased next round
+				break;
+			}
+		}
+	}
+	else
+	{
+		// stgatilov #6703: run all subsystems
+		for ( int i = 0 ; i < int(SubsystemCount) ; i++ )
+		{
+			owner->GetSubsystem(SubsystemId(i))->PerformTask();
 		}
 	}
 }

@@ -67,7 +67,10 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 	idPathCorner* nextPath = owner->GetMemory().nextPath.GetEntity();
 
 	// Allow path prediction only if the next path is an actual path corner and no accuracy is set on this one
-	if (_accuracy == -1 && nextPath != NULL && idStr::Icmp(nextPath->spawnArgs.GetString("classname"), "path_corner") == 0)
+	if (_accuracy == -1 && nextPath != NULL &&
+		idStr::Icmp(nextPath->spawnArgs.GetString("classname"), "path_corner") == 0 &&
+		// stgatilov #6703: this hack is not needed if every subsystem runs every frame
+		cv_ai_opt_interleave_subsystems.GetBool())
 	{
 		_usePathPrediction = true;
 	}
