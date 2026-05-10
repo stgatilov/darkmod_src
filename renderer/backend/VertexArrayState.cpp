@@ -97,11 +97,11 @@ void VertexArrayState::Init() {
 }
 
 void VertexArrayState::Shutdown() {
-	assert(vao != 0);
-	qglDeleteVertexArrays(1, &vao);
-	vao = 0;
-
-	qglBindVertexArray(0);
+	if (vao != 0) {
+		qglDeleteVertexArrays(1, &vao);
+		vao = 0;
+		qglBindVertexArray(0);
+	}
 }
 
 void VertexArrayState::SetDefaultState() {
