@@ -11,7 +11,7 @@ class idRenderModelStaticPrinter:
     def to_string(self):
         return 'RModel: ' + display_string(self.value['name'])
     def children(self):
-        yield from raw_children_inline(self.value)
+        return raw_children_inline(self.value)
 
 
 class RenderEntityPrinter:
@@ -38,9 +38,11 @@ class RenderEntityPrinter:
             return 'REntParms: ?'
     
     def children(self):
+        res = []
         if self.pEntity:
-            yield ('[entity]', self.pEntity.dereference())
-        yield from raw_children_inline(self.value)
+            res.append(('[entity]', self.pEntity.dereference()))
+        res += raw_children_inline(self.value)
+        return res
 
 
 class idRenderEntityLocalPrinter:
@@ -50,7 +52,7 @@ class idRenderEntityLocalPrinter:
     def to_string(self):
         return display_string(self.value['parms'])
     def children(self):
-        yield from raw_children_inline(self.value)
+        return raw_children_inline(self.value)
 
 
 class RenderLightPrinter:
@@ -73,9 +75,11 @@ class RenderLightPrinter:
             return 'RLgtParms: ?'
     
     def children(self):
+        res = []
         if self.pEntity:
-            yield ('[entity]', self.pEntity.dereference())
-        yield from raw_children_inline(self.value)
+            res.append(('[entity]', self.pEntity.dereference()))
+        res += raw_children_inline(self.value)
+        return res
 
 
 class idRenderLightLocalPrinter:
@@ -85,12 +89,12 @@ class idRenderLightLocalPrinter:
     def to_string(self):
         return display_string(self.value['parms'])
     def children(self):
-        yield from raw_children_inline(self.value)
+        return raw_children_inline(self.value)
 
 
 def build_pretty_printer():
     return TdmPrettyPrinterCollection.create_with_printers('engine', [
         idRenderModelStaticPrinter,
         RenderEntityPrinter, idRenderEntityLocalPrinter,
-        RenderLightPrinter, idRenderLightLocalPrinter
+        RenderLightPrinter, idRenderLightLocalPrinter,
     ])

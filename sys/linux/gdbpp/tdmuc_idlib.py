@@ -14,11 +14,12 @@ class idStrPrinter:
         return '"' + self.value['data'].string(length = int(self.value['len'])) + '"'
     
     def children(self):
-        yield raw_child_expandable(self.value)
+        res = [raw_child_expandable(self.value)]
         n = int(self.value['len'])
         pChars = self.value['data']
         for i in range(n):
-            yield (str(i), pChars[i])
+            res.append((str(i), pChars[i]))
+        return res
 
 
 class idKeyValuePrinter:
@@ -44,8 +45,8 @@ class idDictPrinter:
         self.list = value['args']
 
     def children(self):
-        yield raw_child_expandable(self.value)
-        yield from children_of(self.list)
+        res = [raw_child_expandable(self.value)]
+        res += children_of(self.list)
 
     def to_string(self):
         res = display_string(self.list)
@@ -64,11 +65,12 @@ class idListPrinter:
         return 'array'
 
     def children(self):
-        yield raw_child_expandable(self.value)
+        res = [raw_child_expandable(self.value)]
         n = int(self.value['num'])
         pArr = self.value['list']
         for i in range(n):
-            yield (str(i), pArr[i])
+            res.append((str(i), pArr[i]))
+        return res
 
     def to_string(self):
         n = int(self.value['num'])
@@ -95,24 +97,32 @@ class idLinkListPrinter:
             if pnode == self.value.address:
                 return []
             k = 1
+            res = []
             while int(pnode) != 0:
                 vnode = pnode.dereference()
-                yield ('[%d]' % k, vnode['owner'])
+                res.append(('[%d]' % k, vnode['owner']))
                 if vnode['next'] == vnode['head']:
                     break
                 pnode = vnode['next']
                 k += 1
+            return res
 
     def children(self):
-        yield from raw_children_inline(self.value)
-
+        res = raw_children_inline(self.value)
         headPtr = self.value['head']
         if headPtr == self.value.address:
-            yield ('[Enum All]', embed_printer_for_value(self.value, idLinkListPrinter.EnumSynthetic))
+            child = ('[Enum All]', embed_printer_for_value(self.value, idLinkListPrinter.EnumSynthetic))
+            res.append(child)
+        return res
 
     def to_string(self):
         return 'LinkList'
         
 
 def build_pretty_printer():
-    return TdmPrettyPrinterCollection.create_with_printers('idlib', [idListPrinter, idStrPrinter, idKeyValuePrinter, idDictPrinter, idLinkListPrinter])
+    return TdmPrettyPrinterCollection.create_with_printers('idlib', [
+        idListPrinter,
+        idLinkListPrinter,
+        idStrPrinter,
+        idKeyValuePrinter, idDictPrinter,
+    ])

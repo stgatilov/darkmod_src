@@ -15,13 +15,15 @@ class idEntityPrinter:
         def children(self):
             curr = self.value['teamMaster']
             k = 0
+            res = []
             while int(curr) != 0:
                 key = '[%d]' % k
                 if curr == self.value.address:
                     key = '=>' + key
-                yield (key, curr)
+                res.append((key, curr))
                 k += 1
                 curr = curr.dereference()['teamChain']
+            return res
 
 
     def __init__(self, value):
@@ -34,8 +36,10 @@ class idEntityPrinter:
         )
     
     def children(self):
-        yield from raw_children_inline(self.value)
-        yield ('[Team]', embed_printer_for_value(self.value, idEntityPrinter.TeamSynthetic))
+        res = raw_children_inline(self.value)
+        child = ('[Team]', embed_printer_for_value(self.value, idEntityPrinter.TeamSynthetic))
+        res.append(child)
+        return res
 
 
 class idEntityPtrPrinter:
@@ -63,9 +67,15 @@ class idEntityPtrPrinter:
     
     def children(self):
         key = '[WRONG]' if self.invalid else '[entity]'
-        yield (key, self.ptrValue)
-        yield raw_child_expandable(self.value)
+        res = [
+            (key, self.ptrValue),
+            raw_child_expandable(self.value),
+        ]
+        return res
 
 
 def build_pretty_printer():
-    return TdmPrettyPrinterCollection.create_with_printers('game', [idEntityPrinter, idEntityPtrPrinter])
+    return TdmPrettyPrinterCollection.create_with_printers('game', [
+        idEntityPrinter,
+        idEntityPtrPrinter,
+    ])

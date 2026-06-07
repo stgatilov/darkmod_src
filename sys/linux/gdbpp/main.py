@@ -15,6 +15,11 @@ for modname in sys.modules:
 for modname in uncached_modules_names:
     del sys.modules[modname]
 
+# enable verbose tracing of Python execution into a log file
+# this is very useful for debugging, since exceptions are often silently suppressed,
+# GDB often hangs trying to evaluate all the stuff, and we don't see well what IDE is doing
+#import tracing
+
 try:
     import tdmuc_idlib
     import tdmuc_engine

@@ -163,29 +163,28 @@ class TdmPrettyPrinterCollection(gdb.printing.PrettyPrinter):
 
         # resolve 'as is': normally works for value types
         # can work for pointer only if printer has pointer in its wildcard
-        type = value.type
-        printer = self._find_printer_maybe_derived(type, False)
+        printer = self._find_printer_maybe_derived(value.type, False)
         if printer:
             return printer.gen_printer(value)
 
         # resolve reference type
-        if type.code == gdb.TYPE_CODE_REF or type.code == gdb.TYPE_CODE_RVALUE_REF:
-            value = value.referenced_value()
-            type = value.type
-            printer = self._find_printer_maybe_derived(type, False)
+        if value.type.code == gdb.TYPE_CODE_REF or value.type.code == gdb.TYPE_CODE_RVALUE_REF:
+            target_value = value.referenced_value()
+            printer = self._find_printer_maybe_derived(target_value.type, False)
             if printer:
-                return printer.gen_printer(value)
+                return printer.gen_printer(target_value)
             
         # resolve pointer type (address is prepended)
-        if type.code == gdb.TYPE_CODE_PTR:
+        if value.type.code == gdb.TYPE_CODE_PTR:
             if int(value) == 0:
                 return LiteralStringPrinter('null')
             prefix = '0x{:x} '.format(int(value))
-            value = value.dereference()
-            type = value.type
-            printer = self._find_printer_maybe_derived(type, True)
+            if value.type and str(value.type) == 'void *':
+                return LiteralStringPrinter(prefix + 'void')
+            target_value = value.dereference()
+            printer = self._find_printer_maybe_derived(target_value.type, True)
             if printer:
-                return PrefixPrinter(prefix, printer.gen_printer(value))            
+                return PrefixPrinter(prefix, printer.gen_printer(target_value))
 
         return None
 
@@ -275,9 +274,9 @@ register_gdb_helper()
 # enumerates all raw members of a class, including base classes
 # there are two ways of using it:
 #  1) provide members inline, like <ExpandedItem>this,!</ExpandedItem> from natvis:
-#       yield from raw_children_inline(value)
+#       res += raw_children_inline(value)
 #  2) all a synthetic child with raw members, natvis does this automatically:
-#       yield raw_child_expandable(value)
+#       res.append(raw_child_expandable(value))
 
 class RawSubclassPrinter:
     def __init__(self, value):
@@ -287,15 +286,19 @@ class RawSubclassPrinter:
         return ''
 
     def children(self):
+        res = []
         for f in self.value.type.fields():
             if f.artificial:
                 continue
             if f.is_base_class:
                 base_type = gdb.lookup_type(f.name)
                 base_value = self.value.cast(base_type)
-                yield ('%s {base}' % f.name, embed_printer_for_value(base_value, RawSubclassPrinter))
+                child = ('%s {base}' % f.name, embed_printer_for_value(base_value, RawSubclassPrinter))
+                res.append(child)
                 continue
-            yield (f.name, self.value[f.name])
+            child = (f.name, self.value[f.name])
+            res.append(child)
+        return res
 
 class RawPrinter(RawSubclassPrinter):
     def __init__(self, value):
@@ -304,11 +307,11 @@ class RawPrinter(RawSubclassPrinter):
     def to_string(self):
         return '[expand to see raw children]'
 
-# yield this from SomePrinter.children to add expandable [raw] child like in natvis
+# add this child to the returned list in SomePrinter.children to add expandable [raw] child like in natvis
 def raw_child_expandable(value):
     return ('[raw]', embed_printer_for_value(value, RawPrinter))
 
-# yield this from SomePrinter.children to add raw members inline
+# append this array to the returned list in SomePrinter.children to add raw members inline
 def raw_children_inline(value):
     return RawPrinter(value).children()
 
@@ -320,7 +323,9 @@ def raw_children_inline(value):
 def display_string(value):
     pp = gdb.default_visualizer(value)
     if not pp:
-        return str(value)
+        if value.type.is_scalar:
+            return str(value)        
+        return '?'
     return pp.to_string()
 
 # returns children list for a value
@@ -330,7 +335,9 @@ def children_of(value, skip_raw = True):
     pp = gdb.default_visualizer(value)
     if not pp:
         return []
+    res = []
     for x in pp.children():
         if skip_raw and x[0] == '[raw]':
             continue
-        yield x
+        res.append(x)
+    return res
