@@ -1,5 +1,5 @@
 import gdb
-import re, fnmatch, traceback
+import re, fnmatch, traceback, string
 from collections import namedtuple
 
 
@@ -246,9 +246,11 @@ GdbHelperEntry = namedtuple('GdbHelperEntry', ['value', 'gen_printer', 'size', '
 
 # returns artificial gdb.Value which is later resolved to specified (gdb.Value + pretty-printer class) combination
 # information is stored in the global table, and entry ID is wrapped into GdbHelper struct
-def embed_printer_for_value(value, gen_printer):
+def embed_printer_for_value(value, gen_printer, *, size = None):
+    if size is None:
+        size = len(value.bytes)
     tb = traceback.extract_stack()
-    id = g_gdb_helper_table.add_limited(GdbHelperEntry(value, gen_printer, len(value.bytes), tb))
+    id = g_gdb_helper_table.add_limited(GdbHelperEntry(value, gen_printer, size, tb))
     helper_type = gdb.lookup_type('GdbHelper')
     assert helper_type and helper_type.sizeof == 8, "Make sure GdbHelper struct exists and is not stripped out."
     helper_value = gdb.Value(id.to_bytes(8, byteorder = 'little'), helper_type)
@@ -380,7 +382,7 @@ def linked_list_children_list(first_node, func_next_node, func_item_of_node = No
     return res
 
 # returns a synthetic gdd.Value that can be expended to display the given list of children
-# children_lambda should be a lambda wrapping a list of children for lazy avaluation
+# children_lambda should be a lambda wrapping a list of children for lazy evaluation
 def make_synthetic(children_lambda, display = ''):
     class SyntheticPrinter:
         def __init__(self, value):
@@ -393,3 +395,142 @@ def make_synthetic(children_lambda, display = ''):
             else:
                 return children_lambda
     return embed_printer_for_value(gdb.Value(0), SyntheticPrinter)
+
+# ===================================================================================
+
+This = '$%#this#%$'
+
+# Children tree is a json-like structure like this:
+# {
+#     'size': 15,                   # member 'size' = 15
+#     'parent': This,               # member 'parent' = self.value['parent'] (taken from 'this' object)
+#     'duration': gdb.Value(...),   # member with specified gdb.Value
+#     '@hidden': gdb.Value(...)     # hidden member: not displayed, but can be referenced in display string
+#     'extra': {                    # synthetic member: can be expanded to see its contents
+#         'angle': 179.0
+#         'analysed': gdb.Value(...),
+#     },
+#     '^dsfsd': raw_child_expandable(value),    # add expandable synthetic with all raw members (key name ignored)
+#     '^oiwer': raw_children_inline(value),     # list all raw members here (key name ignored)
+#     '^ivnfd': [('a': 7), ('b'): 15]           # in general case, '^???' means "insert this child/children list here"
+# }
+#
+# Formatted display string looks similar to Python format string, for example:
+#   'From {@parent} under angle {@extra.angle}: {@hidden}'
+# The placeholders are surrounded with {}, and can be of two types:
+#   {@path} --- use value from children tree under specified path
+#   {$name} --- use self.value[name], i.e. take from 'this' object
+
+
+# given children tree as described above, or a lambda that returns it,
+# returns same tree with all the values resolved as gdb.Value, 'this' no longer needed
+def preprocess_children_tree(tree, thisValue):
+    if tree is None:
+        return raw_children_inline(thisValue)   # default if tree not specified
+    if callable(tree):
+        structure = tree(thisValue)             # typically the tree is behind lambda
+
+    def preprocess_structure_recursive(tree):
+        if isinstance(tree, dict):
+            tree = list(tree.items())           # dict literal is alternative to list of tuples
+        result = []
+        for key, val in tree:
+            if key.startswith('^'):             # insert value = list of key/value tuples (or one)
+                if isinstance(val, list):
+                    result += val
+                else:
+                    result.append(val)
+                continue
+            elif isinstance(val, str) and val == This:  # use member of 'this' by name
+                val = thisValue[key]
+            elif isinstance(val, (dict, list)):         # synthetic subobject
+                val = preprocess_structure_recursive(val)
+            elif isinstance(val, gdb.Value):            # normal value
+                pass
+            else:                                       # primitives like int, float, string
+                val = gdb.Value(val)
+            result.append((key, val))
+        return result
+
+    return preprocess_structure_recursive(structure)
+
+# tracked against total memory limit of g_gdb_helper_table table
+def estimate_size_of_preprocessed_tree(tree):
+    res = 0
+    for key, val in tree:
+        if isinstance(val, list):
+            res += estimate_size_of_preprocessed_tree(val)
+        res += len(val.bytes)
+    return res
+
+# pretty-printer-like class used for synthetic objects
+# note: unlike true PP, it accepts its contents instead of gdb.Value
+# so it can only be used from inside convert_preprocessed_tree_into_children_list
+class ContainerPrinter:
+    def __init__(self, tree):
+        self.tree = tree
+    def children(self):
+        return convert_preprocessed_tree_into_children_list(self.tree)
+
+# converts the result of preprocess_children_tree to be returned from 'children' method of pretty printer
+def convert_preprocessed_tree_into_children_list(tree):
+    result = []
+    for key, val in tree:
+        if key.startswith('@'):     # hidden
+            continue
+        if isinstance(val, list):
+            val = embed_printer_for_value(val, ContainerPrinter, size = estimate_size_of_preprocessed_tree(val))
+        result.append((key, val))
+    return result
+
+# find member by name (or even path) inside the preprocessed children tree
+# this is used by the feature: {@mystuff.data.first} in display string
+def fetch_from_preprocessed_tree(tree, path):
+    assert tree is not None
+    parts = path.split('.')
+    node = tree
+    for p in parts:
+        nnode = None
+        for k, v in node:
+            if k == p or k == '@' + p:
+                assert nnode is None
+                nnode = v
+        node = nnode
+    return node
+
+# creates string from special 'format string', gdb value of 'this' and optionally preprocessed children tree
+def compose_formatted_display_string(format, value, tree):
+    pieces = string.Formatter().parse(format)
+    res = ''
+    for text, placeholder, specs, _ in pieces:
+        res += text
+        if placeholder:
+            if placeholder.startswith('@'):
+                member = fetch_from_preprocessed_tree(tree, placeholder[1:])
+                assert isinstance(member, gdb.Value)
+            elif placeholder.startswith('$'):
+                member = value[placeholder[1:]]
+            else:
+                assert False
+            s = display_string(member)
+            res += string.Formatter().format_field(s, specs)
+    return res
+
+# Makes pretty-printer using simply and mostly declarative format.
+# The return value can be registered directly in TdmPrettyPrinterCollection.
+#   typename: C++ class name (can be wildcard)
+#   format: will be shown as 'display string', placeholders like {...} are replaced
+#   structure: json-like structure that describes 'children', possibly with synthetic subchildren
+# See large comment above for syntax and possibilities of display string format and json-like structure.
+# Note: if structure is None, then you can't use {@smth} placeholders in display string.
+def make_simple_printer(typename, format, structure = None):
+    class SimplePrinter:
+        wildcard = typename
+        def __init__(self, value):
+            self.value = value
+            self.structure = preprocess_children_tree(structure, value)
+        def to_string(self):
+            return compose_formatted_display_string(format, self.value, self.structure)
+        def children(self):
+            return convert_preprocessed_tree_into_children_list(self.structure)
+    return SimplePrinter

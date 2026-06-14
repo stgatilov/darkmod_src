@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <type_traits>
 
 //used for key/value pairs in idHashMap
-//(OdKeyValue already exists: it is used in idDict, strings-only)
+//(idKeyValue already exists: it is used in idDict, strings-only)
 template<class Key, class Value> struct idKeyVal {
 	Key key;
 	Value value;
