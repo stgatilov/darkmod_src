@@ -15,10 +15,7 @@ class idStrPrinter:
     
     def children(self):
         res = [raw_child_expandable(self.value)]
-        n = int(self.value['len'])
-        pChars = self.value['data']
-        for i in range(n):
-            res.append((str(i), pChars[i]))
+        res += array_children_list(self.value['data'], self.value['len'])
         return res
 
 
@@ -67,10 +64,7 @@ class idListPrinter:
 
     def children(self):
         res = [raw_child_expandable(self.value)]
-        n = int(self.value['num'])
-        pArr = self.value['list']
-        for i in range(n):
-            res.append((str(i), pArr[i]))
+        res += array_children_list(self.value['list'], self.value['num'])
         return res
 
     def to_string(self):
@@ -89,30 +83,18 @@ class idLinkListPrinter:
     def __init__(self, value):
         self.value = value
 
-    class EnumSynthetic:
-        def __init__(self, value):
-            self.value = value
-
-        def children(self):
-            pnode = self.value['next']
-            if pnode == self.value.address:
-                return []
-            k = 1
-            res = []
-            while int(pnode) != 0:
-                vnode = pnode.dereference()
-                res.append(('[%d]' % k, vnode['owner']))
-                if vnode['next'] == vnode['head']:
-                    break
-                pnode = vnode['next']
-                k += 1
-            return res
-
     def children(self):
         res = raw_children_inline(self.value)
         headPtr = self.value['head']
         if headPtr == self.value.address:
-            child = ('[Enum All]', embed_printer_for_value(self.value, idLinkListPrinter.EnumSynthetic))
+            def synthetic():
+                return linked_list_children_list(
+                    self.value['next'],
+                    lambda p: p.dereference()['next'],
+                    lambda p: p.dereference()['owner'],
+                    terminate_if = lambda p: int(p) == self.value.address,
+                )
+            child = ('[Enum All]', make_synthetic(synthetic))
             res.append(child)
         return res
 

@@ -7,25 +7,6 @@ class idEntityPrinter:
     wildcard = 'idEntity'
     allow_derived = True        # there are many derived classes
 
-    class TeamSynthetic:
-        def __init__(self, value):
-            self.value = value
-        def to_string(self):
-            return ''
-        def children(self):
-            curr = self.value['teamMaster']
-            k = 0
-            res = []
-            while int(curr) != 0:
-                key = '[%d]' % k
-                if curr == self.value.address:
-                    key = '=>' + key
-                res.append((key, curr))
-                k += 1
-                curr = curr.dereference()['teamChain']
-            return res
-
-
     def __init__(self, value):
         self.value = value
 
@@ -37,7 +18,13 @@ class idEntityPrinter:
     
     def children(self):
         res = raw_children_inline(self.value)
-        child = ('[Team]', embed_printer_for_value(self.value, idEntityPrinter.TeamSynthetic))
+        def synthetic():
+            return linked_list_children_list(
+                self.value['teamMaster'],
+                lambda p: p.dereference()['teamChain'],
+                marked_if = lambda p: int(p) == self.value.address,
+            )
+        child = ('[Team]', make_synthetic(synthetic))
         res.append(child)
         return res
 

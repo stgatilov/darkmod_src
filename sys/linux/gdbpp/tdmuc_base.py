@@ -1,5 +1,5 @@
 import gdb
-import re, fnmatch, traceback, sys
+import re, fnmatch, traceback
 from collections import namedtuple
 
 
@@ -341,3 +341,55 @@ def children_of(value, skip_raw = True):
             continue
         res.append(x)
     return res
+
+# ===================================================================================
+
+# returns all elements of the given array as a list of children
+def array_children_list(ptr_value, count_value):
+    n = int(count_value)
+    res = []
+    for i in range(n):
+        res.append((str(i), ptr_value[i]))
+    return res
+
+# returns all elements of the given linked list as a list of children
+# terminates on None, null pointer, optional lambda, or revisiting the same node
+def linked_list_children_list(first_node, func_next_node, func_item_of_node = None, *, terminate_if = None, marked_if = None):
+    if not terminate_if:
+        terminate_if = lambda p: False
+    if not func_item_of_node:
+        func_item_of_node = lambda p: p
+    if not marked_if:
+        marked_if = lambda p: False
+    pnode = first_node
+    res = []
+    visited_addresses = set()
+    while pnode and int(pnode) != 0 and not terminate_if(pnode):
+        k = len(res)
+        name = '[%d]' % k
+        if marked_if(pnode):
+            name = '=>' + name
+        cycled = int(pnode) in visited_addresses
+        if cycled:
+            name = '[cycle]'
+        res.append((name, func_item_of_node(pnode)))
+        visited_addresses.add(int(pnode))
+        if cycled:
+            break
+        pnode = func_next_node(pnode)
+    return res
+
+# returns a synthetic gdd.Value that can be expended to display the given list of children
+# children_lambda should be a lambda wrapping a list of children for lazy avaluation
+def make_synthetic(children_lambda, display = ''):
+    class SyntheticPrinter:
+        def __init__(self, value):
+            pass
+        def to_string(self):
+            return display
+        def children(self):
+            if callable(children_lambda):
+                return children_lambda()
+            else:
+                return children_lambda
+    return embed_printer_for_value(gdb.Value(0), SyntheticPrinter)
