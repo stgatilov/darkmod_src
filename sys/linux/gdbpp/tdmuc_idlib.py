@@ -47,6 +47,7 @@ class idDictPrinter:
     def children(self):
         res = [raw_child_expandable(self.value)]
         res += children_of(self.list)
+        return res
 
     def to_string(self):
         res = display_string(self.list)
