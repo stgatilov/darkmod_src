@@ -75,9 +75,12 @@ class idListPrinter:
         return 'List[%d]' % n
     
     # used in other pretty-printers to get element by index
-    def get(self, index):
+    def get(self, index, oobValue = 0):
         pArr = self.value['list']
-        return pArr[index]
+        if index >= 0 and index < int(self.value['num']):
+            return pArr[index]
+        else:
+            return oobValue
     
 
 class idLinkListPrinter:
@@ -105,7 +108,7 @@ class idLinkListPrinter:
         return 'LinkList'
 
 
-pplist = [
+idlib_pplist = [
     make_simple_printer('idVec2', '({$x}, {$y})'),
     make_simple_printer('idVec3', '({$x}, {$y}, {$z})'),
     make_simple_printer('idVec4', '({$x}, {$y}, {$z}, {$w})'),
@@ -117,9 +120,9 @@ pplist = [
     make_simple_printer('idPlane', '(a={$a}, b={$b}, c={$c}, d={$d})'),
     make_simple_printer('idAngles', '(p={$pitch}, y={$yaw}, r={$roll})'),
     make_simple_printer('idBounds', '({@min} ... {@max})', lambda v: {'min': v['b'][0], 'max': v['b'][1]}),
-    make_simple_printer('idMat2', '2 x 2 matrix', lambda v: children_of(v['mat'], True)),
-    make_simple_printer('idMat3', '3 x 3 matrix', lambda v: children_of(v['mat'], True)),
-    make_simple_printer('idMat4', '4 x 4 matrix', lambda v: children_of(v['mat'], True)),
+    make_simple_printer('idMat2', '2 x 2 matrix', lambda v: [('[%d]' % i, v['mat'][i]) for i in range(2)]),
+    make_simple_printer('idMat3', '3 x 3 matrix', lambda v: [('[%d]' % i, v['mat'][i]) for i in range(3)]),
+    make_simple_printer('idMat4', '4 x 4 matrix', lambda v: [('[%d]' % i, v['mat'][i]) for i in range(4)]),
     make_simple_printer('idRenderMatrix', 'render matrix', lambda v: [
         ('row%d' % i, v['m'][4 * i].address.cast(gdb.lookup_type('idVec4*')).dereference()) for i in range(4)
     ]),
@@ -128,7 +131,7 @@ pplist = [
     make_simple_printer('idKeyVal<*>', '{$key}: {$value}'),
 ]
 
-pplist += [
+idlib_pplist += [
     idListPrinter,
     idLinkListPrinter,
     idStrPrinter,
@@ -137,4 +140,4 @@ pplist += [
 ]
 
 def build_pretty_printer():
-    return TdmPrettyPrinterCollection.create_with_printers('idlib', pplist)
+    return TdmPrettyPrinterCollection.create_with_printers('idlib', idlib_pplist)

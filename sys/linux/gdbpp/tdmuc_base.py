@@ -323,10 +323,12 @@ def raw_children_inline(value):
 # this is what MatchedPrinter.to_string returns, without looking at children
 # works fine for types without pretty-printer, e.g. primitive type
 def display_string(value):
+    if not isinstance(value, gdb.Value):
+        return str(value)
     pp = gdb.default_visualizer(value)
     if not pp:
-        if value.type.is_scalar:
-            return str(value)        
+        if value.type.is_scalar or value.type.is_string_like:
+            return str(value)
         return '?'
     return pp.to_string()
 
@@ -507,7 +509,6 @@ def compose_formatted_display_string(format, value, tree):
         if placeholder:
             if placeholder.startswith('@'):
                 member = fetch_from_preprocessed_tree(tree, placeholder[1:])
-                assert isinstance(member, gdb.Value)
             elif placeholder.startswith('$'):
                 member = value[placeholder[1:]]
             else:
