@@ -524,9 +524,8 @@ def compose_formatted_display_string(format, value, tree):
 #   structure: json-like structure that describes 'children', possibly with synthetic subchildren
 # See large comment above for syntax and possibilities of display string format and json-like structure.
 # Note: if structure is None, then you can't use {@smth} placeholders in display string.
-def make_simple_printer(typename, format, structure = None):
+def make_simple_printer(typename, format, structure = None, *, class_attribs = {}):
     class SimplePrinter:
-        wildcard = typename
         def __init__(self, value):
             self.value = value
             self.structure = preprocess_children_tree(structure, value)
@@ -534,4 +533,8 @@ def make_simple_printer(typename, format, structure = None):
             return compose_formatted_display_string(format, self.value, self.structure)
         def children(self):
             return convert_preprocessed_tree_into_children_list(self.structure)
+    if typename is not None:
+        setattr(SimplePrinter, 'wildcard', typename)
+    for k, v in class_attribs.items():
+        setattr(SimplePrinter, k, v)
     return SimplePrinter
