@@ -62,6 +62,18 @@ void Script_Set(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 			}
 			return;
 		} 
+
+		// DG: allow debugprinting to the console with `set "print" "this windowDefs rect:" "$rect"`
+		if (idStr::Icmp(*dest, "print") == 0) {
+			idStr msg;
+			int parmCount = src->Num();
+			for (int i=1; i<parmCount; ++i) {
+				msg += (*src)[i].var->c_str();
+				msg += " ";
+			}
+			common->Printf("GUI debug: %s\n", msg.c_str());
+			return;
+		}
 	}
 	(*src)[0].var->Set((*src)[1].var->c_str());
 	// stgatilov: don't reset this variable automatically from register expressions
@@ -456,8 +468,25 @@ bool idGuiScript::Parse(idParser *src, idWindow *win) {
 		parms.Append( wv );
 	}
 
-	//  verify min/max params
-	if ( handler && (parms.Num() < commandList[i].mMinParms || parms.Num() > commandList[i].mMaxParms ) ) {
+	// DG: special case for set "cmd" and set "print" that have no limit on number of arguments
+	//     (except it should be more than one to make sense)
+	bool isSetCmd = false;
+	if ( handler == &Script_Set && parms.Num() > 0 ) {
+		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
+		if( str != NULL && (idStr::Icmp( str->c_str(), "cmd" ) == 0
+		                   || idStr::Icmp( str->c_str(), "print" ) == 0) ) {
+			isSetCmd = true;
+			if ( parms.Num() < 2 ) {
+				src->Warning(
+					"Script command set \"%s\" should have at least one more argument",
+					str->c_str()
+				);
+			}
+		}
+	}
+
+	//  verify min/max params - DG: except if it's one of the set special cases
+	if ( !isSetCmd && handler && (parms.Num() < commandList[i].mMinParms || parms.Num() > commandList[i].mMaxParms ) ) {
 		bool maybeMissedSemicolon = false;
 		if ( parms.Num() > commandList[i].mMaxParms ) {
 			// check if we have another command in arguments
@@ -518,6 +547,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 
 		bool precacheBackground = false;
 		bool precacheSounds = false;
+		bool isCmd = false; // not regular set but set "cmd" or set "print"
 
 		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
 		assert(str);
@@ -529,7 +559,10 @@ void idGuiScript::FixupParms(idWindow *win) {
 				precacheBackground = true;
 			}
 		} else if ( idStr::Icmp( str->c_str(), "cmd" ) == 0 ) {
+			isCmd = true;
 			precacheSounds = true;
+		} else if ( idStr::Icmp( str->c_str(), "print" ) == 0 ) {
+			isCmd = true;
 		} else {
 			// stgatilov #5869: other destinations make no sense
 			// I believe Script_Set would treat token as string and would assign new value straight into this token =)
@@ -584,7 +617,8 @@ void idGuiScript::FixupParms(idWindow *win) {
 				// stgatilov: this is a plain string
 				if (dest) {
 					// stgatilov #5869: check compatible type of right value in assignment
-					if (!dest->TestSet(str->c_str())) {
+					// DG: ... except if it's for "cmd" or "print"
+					if (!isCmd && !dest->TestSet(str->c_str())) {
 						common->Warning("set value '%s' is not compatible with type %s at %s", str->c_str(), dest->GetTypeName(), GetSrcLocStr().c_str());
 					}
 				}
