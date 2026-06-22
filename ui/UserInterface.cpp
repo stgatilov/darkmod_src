@@ -249,6 +249,9 @@ idUserInterfaceLocal::idUserInterfaceLocal() {
 	//so the reg eval in gui parsing doesn't get bogus values
 	time = 0;
 	refs = 1;
+	// DG: for CST anchored GUIs
+	timeStamp = 0;
+	lastGlWidth = lastGlHeight = 0;
 }
 
 idUserInterfaceLocal::~idUserInterfaceLocal() {
@@ -368,6 +371,8 @@ const char *idUserInterfaceLocal::HandleEvent( const sysEvent_t *event, int _tim
 		return ret;
 	}
 
+	// FIXME: dhewm3 has lots of changes here, not all for anchored guis, figure out what's needed
+
 	if ( event->evType == SE_MOUSE ) {
 		//stgatilov #4768: taken from dhewm3
 		if (!desktop || (desktop->GetFlags() & WIN_MENUGUI)) {
@@ -422,6 +427,20 @@ void idUserInterfaceLocal::Redraw( int _time ) {
 		return;
 	}
 	if ( !loading && desktop ) {
+		// DG: for CST anchored GUIs
+		if ( desktop->GetFlags() & WIN_MENUGUI ) {
+			// if the (SDL) window size has changed, calculate and set the
+			// "gui::cst*" window register variables accordingly
+			if ( MaybeSetCstWinRegs() ) {
+				// tell the GUI script about it in case it wants to handle the size change in
+				// some way (though usually it's enough to use sth like
+				// `rect 0, 200, "gui::cstHorPad", 100"` and `cstAnchor  CST_ANCHOR_LEFT`
+				// for a windowDef that should fill part of the left side)
+				HandleNamedEvent( "CstScreenSizeChange" );
+			}
+		}
+		// DG end
+
 		time = _time;
 		uiManagerLocal.dc.PushClipRect( uiManagerLocal.screenRect );
 		desktop->Redraw( 0, 0 );
@@ -507,6 +526,12 @@ const char *idUserInterfaceLocal::Activate(bool activate, int _time) {
 	active = activate;
 	if ( desktop ) {
 		activateStr = "";
+
+		if ( desktop->GetFlags() & WIN_MENUGUI ) {
+			// DG: calculate and set the "gui::cst*" window register variables
+			//     so the GUI can use them
+			MaybeSetCstWinRegs(true);
+		}
 		desktop->Activate( activate, activateStr );
 		return activateStr;
 	}
@@ -926,4 +951,45 @@ const textureStage_t *idUserInterfaceLocal::GetXrayMaterialStage() {
 	};
 
 	return traverser(desktop);
+}
+
+// DG: for CST anchored GUIs
+bool idUserInterfaceLocal::MaybeSetCstWinRegs(bool force) {
+	if ( desktop == NULL ) {
+		return false;
+	}
+	int glWidth, glHeight;
+	renderSystem->GetGLSettings(glWidth, glHeight);
+	if (glWidth <= 0 || glHeight <= 0 || (!force && glWidth == lastGlWidth && glHeight == lastGlHeight) ) {
+		return false;
+	}
+	lastGlWidth = glWidth;
+	lastGlHeight = glHeight;
+
+	float glAspectRatio = (float)glWidth / (float)glHeight;
+	const float vidAspectRatio = (float)VIRTUAL_WIDTH / (float)VIRTUAL_HEIGHT;
+
+	const float desktopWidth  = desktop->forceAspectWidth;
+	const float desktopHeight = desktop->forceAspectHeight;
+
+	float horizPadding = 0;
+	float vertPadding = 0;
+	float modWidth = desktopWidth;
+	float modHeight = desktopHeight;
+
+	if (glAspectRatio >= vidAspectRatio) {
+		modWidth = desktopHeight * glAspectRatio;
+		horizPadding = 0.5f * (modWidth - desktopWidth);
+	} else {
+		modHeight = desktopWidth / glAspectRatio;
+		vertPadding = 0.5f * (modHeight - desktopHeight);
+	}
+
+	SetStateFloat( "cstAspectRatio", glAspectRatio );
+	SetStateFloat( "cstWidth", modWidth );
+	SetStateFloat( "cstHeight", modHeight );
+	SetStateFloat( "cstHorPad", horizPadding );
+	SetStateFloat( "cstVertPad", vertPadding );
+
+	return true;
 }

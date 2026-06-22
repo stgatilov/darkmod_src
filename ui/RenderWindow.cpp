@@ -131,7 +131,7 @@ void idRenderWindow::Render( int time ) {
 
 
 
-void idRenderWindow::Draw(int time, float x, float y) {
+void idRenderWindow::Draw(int time, float x_, float y_) {
 	PreRender();
 	Render(time);
 
@@ -145,10 +145,20 @@ void idRenderWindow::Draw(int time, float x, float y) {
 	refdef.shaderParms[2] = 1;
 	refdef.shaderParms[3] = 1;
 
-	refdef.x = drawRect.x;
-	refdef.y = drawRect.y;
-	refdef.width = drawRect.w;
-	refdef.height = drawRect.h;
+	// DG: for CST anchored GUIs
+	float x = drawRect.x;
+	float y = drawRect.y;
+	float w = drawRect.w;
+	float h = drawRect.h;
+	if(dc->IsCstAnchoringActive()) {
+		dc->AdjustCoords(&x, &y, &w, &h);
+	}
+
+	refdef.x = x;
+	refdef.y = y;
+	refdef.width = w;
+	refdef.height = h;
+	// DG end
 	refdef.fov_x = 90;
 	refdef.fov_y = 2 * atan((float)drawRect.h / drawRect.w) * idMath::M_RAD2DEG;
 	// stgatilov: don't clear color buffer, render this on top of previous contents

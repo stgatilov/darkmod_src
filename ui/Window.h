@@ -445,6 +445,13 @@ protected:
 
 	idWinBool	hideCursor;
 
+	//#modified-fva; BEGIN
+	idWinInt	cstAnchor;
+	idWinInt	cstAnchorTo;		// for anchor transitions
+	idWinFloat	cstAnchorFactor;	// for anchor transitions
+	bool		cstNoClipBackground;
+	//#modified-fva; END
+
 	//stgatilov: pool of source filename strings referenced in idGuiScript elements
 	idDict sourceFilenamePool;
 	//stgatilov: error reporting and debuggability
