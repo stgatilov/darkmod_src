@@ -816,7 +816,7 @@ void idDeviceContext::SetSize(float width, float height) {
 
 //#modified-fva; BEGIN
 // ===============
-static bool CstGetVidScale(float &_xScale, float &_yScale) {
+static bool CstGetVidScale(float &_xScale, float &_yScale, float &_aspRat) {
 	int glWidth, glHeight;
 	renderSystem->GetGLSettings(glWidth, glHeight);
 	if (glWidth <= 0 || glHeight <= 0) {
@@ -839,6 +839,7 @@ static bool CstGetVidScale(float &_xScale, float &_yScale) {
 
 	_xScale = vidWidth / modWidth;
 	_yScale = vidHeight / modHeight;
+	_aspRat = glAspectRatio;
 	return true;
 }
 
@@ -938,13 +939,14 @@ static void CstAdjustParmsForAnchor(int anchor, float &_xScale, float &_yScale, 
 }
 
 // static
-bool idDeviceContext::CstGetParams(int anchor, int anchorTo, float factor, bool assumes16_9, idVec2& out_Scale, idVec2& out_Offset)
+bool idDeviceContext::CstGetParams(int anchor, int anchorTo, float factor, int assumes16_9, idVec2& out_Scale, idVec2& out_Offset)
 {
 	float xScale = 1.0f;
 	float yScale = 1.0f;
 	out_Offset.Set(0, 0);
+	float screenAspRat = 1.0f;
 
-	if (!CstGetVidScale(xScale, yScale)) {
+	if (!CstGetVidScale(xScale, yScale, screenAspRat)) {
 		out_Scale.Set(1, 1);
 		return false;
 	}
@@ -956,8 +958,18 @@ bool idDeviceContext::CstGetParams(int anchor, int anchorTo, float factor, bool 
 	//     `cstAssumes16_9  1` in windowDefs that are now anchored, and they
 	//     will automatically be scaled by 1.333 ((16/9)/(4/3)) to preserve
 	//     their intended stretching.
-	if (assumes16_9) {
-		xScale *= (4.0f/3.0f); // this factor is (16/9)/(4/3)
+	if (assumes16_9 != 0) {
+		if (assumes16_9 == 1 || screenAspRat >= 16.0f/9.0f)
+			xScale *= (4.0f/3.0f); // this factor is (16/9)/(4/3)
+		else if(assumes16_9 == 2 && screenAspRat > (4.0f/3.0f)) {
+			// assumes16_9 = 2 scales windowDefs meant for 16:9 down to the
+			// available aspect ratio so nothing is cut off, even if it means
+			// that things look a bit squeezed.
+			// for >= 16:9 it behaves like assumes16_9 = 1 (preserving aspect ratio)
+			// < 4:3 is handled just like 4:3 because the anchoring makes sure that
+			//       the 4:3 area fits the screen by leaving space above or below it
+			xScale *= screenAspRat/(4.0f/3.0f);
+		}
 	}
 
 	if (anchorTo == idDeviceContext::CST_ANCHOR_NONE) {
@@ -987,7 +999,7 @@ bool idDeviceContext::CstGetParams(int anchor, int anchorTo, float factor, bool 
 	return true;
 }
 
-void idDeviceContext::CstSetSize(int anchor, int anchorTo, float factor, bool assumes16_9) {
+void idDeviceContext::CstSetSize(int anchor, int anchorTo, float factor, int assumes16_9) {
 	vidWidth = VIRTUAL_WIDTH;
 	vidHeight = VIRTUAL_HEIGHT;
 

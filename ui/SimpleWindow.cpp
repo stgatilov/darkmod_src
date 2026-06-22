@@ -426,7 +426,7 @@ void idSimpleWindow::WriteToSaveGame( idFile *savefile ) {
 	cstAnchorTo.WriteToSaveGame(savefile);
 	cstAnchorFactor.WriteToSaveGame(savefile);
 	savefile->WriteBool(cstNoClipBackground);
-	savefile->WriteBool(cstAssumes16_9);
+	savefile->WriteInt(cstAssumes16_9);
 	//#modified-fva; END
 
 	int stringLen;
@@ -480,7 +480,7 @@ void idSimpleWindow::ReadFromSaveGame( idFile *savefile ) {
 	cstAnchorTo.ReadFromSaveGame(savefile);
 	cstAnchorFactor.ReadFromSaveGame(savefile);
 	savefile->ReadBool(cstNoClipBackground);
-	savefile->ReadBool(cstAssumes16_9);
+	savefile->ReadInt(cstAssumes16_9);
 	//#modified-fva; END
 
 	int stringLen;

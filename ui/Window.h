@@ -453,7 +453,7 @@ protected:
 	idWinFloat	cstAnchorFactor;	// for anchor transitions
 	bool		cstNoClipBackground;
 	// DG: additional hack: stretch like an unanchored window would be stretched on a 16:9 screen
-	bool		cstAssumes16_9;
+	int			cstAssumes16_9;
 	//#modified-fva; END
 
 	//stgatilov: pool of source filename strings referenced in idGuiScript elements

@@ -189,7 +189,7 @@ void idWindow::CommonInit() {
 	cstAnchorTo = idDeviceContext::CST_ANCHOR_NONE;
 	cstAnchorFactor = 0.0f;
 	cstNoClipBackground = false;
-	cstAssumes16_9 = false;
+	cstAssumes16_9 = 0;
 	//#modified-fva; END
 }
 
@@ -2280,9 +2280,7 @@ bool idWindow::ParseInternalVar(const char *_name, idParser *src) {
 	// DG: set this on anchored GUIs so they get stretched like
 	//     they would unanchored on a 16:9 screen
 	if (idStr::Icmp(_name, "cstAssumes16_9") == 0) {
-		if ( ParseBool(src) ) {
-			cstAssumes16_9 = true;
-		}
+		cstAssumes16_9 = src->ParseInt();
 		return true;
 	}
 	//#modified-fva; END
@@ -3803,7 +3801,7 @@ void idWindow::WriteToSaveGame( idFile *savefile ) {
 	cstAnchorTo.WriteToSaveGame(savefile);
 	cstAnchorFactor.WriteToSaveGame(savefile);
 	savefile->WriteBool(cstNoClipBackground);
-	savefile->WriteBool(cstAssumes16_9);
+	savefile->WriteInt(cstAssumes16_9);
 	//#modified-fva; END
 
 	// Defined Vars
@@ -3961,7 +3959,7 @@ void idWindow::ReadFromSaveGame( idFile *savefile ) {
 	cstAnchorTo.ReadFromSaveGame(savefile);
 	cstAnchorFactor.ReadFromSaveGame(savefile);
 	savefile->ReadBool(cstNoClipBackground);
-	savefile->ReadBool(cstAssumes16_9);
+	savefile->ReadInt(cstAssumes16_9);
 	//#modified-fva; END
 
 	// Defined Vars

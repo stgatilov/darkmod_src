@@ -64,7 +64,7 @@ public:
 	void				SetSize(float width, float height);
 
 	//#modified-fva; BEGIN
-	void				CstSetSize(int anchor, int anchorTo, float factor, bool assume16_9);
+	void				CstSetSize(int anchor, int anchorTo, float factor, int assume16_9);
 	//#modified-fva; END
 
 	void				DrawCursor(float *x, float *y, float size);
@@ -95,7 +95,7 @@ public:
 	}
 
 	// DG: used in idWindow::Contains(), so it can adjust coordinates
-	static bool			CstGetParams(int anchor, int anchorTo, float anchorFactor, bool assume16_9, idVec2& out_Scale, idVec2& out_Offset);
+	static bool			CstGetParams(int anchor, int anchorTo, float anchorFactor, int assume16_9, idVec2& out_Scale, idVec2& out_Offset);
 
 	enum {
 		CURSOR_ARROW,
