@@ -428,8 +428,10 @@ void idUserInterfaceLocal::Redraw( int _time ) {
 	}
 	if ( !loading && desktop ) {
 		// DG: for CST anchored GUIs
-		if ( desktop->GetFlags() & WIN_MENUGUI ) {
-			// if the (SDL) window size has changed, calculate and set the
+		// TODO: is there a way to identify fullscreen GUIs, like menus or the HUD?
+		//if ( desktop->GetFlags() & WIN_MENUGUI ) // this only works for menus, not HUD
+		{
+			// if the (operating system) window size has changed, calculate and set the
 			// "gui::cst*" window register variables accordingly
 			if ( MaybeSetCstWinRegs() ) {
 				// tell the GUI script about it in case it wants to handle the size change in
