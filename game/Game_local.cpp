@@ -3549,8 +3549,8 @@ Calculates the horizontal and vertical field of view based on a horizontal field
 ====================
 */
 void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
-	int viewX = r_customWidth.GetInteger();
-	int viewY = r_customHeight.GetInteger();
+	int viewX = renderSystem->GetScreenWidth();
+	int viewY = renderSystem->GetScreenHeight();
 
 	if (viewX <= 0 || viewY <= 0)
 		Error( "idGameLocal::CalcFov: screen dimensions are %d x %d <= 0", viewX, viewY );
