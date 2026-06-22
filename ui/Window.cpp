@@ -4183,6 +4183,11 @@ void idWindow::FixupParms() {
 			if (!var) {
 				// stgatilov #5869: zero op.a will evaluate as 0.0f in idWindow::EvaluateRegisters
 				common->Warning("Failed to fixup '%s' in window '%s', replaced with zero", p, name.c_str());
+				// DG: forgetting to include _cst_anchor.pd is an easy mistake to make,
+				//     so detect a common error caused by it and print a warning
+				if (idStr::Icmpn(p, "CST_ANCHOR", 10) == 0) {
+					common->Warning("Did you forget #include \"guis/_cst_anchor.pd\" ?");
+				}
 			}
 			delete []p;
             ops[i].a = (intptr_t)var;
