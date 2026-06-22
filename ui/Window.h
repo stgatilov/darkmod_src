@@ -319,6 +319,8 @@ public:
 	int			GetChildIndex		( idWindow* window );
 	int			GetChildCount		( void );
 	idWindow*	GetChild			( int index );
+	// DG: by getting drawWin_t we can also access simple child windows
+	drawWin_t	GetChildDrawWin		( int index ) { return drawWindows[index]; }
 	void		RemoveChild			( idWindow *win );
 	bool		InsertChild			( idWindow *win, idWindow* before );
 

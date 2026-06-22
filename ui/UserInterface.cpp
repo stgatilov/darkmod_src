@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "ListGUILocal.h"
 #include "DeviceContext.h"
 #include "Window.h"
+#include "SimpleWindow.h"
 #include "UserInterfaceLocal.h"
 #include "../sound/snd_local.h"
 
@@ -936,28 +937,35 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 	}
 }
 
-const textureStage_t *idUserInterfaceLocal::GetXrayMaterialStage() {
-	std::function<const textureStage_t*(idWindow *window)> traverser = [&](idWindow *window) -> const textureStage_t* {
-		if (!window)
-			return nullptr;
-
-		if (const idMaterial* material = window->GetBackground())
+static const textureStage_t* findXrayStage(drawWin_t win) {
+	if (win.win != nullptr) {
+		idWindow *window = win.win;
+		if (const idMaterial* material = window->GetBackground()) {
 			if (const shaderStage_t *stage = material->FindXrayStage())
 				return &stage->texture;
-
-		for (int i = 0; i < window->GetChildCount(); i++)
-			if (const textureStage_t* res = traverser(window->GetChild(i)))
+		}
+		for (int i = 0; i < window->GetChildCount(); i++) {
+			if (const textureStage_t* res = findXrayStage(window->GetChildDrawWin(i)))
 				return res;
+		}
+	} else if(win.simp != nullptr) {
+		if (const idMaterial* material = win.simp->GetBackground()) {
+			if (const shaderStage_t *stage = material->FindXrayStage())
+				return &stage->texture;
+		}
+	}
 
-		return nullptr;
-	};
+	return nullptr;
+}
 
-	return traverser(desktop);
+const textureStage_t *idUserInterfaceLocal::GetXrayMaterialStage() {
+	drawWin_t dw = { desktop };
+	return findXrayStage(dw);
 }
 
 // DG: for CST anchored GUIs
 bool idUserInterfaceLocal::MaybeSetCstWinRegs(bool force) {
-	if ( desktop == NULL ) {
+	if ( desktop == nullptr ) {
 		return false;
 	}
 	int glWidth, glHeight;

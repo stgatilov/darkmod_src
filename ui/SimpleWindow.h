@@ -36,6 +36,8 @@ public:
     intptr_t		GetWinVarOffset(idWinVar *wv, drawWin_t* owner);
 	size_t			Size();
 
+	const idMaterial* GetBackground() const { return background; }
+
 	idWindow*		GetParent ( void ) { return mParent; }
 
 	virtual void	WriteToSaveGame( idFile *savefile );
