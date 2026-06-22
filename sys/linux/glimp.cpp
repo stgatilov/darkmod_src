@@ -18,6 +18,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include <GLFW/glfw3.h>
 
+#include "icons/darkmod_icon32.h"
+#include "icons/darkmod_icon64.h"
+#include "icons/darkmod_icon128.h"
+#include "icons/darkmod_icon256.h"
+
 GLFWwindow *window = nullptr;
 
 idCVar r_customMonitor( "r_customMonitor", "0", CVAR_RENDERER|CVAR_INTEGER|CVAR_ARCHIVE|CVAR_NOCHEAT, "Select monitor to use for fullscreen mode (0 = primary)" );
@@ -159,12 +164,18 @@ int GLX_Init(glimpParms_t a) {
 		return false;
 	}
 
-	GLFWimage icons[2];
-	R_LoadImage( "darkmod_icon_small.tga", &icons[0].pixels, &icons[0].width, &icons[0].height, nullptr );
-	R_LoadImage( "darkmod_icon.tga", &icons[1].pixels, &icons[1].width, &icons[1].height, nullptr );
-	glfwSetWindowIcon( window, 2, icons );
-	R_StaticFree( icons[0].pixels );
-	R_StaticFree( icons[1].pixels );
+
+	//GLFWimage icons[2];
+	//R_LoadImage( "darkmod_icon_small.tga", &icons[0].pixels, &icons[0].width, &icons[0].height, nullptr );
+	//R_LoadImage( "darkmod_icon.tga", &icons[1].pixels, &icons[1].width, &icons[1].height, nullptr );
+
+	const GLFWimage icons[4] = {
+		{ (int)darkmod_icon32.width,  (int)darkmod_icon32.height,  (unsigned char*)darkmod_icon32.pixel_data },
+		{ (int)darkmod_icon64.width,  (int)darkmod_icon64.height,  (unsigned char*)darkmod_icon64.pixel_data },
+		{ (int)darkmod_icon128.width, (int)darkmod_icon128.height, (unsigned char*)darkmod_icon128.pixel_data },
+		{ (int)darkmod_icon256.width, (int)darkmod_icon256.height, (unsigned char*)darkmod_icon256.pixel_data }
+	};
+	glfwSetWindowIcon( window, 4, icons );
 
 	glfwSetFramebufferSizeCallback( window, resize_callback );
 	glfwSetWindowCloseCallback( window, close_callback );
