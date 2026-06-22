@@ -189,6 +189,7 @@ void idWindow::CommonInit() {
 	cstAnchorTo = idDeviceContext::CST_ANCHOR_NONE;
 	cstAnchorFactor = 0.0f;
 	cstNoClipBackground = false;
+	cstAssumes16_9 = false;
 	//#modified-fva; END
 }
 
@@ -716,7 +717,7 @@ bool idWindow::Contains(const idRectangle &sr, float x, float y) {
 	if ( cstAnchor != idDeviceContext::CST_ANCHOR_NONE ) {
 		// adjust r like idDeviceContext does for drawing
 		idVec2 scale, offset;
-		if ( idDeviceContext::CstGetParams( cstAnchor, cstAnchorTo, cstAnchorFactor, scale, offset ) ) {
+		if ( idDeviceContext::CstGetParams( cstAnchor, cstAnchorTo, cstAnchorFactor, cstAssumes16_9, scale, offset ) ) {
 			r.x = r.x * scale.x + offset.x;
 			r.y = r.y * scale.y + offset.y;
 			r.w *= scale.x;
@@ -741,7 +742,7 @@ bool idWindow::Contains(float x, float y) {
 	if ( cstAnchor != idDeviceContext::CST_ANCHOR_NONE ) {
 		// adjust r like idDeviceContext does for drawing
 		idVec2 scale, offset;
-		if ( idDeviceContext::CstGetParams( cstAnchor, cstAnchorTo, cstAnchorFactor, scale, offset ) ) {
+		if ( idDeviceContext::CstGetParams( cstAnchor, cstAnchorTo, cstAnchorFactor, cstAssumes16_9, scale, offset ) ) {
 			r.x = r.x * scale.x + offset.x;
 			r.y = r.y * scale.y + offset.y;
 			r.w *= scale.x;
@@ -1336,11 +1337,12 @@ void idWindow::Redraw(float x, float y) {
 		cstAnchor = parent->cstAnchor;
 		cstAnchorTo = parent->cstAnchorTo;
 		cstAnchorFactor = parent->cstAnchorFactor;
+		cstAssumes16_9 = parent->cstAssumes16_9;
 	}
 	if (!cst_hudAdjustAspect.GetBool() || cstAnchor == idDeviceContext::CST_ANCHOR_NONE) {
 		dc->SetSize(forceAspectWidth, forceAspectHeight);
 	} else {
-		dc->CstSetSize(cstAnchor, cstAnchorTo, cstAnchorFactor);
+		dc->CstSetSize(cstAnchor, cstAnchorTo, cstAnchorFactor, cstAssumes16_9);
 	}
 	//#modified-fva; END
 
@@ -1434,6 +1436,7 @@ void idWindow::SetDC(idDeviceContext *d) {
 		cstAnchor = parent->cstAnchor;
 		cstAnchorTo = parent->cstAnchorTo;
 		cstAnchorFactor = parent->cstAnchorFactor;
+		cstAssumes16_9 = parent->cstAssumes16_9;
 	}
 	//#modified-fva; END
 
@@ -2272,6 +2275,14 @@ bool idWindow::ParseInternalVar(const char *_name, idParser *src) {
 	//#modified-fva; BEGIN
 	if (idStr::Icmp(_name, "cstNoClipBackground") == 0) {
 		cstNoClipBackground = src->ParseBool();
+		return true;
+	}
+	// DG: set this on anchored GUIs so they get stretched like
+	//     they would unanchored on a 16:9 screen
+	if (idStr::Icmp(_name, "cstAssumes16_9") == 0) {
+		if ( ParseBool(src) ) {
+			cstAssumes16_9 = true;
+		}
 		return true;
 	}
 	//#modified-fva; END
@@ -3792,6 +3803,7 @@ void idWindow::WriteToSaveGame( idFile *savefile ) {
 	cstAnchorTo.WriteToSaveGame(savefile);
 	cstAnchorFactor.WriteToSaveGame(savefile);
 	savefile->WriteBool(cstNoClipBackground);
+	savefile->WriteBool(cstAssumes16_9);
 	//#modified-fva; END
 
 	// Defined Vars
@@ -3949,6 +3961,7 @@ void idWindow::ReadFromSaveGame( idFile *savefile ) {
 	cstAnchorTo.ReadFromSaveGame(savefile);
 	cstAnchorFactor.ReadFromSaveGame(savefile);
 	savefile->ReadBool(cstNoClipBackground);
+	savefile->ReadBool(cstAssumes16_9);
 	//#modified-fva; END
 
 	// Defined Vars

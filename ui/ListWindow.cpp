@@ -125,7 +125,7 @@ const char *idListWindow::HandleEvent(const sysEvent_t *event, bool *updateVisua
 
 				// DG: adjust cursorY for cst anchors
 				idVec2 scale, offset;
-				if ( idDeviceContext::CstGetParams( cstAnchor, cstAnchorTo, cstAnchorFactor, scale, offset ) ) {
+				if ( idDeviceContext::CstGetParams( cstAnchor, cstAnchorTo, cstAnchorFactor, cstAssumes16_9, scale, offset ) ) {
 					cursorY -= offset.y;
 					cursorY /= scale.y;
 				}

@@ -73,6 +73,7 @@ idSimpleWindow::idSimpleWindow(idWindow *win) {
 	cstAnchorTo = win->cstAnchorTo;
 	cstAnchorFactor = win->cstAnchorFactor;
 	cstNoClipBackground = win->cstNoClipBackground;
+	cstAssumes16_9 = win->cstAssumes16_9;
 	//#modified-fva; END
 
 	idWindow *parent = win->GetParent();
@@ -243,6 +244,7 @@ void idSimpleWindow::Redraw(float x, float y) {
 		cstAnchor = mParent->cstAnchor;
 		cstAnchorTo = mParent->cstAnchorTo;
 		cstAnchorFactor = mParent->cstAnchorFactor;
+		cstAssumes16_9 = mParent->cstAssumes16_9;
 	}
 	extern idCVar cst_hudAdjustAspect;
 	if (!cst_hudAdjustAspect.GetBool() || cstAnchor == idDeviceContext::CST_ANCHOR_NONE) {
@@ -252,7 +254,7 @@ void idSimpleWindow::Redraw(float x, float y) {
 			dc->SetSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 		}
 	} else {
-		dc->CstSetSize(cstAnchor, cstAnchorTo, cstAnchorFactor);
+		dc->CstSetSize(cstAnchor, cstAnchorTo, cstAnchorFactor, cstAssumes16_9);
 	}
 	//#modified-fva; END
 
@@ -424,6 +426,7 @@ void idSimpleWindow::WriteToSaveGame( idFile *savefile ) {
 	cstAnchorTo.WriteToSaveGame(savefile);
 	cstAnchorFactor.WriteToSaveGame(savefile);
 	savefile->WriteBool(cstNoClipBackground);
+	savefile->WriteBool(cstAssumes16_9);
 	//#modified-fva; END
 
 	int stringLen;
@@ -477,6 +480,7 @@ void idSimpleWindow::ReadFromSaveGame( idFile *savefile ) {
 	cstAnchorTo.ReadFromSaveGame(savefile);
 	cstAnchorFactor.ReadFromSaveGame(savefile);
 	savefile->ReadBool(cstNoClipBackground);
+	savefile->ReadBool(cstAssumes16_9);
 	//#modified-fva; END
 
 	int stringLen;

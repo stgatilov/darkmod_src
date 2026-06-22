@@ -938,7 +938,7 @@ static void CstAdjustParmsForAnchor(int anchor, float &_xScale, float &_yScale, 
 }
 
 // static
-bool idDeviceContext::CstGetParams(int anchor, int anchorTo, float factor, idVec2& out_Scale, idVec2& out_Offset)
+bool idDeviceContext::CstGetParams(int anchor, int anchorTo, float factor, bool assumes16_9, idVec2& out_Scale, idVec2& out_Offset)
 {
 	float xScale = 1.0f;
 	float yScale = 1.0f;
@@ -947,6 +947,17 @@ bool idDeviceContext::CstGetParams(int anchor, int anchorTo, float factor, idVec
 	if (!CstGetVidScale(xScale, yScale)) {
 		out_Scale.Set(1, 1);
 		return false;
+	}
+
+	// DG: TDM has several GUIs that assume that they're stretched to 16:9
+	//     (even though of course they had to use 640x480 which is 4:3),
+	//     so their x-coordinates and widths have been scaled accordingly.
+	//     To make porting those GUIs to anchored GUIs easier, one can set
+	//     `cstAssumes16_9  1` in windowDefs that are now anchored, and they
+	//     will automatically be scaled by 1.333 ((16/9)/(4/3)) to preserve
+	//     their intended stretching.
+	if (assumes16_9) {
+		xScale *= (4.0f/3.0f); // this factor is (16/9)/(4/3)
 	}
 
 	if (anchorTo == idDeviceContext::CST_ANCHOR_NONE) {
@@ -976,13 +987,13 @@ bool idDeviceContext::CstGetParams(int anchor, int anchorTo, float factor, idVec
 	return true;
 }
 
-void idDeviceContext::CstSetSize(int anchor, int anchorTo, float factor) {
+void idDeviceContext::CstSetSize(int anchor, int anchorTo, float factor, bool assumes16_9) {
 	vidWidth = VIRTUAL_WIDTH;
 	vidHeight = VIRTUAL_HEIGHT;
 
 	idVec2 scale;
 	idVec2 offset;
-	cstAdjustCoords = CstGetParams(anchor, anchorTo, factor, scale, offset);
+	cstAdjustCoords = CstGetParams(anchor, anchorTo, factor, assumes16_9, scale, offset);
 	xScale = scale.x;
 	yScale = scale.y;
 	cst_xOffset = offset.x;
