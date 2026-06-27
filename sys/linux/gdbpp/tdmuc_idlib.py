@@ -126,7 +126,10 @@ idlib_pplist = [
     make_simple_printer('idRenderMatrix', 'render matrix', lambda v: [
         ('row%d' % i, v['m'][4 * i].address.cast(gdb.lookup_type('idVec4*')).dereference()) for i in range(4)
     ]),
-    make_simple_printer('idWinding', 'winding[{$numPoints}]', lambda v: [('numPoints', This)] + array_children_list(v['p'], v['numPoints'])),
+    make_simple_printer('idWinding', 'winding[{$numPoints}]', class_attribs = {'allow_derived': True}, structure = lambda v: {
+        'numPoints': This,
+        '^': array_children_list(v['p'], v['numPoints']),
+    }),
     make_simple_printer('idKeyValue', '{@key}: {@value}', lambda v: {'key': v['key'].dereference(), 'value': v['value'].dereference()}),
     make_simple_printer('idKeyVal<*>', '{$key}: {$value}'),
 ]

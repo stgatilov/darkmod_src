@@ -103,10 +103,12 @@ class TdmPrettyPrinterCollection(gdb.printing.PrettyPrinter):
     # in case of pointer/reference, all bases also have pointer/reference
     @staticmethod
     def _get_base_types(type):
+        # these cases are only needed for pretty printers which match
+        # pointer/reference type specifically, i.e. have wildcard = 'idEntity*'
+        # I doubt I'll ever use this feature though...
         if type.code == gdb.TYPE_CODE_PTR:
             value_bases = TdmPrettyPrinterCollection._get_base_types(type.target())
             return [bt.pointer() for bt in value_bases]
-        
         if type.code == gdb.TYPE_CODE_REF or type.code == gdb.TYPE_CODE_RVALUE_REF:
             value_bases = TdmPrettyPrinterCollection._get_base_types(type.target())
             return [bt.reference() for bt in value_bases]
@@ -142,16 +144,16 @@ class TdmPrettyPrinterCollection(gdb.printing.PrettyPrinter):
     
     # find printer for given type; include its base types in the search
     def _find_printer_maybe_derived(self, type, is_deref):
-            base_type_sequence = self._get_base_types(type)
+        base_type_sequence = self._get_base_types(type)
 
-            for i, base_type in enumerate(base_type_sequence):
-                typename = self._get_normal_type_name(base_type)
-                if not typename:
-                    continue
+        for i, base_type in enumerate(base_type_sequence):
+            typename = self._get_normal_type_name(base_type)
+            if not typename:
+                continue
 
-                printer = self._find_printer_exact(typename, is_deref, i > 0)
-                if printer:
-                    return printer
+            printer = self._find_printer_exact(typename, is_deref, i > 0)
+            if printer:
+                return printer
 
     # called by GDB to find pretty-printer
     def __call__(self, value):
@@ -334,14 +336,14 @@ def display_string(value):
 
 # returns children list for a value
 # this is what MatchedPrinter.children returns
-# returns empty list for a type without pretty-printer, e.g. for primitive type
-def children_of(value, skip_raw = True):
+# returns raw members for a type without pretty-printer (empty for for primitive types)
+def children_of(value, skip_raw_child = True):
     pp = gdb.default_visualizer(value)
     if not pp:
-        return []
+        return raw_children_inline(value)
     res = []
     for x in pp.children():
-        if skip_raw and x[0] == '[raw]':
+        if skip_raw_child and x[0] == '[raw]':
             continue
         res.append(x)
     return res
@@ -383,7 +385,7 @@ def linked_list_children_list(first_node, func_next_node, func_item_of_node = No
         pnode = func_next_node(pnode)
     return res
 
-# returns a synthetic gdd.Value that can be expended to display the given list of children
+# returns a synthetic gdb.Value that can be expanded to display the given list of children
 # children_lambda should be a lambda wrapping a list of children for lazy evaluation
 def make_synthetic(children_lambda, display = ''):
     class SyntheticPrinter:
