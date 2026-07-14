@@ -13,15 +13,19 @@ def traceprint(message):
 
 def formatvalue(value):
     if isinstance(value, str) or isinstance(value, int) or isinstance(value, float) or isinstance(value, bool) or value is None:
-        return str(value)
+        return '"%s"' % str(value)
     if isinstance(value, gdb.Value):
         vtype = value.type
-        typename = vtype.name
+        typename = str(vtype)
+        if typename is None:
+            return 'VT:none'
         if isinstance(typename, str):
             addr = value.address
             addr = 'none' if addr is None else '%x' % int(addr)
             return 'VT:' + typename + "|" + addr
         return 'VT:' + str(type)
+    if isinstance(value, gdb.Type):
+        return 'TP:' + str(value)
     if hasattr(value, 'name'):
         name = value.name
         if isinstance(name, str):

@@ -61,8 +61,9 @@ class idEntityPtrPrinter:
         return res
 
 
-def build_pretty_printer():
-    return TdmPrettyPrinterCollection.create_with_printers('game', [
-        idEntityPrinter,
-        idEntityPtrPrinter,
-    ])
+game_pplist = [
+    idEntityPrinter,
+    idEntityPtrPrinter,
+]
+def get_pretty_printers():
+    return game_pplist

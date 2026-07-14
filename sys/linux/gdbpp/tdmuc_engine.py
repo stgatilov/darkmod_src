@@ -70,7 +70,7 @@ class RenderLightPrinter:
 engine_pplist = [
     make_simple_printer('idScreenRect', '[{$x1}..{$x2}] x [{$y1}..{$y2}] x [{$zmin}..{$zmax}]'),
     make_simple_printer('idCVar',
-        'CVar {@name_} is: {@value_}  (default:{$resetString})',
+        'CVar "{@name_}" is: "{@value_}"  (default: {$resetString})',
         class_attribs = {'allow_derived': True}, structure = lambda v: {
             '^': raw_children_inline(v),
             '@name_': v['name'].string(),
@@ -151,8 +151,8 @@ engine_pplist += [
     make_simple_printer('emptyCommand_t', '[Expand command list]', class_attribs = {'allow_derived': False},
         structure = lambda v: linked_list_children_list(
             v.address,
-            lambda n: n['next'].cast(gdb.lookup_type('emptyCommand_t*')),
-            lambda n: n.cast(gdb.lookup_type('baseCommand_t*'))
+            lambda n: n['next'].cast(gdb.lookup_type('emptyCommand_t').pointer()),
+            lambda n: n.cast(gdb.lookup_type('baseCommand_t').pointer())
         )
     ),
     make_simple_printer('baseCommand_t', '{$commandId}', class_attribs = {'allow_derived': False},
@@ -171,5 +171,5 @@ engine_pplist += [
     RenderEntityPrinter, RenderLightPrinter,
 ]
 
-def build_pretty_printer():
-    return TdmPrettyPrinterCollection.create_with_printers('engine', engine_pplist)
+def get_pretty_printers():
+    return engine_pplist

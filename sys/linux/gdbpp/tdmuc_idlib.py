@@ -57,7 +57,7 @@ class idHashMapPrinter:
 
 
 class idListPrinter:
-    regex = r'^id(List|StaticList|FlexList)<.*>$'
+    wildcard = ['idList<*>', 'idStaticList<*>', 'idFlexList<*>']
 
     def __init__(self, value):
         self.value = value
@@ -72,7 +72,19 @@ class idListPrinter:
 
     def to_string(self):
         n = int(self.value['num'])
-        return 'List[%d]' % n
+        header = 'List[%d]' % n
+        if ENABLE_AUTO_SUMMARY:
+            builder = StringBuilder()
+            builder.append(header + ' { ')
+            for i in range(n):
+                if i > 0:
+                    builder.append(', ')
+                if append_deep_summary(builder, self.value['list'][i]):
+                    break
+            builder.append(' }')
+            return builder.finalize()
+        else:
+            return header
     
     # used in other pretty-printers to get element by index
     def get(self, index, oobValue = 0):
@@ -142,5 +154,5 @@ idlib_pplist += [
     idHashMapPrinter,
 ]
 
-def build_pretty_printer():
-    return TdmPrettyPrinterCollection.create_with_printers('idlib', idlib_pplist)
+def get_pretty_printers():
+    return idlib_pplist

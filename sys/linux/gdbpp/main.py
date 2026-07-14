@@ -21,12 +21,17 @@ for modname in uncached_modules_names:
 #import tracing
 
 try:
+    pp_list = []
     import tdmuc_idlib
     import tdmuc_engine
     import tdmuc_game
-    gdb.printing.register_pretty_printer(gdb.current_objfile(), tdmuc_idlib.build_pretty_printer(), replace = True)
-    gdb.printing.register_pretty_printer(gdb.current_objfile(), tdmuc_engine.build_pretty_printer(), replace = True)
-    gdb.printing.register_pretty_printer(gdb.current_objfile(), tdmuc_game.build_pretty_printer(), replace = True)
+    pp_list += tdmuc_idlib.get_pretty_printers()
+    pp_list += tdmuc_engine.get_pretty_printers()
+    pp_list += tdmuc_game.get_pretty_printers()
+
+    import tdmuc_base
+    collection = tdmuc_base.TdmPrettyPrinterCollection.create_with_printers('all', pp_list)
+    gdb.printing.register_pretty_printer(gdb.current_objfile(), collection, replace = True)
 
     print("TheDarkMod GDB pretty printers: registration finished")
 
