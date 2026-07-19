@@ -468,14 +468,13 @@ bool idGuiScript::Parse(idParser *src, idWindow *win) {
 		parms.Append( wv );
 	}
 
-	// DG: special case for set "cmd" and set "print" that have no limit on number of arguments
+	// DG: special case for set "print" that have no limit on number of arguments
 	//     (except it should be more than one to make sense)
-	bool isSetCmd = false;
+	bool isExtendedSet = false;
 	if ( handler == &Script_Set && parms.Num() > 0 ) {
 		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
-		if( str != NULL && (idStr::Icmp( str->c_str(), "cmd" ) == 0
-		                   || idStr::Icmp( str->c_str(), "print" ) == 0) ) {
-			isSetCmd = true;
+		if( str != NULL && (idStr::Icmp( str->c_str(), "print" ) == 0) ) {
+			isExtendedSet = true;
 			if ( parms.Num() < 2 ) {
 				src->Warning(
 					"Script command set \"%s\" should have at least one more argument",
@@ -486,7 +485,7 @@ bool idGuiScript::Parse(idParser *src, idWindow *win) {
 	}
 
 	//  verify min/max params - DG: except if it's one of the set special cases
-	if ( !isSetCmd && handler && (parms.Num() < commandList[i].mMinParms || parms.Num() > commandList[i].mMaxParms ) ) {
+	if ( !isExtendedSet && handler && (parms.Num() < commandList[i].mMinParms || parms.Num() > commandList[i].mMaxParms ) ) {
 		bool maybeMissedSemicolon = false;
 		if ( parms.Num() > commandList[i].mMaxParms ) {
 			// check if we have another command in arguments
