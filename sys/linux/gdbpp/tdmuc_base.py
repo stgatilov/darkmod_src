@@ -402,7 +402,12 @@ def print_simple_value(value):
     if vtype.code in [gdb.TYPE_CODE_ENUM, gdb.TYPE_CODE_INT, gdb.TYPE_CODE_FLT, gdb.TYPE_CODE_CHAR, gdb.TYPE_CODE_BOOL]:
         return str(value)
     if vtype.code in [gdb.TYPE_CODE_PTR, gdb.TYPE_CODE_ARRAY] and vtype.target().name == 'char':
-        return value.string()
+        if vtype.code == gdb.TYPE_CODE_PTR and int(value) == 0:
+            return 'null'
+        try:
+            return '"' + str(value.string()) + '"'
+        except:
+            return 'bad'
     return None
 
 # getting custom pretty printer for a given value
@@ -609,8 +614,17 @@ def compose_formatted_display_string(format, value, tree):
                 member = value[placeholder[1:]]
             else:
                 assert False
-            s = display_string(member)
-            res += string.Formatter().format_field(s, specs)
+            try:
+                if '*' in specs:
+                    assert int(member) != 0
+                    member = member.dereference()
+            except:
+                member = 'err'
+            if ENABLE_AUTO_SUMMARY and specs.endswith('a'):
+                s = AutoDisplayStringPrinter(member).to_string()
+            else:
+                s = display_string(member)
+            res += str(s)
     return res
 
 # Makes pretty-printer using simply and mostly declarative format.
@@ -626,6 +640,8 @@ def make_simple_printer(typename, format, structure = None, *, class_attribs = {
             self.value = value
             self.structure = preprocess_children_tree(structure, value)
         def to_string(self):
+            if ENABLE_AUTO_SUMMARY and getattr(SimplePrinter, 'auto_summary', False):
+                return get_auto_summary_as_string(self.value)
             return compose_formatted_display_string(format, self.value, self.structure)
         def children(self):
             return convert_preprocessed_tree_into_children_list(self.structure)
@@ -687,7 +703,7 @@ def append_deep_summary(builder, value):
         return False
 
     pp = default_visualizer(value)
-    if pp:
+    if pp and not getattr(type(pp), 'auto_summary', False):
         # never deep-print custom types with pretty-printer
         return builder.append(pp.to_string())
 
@@ -732,17 +748,23 @@ def append_deep_summary(builder, value):
         return True
     return False
 
+# returns auto summary as a final string with limit applied
+# not suitable for concatenating with anything else...
+def get_auto_summary_as_string(value, prefix = ''):
+    builder = StringBuilder()
+    builder.append(prefix)
+    if value is not None:
+        append_deep_summary(builder, value)
+    return builder.finalize()
+
+
 # pretty-printer to produce auto-summary for non-customized types
 class AutoDisplayStringPrinter:
-    def __init__(self, value, prefix):
+    def __init__(self, value, prefix = ''):
         self.value = value
         self.prefix = prefix
     def to_string(self):
-        builder = StringBuilder()
-        builder.append(self.prefix)
-        if self.value is not None:
-            append_deep_summary(builder, self.value)
-        return builder.finalize()
+        return get_auto_summary_as_string(self.value, self.prefix)
     def children(self):
         if self.value is None:
             return []

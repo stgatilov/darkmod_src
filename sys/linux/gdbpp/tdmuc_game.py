@@ -1,6 +1,7 @@
 import gdb
 from tdmuc_base import *
 from tdmuc_idlib import *
+from tdmuc_engine import *
 
 
 class idEntityPrinter:
@@ -49,7 +50,7 @@ class idEntityPtrPrinter:
     def to_string(self):
         text = display_string(self.ptrValue)
         if self.invalid:
-            text = "[WRONG] " + text
+            text = '[WRONG] ' + text
         return text
     
     def children(self):
@@ -61,9 +62,52 @@ class idEntityPtrPrinter:
         return res
 
 
+class idEventPrinter:
+    wildcard = 'idEvent'
+
+    def __init__(self, value):
+        self.value = value
+        threadexec = gdb.lookup_global_symbol('EV_Thread_Execute', gdb.SYMBOL_VAR_DOMAIN).value().address
+        self.is_thread_exec = int(self.value['eventdef']) == int(threadexec)
+
+    def to_string(self):
+        time = int(self.value['time'])
+        if self.is_thread_exec:
+            threadname = self.value['object'].cast(gdb.lookup_type('idThread*')).dereference()['threadName']
+            threadname = idStrPrinter(threadname).to_string()
+            return 'idThread::Execute (%d): %s' % (time, threadname)
+        classname = print_simple_value(self.value['typeinfo'].dereference()['classname'])
+        eventname = print_simple_value(self.value['eventdef'].dereference()['name'])
+        objdata = display_string(self.value['object'].dereference())
+        return '%s::%s (%d): %s' % (classname, eventname, time, objdata)
+
+    def children(self):
+        return raw_children_inline(self.value)
+
+
 game_pplist = [
     idEntityPrinter,
     idEntityPtrPrinter,
+    idEventPrinter,
 ]
+
+game_pplist += [
+    make_simple_printer('activeSmokeStage_t', 'activeSmoke', lambda v: {
+        '^':  raw_children_inline(v),
+        '[All Particles]': make_synthetic(lambda: linked_list_children_list(
+            v['smokes'],
+            lambda n: n.dereference()['next']
+        ))
+    }, class_attribs = {'auto_summary': True}),
+    make_simple_printer('singleSmoke_s', 'smoke[{$index}] T{$privateStartTime} at {$origin}'),
+]
+
+game_pplist += [
+    make_simple_printer('contactInfo_t', 'contact at {$point}', lambda v: {
+        '^':  raw_children_inline(v),
+        '[Entity]': idListPrinter(getGameLocal()['entities']).get(int(v['entityNum'])),
+    }, class_attribs = {'auto_summary': True}),
+]
+
 def get_pretty_printers():
     return game_pplist
