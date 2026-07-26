@@ -1,5 +1,6 @@
 import gdb
 import sys, inspect
+from datetime import datetime
 
 COMMON_PATH = 'sys/linux/gdbpp'
 tracefile = open('trace.txt', 'w')
@@ -8,7 +9,8 @@ tablevel = 0
 
 
 def traceprint(message):
-    print(message, file = tracefile)
+    timestamp = datetime.utcnow().strftime('%H:%M:%S.%f')
+    print(timestamp + ': ' + message, file = tracefile)
 
 
 def formatvalue(value):
@@ -78,7 +80,7 @@ def trace(frame, event, arg):
         printpoint('call', frame, args)
 
     if event in ['exception']:
-        printpoint(event, frame)
+        printpoint(event, frame, [arg[1]])
 
     if event == 'return':
         printpoint('return', frame, [arg])

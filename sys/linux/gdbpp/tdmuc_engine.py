@@ -197,13 +197,9 @@ engine_pplist += [
         )),
     }),
 
-    make_simple_printer('idDecl', '{@base_}', class_attribs = {'allow_derived': True}, structure = lambda v: {
+    make_simple_printer('idDecl', '{$base:*}', class_attribs = {'allow_derived': True}),
+    make_simple_printer('idMaterial', '{$base:*}', structure = lambda v: {
         '^': raw_children_inline(v),
-        '@base_': v['base'].dereference(),
-    }),
-    make_simple_printer('idMaterial', '{@base_}', structure = lambda v: {
-        '^': raw_children_inline(v),
-        '@base_': v['base'].dereference(),
         '[stages]': array_children_list(v['stages'], v['numStages']),
         '[interactionGroups]': array_children_list(v['interactionGroupStarts'], int(v['numInteractionGroups']) + 1),
     }),

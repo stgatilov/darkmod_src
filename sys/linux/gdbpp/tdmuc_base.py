@@ -523,6 +523,9 @@ This = '$%#this#%$'
 # The placeholders are surrounded with {}, and can be of two types:
 #   {@path} --- use value from children tree under specified path
 #   {$name} --- use self.value[name], i.e. take from 'this' object
+# You can also add format specification after colon:
+#   {$ptrToObject:*} --- take ptrToObject member and dereference it before display
+#   {$mystruct:a} --- generate auto-summary for mystruct member (not recommended)
 
 
 # given children tree as described above, or a lambda that returns it,
@@ -616,7 +619,6 @@ def compose_formatted_display_string(format, value, tree):
                 assert False
             try:
                 if '*' in specs:
-                    assert int(member) != 0
                     member = member.dereference()
             except:
                 member = 'err'
@@ -658,7 +660,7 @@ def make_simple_printer(typename, format, structure = None, *, class_attribs = {
 # this is how many characters it produces at maximum
 AutoSummaryLengthLimitDefault = 100
 
-# helper for simple concatenation of strings into text
+# helper for simple concatenation of strings into a text of limited length
 class StringBuilder:
     def __init__(self, limit = AutoSummaryLengthLimitDefault):
         self.limit = limit
@@ -709,7 +711,7 @@ def append_deep_summary(builder, value):
 
     if value.type.code == gdb.TYPE_CODE_PTR:
         if int(value) == 0:
-           return builder.append('null')
+            return builder.append('null')
         if builder.append('0x{:x} '.format(int(value))):
             return True
         try:
@@ -749,7 +751,7 @@ def append_deep_summary(builder, value):
     return False
 
 # returns auto summary as a final string with limit applied
-# not suitable for concatenating with anything else...
+# for performance reasons, it should not be concatenated with anything else...
 def get_auto_summary_as_string(value, prefix = ''):
     builder = StringBuilder()
     builder.append(prefix)
