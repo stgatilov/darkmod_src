@@ -7,6 +7,97 @@ from collections import namedtuple
 # it has the largest chance to cause debug issues...
 ENABLE_AUTO_SUMMARY = True
 
+# return children list as generator in some builtin methods, like e.g. arrays or raw members
+# this makes CLion much faster if large arrays are present
+# but makes it harder to debug and turns some children lists into LazyArray, which has less methods than proper list
+USE_GENERATORS_FOR_CHILDREN = True
+
+
+# wraps an iterable into a lazy container
+# which can be iterated through as many times as wanted
+# and which evaluates elements on-demand and caches them internally
+class CachedIterable:
+    def __init__(self, iterable):
+        self.prefix = []
+        self.iterator = iter(iterable)
+
+    def __iter__(self):
+        return self.Iterator(self)
+    
+    class Iterator:
+        def __init__(self, owner):
+            self.owner = owner
+            self.index = 0
+
+        def __iter__(self):
+            return self
+        
+        def __next__(self):
+            if self.index < len(self.owner.prefix):
+                ret = self.owner.prefix[self.index]
+            else:
+                assert self.index == len(self.owner.prefix)
+                ret = next(self.owner.iterator)
+                self.owner.prefix.append(ret)
+            self.index += 1
+            return ret
+
+# list-like container of children
+# it can be constructed from list and from generator,
+# and it can be composited using append and '+' like with lists
+class LazyArray:
+    def __init__(self, arr = None):
+        self.chunks = []
+        if arr is not None:
+            self.chunks.append(self._wrap_iterator(arr))
+
+    def _wrap_iterator(self, arr):
+        assert not isinstance(arr, LazyArray)
+        if isinstance(arr, list):
+            return arr
+        assert hasattr(arr, '__iter__')
+        return CachedIterable(arr)
+
+    def clear(self):
+        self.chunks.clear()
+
+    def append(self, elem):
+        self.chunks.append([elem])
+
+    def __add__(self, other):
+        if not isinstance(other, LazyArray):
+            other = LazyArray(other)
+        res = LazyArray()
+        res.chunks = self.chunks + other.chunks
+        return res
+
+    def __radd__(self, other):
+        if not isinstance(other, LazyArray):
+            other = LazyArray(other)
+        res = LazyArray()
+        res.chunks = other.chunks + self.chunks
+        return res
+
+    def __iter__(self):
+        for arr in self.chunks:
+            yield from arr
+
+    def __bool__(self):
+        for i in self:
+            return True
+        return False
+
+# this is a decorator applied to a few methods which return children as generator/iterator for performance reasons
+def wrap_children_generator(generator):
+    def wrapper(*args, **kwargs):
+        iter = generator(*args, **kwargs)
+        if USE_GENERATORS_FOR_CHILDREN:
+            return LazyArray(iter)
+        else:
+            return list(iter)   # unwrap into explicit list immediately
+    return wrapper
+
+# ===================================================================================
 
 # given gdb.Value and its gdb.Field, returns gdb.Value corresponding to the field
 # note: unlike simple value[field.name], this function supports unnamed structs and unions
@@ -352,9 +443,8 @@ class RawSubclassPrinter:
     def to_string(self):
         return ''
 
+    @wrap_children_generator
     def children(self):
-        res = []
-
         vtype = self.value.type
         assert vtype.code != gdb.TYPE_CODE_TYPEDEF
 
@@ -366,17 +456,15 @@ class RawSubclassPrinter:
                     base_type = gdb.lookup_type(f.name)
                     base_value = self.value.cast(base_type)
                     child = ('%s {base}' % f.name, embed_printer_for_value(base_value, RawSubclassPrinter))
-                    res.append(child)
+                    yield child
                     continue
                 child = (str(f.name), get_field(self.value, f))
-                res.append(child)
+                yield child
 
         if vtype.code == gdb.TYPE_CODE_ARRAY:
             (n, elemtype) = get_array_length_and_element_type(vtype)
             for i in range(n):
-                res.append(('[%d]' % i, self.value[i]))
-
-        return res
+                yield ('[%d]' % i, self.value[i])
 
 class RawPrinter(RawSubclassPrinter):
     def __init__(self, value):
@@ -450,15 +538,15 @@ def children_of(value, skip_raw_child = True):
 # ===================================================================================
 
 # returns all elements of the given array as a list of children
+@wrap_children_generator
 def array_children_list(ptr_value, count_value):
     n = int(count_value)
-    res = []
     for i in range(n):
-        res.append((str(i), ptr_value[i]))
-    return res
+        yield (str(i), ptr_value[i])
 
 # returns all elements of the given linked list as a list of children
 # terminates on None, null pointer, optional lambda, or revisiting the same node
+@wrap_children_generator
 def linked_list_children_list(first_node, func_next_node, func_item_of_node = None, *, terminate_if = None, marked_if = None):
     if not terminate_if:
         terminate_if = lambda p: False
@@ -467,22 +555,21 @@ def linked_list_children_list(first_node, func_next_node, func_item_of_node = No
     if not marked_if:
         marked_if = lambda p: False
     pnode = first_node
-    res = []
     visited_addresses = set()
+    k = 0
     while pnode and int(pnode) != 0 and not terminate_if(pnode):
-        k = len(res)
         name = '[%d]' % k
         if marked_if(pnode):
             name = '=>' + name
         cycled = int(pnode) in visited_addresses
         if cycled:
             name = '[cycle]'
-        res.append((name, func_item_of_node(pnode)))
+        yield (name, func_item_of_node(pnode))
+        k += 1
         visited_addresses.add(int(pnode))
         if cycled:
             break
         pnode = func_next_node(pnode)
-    return res
 
 # returns a synthetic gdb.Value that can be expanded to display the given list of children
 # children_lambda should be a lambda wrapping a list of children for lazy evaluation
@@ -542,14 +629,14 @@ def preprocess_children_tree(tree, thisValue):
         result = []
         for key, val in tree:
             if key.startswith('^'):             # insert value = list of key/value tuples (or one)
-                if isinstance(val, list):
+                if isinstance(val, (list, LazyArray)):
                     result += val
                 else:
                     result.append(val)
                 continue
             elif isinstance(val, str) and val == This:  # use member of 'this' by name
                 val = thisValue[key]
-            elif isinstance(val, (dict, list)):         # synthetic subobject
+            elif isinstance(val, (dict, list, LazyArray)):      # synthetic subobject
                 val = preprocess_structure_recursive(val)
             elif isinstance(val, gdb.Value):            # normal value
                 pass
@@ -564,7 +651,7 @@ def preprocess_children_tree(tree, thisValue):
 def estimate_size_of_preprocessed_tree(tree):
     res = 0
     for key, val in tree:
-        if isinstance(val, list):
+        if isinstance(val, (list, LazyArray)):
             res += estimate_size_of_preprocessed_tree(val)
         res += len(val.bytes)
     return res
@@ -584,7 +671,7 @@ def convert_preprocessed_tree_into_children_list(tree):
     for key, val in tree:
         if key.startswith('@'):     # hidden
             continue
-        if isinstance(val, list):
+        if isinstance(val, (list, LazyArray)):
             val = embed_printer_for_value(val, ContainerPrinter, size = estimate_size_of_preprocessed_tree(val))
         result.append((key, val))
     return result
