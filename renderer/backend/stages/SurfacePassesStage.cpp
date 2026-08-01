@@ -95,7 +95,24 @@ struct CustomShaderUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec4, localParam1 )
 	DEFINE_UNIFORM( vec4, localParam2 )
 	DEFINE_UNIFORM( vec4, localParam3 )
-	GLSLUniform_vec4 *localParams[4] = { &localParam0, &localParam1, &localParam2, &localParam3 };
+	DEFINE_UNIFORM( vec4, localParam4 )
+	DEFINE_UNIFORM( vec4, localParam5 )
+	DEFINE_UNIFORM( vec4, localParam6 )
+	DEFINE_UNIFORM( vec4, localParam7 )
+	DEFINE_UNIFORM( vec4, localParam8 )
+	DEFINE_UNIFORM( vec4, localParam9 )
+	DEFINE_UNIFORM( vec4, localParam10 )
+	DEFINE_UNIFORM( vec4, localParam11 )
+	DEFINE_UNIFORM( vec4, localParam12 )
+	DEFINE_UNIFORM( vec4, localParam13 )
+	DEFINE_UNIFORM( vec4, localParam14 )
+	DEFINE_UNIFORM( vec4, localParam15 )
+	GLSLUniform_vec4 *localParams[MAX_VERTEX_PARMS] = {
+		&localParam0, &localParam1, &localParam2, &localParam3,
+		&localParam4, &localParam5, &localParam6, &localParam7,
+		&localParam8, &localParam9, &localParam10, &localParam11,
+		&localParam12, &localParam13, &localParam14, &localParam15
+	};
 
 	DEFINE_UNIFORM( sampler, texture0 )
 	DEFINE_UNIFORM( sampler, texture1 )
@@ -105,7 +122,20 @@ struct CustomShaderUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( sampler, texture5 )
 	DEFINE_UNIFORM( sampler, texture6 )
 	DEFINE_UNIFORM( sampler, texture7 )
-	GLSLUniform_sampler *textures[8] = { &texture0, &texture1, &texture2, &texture3, &texture4, &texture5, &texture6, &texture7 };
+	DEFINE_UNIFORM( sampler, texture8 )
+	DEFINE_UNIFORM( sampler, texture9 )
+	DEFINE_UNIFORM( sampler, texture10 )
+	DEFINE_UNIFORM( sampler, texture11 )
+	DEFINE_UNIFORM( sampler, texture12 )
+	DEFINE_UNIFORM( sampler, texture13 )
+	DEFINE_UNIFORM( sampler, texture14 )
+	DEFINE_UNIFORM( sampler, texture15 )
+	GLSLUniform_sampler *textures[MAX_FRAGMENT_IMAGES] = {
+		&texture0, &texture1, &texture2, &texture3,
+		&texture4, &texture5, &texture6, &texture7,
+		&texture8, &texture9, &texture10, &texture11,
+		&texture12, &texture13, &texture14, &texture15
+	};
 };
 
 static GLSLProgram *LoadShader(const idStr &name) {

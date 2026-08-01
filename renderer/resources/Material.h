@@ -180,8 +180,8 @@ typedef enum {
 	SVC_INVERSE_MODULATE
 } stageVertexColor_t;
 
-static const int	MAX_FRAGMENT_IMAGES = 8;
-static const int	MAX_VERTEX_PARMS = 4;
+static const int	MAX_FRAGMENT_IMAGES = 16;
+static const int	MAX_VERTEX_PARMS = 16;
 #define NEWSTAGE_PROGRAM_DELAYED ((GLSLProgram*)SIZE_MAX)
 
 typedef struct newShaderStage_s {
