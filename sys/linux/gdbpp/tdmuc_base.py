@@ -653,7 +653,10 @@ def estimate_size_of_preprocessed_tree(tree):
     for key, val in tree:
         if isinstance(val, (list, LazyArray)):
             res += estimate_size_of_preprocessed_tree(val)
-        res += len(val.bytes)
+        try:    # unbelievable! taking "bytes" throws =)
+            res += len(val.bytes)
+        except:
+            pass
     return res
 
 # pretty-printer-like class used for synthetic objects
