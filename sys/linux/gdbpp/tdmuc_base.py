@@ -761,6 +761,7 @@ class StringBuilder:
         return self.size > self.limit
 
     def append(self, s):
+        s = str(s)
         self.args.append(s)
         self.size += len(s)
         return self.overflow()
