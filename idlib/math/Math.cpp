@@ -16,6 +16,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
+// mac-port: Math.h (via precompiled.h) re-#defines the INFINITY macro on Apple
+// (needed by libc++ headers), but the member definition "idMath::INFINITY = 1e30f"
+// below must not expand it
+#ifdef __APPLE__
+#undef INFINITY
+#endif
+
 #include "tests/testing.h"
 #include <cmath>
 
