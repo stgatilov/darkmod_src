@@ -27,7 +27,6 @@ idLangDict::idLangDict( void ) {
 	args.SetGranularity( 256 );
 	hash.SetGranularity( 256 );
 	hash.ClearFree( 4096, 8192 );
-	baseID = 0;
 }
 
 /*
@@ -51,15 +50,12 @@ void idLangDict::Clear( void ) {
 
 /*
 ============
-idLangDict::Load
+idLangDict::LoadLegacy
 ============
 */
-bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const unsigned int remapcount, const char *remap ) {
-	
-	if ( clear ) {
-		Clear();
-	}
-	
+bool idLangDict::LoadLegacy( const char *fileName, const idStr &remap ) {
+	Clear();
+
 	const char *buffer = NULL;
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
@@ -86,12 +82,11 @@ bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const
 			idLangKeyValue kv;
 			kv.key = tok;
 			kv.value = tok2;
-			if (remap && remapcount > 0)
 			{
 				// Tels: fix #2812, some characters like 0xFF ("я" in russian) are not rendered
 				// in the GUI, so replace them (as the font contains the characters elsewhere).
 				// If we were given a replacement table, use it to exchange the characters:
-				kv.value.Remap( remapcount, remap );
+				kv.value.RemapI18nLegacy( remap.Length() / 2, remap.c_str() );
 			}
 			assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
 			hash.Add( GetHashKey( kv.key ), args.Append( kv ) );
@@ -105,34 +100,32 @@ bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const
 
 /*
 ============
-idLangDict::Save
+idLangDict::Merge
 ============
 */
-void idLangDict::Save( const char *fileName ) {
-	idFile *outFile = idLib::fileSystem->OpenFileWrite( fileName );
-	outFile->WriteFloatString( "// string table\n// english\n//\n\n{\n" );
-	for ( int j = 0; j < args.Num(); j++ ) {
-		outFile->WriteFloatString( "\t\"%s\"\t\"", args[j].key.c_str() );
-		int l = args[j].value.Length();
-		char slash = '\\';
-		char tab = 't';
-		char nl = 'n';
-		for ( int k = 0; k < l; k++ ) {
-			char ch = args[j].value[k];
-			if ( ch == '\t' ) {
-				outFile->Write( &slash, 1 );
-				outFile->Write( &tab, 1 );
-			} else if ( ch == '\n' || ch == '\r' ) {
-				outFile->Write( &slash, 1 );
-				outFile->Write( &nl, 1 );
-			} else {
-				outFile->Write( &ch, 1 );
+void idLangDict::Merge( const idLangDict &dict, bool override ) {
+	for ( int i = 0; i < dict.args.Num(); i++ ) {
+		const idLangKeyValue &kv = dict.args[ i ];
+		int found = 0;
+
+		int hashKey = GetHashKey( kv.key );
+		for ( int i = hash.First( hashKey ); i != -1; i = hash.Next( i ) ) {
+			if ( args[i].key.Cmp( kv.key ) == 0 ) {
+				found++;
+
+				if ( override ) {
+					args[i].value = kv.value;	// override
+				} else {
+					// skip
+				}
 			}
 		}
-		outFile->WriteFloatString( "\"\n" );
+
+		if ( !found ) {
+			// new key
+			hash.Add( hashKey, args.Append( kv ) );
+		}
 	}
-	outFile->WriteFloatString( "\n}\n" );
-	idLib::fileSystem->CloseFile( outFile );
 }
 
 /*
@@ -166,158 +159,14 @@ const char *idLangDict::GetString( const char *str, const bool dowarn ) const {
 
 /*
 ============
-idLangDict::AddString
-============
-*/
-const char *idLangDict::AddString( const char *str ) {
-	
-	if ( ExcludeString( str ) ) {
-		return str;
-	}
-
-	int c = args.Num();
-	for ( int j = 0; j < c; j++ ) {
-		if ( idStr::Cmp( args[j].value, str ) == 0 ){
-			return args[j].key;
-		}
-	}
-
-	int id = GetNextId();
-	idLangKeyValue kv;
-	// _D3XP
-	kv.key = va( "#str_%08i", id );
-	// kv.key = va( "#str_%05i", id );
-	kv.value = str;
-	c = args.Append( kv );
-	assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
-	hash.Add( GetHashKey( kv.key ), c );
-	return args[c].key;
-}
-
-/*
-============
-idLangDict::GetNumKeyVals
-============
-*/
-int idLangDict::GetNumKeyVals( void ) const {
-	return args.Num();
-}
-
-/*
-============
-idLangDict::GetKeyVal
-============
-*/
-const idLangKeyValue * idLangDict::GetKeyVal( const int i ) const {
-	return &args[i];
-}
-
-/*
-============
-idLangDict::AddKeyVal
-============
-*/
-void idLangDict::AddKeyVal( const char *key, const char *val ) {
-	idLangKeyValue kv;
-	kv.key = key;
-	kv.value = val;
-	assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
-	hash.Add( GetHashKey( kv.key ), args.Append( kv ) );
-}
-
-/*
-============
-idLangDict::ExcludeString
-============
-*/
-bool idLangDict::ExcludeString( const char *str ) const {
-	if ( str == NULL ) {
-		return true;
-	}
-
-    int c = static_cast<int>(strlen(str));
-	if ( c <= 1 ) {
-		return true;
-	}
-
-	if ( idStr::Cmpn( str, STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ) {
-		return true;
-	}
-
-    if (idStr::Icmpn(str, "gui::", static_cast<int>(strlen("gui::"))) == 0) {
-		return true;
-	}
-
-	if ( str[0] == '$' ) {
-		return true;
-	}
-
-	int i;
-	for ( i = 0; i < c; i++ ) {
-		if ( isalpha( str[i] ) ) {
-			break;
-		}
-	}
-	if ( i == c ) {
-		return true;
-	}
-	
-	return false;
-}
-
-/*
-============
-idLangDict::GetNextId
-============
-*/
-int idLangDict::GetNextId( void ) const {
-	int c = args.Num();
-
-	// Let an external user supply the base id for this dictionary
-	int id = baseID;
-
-	if ( c == 0 ) {
-		return id;
-	}
-
-	idStr work;
-	for ( int j = 0; j < c; j++ ) {
-		work = args[j].key;
-		work.StripLeading( STRTABLE_ID );
-		int test = atoi( work );
-		if ( test > id ) {
-			id = test;
-		}
-	}
-	return id + 1;
-}
-
-/*
-============
 idLangDict::GetHashKey
 ============
 */
 int idLangDict::GetHashKey( const char *str ) const {
-/*	int hashKey = 0;
-	for ( str += STRTABLE_ID_LENGTH; str[0] != '\0'; str++ ) {
-		assert( str[0] >= '0' && str[0] <= '9' );
-		hashKey = hashKey * 10 + str[0] - '0';
-	}*/
 	//stgatilov #5261: generic string hashing algorithm (djb2), no assert
 	int hashKey = 5381;
 	for ( str += STRTABLE_ID_LENGTH; str[0] != '\0'; str++ ) {
 		hashKey = (hashKey << 5) + hashKey + str[0];
 	}
 	return hashKey;
-}
-
-/*
-============
-idLangDict::Print
-============
-*/
-void idLangDict::Print( void ) const {
-	int c = args.Num();
-	idLib::common->Printf("idLangDict: %d KB in %d entries.\n", static_cast<int>(args.Size() + hash.Size()) >> 10, c);
-	//hash.Print();
 }

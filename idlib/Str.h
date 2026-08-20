@@ -203,7 +203,7 @@ public:
 	void				Replace( const char old, const char nw );		// Tels: faster version of Replace() if you want to swap only one char
 	void				Remove( const char *old );						// Tels: Faster than Replace("..","");
 	void				Remove( const char rem );						// Tels: Faster version of Remove(" ");
-	void				Remap( const unsigned int tablesize, const char *table );	// Table-driven remap (replace A w/ B, and B w/ C etc.) many chars simultanously
+	void				RemapI18nLegacy( const unsigned int tablesize, const char *table );	// Table-driven remap (replace A w/ B, and B w/ C etc.) many chars simultanously
 	idList<idStr>		Split( const char *delimiters, bool skipEmpty ) const;
 	idList<idStr>		Split( const idList<idStr> &delimiters, bool skipEmpty ) const;
 	idList<idStr>		SplitLines( void ) const;

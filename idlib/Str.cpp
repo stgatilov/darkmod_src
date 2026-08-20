@@ -816,7 +816,7 @@ Tels: table-driven remap (replace A w/ B, and B w/ C etc.) many chars simultanou
 to convert ISO 8859-1 etc. to our specific character set.
 ============
 */
-void idStr::Remap( const unsigned int count, const char *table ) {
+void idStr::RemapI18nLegacy( const unsigned int count, const char *table ) {
 	assert(table);
 	assert(count < 256);
 

@@ -64,18 +64,6 @@ public:
 	virtual const idStr&		GetCurrentFontPath() const = 0;
 
 	/**
-	* Print memory usage info.
-    */
-	virtual void				Print() const = 0;
-
-	/**
-	* Load a new character mapping based on the new language. Returns the
-	* number of characters that should be remapped upon dictionary and
-	* readable load time.
-	*/
-	virtual int					LoadCharacterMapping( idStr& lang ) = 0;
-
-	/**
 	* Set a new laguage (example: "english").
 	*/
 	virtual bool				SetLanguage( const char* lang, bool firstTime = false ) = 0;

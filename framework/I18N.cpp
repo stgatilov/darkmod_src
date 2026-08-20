@@ -62,16 +62,9 @@ public:
 	virtual const idStr&	GetCurrentFontPath() const override;
 
 	/**
-	* Print memory usage info.
-    */
-	virtual void			Print() const override;
-
-	/**
-	* Load a new character mapping based on the new language. Returns the
-	* number of characters that should be remapped upon dictionary and
-	* readable load time.
+	* Load a new character mapping based on the new language.
 	*/
-	virtual int				LoadCharacterMapping( idStr& lang ) override;
+	int				LoadCharacterMappingLegacy( const idStr &lang );
 
 	/**
 	* Set a new laguage (example: "english").
@@ -112,7 +105,7 @@ private:
 
 	// A table remapping between characters. The string contains two bytes
 	// for each remapped character, Length()/2 is the count.
-	idStr				m_Remap;
+	idStr				m_RemapLegacy;
 };
 
 I18NLocal	i18nLocal;
@@ -220,7 +213,7 @@ void I18NLocal::Init()
 	m_ArticlesDict.Set( "Os ",	", Os" );	// Portuguese
 	m_ArticlesDict.Set( "The ",	", The" );	// English
 
-	m_Remap.Clear();						// by default, no remaps
+	m_RemapLegacy.Clear();						// by default, no remaps
 
 	// Create the correct dictionary and set fontLang
 	SetLanguage( cvarSystem->GetCVarString( "sys_lang" ), true );
@@ -239,25 +232,6 @@ void I18NLocal::Shutdown()
 	m_ReverseDict.ClearFree();
 	m_ArticlesDict.ClearFree();
 	m_Dict.Clear();
-}
-
-/*
-===============
-I18NLocal::Print
-===============
-*/
-void I18NLocal::Print() const
-{
-	common->Printf("I18N: Current language: %s\n", m_lang.c_str() );
-	common->Printf("I18N: Current font path: %s\n", m_fontPath.c_str() );
-	common->Printf("I18N: Move articles to back: %s\n", m_bMoveArticles ? "Yes" : "No");
-	common->Printf(" Main " );
-	m_Dict.Print();
-	common->Printf(" Reverse dict   : " );
-	m_ReverseDict.PrintMemory();
-	common->Printf(" Articles dict  : " );
-	m_ArticlesDict.PrintMemory();
-	common->Printf(" Remapped chars : %i\n", m_Remap.Length() / 2 );
 }
 
 /*
@@ -326,15 +300,15 @@ const idStr& I18NLocal::GetCurrentFontPath() const
 
 /*
 ===============
-I18NLocal::LoadCharacterMapping
+I18NLocal::LoadCharacterMappingLegacy
 
 Loads the character remap table, defaulting to "default.map" if "LANGUAGE.map"
 is not found. This is used to fix bug #2812.
 ===============
 */
-int I18NLocal::LoadCharacterMapping( idStr& lang ) {
+int I18NLocal::LoadCharacterMappingLegacy( const idStr &lang ) {
 
-	m_Remap.Clear();		// clear the old mapping
+	m_RemapLegacy.Clear();		// clear the old mapping
 
 	const char *buffer = NULL;
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
@@ -380,15 +354,15 @@ int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 			}
 			// add the two numbers
 			//	common->Warning("got '%s' '%s'", tok.c_str(), tok2.c_str() );
-			m_Remap.Append( (char) tok.GetIntValue() );
-			m_Remap.Append( (char) tok2.GetIntValue() );
+			m_RemapLegacy.Append( (char) tok.GetIntValue() );
+			m_RemapLegacy.Append( (char) tok2.GetIntValue() );
 //			common->Printf("I18N: Mapping %i (0x%02x) to %i (0x%02x)\n", tok.GetIntValue(), tok.GetIntValue(), tok2.GetIntValue(), tok2.GetIntValue() );
 		}
 	}
 
-	common->Printf("I18N: Loaded %i character remapping entries.\n", m_Remap.Length() / 2 );
+	common->Printf("I18N: Loaded %i character remapping entries.\n", m_RemapLegacy.Length() / 2 );
 
-	return m_Remap.Length() / 2;
+	return m_RemapLegacy.Length() / 2;
 }
 
 /*
@@ -418,68 +392,40 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
 
 	// If we need to remap some characters upon loading one of these languages:
-	LoadCharacterMapping(m_lang);
+	LoadCharacterMappingLegacy(m_lang);
 
 	// build our combined dictionary, first the TDM base dict
-	idStr file = "strings/"; file += m_lang + ".lang";
-	m_Dict.Load( file, true, m_Remap.Length() / 2, m_Remap.c_str() );				// true => clear before load
+	idStr filename = "strings/" + m_lang + ".lang";
+	m_Dict.LoadLegacy(filename, m_RemapLegacy);
 
-	idLangDict* fmDict = new idLangDict;
-	file = "strings/fm/"; file += m_lang + ".lang";
-
-	if (!fmDict->Load(file, false, m_Remap.Length() / 2, m_Remap.c_str()))
+	filename = "strings/fm/" + m_lang + ".lang";
+	idLangDict fmDictLocal;
+	if (fmDictLocal.LoadLegacy(filename, m_RemapLegacy))
 	{
-		common->Printf("I18N: '%s' not found.\n", file.c_str() );
+		// fold the newly loaded strings into the system dict
+		// note: mission strings override code ones
+		m_Dict.Merge(fmDictLocal, true);
 	}
 	else
 	{
-		// else fold the newly loaded strings into the system dict
-		int num = fmDict->GetNumKeyVals( );
-		const idLangKeyValue*  kv;
-		for (int i = 0; i < num; i++)
-		{	
-			kv = fmDict->GetKeyVal( i );
-			if (kv != NULL)
-			{
-#ifdef M_DEBUG
-				common->Printf("I18NLocal: Folding '%s' ('%s') into main dictionary.\n", kv->key.c_str(), kv->value.c_str() );
-#endif
-				m_Dict.AddKeyVal( kv->key.c_str(), kv->value.c_str() );
-			}
-		}
+		common->Printf("I18N: '%s' not found.\n", filename.c_str());
 	}
 
 	// With FM strings it can happen that one translation is missing or incomplete,
 	// so fall back to the english version by folding these in, too:
 	if (m_lang != "english")
 	{
-		file = "strings/fm/english.lang";
-		if (!fmDict->Load(file, true, m_Remap.Length() / 2, m_Remap.c_str()))
+		filename = "strings/fm/english.lang";
+		idLangDict fmDictFallback;
+		if (fmDictFallback.LoadLegacy(filename, m_RemapLegacy))
 		{
-			common->Printf("I18NLocal: '%s' not found, skipping it.\n", file.c_str() );
+			// fold the newly loaded strings into the system dict unless they exist already
+			m_Dict.Merge(fmDictFallback, false);
 		}
 		else
 		{
-			// else fold the newly loaded strings into the system dict unless they exist already
-			int num = fmDict->GetNumKeyVals( );
-			const idLangKeyValue*  kv;
-			for (int i = 0; i < num; i++)
-			{	
-				kv = fmDict->GetKeyVal( i );
-				if (kv != NULL)
-				{
-					const char *oldEntry = m_Dict.GetString( kv->key.c_str(), false);
-					// if equal, the entry was not found
-					if (oldEntry == kv->key.c_str())
-					{
-#ifdef M_DEBUG
-						common->Printf("I18NLocal: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
-#endif
-						m_Dict.AddKeyVal( kv->key.c_str(), kv->value.c_str() );
-					}
-				}
-			}
-		}	
+			common->Printf("I18NLocal: '%s' not found, skipping it.\n", filename.c_str() );
+		}
 	}
 
 	// Now set the path to where to load fonts from
@@ -530,11 +476,9 @@ I18NLocal::MoveArticlesToBack
 
 Changes "A Little House" to "Little House, A", supporting multiple languages
 like English, German, French etc.
+grayman #3110 - rewritten to avoid crashes from freeing memory in the caller
 ===============
 */
-
-// grayman #3110 - rewritten to avoid crashes from freeing memory in the caller
-
 void I18NLocal::MoveArticlesToBack(const idStr& title, idStr& prefix, idStr& suffix)
 {
 	prefix = "";
