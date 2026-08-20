@@ -11,8 +11,10 @@ class idStrPrinter:
 
     # note: display_hint = string is unwanted, it adds doublequotes implicitly
     def to_string(self):
-        return '"' + self.value['data'].string(length = int(self.value['len'])) + '"'
-    
+        ptr = self.value['data']
+        n = int(self.value['len'])
+        return '"' + ptr.string(length = n, errors = 'backslashreplace') + '"'
+
     def children(self):
         res = [raw_child_expandable(self.value)]
         res += array_children_list(self.value['data'], self.value['len'])
