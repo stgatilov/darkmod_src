@@ -41,6 +41,10 @@ public:
 
 	const char *			GetString( const char *str, const bool dowarn = true ) const;
 
+	bool					IsEmpty() const { return args.Num() == 0; }
+							// adds the value and key as passed without checks
+	void					AddKeyVal( const char *key, const char *val );
+
 private:
 	idList<idLangKeyValue>	args;
 	idHashIndex				hash;

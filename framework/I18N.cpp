@@ -365,6 +365,175 @@ int I18NLocal::LoadCharacterMappingLegacy( const idStr &lang ) {
 	return m_RemapLegacy.Length() / 2;
 }
 
+// load file with UTF-8 -> 8-bit character remapping for the given language
+static idHashMap<idStr, idStr> LoadCharacterMappingUtf8( const idStr &lang ) {
+	idHashMap<idStr, idStr> charRemap;
+
+	idStr filename = "strings/" + lang + ".utf8map";
+	idLexer src(LEXFL_NOSTRINGCONCAT);
+	if (!src.LoadFile(filename)) {
+		common->Warning("I18N: Missing UTF-8 remap file at %s", filename.c_str());
+		return charRemap;
+	}
+
+	idToken tok;
+	src.ExpectTokenString("{");
+	while (!src.CheckTokenString("}")) {
+		src.ReadToken(&tok);
+
+		if (tok == "char") {
+			idStr key, value;
+
+			while (!src.CheckTokenString(":")) {
+				src.ExpectTokenType(TT_NUMBER, TT_HEX, &tok);
+				int code = tok.GetIntValue();
+
+				// sanity check (not full validation)
+				bool isContinuation = (code >= 0x80 && code < 0xC0);
+				if (key.IsEmpty() == isContinuation)
+					src.Warning("Invalid UTF-8 code point");
+
+				key.Append(char(code));
+			}
+			if (key.Length() < 2)
+				src.Warning("Remapping %s character", key.IsEmpty() ? "empty" : "ASCII");
+
+			{
+				src.ExpectTokenType(TT_NUMBER, TT_HEX, &tok);
+				int code = tok.GetIntValue();
+				value.Append(char(code));
+			}
+
+			if (charRemap.Find(key))
+				src.Warning("Duplicate character remap");
+			charRemap[key] = value;
+		} else {
+			src.Warning("Unexpected command %s", tok.c_str());
+			src.SkipRestOfLine();
+		}
+	}
+
+	return charRemap;
+}
+
+// decode UTF-8 to localized 8-bit string
+// using only ASCII and explicitly specified code point remappings
+static idStr DecodeUtf8String(const idStr &utf8, const idHashMap<idStr, idStr> &remap, idLexer &src) {
+	idStr result;
+
+	idStr temp;
+	int pos = 0;
+	while (pos < utf8.Length()) {
+		// first, try the remappings
+		// note: UTF-8 character is 4 bytes max
+		bool found = false;
+		for (int l = 1; l <= 4; l++) {
+			utf8.Mid(pos, l, temp);
+			if (const idKeyVal<idStr, idStr> *kv = remap.Find(temp)) {
+				result += kv->value;
+				pos += l;
+				found = true;
+				break;
+			}
+		}
+		if (found)
+			continue;
+
+		// second, check if this is ASCII
+		// if it is, copy identically
+		if (utf8[pos] >= 0 && utf8[pos] < 0x80) {
+			result += utf8[pos];
+			pos++;
+			continue;
+		}
+
+		// report error
+		utf8.Mid(pos, 4, temp);
+		idStr hex;
+		for (int i = 0; i < temp.Length(); i++)
+			hex += va(" 0x%02X", byte(temp[i]));
+		src.Warning("Unexpected UTF-8 characters:%s", hex.c_str());
+
+		// replace one byte + continuation bytes with question mark
+		pos++;
+		while (pos < utf8.Length() && byte(utf8[pos]) >= 0x80 && byte(utf8[pos]) < 0xC0)
+			pos++;
+		result += '?';
+	}
+
+	return result;
+}
+
+// load multi-language UTF-8 encoded file with translations
+// it is supposed to contain language switches + "key" "value" lines
+static idLangDict LoadStringsFileUtf8( const char *filename, const idStr &activeLang ) {
+	idLangDict result;
+
+	idLexer src(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT);
+	if (!src.LoadFile(filename))
+		return result;
+
+	idHashMap<idStr, idHashMap<idStr, idStr>> keyToLangToValue;
+	idHashMap<idStr, idHashMap<idStr, idStr>> langToCharRemap;
+	idStr currLang = "";
+
+	idToken tok;
+	src.ExpectTokenString("{");
+	while (!src.CheckTokenString("}")) {
+		src.ReadToken(&tok);
+
+		if (tok == "[") {
+			src.ReadToken(&tok);
+			src.ExpectTokenString("]");
+			currLang = tok;
+			currLang.ToLower();
+
+			if (!langToCharRemap.Find(currLang)) {
+				// load per-language character demand whenever language is switched on
+				langToCharRemap[currLang] = LoadCharacterMappingUtf8(currLang);
+			}
+		}
+		else {
+			idStr key = tok;
+			src.ReadToken(&tok);
+			idStr valueUtf8 = tok;
+
+			idStr valueLocal = DecodeUtf8String(valueUtf8, langToCharRemap[currLang], src);
+
+			idHashMap<idStr, idStr> &langToValue = keyToLangToValue[key];
+			if (const idKeyVal<idStr, idStr> *oldKv = langToValue.Find(currLang)) {
+				src.Warning("String '%s' was already defined in language '%s'", key.c_str(), currLang.c_str());
+			} else {
+				langToValue.AddIfNew(currLang, valueLocal);
+			}
+		}
+	}
+
+	for (int i = 0; i < keyToLangToValue.CellsNum(); i++) {
+		const auto &elem = keyToLangToValue.Ptr()[i];
+		if (keyToLangToValue.IsEmpty(elem))
+			continue;
+		const idHashMap<idStr, idStr> &langToValue = elem.value;
+
+		const idKeyVal<idStr, idStr> *kv = langToValue.Find(activeLang);
+		// if there is no translation for active language, take English string as fallback
+		if (!kv)
+			kv = langToValue.Find("english");
+		if (!kv)
+			continue;	// string exists only in non-English language?
+
+		result.AddKeyVal(elem.key, kv->value);
+	}
+
+	return result;
+}
+
+idCVar g_utf8lang(
+	"g_utf8lang", "1", CVAR_BOOL | CVAR_ARCHIVE,
+	"Use new .utf8lang files for localization strings. "
+	"Engine restart is recommended after change. "
+);
+
 /*
 ===============
 I18NLocal::SetLanguage
@@ -384,7 +553,7 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 #endif
 
 	// store the new setting
-	idStr oldLang = m_lang; 
+	idStr oldLang = m_lang;
 	m_lang = lang;
 
 	// set sys_lang
@@ -394,37 +563,63 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	// If we need to remap some characters upon loading one of these languages:
 	LoadCharacterMappingLegacy(m_lang);
 
-	// build our combined dictionary, first the TDM base dict
-	idStr filename = "strings/" + m_lang + ".lang";
-	m_Dict.LoadLegacy(filename, m_RemapLegacy);
-
-	filename = "strings/fm/" + m_lang + ".lang";
-	idLangDict fmDictLocal;
-	if (fmDictLocal.LoadLegacy(filename, m_RemapLegacy))
+	// first load the TDM base dict
+	if (g_utf8lang.GetBool())
 	{
-		// fold the newly loaded strings into the system dict
-		// note: mission strings override code ones
-		m_Dict.Merge(fmDictLocal, true);
+		idStr filename = "strings/all.utf8lang";
+		m_Dict = LoadStringsFileUtf8(filename, lang);
 	}
 	else
 	{
-		common->Printf("I18N: '%s' not found.\n", filename.c_str());
+		idStr filename = "strings/" + m_lang + ".lang";
+		m_Dict.LoadLegacy(filename, m_RemapLegacy);
 	}
 
-	// With FM strings it can happen that one translation is missing or incomplete,
-	// so fall back to the english version by folding these in, too:
-	if (m_lang != "english")
+	// fold the newly loaded strings into the system dict
+	// note: mission strings override code ones
+	bool fmStringsLoaded = false;
+	if (g_utf8lang.GetBool())
 	{
-		filename = "strings/fm/english.lang";
-		idLangDict fmDictFallback;
-		if (fmDictFallback.LoadLegacy(filename, m_RemapLegacy))
+		idStr filename = "strings/fm/all.utf8lang";
+		idLangDict fmDictLocal = LoadStringsFileUtf8(filename, lang);
+		if (!fmDictLocal.IsEmpty())
 		{
-			// fold the newly loaded strings into the system dict unless they exist already
-			m_Dict.Merge(fmDictFallback, false);
+			fmStringsLoaded = true;
+			m_Dict.Merge(fmDictLocal, true);
+		}
+	}
+
+	// note: load old-style FM strings only if new-style are missing
+	if (!fmStringsLoaded)
+	{
+		idStr filename = "strings/fm/" + m_lang + ".lang";
+		idLangDict fmDictLocal;
+		if (fmDictLocal.LoadLegacy(filename, m_RemapLegacy))
+		{
+			// fold the newly loaded strings into the system dict
+			// note: mission strings override code ones
+			m_Dict.Merge(fmDictLocal, true);
 		}
 		else
 		{
-			common->Printf("I18NLocal: '%s' not found, skipping it.\n", filename.c_str() );
+			common->Printf("I18N: '%s' not found.\n", filename.c_str());
+		}
+
+		// With FM strings it can happen that one translation is missing or incomplete,
+		// so fall back to the english version by folding these in, too:
+		if (m_lang != "english")
+		{
+			filename = "strings/fm/english.lang";
+			idLangDict fmDictFallback;
+			if (fmDictFallback.LoadLegacy(filename, m_RemapLegacy))
+			{
+				// fold the newly loaded strings into the system dict unless they exist already
+				m_Dict.Merge(fmDictFallback, false);
+			}
+			else
+			{
+				common->Printf("I18NLocal: '%s' not found, skipping it.\n", filename.c_str() );
+			}
 		}
 	}
 

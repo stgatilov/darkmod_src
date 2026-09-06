@@ -159,6 +159,19 @@ const char *idLangDict::GetString( const char *str, const bool dowarn ) const {
 
 /*
 ============
+idLangDict::AddKeyVal
+============
+*/
+void idLangDict::AddKeyVal( const char *key, const char *val ) {
+	idLangKeyValue kv;
+	kv.key = key;
+	kv.value = val;
+	assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
+	hash.Add( GetHashKey( kv.key ), args.Append( kv ) );
+}
+
+/*
+============
 idLangDict::GetHashKey
 ============
 */
