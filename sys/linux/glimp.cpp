@@ -27,6 +27,27 @@ GLFWwindow *window = nullptr;
 
 idCVar r_customMonitor( "r_customMonitor", "0", CVAR_RENDERER|CVAR_INTEGER|CVAR_ARCHIVE|CVAR_NOCHEAT, "Select monitor to use for fullscreen mode (0 = primary)" );
 
+idCVar r_glfwBackend(
+	"r_glfwBackend", "",
+	CVAR_RENDERER | CVAR_ARCHIVE | CVAR_NOCHEAT,
+	"Set GLFW_PLATFORM hint (wayland, x11, win32). "
+	"Empty value means automatic selection."
+);
+
+struct GlfwPlatformNaming {
+	int value;
+	const char *name;
+};
+static const GlfwPlatformNaming GlfwPlatformNames[] = {
+	{GLFW_PLATFORM_WAYLAND, "Wayland"},
+	{GLFW_PLATFORM_X11, "X11"},
+	{GLFW_PLATFORM_WIN32, "Win32"},
+	{GLFW_PLATFORM_COCOA, "Cocoa"},
+	{GLFW_PLATFORM_NULL, "Null"},
+	{GLFW_ANY_PLATFORM, "Any"},
+	{0, NULL}
+};
+
 void GLimp_ActivateContext() {
 	assert( window );
 	glfwMakeContextCurrent( window );
@@ -109,6 +130,13 @@ GLX_Init
 ===============
 */
 int GLX_Init(glimpParms_t a) {
+	for (int i = 0; GlfwPlatformNames[i].name; i++) {
+		if (idStr::Icmp(GlfwPlatformNames[i].name, r_glfwBackend.GetString()) == 0) {
+			common->Printf("GLFW hint %s (0x%08X) added\n", GlfwPlatformNames[i].name, GlfwPlatformNames[i].value);
+			glfwInitHint(GLFW_PLATFORM, GlfwPlatformNames[i].value);
+		}
+	}
+
 	if (!glfwInit()) {
 		return false;
 	}
@@ -117,10 +145,10 @@ int GLX_Init(glimpParms_t a) {
 
 	int platform = glfwGetPlatform();
 	const char *platName = "unknown";
-	if (platform == GLFW_PLATFORM_WIN32) platName = "Win32";
-	if (platform == GLFW_PLATFORM_WAYLAND) platName = "Wayland";
-	if (platform == GLFW_PLATFORM_X11) platName = "X11";
-	common->Printf("GLFW platform used: %s (%d)\n", platName, platform);
+	for (int i = 0; GlfwPlatformNames[i].name; i++)
+		if (GlfwPlatformNames[i].value == platform)
+			platName = GlfwPlatformNames[i].name;
+	common->Printf("GLFW platform used: %s (0x%08X)\n", platName, platform);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, QGL_REQUIRED_VERSION_MAJOR);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, QGL_REQUIRED_VERSION_MINOR);
