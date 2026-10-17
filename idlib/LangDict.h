@@ -40,6 +40,7 @@ public:
 	void					Merge( const idLangDict &dict, bool override );
 
 	const char *			GetString( const char *str, const bool dowarn = true ) const;
+	bool					Contains( const char *str ) const;
 
 	bool					IsEmpty() const { return args.Num() == 0; }
 							// adds the value and key as passed without checks

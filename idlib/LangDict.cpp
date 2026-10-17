@@ -159,6 +159,21 @@ const char *idLangDict::GetString( const char *str, const bool dowarn ) const {
 
 /*
 ============
+idLangDict::Contains
+============
+*/
+bool idLangDict::Contains( const char *str ) const {
+	int hashKey = GetHashKey( str );
+	for ( int i = hash.First( hashKey ); i != -1; i = hash.Next( i ) ) {
+		if ( args[i].key.Cmp( str ) == 0 ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+============
 idLangDict::AddKeyVal
 ============
 */
