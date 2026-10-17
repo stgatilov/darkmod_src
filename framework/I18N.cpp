@@ -528,10 +528,119 @@ static idLangDict LoadStringsFileUtf8( const char *filename, const idStr &active
 	return result;
 }
 
-idCVar g_utf8lang(
-	"g_utf8lang", "1", CVAR_BOOL | CVAR_ARCHIVE,
-	"Use new .utf8lang files for localization strings. "
-	"Engine restart is recommended after change. "
+// load single-language UTF-8 encoded file with translations in gettext format
+// it is either .PO file (isTemplate = false) or .POT file for English (isTemplate = true)
+static idLangDict LoadGetTextFileUtf8( const char *filename, bool isTemplate, const idHashMap<idStr, idStr> &charRemap ) {
+	idLangDict result;
+
+	idLexer src(LEXFL_NOFATALERRORS);
+	if (!src.LoadFile(filename))
+		return result;
+
+	int presenceMask = 0;
+	idStr currCtxt, currId, currStr;
+
+	idToken tok;
+	while (src.ReadToken(&tok)) {
+
+		if (tok == "#") {
+			src.ReadRestOfLineUnp(nullptr, true);
+			continue;
+		}
+
+		if (tok.type == TT_NAME && tok.Icmp("msgctxt") == 0) {
+			if (src.ExpectTokenType(TT_STRING, 0, &tok))
+				currCtxt = tok;
+
+			if (presenceMask & 0x1)
+				src.Warning("Second msgctxt on one item");
+			presenceMask |= 0x1;
+		}
+		else if (tok.type == TT_NAME && tok.Icmp("msgid") == 0) {
+			if (src.ExpectTokenType(TT_STRING, 0, &tok))
+				currId = tok;
+
+			if (presenceMask & 0x2)
+				src.Warning("Second msgid on one item");
+			presenceMask |= 0x2;
+		}
+		else if (tok.type == TT_NAME && tok.Icmp("msgstr") == 0) {
+			if (src.ExpectTokenType(TT_STRING, 0, &tok))
+				currStr = tok;
+
+			int mask = presenceMask;
+			presenceMask = 0;
+
+			if (currId.IsEmpty()) {
+				if (!result.IsEmpty())
+					src.Warning("Empty msgid on non-first entry");
+				continue;
+			}
+
+			// TDM-specific: context is required now because it contains key to replace
+			if (!(mask & 0x1))
+				src.Warning("Missing msgctxt on item");
+			if (!(mask & 0x2))
+				src.Warning("Missing msgid on item");
+
+			// TDM special: such items are also treated as comments
+			if (currCtxt.Icmp("//") == 0)
+				continue;
+
+			// TDM convention: replacement key is actually in context instead of id
+			idStr key = currCtxt;
+			if (key.CmpPrefix(STRTABLE_ID)) {
+				src.Warning("Msgctxt must start with %s", STRTABLE_ID);
+				continue;
+			}
+			idStr valueUtf8 = (isTemplate ? currId : currStr);
+			// TDM special: empty output string is considered "this item is missing"
+			if (valueUtf8.IsEmpty())
+				continue;
+
+			idStr valueLocal = DecodeUtf8String(valueUtf8, charRemap, src);
+			if (result.Contains(key.c_str()))
+				src.Warning("Duplicate entry for key '%s'", key.c_str());
+			result.AddKeyVal(key.c_str(), valueLocal.c_str());
+		}
+		else {
+			src.Warning("Unexpected token '%s'", tok.c_str());
+		}
+	}
+
+	if (presenceMask)
+		src.Warning("Unfinished item");
+
+	return result;
+}
+
+// loads strings for one language from translations in gettext format (UTF-8 encoded)
+// reads both English .POT and language-specific .PO and combines the results
+static idLangDict LoadGetTextLanguageStrings( const char *filenamePrefix, const char *lang ) {
+	// load English language first
+	idHashMap remap = LoadCharacterMappingUtf8("english");
+	idStr filename = idStr(filenamePrefix) + "english.pot";
+	idLangDict result = LoadGetTextFileUtf8(filename.c_str(), true, remap);
+
+	if (lang != "english") {
+		// load specified non-English language
+		remap = LoadCharacterMappingUtf8(lang);
+		idStr filename = idStr(filenamePrefix) + lang + ".po";
+		idLangDict dictLocal = LoadGetTextFileUtf8(filename.c_str(), false, remap);
+		// override English strings with localized ones
+		result.Merge(dictLocal, true);
+	}
+
+	return result;
+}
+
+idCVar g_langStrings(
+	"g_langStrings", "1", CVAR_INTEGER | CVAR_ARCHIVE,
+	"Which kind of localization string to load:\n"
+	"  0 --- load per-language .lang files with 8-bit strings\n"
+	"  1 --- load merged .utf8lang files\n"
+	"  2 --- load gettext .po/.pot files with UTF-8 text\n"
+	"Engine restart is recommended after change."
 );
 
 /*
@@ -564,7 +673,11 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	LoadCharacterMappingLegacy(m_lang);
 
 	// first load the TDM base dict
-	if (g_utf8lang.GetBool())
+	if (g_langStrings.GetInteger() == 2)
+	{
+		m_Dict = LoadGetTextLanguageStrings("strings/", m_lang.c_str());
+	}
+	else if (g_langStrings.GetInteger() == 1)
 	{
 		idStr filename = "strings/all.utf8lang";
 		m_Dict = LoadStringsFileUtf8(filename, lang);
@@ -578,7 +691,16 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	// fold the newly loaded strings into the system dict
 	// note: mission strings override code ones
 	bool fmStringsLoaded = false;
-	if (g_utf8lang.GetBool())
+	if (g_langStrings.GetInteger() == 2)
+	{
+		idLangDict fmDictLocal = LoadGetTextLanguageStrings("strings/fm/", m_lang.c_str());
+		if (!fmDictLocal.IsEmpty())
+		{
+			fmStringsLoaded = true;
+			m_Dict.Merge(fmDictLocal, true);
+		}
+	}
+	else if (g_langStrings.GetInteger() == 1)
 	{
 		idStr filename = "strings/fm/all.utf8lang";
 		idLangDict fmDictLocal = LoadStringsFileUtf8(filename, lang);
