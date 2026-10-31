@@ -584,7 +584,7 @@ static idLangDict LoadGetTextFileUtf8( const char *filename, bool isTemplate, co
 				src.Warning("Missing msgid on item");
 
 			// TDM special: such items are also treated as comments
-			if (currCtxt.Icmp("//") == 0)
+			if (currCtxt.Icmp("##") == 0)
 				continue;
 
 			// TDM convention: replacement key is actually in context instead of id
@@ -597,6 +597,9 @@ static idLangDict LoadGetTextFileUtf8( const char *filename, bool isTemplate, co
 			// TDM special: empty output string is considered "this item is missing"
 			if (valueUtf8.IsEmpty())
 				continue;
+			// TDM special: a special string is used to denote the actual empty output
+			if (valueUtf8.Icmp("#empty") == 0)
+				valueUtf8.ClearFree();
 
 			idStr valueLocal = DecodeUtf8String(valueUtf8, charRemap, src);
 			if (result.Contains(key.c_str()))
