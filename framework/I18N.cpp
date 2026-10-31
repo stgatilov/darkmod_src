@@ -638,7 +638,7 @@ static idLangDict LoadGetTextLanguageStrings( const char *filenamePrefix, const 
 }
 
 idCVar g_langStrings(
-	"g_langStrings", "1", CVAR_INTEGER | CVAR_ARCHIVE,
+	"g_langStrings", "2", CVAR_INTEGER | CVAR_GAME,
 	"Which kind of localization string to load:\n"
 	"  0 --- load per-language .lang files with 8-bit strings\n"
 	"  1 --- load merged .utf8lang files\n"
