@@ -613,9 +613,66 @@ static imageBlock_t R_CosPowerCubeMap( idVec3 axis, int power, float scale, idVe
 	return res;
 }
 
+// fills cubemap with lightFromDir(direction of texel); results are clamped to [0..1]
+static imageBlock_t R_DirectionalCubeMap( int size, idVec3 (*lightFromDir)( const idVec3 &dir ) ) {
+	imageBlock_t res = imageBlock_t::AllocCube( size );
+
+	for ( int f = 0; f < 6; f++ ) {
+		for ( int y = 0; y < size; y++ ) {
+			for ( int x = 0; x < size; x++ ) {
+				float ratioX = ( x + 0.5f ) / size;
+				float ratioY = ( y + 0.5f ) / size;
+				// direction to center of texel
+				idVec3 dir = (
+					cubeMapAxes[f][2] +
+					cubeMapAxes[f][0] * ( 2.0f * ratioX - 1.0f ) +
+					cubeMapAxes[f][1] * ( 2.0f * ratioY - 1.0f )
+				);
+				dir.Normalize();
+
+				idVec3 light = lightFromDir( dir );
+
+				int p = (y * size + x);
+				for ( int c = 0; c < 3; c++ )
+					res.pic[f][4 * p + c] = int(idMath::ClampFloat(0.0f, 1.0f, light[c]) * 255.0f + 0.5f);
+				res.pic[f][4 * p + 3] = 255;
+			}
+		}
+	}
+
+	return res;
+}
+
+// Reflectance of the ground, used to darken the underside of objects in the world ambient.
+// ~0.2 is the usual average for natural surfaces (dirt, stone, wood, grass are 0.1 - 0.3);
+// it is also close to the 18% grey of photographic metering, i.e. the average reflectance of a scene.
+static const float AMBIENT_WORLD_GROUND_ALBEDO = 0.2f;
+// The cubemap values are display-encoded (the shader multiplies them as they are, or hardware sRGB-decodes them),
+// so a physical light ratio R must be stored as pow(R, 1/gamma).
+static const float AMBIENT_WORLD_ENCODING_GAMMA = 2.2f;
+
+static idVec3 R_AmbientWorldDiffuseLight( const idVec3 &dir ) {
+	// mix diffuse and ambient in 1:1 proportion: 1.0 looking up, 0.5 at the horizon
+	// (above the horizon this is the same as it has always been)
+	float level = 0.5f + 0.5f * idMath::Fmax( dir.z, 0.0f );
+
+	if ( dir.z < 0.0f ) {
+		// Below the horizon the old cubemap stayed at 0.5, so the underside was lit like the sides.
+		// Use the hemisphere model instead: the surface sees sky in a (1 + z) / 2 part of its view
+		// and ground in a (1 - z) / 2 part, where the ground is lit as much as the sky and reflects albedo of it:
+		//   irradiance(z) = (1 + z) / 2 + groundAlbedo * (1 - z) / 2
+		// Facing straight down it gets only the bounce light (groundAlbedo), the sides get (1 + groundAlbedo) / 2.
+		float irradiance = 0.5f * ( 1.0f + dir.z ) + 0.5f * AMBIENT_WORLD_GROUND_ALBEDO * ( 1.0f - dir.z );
+		float irradianceAtHorizon = 0.5f * ( 1.0f + AMBIENT_WORLD_GROUND_ALBEDO );
+		float lightRatio = irradiance / irradianceAtHorizon;	// relative to the sides
+		level *= idMath::Pow( lightRatio, 1.0f / AMBIENT_WORLD_ENCODING_GAMMA );
+	}
+
+	return idVec3( level );
+}
+
 static imageBlock_t R_AmbientWorldDiffuseCubeMap() {
-	// mix diffuse and ambient in 1:1 proportion
-	return R_CosPowerCubeMap( idVec3(0, 0, 1), 1, 0.5f, idVec3(0.5f) );
+	return R_DirectionalCubeMap( 32, R_AmbientWorldDiffuseLight );
 }
 static imageBlock_t R_AmbientWorldSpecularCubeMap() {
 	// take 50% of pure specular
