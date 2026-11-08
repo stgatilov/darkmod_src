@@ -5555,7 +5555,9 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 			idVec3 startPoint = physics.GetOrigin();
 			idVec3 bottomPoint = startPoint;
 			bottomPoint.z -= 200;
-			if ( !gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, this) )
+			// stgatilov: use the same content mask as in ground check
+			int contentMask = physicsObj.GetClipMask();
+			if ( !gameLocal.clip.TracePoint(result, startPoint, bottomPoint, contentMask, this) )
 			{
 				// no floor soon, so knock him out
 				static_cast<idAI*>(this)->Fall_Knockout( m_SetInMotionByActor.GetEntity() );
