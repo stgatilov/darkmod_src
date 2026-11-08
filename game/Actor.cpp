@@ -5544,17 +5544,17 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	// realistic fall. Just KO the AI, since he can't come back from being a ragdoll.
 	if (IsType(idAI::Type) && !isRagDoll)
 	{
-		// When an AI in freefall falls ~20 units, he's traveling
-		// a vertical downward speed of ~200, so that's where we'll
-		// see what awaits him below. If he's going to fall > 200 units,
+		// When an AI in freefall falls ~80 units, he's traveling
+		// a vertical downward speed of ~400, so that's where we'll
+		// see what awaits him below. If he's going to fall > 400 units,
 		// we can change him to a ragdoll now. If not, we'll leave him alone.
-		if ((curVelocity.z < -200.0f))
+		if ((curVelocity.z < -400.0f))
 		{
 			// trace down
 			trace_t result;
 			idVec3 startPoint = physics.GetOrigin();
 			idVec3 bottomPoint = startPoint;
-			bottomPoint.z -= 200;
+			bottomPoint.z -= 400;
 			// stgatilov: use the same content mask as in ground check
 			int contentMask = physicsObj.GetClipMask();
 			if ( !gameLocal.clip.TracePoint(result, startPoint, bottomPoint, contentMask, this) )
