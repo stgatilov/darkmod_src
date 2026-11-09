@@ -76,7 +76,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #if defined(__APPLE__)
 	//note: previously this macro was set in XCode projects, so it is used all over the code
 	//here we try to detect MacOS build and automatically set it
-	#define MACOS_X
+	//note: defined as 1 because some places use "#if MACOS_X" (not #ifdef)
+	#define MACOS_X 1
 #endif
 // Mac OSX
 #if defined(MACOS_X)

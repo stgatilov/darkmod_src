@@ -91,7 +91,13 @@ static void RunTests( const idCmdArgs &args ) {
 void ArgCompletion_DoctestArg( const idCmdArgs &args, void(*callback)( const char *s ) ) {
 	idStr start = args.Args();
 	char buffer[1024];
+	//note: doctest 2.4.11 has getRegisteredTests in doctest namespace;
+	//newer versions (2.5+) moved it to doctest::detail
+#if DOCTEST_VERSION >= 20500
+	auto allTests = doctest::detail::getRegisteredTests();
+#else
 	auto allTests = doctest::getRegisteredTests();
+#endif
 
 	if ( start.IcmpPrefix( "- tc =" ) == 0 ) {
 		for ( const auto &test : allTests ) {
@@ -117,7 +123,12 @@ void TestsInit() {
 	//but it causes issues with command line parsers, and breaks even its own features like -tc=name:
 	//  https://github.com/onqtam/doctest/issues/297
 	//to keep away of confusion, let's forbid bad characters in test names
+	//note: doctest 2.5+ moved getRegisteredTests into doctest::detail
+#if DOCTEST_VERSION >= 20500
+	auto allTests = doctest::detail::getRegisteredTests();
+#else
 	auto allTests = doctest::getRegisteredTests();
+#endif
 	for ( const auto &test : allTests ) {
 		if (
 			idStr::CountChar( test.m_name, ',' ) ||	//breaks -tc="name"

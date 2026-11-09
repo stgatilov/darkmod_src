@@ -12,9 +12,9 @@ or (at your option) any later version. For details, see LICENSE.TXT.
 Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
-//#include "../../idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
 #include "../posix/posix_public.h"
-//#include "../sys_local.h"
+#include "../sys_local.h"
 
 #include <pthread.h>
 #include <errno.h>
@@ -22,19 +22,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <pwd.h>
 
 #include <sys/sysctl.h>
-#include <mach/clock.h>
-#include <mach/clock_types.h>
 #include <mach/mach.h>
 #include <mach-o/dyld.h>
-
-// DG: needed for Sys_ReLaunch()
-#include <dirent.h>
-
-static const char** cmdargv = NULL;
-static int cmdargc = 0;
-// DG end
 
 /*
 ==============
@@ -45,11 +37,17 @@ const char* Sys_EXEPath()
 {
 	static char path[1024];
 	uint32_t size = sizeof( path );
-	
-	if( _NSGetExecutablePath( path, &size ) != 0 )
+
+	if ( _NSGetExecutablePath( path, &size ) != 0 )
 	{
 		Sys_Printf( "buffer too small to store exe path, need size %u\n", size );
 		path[0] = '\0';
+	}
+	// resolve symlinks (e.g. /var -> /private/var)
+	char resolved[PATH_MAX];
+	if ( realpath( path, resolved ) != nullptr )
+	{
+		idStr::snPrintf( path, sizeof( path ), "%s", resolved );
 	}
 	return path;
 }
@@ -59,32 +57,22 @@ const char* Sys_EXEPath()
 Sys_ClockTicksPerSecond
 ===============
 */
-double Sys_ClockTicksPerSecond()
+uint64 Sys_ClockTicksPerSecond()
 {
-	static bool		init = false;
-	static double	ret;
-	size_t len = sizeof( ret );
-	int status;
-	
-	if( init )
+	static bool init = false;
+	static uint64 ret;
+
+	if ( init )
 	{
 		return ret;
 	}
-	
-	status = sysctlbyname( "hw.cpufrequency", &ret, &len, NULL, 0 );
-	
-	if( status == -1 )
-	{
-		common->Printf( "couldn't read systclbyname\n" );
-		ret = MeasureClockTicks();
-		init = true;
-		common->Printf( "measured CPU frequency: %g MHz\n", ret / 1000000.0 );
-		return ret;
-	}
-	
-	common->Printf( "CPU frequency: %g MHz\n", ret / 1000000.0 );
+
+	// note: Apple Silicon has no fixed "CPU frequency" sysctl,
+	// and clock ticks come from clock_gettime(CLOCK_MONOTONIC) in ns,
+	// so the tick rate is nanoseconds per second: 1'000'000'000
+	ret = 1000000000ull;
 	init = true;
-	
+	common->Printf( "Sys_ClockTicksPerSecond: monotonic clock, %g ticks/ms\n", ret / 1000000.0 );
 	return ret;
 }
 
@@ -92,59 +80,72 @@ double Sys_ClockTicksPerSecond()
 ========================
 Sys_CPUCount
 
-numLogicalCPUCores	- the number of logical CPU per core
-numPhysicalCPUCores	- the total number of cores per package
+numLogicalCPUCores	- the total number of logical CPU cores
+numPhysicalCores	- the total number of physical cores
 numCPUPackages		- the total number of packages (physical processors)
 ========================
 */
-// RB begin
-void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages )
+void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCores, int& numCPUPackages )
 {
-	static bool		init = false;
-	
-	static int		s_numLogicalCPUCores;
-	static int		s_numPhysicalCPUCores;
-	static int		s_numCPUPackages;
-	
-	size_t len = sizeof( s_numPhysicalCPUCores );
-	
-	if( init )
+	static bool init = false;
+
+	static int s_numLogicalCPUCores;
+	static int s_numPhysicalCores;
+	static int s_numCPUPackages;
+
+	if ( init )
 	{
-		numPhysicalCPUCores = s_numPhysicalCPUCores;
 		numLogicalCPUCores = s_numLogicalCPUCores;
+		numPhysicalCores = s_numPhysicalCores;
 		numCPUPackages = s_numCPUPackages;
+		return;
 	}
-	
-	s_numPhysicalCPUCores = 1;
+
+	s_numPhysicalCores = 1;
 	s_numLogicalCPUCores = 1;
 	s_numCPUPackages = 1;
-	
-	
-	sysctlbyname( "hw.physicalcpu", &s_numPhysicalCPUCores, &len, NULL, 0 );
+
+	size_t len = sizeof( s_numPhysicalCores );
+	sysctlbyname( "hw.physicalcpu", &s_numPhysicalCores, &len, NULL, 0 );
+	len = sizeof( s_numLogicalCPUCores );
 	sysctlbyname( "hw.logicalcpu", &s_numLogicalCPUCores, &len, NULL, 0 );
-	
-	common->Printf( "CPU processors: %d\n", s_numPhysicalCPUCores );
+
+	common->Printf( "CPU processors: %d\n", s_numPhysicalCores );
 	common->Printf( "CPU logical cores: %d\n", s_numLogicalCPUCores );
-	
-	numPhysicalCPUCores = s_numPhysicalCPUCores;
+
 	numLogicalCPUCores = s_numLogicalCPUCores;
+	numPhysicalCores = s_numPhysicalCores;
 	numCPUPackages = s_numCPUPackages;
+	init = true;
 }
-// RB end
+
+/*
+========================
+OSX_GetLocalizedString
+
+The old sys/osx/macosx_misc.mm implementation looked up the string in the
+application bundle's Localizable.strings. A plain executable has no such
+bundle, so fall back to the key itself (English name of the key).
+Declared in framework/KeyInput.cpp under #if MACOS_X.
+========================
+*/
+const char* OSX_GetLocalizedString( const char* key )
+{
+	return key;
+}
 
 /*
 ==================
 Sys_DoStartProcess
+
 if we don't fork, this function never returns
 the no-fork lets you keep the terminal when you're about to spawn an installer
-
-if the command contains spaces, system() is used. Otherwise the more straightforward execl ( system() blows though )
 ==================
 */
 void Sys_DoStartProcess( const char* exeName, bool dofork )
 {
 	bool use_system = false;
-	if( strchr( exeName, ' ' ) )
+	if ( strchr( exeName, ' ' ) )
 	{
 		use_system = true;
 	}
@@ -152,27 +153,27 @@ void Sys_DoStartProcess( const char* exeName, bool dofork )
 	{
 		// set exec rights when it's about a single file to execute
 		struct stat buf;
-		if( stat( exeName, &buf ) == -1 )
+		if ( stat( exeName, &buf ) == -1 )
 		{
 			printf( "stat %s failed: %s\n", exeName, strerror( errno ) );
 		}
 		else
 		{
-			if( chmod( exeName, buf.st_mode | S_IXUSR ) == -1 )
+			if ( chmod( exeName, buf.st_mode | S_IXUSR ) == -1 )
 			{
-				printf( "cmod +x %s failed: %s\n", exeName, strerror( errno ) );
+				printf( "chmod +x %s failed: %s\n", exeName, strerror( errno ) );
 			}
 		}
 	}
-	if( dofork )
+	if ( dofork )
 	{
-		switch( fork() )
+		switch ( fork() )
 		{
 			case -1:
 				// main thread
 				break;
 			case 0:
-				if( use_system )
+				if ( use_system )
 				{
 					printf( "system %s\n", exeName );
 					system( exeName );
@@ -190,11 +191,11 @@ void Sys_DoStartProcess( const char* exeName, bool dofork )
 	}
 	else
 	{
-		if( use_system )
+		if ( use_system )
 		{
 			printf( "system %s\n", exeName );
 			system( exeName );
-			sleep( 1 );	// on some systems I've seen that starting the new process and exiting this one should not be too close
+			sleep( 1 );	// on some systems starting the new process and exiting this one should not be too close
 		}
 		else
 		{
@@ -215,157 +216,15 @@ void Sys_DoStartProcess( const char* exeName, bool dofork )
 void Sys_DoPreferences() { }
 
 /*
-========================
-Sys_GetCmdLine
-========================
-*/
-const char* Sys_GetCmdLine()
-{
-	// DG: don't use this, use cmdargv and cmdargc instead!
-	return "TODO Sys_GetCmdLine";
-}
-
-/*
-========================
-Sys_ReLaunch
-========================
-*/
-void Sys_ReLaunch()
-{
-	// DG: implementing this... basic old fork() exec() (+ setsid()) routine..
-	// NOTE: this function used to have parameters: the commandline arguments, but as one string..
-	//       for Linux/Unix we want one char* per argument so we'll just add the friggin'
-	//       " +set com_skipIntroVideos 1" to the other commandline arguments in this function.
-	
-	int ret = fork();
-	if( ret < 0 )
-		idLib::Error( "Sys_ReLaunch(): Couldn't fork(), reason: %s ", strerror( errno ) );
-		
-	if( ret == 0 )
-	{
-		// child process
-		
-		// get our own session so we don't depend on the (soon to be killed)
-		// parent process anymore - else we'll freeze
-		pid_t sId = setsid();
-		if( sId == ( pid_t ) - 1 )
-		{
-			idLib::Error( "Sys_ReLaunch(): setsid() failed! Reason: %s ", strerror( errno ) );
-		}
-		
-		// close all FDs (except for stdin/out/err) so we don't leak FDs
-		DIR* devfd = opendir( "/dev/fd" );
-		if( devfd != NULL )
-		{
-			struct dirent entry;
-			struct dirent* result;
-			while( readdir_r( devfd, &entry, &result ) == 0 )
-			{
-				const char* filename = result->d_name;
-				char* endptr = NULL;
-				long int fd = strtol( filename, &endptr, 0 );
-				if( endptr != filename && fd > STDERR_FILENO )
-					close( fd );
-			}
-		}
-		else
-		{
-			idLib::Warning( "Sys_ReLaunch(): Couldn't open /dev/fd/ - will leak file descriptors. Reason: %s", strerror( errno ) );
-		}
-		
-		// + 3 because "+set" "com_skipIntroVideos" "1" - and note that while we'll skip
-		// one (the first) cmdargv argument, we need one more pointer for NULL at the end.
-		int argc = cmdargc + 3;
-		const char** argv = ( const char** )calloc( argc, sizeof( char* ) );
-		
-		int i;
-		for( i = 0; i < cmdargc - 1; ++i )
-			argv[i] = cmdargv[i + 1]; // ignore cmdargv[0] == executable name
-			
-		// add +set com_skipIntroVideos 1
-		argv[i++] = "+set";
-		argv[i++] = "com_skipIntroVideos";
-		argv[i++] = "1";
-		// execv expects NULL terminated array
-		argv[i] = NULL;
-		
-		const char* exepath = Sys_EXEPath();
-		
-		errno = 0;
-		execv( exepath, ( char** )argv );
-		// we only get here if execv() fails, else the executable is restarted
-		idLib::Error( "Sys_ReLaunch(): WTF exec() failed! Reason: %s ", strerror( errno ) );
-		
-	}
-	else
-	{
-		// original process
-		// just do a clean shutdown
-		cmdSystem->AppendCommandText( "quit\n" );
-	}
-	// DG end
-}
-
-// OS X doesn't have clock_gettime()
-int clock_gettime( clk_id_t clock, struct timespec* tp )
-{
-	switch( clock )
-	{
-		case CLOCK_MONOTONIC_RAW:
-		case CLOCK_MONOTONIC:
-		{
-			clock_serv_t clock_ref;
-			mach_timespec_t tm;
-			host_name_port_t self = mach_host_self();
-			memset( &tm, 0, sizeof( tm ) );
-			if( KERN_SUCCESS != host_get_clock_service( self, SYSTEM_CLOCK, &clock_ref ) )
-			{
-				mach_port_deallocate( mach_task_self(), self );
-				return -1;
-			}
-			if( KERN_SUCCESS != clock_get_time( clock_ref, &tm ) )
-			{
-				mach_port_deallocate( mach_task_self(), self );
-				return -1;
-			}
-			mach_port_deallocate( mach_task_self(), self );
-			mach_port_deallocate( mach_task_self(), clock_ref );
-			tp->tv_sec = tm.tv_sec;
-			tp->tv_nsec = tm.tv_nsec;
-			break;
-		}
-		
-		case CLOCK_REALTIME:
-		default:
-		{
-			struct timeval now;
-			if( KERN_SUCCESS != gettimeofday( &now, NULL ) )
-			{
-				return -1;
-			}
-			tp->tv_sec  = now.tv_sec;
-			tp->tv_nsec = now.tv_usec * 1000;
-			break;
-		}
-	}
-	return 0;
-}
-
-/*
 ===============
 main
 ===============
 */
 int main( int argc, const char** argv )
 {
-	// DG: needed for Sys_ReLaunch()
-	cmdargc = argc;
-	cmdargv = argv;
-	// DG end
-	
 	Posix_EarlyInit( );
-	
-	if( argc > 1 )
+
+	if ( argc > 1 )
 	{
 		common->Init( argc - 1, &argv[1], NULL );
 	}
@@ -373,10 +232,10 @@ int main( int argc, const char** argv )
 	{
 		common->Init( 0, NULL, NULL );
 	}
-	
+
 	Posix_LateInit( );
-	
-	while( 1 )
+
+	while ( 1 )
 	{
 		common->Frame();
 	}

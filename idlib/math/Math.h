@@ -40,12 +40,15 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifdef INFINITY
 #undef INFINITY
 #endif
+// note: idlib uses idMath::INFINITY (a member constant), not the INFINITY macro.
+// The #undef above used to break libc++ headers on Darwin (e.g. <random>), so
+// Lib.h re-defines the macro AFTER this header (see bottom of Lib.h).
 
-#define DEG2RAD(a)				( (a) * idMath::M_DEG2RAD )
-#define RAD2DEG(a)				( (a) * idMath::M_RAD2DEG )
+#define DEG2RAD(a)			( (a) * idMath::M_DEG2RAD )
+#define RAD2DEG(a)			( (a) * idMath::M_RAD2DEG )
 
-#define SEC2MS(t)				( idMath::FtoiRound( (t) * idMath::M_SEC2MS ) )
-#define MS2SEC(t)				( (t) * idMath::M_MS2SEC )
+#define SEC2MS(t)			( idMath::FtoiRound( (t) * idMath::M_SEC2MS ) )
+#define MS2SEC(t)			( (t) * idMath::M_MS2SEC )
 
 #define	ANGLE2SHORT(x)			( idMath::FtoiRound( (x) * 65536.0f / 360.0f ) & 65535 )
 #define	SHORT2ANGLE(x)			( (x) * ( 360.0f / 65536.0f ) )

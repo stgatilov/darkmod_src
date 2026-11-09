@@ -43,7 +43,15 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 	#define ExtLibs
 #endif
 
+// mac-port: idlib's Math.h #undef-ines the INFINITY macro (to protect idMath::INFINITY),
+// which breaks libc++'s <random> on Darwin — restore it just for this include
+#if defined(__APPLE__) && !defined(INFINITY)
+#define INFINITY __builtin_inff()
 #include <random>
+#undef INFINITY
+#else
+#include <random>
+#endif
 
 /*
 =============================================================================

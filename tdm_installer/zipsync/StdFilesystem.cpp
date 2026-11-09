@@ -1,9 +1,15 @@
 #include "StdFilesystem.h"
 
 // TODO: switch to std::filesystem when it includes something like file_time_type::clock::to_time_t
+// mac-port: libc++ has no <experimental/filesystem>; std::filesystem works there
+#if defined(__APPLE__) || __cplusplus >= 201703L
+#include <filesystem>
+namespace stdfsys = std::filesystem;
+#else
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #include <experimental/filesystem>
 namespace stdfsys = std::experimental::filesystem;
+#endif
 
 namespace stdext {
     struct path_impl : public stdfsys::path {
@@ -129,7 +135,17 @@ namespace stdext {
         std::time_t res;
         try {
             auto tt = stdfsys::last_write_time(get(p));
+#if defined(__APPLE__)
+            // mac-port: libc++'s file_time_type clock has no to_time_t;
+            // convert via duration since epoch (Apple filesystem clock ticks = ns)
+            res = std::time_t(
+                std::chrono::duration_cast<std::chrono::seconds>(
+                    tt.time_since_epoch()
+                ).count()
+            );
+#else
             res = stdfsys::file_time_type::clock::to_time_t(tt);
+#endif
         }
         catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
         return res;
