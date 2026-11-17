@@ -551,7 +551,12 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			}
 			else // walking toward each other
 			{
-				if (self->m_pathRank > obEntActor->m_pathRank)
+				// If the path ranks are equal, use entity number as a stable tie-breaker.
+				// Without this, both actors treat the other as higher priority (because
+				// neither rank is greater), so both try to walk around each other.
+				// The higher-numbered actor ignores the lower-numbered actor; therefore
+				// the lower-numbered actor is the one that routes around it.
+				if ( self->m_pathRank > obEntActor->m_pathRank || (self->m_pathRank == obEntActor->m_pathRank && self->entityNumber > obEntActor->entityNumber) )
 				{
 					continue; // ignore actor; he'll walk around you
 				}
