@@ -94,13 +94,25 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #elif defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__) || defined(__GNUC__) || defined(__clang__)
 
+// stgatilov/mac-port: on Darwin, <sys/param.h> -> <arm/param.h> defines a one-argument
+// ALIGN(p) macro. If it slips in after this header (e.g. via ffmpeg/openal headers),
+// it breaks every two-argument ALIGN(x, a) call in idlib/renderer code.
+// Include it NOW, while our definition below can still override it: the include guard
+// ensures the Darwin macro can never be (re)defined later.
+#if defined(__APPLE__)
+#include <sys/param.h>
+#undef ALIGN
+#endif
+
 #ifndef CPUSTRING
 #if defined(__i386__)
-#define	CPUSTRING						"x86"
+#define	CPUSTRING							"x86"
 #elif defined(__x86_64__)
-#define CPUSTRING						"x86_64"
+#define CPUSTRING							"x86_64"
+#elif defined(__aarch64__)
+#define CPUSTRING							"arm64"
 #elif defined(__e2k__)
-#define CPUSTRING						"e2k"
+#define	CPUSTRING							"e2k"
 #else
 #error unknown CPU
 #endif
@@ -160,12 +172,14 @@ Defines and macros usable in all code
 ================================================================================================
 */
 
-#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) - ( ( (x) + (a) - 1 ) % (a) ) )
-//#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) & ~((a)-1) )
+// stgatilov/mac-port: see the note at the top of the __GNUC__ section — on Apple,
+// <sys/param.h> is force-included before this point so that Darwin's one-argument
+// ALIGN(p) is already defined (and its include guard closed). Our two-argument
+// version below then safely overrides it for the rest of the translation unit.
+#define _alloca16( x )		((void *)ALIGN( (uintptr_t)_alloca( ALIGN( x, 16 ) + 16 ), 16 ) )
+#define _alloca128( x )		((void *)ALIGN( (uintptr_t)_alloca( ALIGN( x, 128 ) + 128 ), 128 ) )
 
-// RB: changed UINT_PTR to uintptr_t
-#define _alloca16( x )					((void *)ALIGN( (uintptr_t)_alloca( ALIGN( x, 16 ) + 16 ), 16 ) )
-#define _alloca128( x )					((void *)ALIGN( (uintptr_t)_alloca( ALIGN( x, 128 ) + 128 ), 128 ) )
+#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) - ( ( (x) + (a) - 1 ) % (a) ) )
 // RB end
 
 #define likely( x )	( x )

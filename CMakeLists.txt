@@ -6,13 +6,13 @@ if(NOT is_multi_config AND NOT CMAKE_BUILD_TYPE)
 	message(FATAL_ERROR "Set CMAKE_BUILD_TYPE to either Release or Debug")
 endif()
 
-if (UNIX)
+if(NOT MSVC AND NOT APPLE)
 	# we want debug symbols even with Release builds; enable the "good parts" of -ffast-math (which is not to be trusted)
-	string(APPEND CMAKE_CXX_FLAGS_RELEASE_INIT "-g -fno-math-errno -fno-trapping-math -ffinite-math-only")
-	string(APPEND CMAKE_C_FLAGS_RELEASE_INIT "-g -fno-math-errno -fno-trapping-math -ffinite-math-only")
+	string(APPEND CMAKE_CXX_FLAGS_RELEASE_INIT " -g -fno-math-errno -fno-trapping-math -ffinite-math-only")
+	string(APPEND CMAKE_C_FLAGS_RELEASE_INIT " -g -fno-math-errno -fno-trapping-math -ffinite-math-only")
 
 	option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored compiler warnings/errors (GCC/Clang only; esp. useful with ninja)." OFF)
-	option(ASAN		"Enable GCC/Clang Adress Sanitizer (ASan)" OFF) # TODO: MSVC also supports this, somehow?
+	option(ASAN		"Enable GCC/Clang Adress Sanitizer (Asan)" OFF) # TODO: MSVC also supports this, somehow?
 elseif(MSVC)
 	set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
 endif()
@@ -32,7 +32,20 @@ project(TheDarkMod)
 # note: must be after project: https://gitlab.kitware.com/cmake/cmake/-/issues/14983
 check_pie_supported()
 if(TDM_THIRDPARTY_ARTEFACTS)
-	include(ThirdParty/use_artefacts.cmake)
+if(APPLE)
+	# no prebuilt artefacts for macOS: use Homebrew packages + local tracy shim
+	list(APPEND CMAKE_PREFIX_PATH
+			"/opt/homebrew/opt/openal-soft"
+			"/opt/homebrew/opt/glfw"
+			"/opt/homebrew/opt/pugixml"
+			"/opt/homebrew/opt/doctest"
+			"/opt/homebrew/opt/libogg"
+			"$ENV{HOME}/tdm-deps/tracy-cmake"
+	)
+	include(sys/cmake/homebrew_shims.cmake)
+	else()
+		include(ThirdParty/use_artefacts.cmake)
+	endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
@@ -68,7 +81,10 @@ if (UNIX)
 			-fno-omit-frame-pointer         # crashdumps!
 			-fmessage-length=0
 			-fvisibility=hidden
-			-std=c++17
+	)
+	# -std=c++17 must not leak into C sources (glad.c, sha256.c, ...)
+	add_compile_options(
+			$<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
 	)
 	# enable SSE2 if supported (mainly 32-bit x86)
 	check_cxx_compiler_flag(-msse2 MSSE2_SUPPORTED)
@@ -139,6 +155,12 @@ ucm_add_dirs(
 		"tools/compilers"
 		TO TDM_SOURCE_FILES RECURSIVE
 )
+if (APPLE)
+	# mac-port: roqvq (RoQ video compiler tool) needs libjpeg private header
+	# jpegint.h, which Homebrew's jpeg-turbo does not install — replace with a stub
+	ucm_remove_directories("tools/compilers/roqvq" FROM TDM_SOURCE_FILES)
+	ucm_add_files("tools/compilers/roqvq_stub.cpp" TO TDM_SOURCE_FILES)
+endif ()
 ucm_add_dirs(
 	"sys/renderdoc"
 	TO TDM_SOURCE_FILES RECURSIVE
@@ -182,13 +204,24 @@ endif ()
 if (UNIX)
 	ucm_add_dirs("sys/linux" "sys/posix" TO TDM_SOURCE_FILES RECURSIVE)
 	ucm_remove_directories("idlib/sys/win32" FROM TDM_SOURCE_FILES)
-	ucm_remove_files(
-			"renderer/backend/qgl/glad_wgl.c"
-			"sys/linux/dedicated.cpp"
-			"sys/linux/test_scheduler.c"
-			"sys/posix/platform_osx.cpp"
-			FROM TDM_SOURCE_FILES
-	)
+	if (APPLE)
+		ucm_remove_files(
+				"renderer/backend/qgl/glad_wgl.c"
+				"renderer/backend/qgl/glad_glx.c"
+				"sys/linux/dedicated.cpp"
+				"sys/linux/test_scheduler.c"
+				"sys/posix/platform_linux.cpp"
+				FROM TDM_SOURCE_FILES
+		)
+	else ()
+		ucm_remove_files(
+				"renderer/backend/qgl/glad_wgl.c"
+				"sys/linux/dedicated.cpp"
+				"sys/linux/test_scheduler.c"
+				"sys/posix/platform_osx.cpp"
+				FROM TDM_SOURCE_FILES
+		)
+	endif ()
 elseif (WIN32)
 	ucm_add_dirs("sys/win32" TO TDM_SOURCE_FILES RECURSIVE)
 	ucm_add_files("sys/win32/rc/doom.rc" TO TDM_SOURCE_FILES)
@@ -253,7 +286,9 @@ elseif (MSVC)
 endif ()
 
 # ffmpeg dep was compiled without -fPIC, so need to disable PIE on 64bit builds
-set_target_properties(TheDarkMod PROPERTIES POSITION_INDEPENDENT_CODE OFF)	# see also CMP0083
+if (NOT APPLE)
+	set_target_properties(TheDarkMod PROPERTIES POSITION_INDEPENDENT_CODE OFF)	# see also CMP0083
+endif ()
 
 # use static runtime (except for glibc)
 if (MSVC)
@@ -267,21 +302,22 @@ include_directories(
 		"${PROJECT_SOURCE_DIR}/idlib"
 )
 
-find_package(ZLIB REQUIRED CONFIG)
-find_package(minizip REQUIRED CONFIG)
-find_package(CURL REQUIRED CONFIG)
-find_package(OpenAL REQUIRED CONFIG)
-find_package(Ogg REQUIRED CONFIG)
-find_package(Vorbis REQUIRED CONFIG)
-find_package(JPEG REQUIRED CONFIG)
-find_package(PNG REQUIRED CONFIG)
-find_package(ffmpeg REQUIRED CONFIG)
-find_package(pugixml REQUIRED CONFIG)
-find_package(MbedTLS REQUIRED CONFIG)
-find_package(glfw3 REQUIRED CONFIG)
-find_package(doctest REQUIRED CONFIG)
-find_package(tracy REQUIRED CONFIG)
-
+if(NOT APPLE)
+	find_package(ZLIB REQUIRED CONFIG)
+	find_package(minizip REQUIRED CONFIG)
+	find_package(CURL REQUIRED CONFIG)
+	find_package(OpenAL REQUIRED CONFIG)
+	find_package(Ogg REQUIRED CONFIG)
+	find_package(Vorbis REQUIRED CONFIG)
+	find_package(JPEG REQUIRED CONFIG)
+	find_package(PNG REQUIRED CONFIG)
+	find_package(ffmpeg REQUIRED CONFIG)
+	find_package(pugixml REQUIRED CONFIG)
+	find_package(MbedTLS REQUIRED CONFIG)
+	find_package(glfw3 REQUIRED CONFIG)
+	find_package(doctest REQUIRED CONFIG)
+	find_package(tracy REQUIRED CONFIG)
+endif()
 target_link_libraries(TheDarkMod
 		ZLIB::ZLIB
 		minizip::minizip
@@ -302,25 +338,34 @@ if (WIN32)
 	target_link_libraries(TheDarkMod ws2_32 iphlpapi winmm bcrypt dinput8 dbghelp)
 	set_target_properties(TheDarkMod PROPERTIES WIN32_EXECUTABLE TRUE)
 elseif (UNIX)
-	target_link_libraries(TheDarkMod pthread dl stdc++fs X11 Xext Xxf86vm)
+	if (APPLE)
+		find_library(COCOA Cocoa REQUIRED)
+		find_library(IOKIT IOKit REQUIRED)
+		find_library(COREVIDEO CoreVideo REQUIRED)
+		target_link_libraries(TheDarkMod ${COCOA} ${IOKIT} ${COREVIDEO})
+	else ()
+		target_link_libraries(TheDarkMod pthread dl stdc++fs X11 Xext Xxf86vm)
+	endif ()
 
 	if(ASAN)
 		target_link_libraries(TheDarkMod -fsanitize=address)
 	endif()
 
-	# strip debug symbols from executable and put them into a separate symbols file
-	add_custom_command(
-			TARGET TheDarkMod POST_BUILD
-			COMMAND objcopy --only-keep-debug "$<TARGET_FILE:TheDarkMod>" "$<TARGET_FILE:TheDarkMod>.debug"
-	)
-	add_custom_command(
-			TARGET TheDarkMod POST_BUILD
-			COMMAND strip --strip-debug --strip-unneeded "$<TARGET_FILE:TheDarkMod>"
-	)
-	add_custom_command(
-			TARGET TheDarkMod POST_BUILD
-			COMMAND objcopy "--add-gnu-debuglink=$<TARGET_FILE:TheDarkMod>.debug" "$<TARGET_FILE:TheDarkMod>"
-	)
+	if (NOT APPLE)
+		# strip debug symbols from executable and put them into a separate symbols file
+		add_custom_command(
+				TARGET TheDarkMod POST_BUILD
+				COMMAND objcopy --only-keep-debug "$<TARGET_FILE:TheDarkMod>" "$<TARGET_FILE:TheDarkMod>.debug"
+		)
+		add_custom_command(
+				TARGET TheDarkMod POST_BUILD
+				COMMAND strip --strip-debug --strip-unneeded "$<TARGET_FILE:TheDarkMod>"
+		)
+		add_custom_command(
+				TARGET TheDarkMod POST_BUILD
+				COMMAND objcopy "--add-gnu-debuglink=$<TARGET_FILE:TheDarkMod>.debug" "$<TARGET_FILE:TheDarkMod>"
+		)
+	endif ()
 endif ()
 
 if (COPY_EXE)
@@ -330,7 +375,7 @@ if (COPY_EXE)
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:TheDarkMod> "${GAME_DIR}"
 			COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/glprogs" "${GAME_DIR}/glprogs"
 	)
-	if (UNIX)
+	if (UNIX AND NOT APPLE)
 		add_custom_command(
 				TARGET TheDarkMod POST_BUILD
 				COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:TheDarkMod>.debug "${GAME_DIR}"

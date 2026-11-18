@@ -108,6 +108,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <signal.h>
 #include <pthread.h>
 
+#elif defined(__APPLE__)
+
+#include <signal.h>
+#include <pthread.h>
+
 #endif // #if defined(_WIN32)
 // RB end
 
