@@ -1,0 +1,1237 @@
+diff --git a/glprogs/stages/interaction/interaction.stencil.fs.glsl b/glprogs/stages/interaction/interaction.stencil.fs.glsl
+index 062add2..3b42665 100644
+--- a/glprogs/stages/interaction/interaction.stencil.fs.glsl
++++ b/glprogs/stages/interaction/interaction.stencil.fs.glsl
+@@ -14,12 +14,24 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
+ ******************************************************************************/
+ #version 330 core
+ #extension GL_ARB_texture_query_lod: enable
++#extension GL_ARB_texture_gather: enable
++
++#define STGATILOV_USEGATHER 1
+ 
+ out vec4 FragColor;
+ 
+ #pragma tdm_include "tdm_utils.glsl"
+ #pragma tdm_include "stages/interaction/interaction.common.fs.glsl"
+ #pragma tdm_include "tdm_shadowstencilsoft.glsl"
++#define TDM_allow_ARB_texture_gather STGATILOV_USEGATHER
++#define SHADOWMAP_NO_FALL_ANGLE_LIMITER 1
++#pragma tdm_include "tdm_shadowmaps.glsl"
++
++uniform vec4 u_shadowRect;
++uniform sampler2D u_shadowMap;
++uniform int u_alphaSoftShadowsQuality;
++
++in vec3 var_LightDirWorld;
+ 
+ uniform usampler2D u_stencilTexture;
+ uniform sampler2D u_depthTexture;
+@@ -45,5 +57,23 @@ void main() {
+ 			u_stencilMipmapsTexture, u_stencilMipmapsLevel, u_stencilMipmapsScissor
+ 		);
+ 	}
++	// alpha-tested casters (foliage, grates) are not in stencil: they are in a small shadow map
++	// (skipped if the pixel is already unlit: facing away, or in the stencil shadow)
++	if (checkFlag(u_flags, SFL_INTERACTION_SHADOWS) && checkFlag(u_flags, SFL_INTERACTION_ALPHA_SHADOW) && any(greaterThan(FragColor.rgb, vec3(0.0)))) {
++		vec3 worldNormal = mat3(u_modelMatrix) * var_TangentBitangentNormalMatrix[2];
++		if (props.localN.z < 0.0)	// #5862: reverse-sided material with Z < 0 normalmap
++			worldNormal = -worldNormal;
++		// thin two-sided casters (grates) are lit from both sides: the normal must face the light,
++		// otherwise the shadow map code treats the back side as unlit (fallAngleLimiter = 0)
++		if (dot(worldNormal, var_LightDirWorld) < 0.0)
++			worldNormal = -worldNormal;
++		float alphaCoeff = computeShadowMapCoefficient(
++			-var_LightDirWorld, worldNormal,
++			u_shadowMap, u_shadowRect,
++			u_alphaSoftShadowsQuality, u_softShadowsRadius,	// PCSS (contact hardening) of the shadow map code, independent of stencil softness
++			false	// alpha page is rendered two-sided, no cull-front hack
++		);
++		FragColor.rgb *= alphaCoeff;
++	}
+ 	FragColor.a = 1.0;
+ }
+diff --git a/glprogs/stages/stencil/stencil_penumbra.frag.glsl b/glprogs/stages/stencil/stencil_penumbra.frag.glsl
+new file mode 100644
+index 0000000..940a951
+--- /dev/null
++++ b/glprogs/stages/stencil/stencil_penumbra.frag.glsl
+@@ -0,0 +1,67 @@
++/*****************************************************************************
++The Dark Mod GPL Source Code
++
++This file is part of the The Dark Mod Source Code, originally based
++on the Doom 3 GPL Source Code as published in 2011.
++
++The Dark Mod Source Code is free software: you can redistribute it
++and/or modify it under the terms of the GNU General Public License as
++published by the Free Software Foundation, either version 3 of the License,
++or (at your option) any later version. For details, see LICENSE.TXT.
++
++Project: The Dark Mod (http://www.thedarkmod.com/)
++
++******************************************************************************/
++#version 330 core
++
++// Penumbra pre-pass for soft stencil shadows:
++// for every pixel in light scissor, finds blockers in the depth buffer (screen-space) and stores penumbra size factors.
++// The interaction shader reads them for the pixel itself and for every tap of its blur (so that taps of narrow
++// penumbras do not influence wide penumbras and vice versa).
++
++#pragma tdm_include "tdm_utils.glsl"
++#pragma tdm_include "tdm_shadowstencilsoft_ssabss.glsl"
++
++in vec2 var_TexCoord;
++out vec4 FragColor;
++
++uniform sampler2D u_depthTexture;
++uniform mat4 u_projectionMatrix;
++uniform vec3 u_lightPosView;	// light origin in view space
++uniform float u_softRadius;
++uniform int u_softQuality;
++
++void main() {
++	vec2 texSize = vec2(textureSize(u_depthTexture, 0));
++	vec2 pixSize = vec2(1.0) / texSize;
++	vec2 uv = gl_FragCoord.xy * pixSize;
++	float depth = texelFetch(u_depthTexture, ivec2(gl_FragCoord.xy), 0).r;
++
++	if (depth >= 1.0) {
++		// no geometry (sky, hole): nothing is lit here
++		FragColor = vec4(1.0, 1.0, 0.0, 1.0);
++		return;
++	}
++
++	vec3 P_v = viewPosFromUvDepth(u_projectionMatrix, uv, depth);
++	// geometric normal from depth derivatives (the interaction shader uses interpolated vertex normal, which is not available here)
++	vec3 N_v = cross(dFdx(P_v), dFdy(P_v));
++	float nLen = length(N_v);
++	N_v = nLen > 1e-8 ? N_v / nLen : normalize(-P_v);
++	if (dot(N_v, -P_v) < 0.0)
++		N_v = -N_v;
++
++	vec3 toLight = u_lightPosView - P_v;
++	float rawLightDist = max(length(toLight), 1e-3);
++	vec3 L_dir = toLight / rawLightDist;
++
++	// the same noise as in the interaction shader
++	float ign2 = interleavedGradientNoise(gl_FragCoord.xy + vec2(5.588238, 5.588238));
++	vec2 k = ssabssContactFactors(
++		u_depthTexture, u_projectionMatrix,
++		P_v, N_v, L_dir, rawLightDist,
++		u_softRadius, u_softQuality, ign2,
++		0.5 * pixSize, vec2(1.0) - 0.5 * pixSize
++	);
++	FragColor = vec4(k, 0.0, 1.0);
++}
+diff --git a/glprogs/tdm_constants_shared.glsl b/glprogs/tdm_constants_shared.glsl
+index 8ad8928..a6489db 100644
+--- a/glprogs/tdm_constants_shared.glsl
++++ b/glprogs/tdm_constants_shared.glsl
+@@ -30,6 +30,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
+ #define SFL_INTERACTION_BUMPMAP_LIGHT_TOGGLING_FIX		0x020000
+ #define SFL_INTERACTION_PARALLAX_OFFSET_EXTERNAL_SHADOWS 0x040000
+ #define SFL_INTERACTION_SHADOW_MAP_CULL_FRONT			0x080000
++// stencil shadows: also multiply by shadow map which contains only alpha-tested casters (foliage, grates)
++#define SFL_INTERACTION_ALPHA_SHADOW					0x1000000
+ 
+ bool checkFlag(int flags, int mask) {
+ 	return (flags & mask) != 0;
+diff --git a/glprogs/tdm_shadowmaps.glsl b/glprogs/tdm_shadowmaps.glsl
+index 35efa53..5bbc719 100644
+--- a/glprogs/tdm_shadowmaps.glsl
++++ b/glprogs/tdm_shadowmaps.glsl
+@@ -98,7 +98,12 @@ float computeShadowMapCoefficient(
+ 
+ 	//note: choosing normal and how to cap angles is the hardest question for now
+ 	//this has large effect on near-tangent surfaces (mostly the curved ones)
++#ifdef SHADOWMAP_NO_FALL_ANGLE_LIMITER
++	//thin alpha-tested casters: the receiver can be the caster itself, angle must not zero the light
++	float fallAngleLimiter = 1.0;
++#else
+ 	float fallAngleLimiter = smoothstep(0.01, 0.05, lightFallAngle);
++#endif
+ 	//some very generic error estimation...
+ 	float errorMargin = 5.0 * maxAbsL / ( shadowMapResolution * max(lightFallAngle, 0.1) );
+ 	if (shadowMapCullFrontHack)
+diff --git a/glprogs/tdm_shadowstencilsoft.glsl b/glprogs/tdm_shadowstencilsoft.glsl
+index 5d8bf96..05e426c 100644
+--- a/glprogs/tdm_shadowstencilsoft.glsl
++++ b/glprogs/tdm_shadowstencilsoft.glsl
+@@ -15,28 +15,68 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
+ 
+ #pragma tdm_include "tdm_utils.glsl"
+ #pragma tdm_include "tdm_shadowstencilsoft_shared.glsl"
+-#pragma tdm_include "tdm_poissondisk.glsl"  // note: adds uniform
++#pragma tdm_include "tdm_poissondisk.glsl"  // note: adds uniform (only used if SSABSS_VOGEL is 0)
++#pragma tdm_include "tdm_shadowstencilsoft_ssabss.glsl"  // blocker search, also used by the penumbra pre-pass
++
++// penumbra pre-pass buffer (r_softShadowsPenumbraBuffer): x = penumbra size factor for the farthest blocker, y = for the nearest one
++uniform sampler2D u_penumbraTexture;
++uniform int u_penumbraMode;	// 0 = no buffer, search blockers here; 1 = read the buffer
++
++// Set to 0 if you prefer static sample pattern over per-pixel IGN rotation
++#define SSABSS_ROTATE_SAMPLES 1
++// 1 = golden-angle (Vogel) disk generated in the shader: any prefix of the samples is evenly spread,
++// which allows to use fewer samples for small footprints (SSABSS_ADAPTIVE_SAMPLES)
++// 0 = precomputed Poisson disk from u_softShadowsSamples (always uses all samples)
++#define SSABSS_VOGEL 1
++#define SSABSS_ADAPTIVE_SAMPLES SSABSS_VOGEL
++#define SSABSS_MIN_SAMPLES 8
++// Penumbra model, tuned to resemble the shadow map PCSS: blur = lightRadius * blockerToReceiver / lightToBlocker
++// (the shadow map version limits it to 0.03 * lightRadius * lightDist, no saturation with distance)
++// far field: penumbra of a blocker which is far from the receiver. Grows with the light distance, saturating slowly
++#define SSABSS_FAR_SCALE 4.0
++#define SSABSS_FAR_REF_DIST 90.0
++// several overlapping casters: the shadow is computed with two penumbra widths, from the nearest blocker found (narrow)
++// and from the farthest blocker found (wide), and the darker of the two wins. This way a close caster (apple) neither
++// hardens nor brightens the penumbra of a farther one (wall). Needs SSABSS_VOGEL (narrow = the inner samples of the same disk).
++// 1 = enabled, 0 = one penumbra width from the nearest blocker
++#define SSABSS_TWO_PENUMBRAS 1
++#define SSABSS_MIN_NARROW_SAMPLES 3
++// brightness limits relative to the hard (unblurred) stencil at this pixel, as fraction of full light:
++// a pixel which is inside some caster's shadow never gets brighter than SSABSS_SHADOWED_MAX_LIT (1.0 = no limit),
++// a pixel which is lit by the stencil never gets darker than SSABSS_LIT_MIN_LIT (0.0 = no limit)
++#define SSABSS_SHADOWED_MAX_LIT 0.6
++#define SSABSS_LIT_MIN_LIT 0.0
++// the tolerance of depth difference between receiver plane and sample grows with the blur radius (world units per world unit)
++#define SSABSS_DEPTH_TOL_PER_RADIUS 0.03
++// penumbra buffer: a blur tap contributes only if the penumbra of the tap pixel itself is wide enough to reach the center pixel
++// (scatter-as-gather). This keeps narrow penumbras (close casters) and wide ones (far casters) from affecting each other.
++// sharpness: how fast the weight changes with the difference of penumbra size factors (1 / width of the transition)
++#define SSABSS_TAP_REACH 1
++#define SSABSS_TAP_REACH_SHARPNESS 4.0
+ 
+ float fetchStencilShadowTexture(usampler2D stencilTexture, vec2 texCoord) {
+ 	float stTex = float(texture(stencilTexture, texCoord).r);
+ 	return clamp(129.0 - stTex, 0.0, 1.0);
+ }
+ 
+-// note: this function must be run while rendering the shadowed surface
+-// it uses gl_FragCoord and dfdx/dfdy (including depth/W components)
+ float computeStencilSoftShadow(
+ 	usampler2D stencilTexture, sampler2D depthTexture,
+ 	vec3 objectToLight, vec3 objectNormal,
+ 	mat4 modelViewMatrix, mat4 projectionMatrix,
+ 	int softQuality, float softRadius,
+-	sampler2D stencilMipmapsTexture, ivec2 stencilMipmapsLevel, vec4 stencilMipmapsScissor 
++	sampler2D stencilMipmapsTexture, ivec2 stencilMipmapsLevel, vec4 stencilMipmapsScissor
+ ) {
+ 	vec2 texSize = vec2(textureSize(stencilTexture, 0));
+ 	vec2 pixSize = vec2(1.0, 1.0) / texSize;
+ 	vec2 baseTexCoord = gl_FragCoord.xy * pixSize;
+ 
+-	//check stencil mipmaps if there is constant value in vicinity
++	// UV clamp bounds (keeps taps inside light scissor when mipmaps/scissor are active)
++	vec2 uvMin = 0.5 * pixSize;
++	vec2 uvMax = 1.0 - 0.5 * pixSize;
+ 	if (stencilMipmapsLevel.x >= 0) {
++		uvMin = max(uvMin, (stencilMipmapsScissor.xy + 0.5) * pixSize);
++		uvMax = min(uvMax, (stencilMipmapsScissor.zw - 0.5) * pixSize);
++
+ 		vec2 pixelCoords = clamp(gl_FragCoord.xy, stencilMipmapsScissor.xy, stencilMipmapsScissor.zw);
+ 		vec2 mipmapsFullSize = textureSize(stencilMipmapsTexture, 0) * (1 << stencilMipmapsLevel.y);
+ 		float mipmapValue = textureLod(
+@@ -51,85 +91,199 @@ float computeStencilSoftShadow(
+ 	}
+ 
+ 	float stencil = fetchStencilShadowTexture(stencilTexture, baseTexCoord);
++	float centerStencil = stencil;
+ 	float sumWeight = 1.0;
+ 	if (softQuality == 0) {
+-		//actually, this case is handled very differently on C++ side
+ 		return stencil;
+ 	}
+ 
+-	float lightDist = min(length(objectToLight), 1e3); // crutch !
+-	//radius of light source
++	float ign = interleavedGradientNoise(gl_FragCoord.xy);
++	// decorrelated from the one used for rotation of the samples
++	float ign2 = interleavedGradientNoise(gl_FragCoord.xy + vec2(5.588238, 5.588238));
++	float rawLightDist = max(length(objectToLight), 1e-3);
+ 	float lightRadius = softRadius;
+-	//radius of one-point penumbra at the consided point (in world coordinates)
+-	//note that proper formula is:  lightRadius * (lightDist - occlDist) / occlDist;
+-	float blurRadiusWorld = lightRadius * lightDist / 66.6666;  //TODO: revert?!
+-
+-	//project direction to light onto surface
+-	vec3 alongDirW = normalize(objectToLight - dot(objectToLight, objectNormal) * objectNormal);
+-	//get orthogonal direction on surface
+-	vec3 orthoDirW = cross(objectNormal, alongDirW);
+-	//multiply the two axes by penumbra radius
+-	float NdotL = dot(normalize(objectToLight), objectNormal);
+-	alongDirW *= blurRadiusWorld / max(NdotL, 0.2);  //penumbra is longer by (1/cos(a)) in light direction
++
++	// 1. Bounded distance-based far penumbra (replaces unbounded lightDist / 66.6666)
++	float r_far = lightRadius * SSABSS_FAR_SCALE * (rawLightDist / (rawLightDist + SSABSS_FAR_REF_DIST));
++
++	// 2. View-space reconstruction & screen-space contact hardening
++	vec3 P_v = viewPosFromUvDepth(projectionMatrix, baseTexCoord, gl_FragCoord.z);
++	mat3 mv3 = mat3(modelViewMatrix);
++	// interpolated vertex normal is not unit length
++	vec3 N_v = normalize(mv3 * objectNormal);
++	vec3 N_o = normalize(objectNormal);
++	if (dot(N_v, -P_v) < 0.0) {
++		// the surface is seen from behind: flip the normal everywhere in the same way
++		N_v = -N_v;
++		N_o = -N_o;
++	}
++	vec3 L_dir = normalize(mv3 * objectToLight);
++
++	// penumbra size factors: from the pre-pass buffer, or search blockers right here
++	vec2 kk;
++	if (u_penumbraMode != 0) {
++		kk = texelFetch(u_penumbraTexture, ivec2(gl_FragCoord.xy), 0).rg;
++	} else {
++		kk = ssabssContactFactors(
++			depthTexture, projectionMatrix,
++			P_v, N_v, L_dir, rawLightDist,
++			lightRadius, softQuality, ign2,
++			uvMin, uvMax
++		);
++	}
++	float kFar = kk.x;
++	float kNear = kk.y;
++#if SSABSS_TWO_PENUMBRAS && SSABSS_VOGEL
++	float k_contact = max(kFar, kNear);
++	// the narrow penumbra is the same disk with smaller radius
++	float narrowRatio = clamp(kNear / max(k_contact, 1e-4), 0.0, 1.0);
++#else
++	float k_contact = kNear;
++#endif
++	float blurRadiusWorld = r_far * k_contact;
++
++	// 3. SSABSS tangent-plane basis + light-grazing elongation in object space
++	vec3 objL = objectToLight / rawLightDist;
++	vec3 perpL = objectToLight - dot(objectToLight, N_o) * N_o;
++	vec3 alongDirW = (dot(perpL, perpL) > 1e-6)
++		? normalize(perpL)
++		: normalize(cross(N_o, abs(N_o.z) < 0.99 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0)));
++	vec3 orthoDirW = cross(N_o, alongDirW);
++
++	float NdotL = dot(objL, N_o);
++	alongDirW *= blurRadiusWorld / max(NdotL, 0.25);
+ 	orthoDirW *= blurRadiusWorld;
+ 
+-	//convert both vectors into clip space (get only X and Y components)
++	// Convert both vectors into screen UV space via exact clip-space derivative
+ 	mat4 modelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
+ 	vec2 alongDir = (mat3(modelViewProjectionMatrix) * alongDirW).xy;
+ 	vec2 orthoDir = (mat3(modelViewProjectionMatrix) * orthoDirW).xy;
+-	//now also get W component from multiplication by gl_ModelViewProjectionMatrix
+ 	vec3 mvpRow3 = vec3(modelViewProjectionMatrix[0][3], modelViewProjectionMatrix[1][3], modelViewProjectionMatrix[2][3]);
+ 	float along_w = dot(mvpRow3, alongDirW);
+ 	float ortho_w = dot(mvpRow3, orthoDirW);
+-	//this is perspective correction: it is necessary because W component in clip space also varies
+-	//if you remove it and look horizontally parallel to a wall, then vertical shadow boundaries on this wall won't be blurred
+-	vec2 thisNdc = (2 * baseTexCoord - vec2(1));
++
++	vec2 thisNdc = 2.0 * baseTexCoord - vec2(1.0);
+ 	alongDir -= thisNdc * along_w;
+ 	orthoDir -= thisNdc * ortho_w;
+-	//divide by clip W to get NDC coords (screen coords are half of them)
+-	alongDir *= gl_FragCoord.w / 2;
+-	orthoDir *= gl_FragCoord.w / 2;
+-	//Note: if you want to check the math just above, consider how screen position changes when a point moves in specified direction:
+-	//  F(t) = divideByW(gl_ModelViewProjectionMatrix * (var_Position + dir_world * t)).xy
+-	//the converted vector must be equal to the derivative by parameter:
+-	//  dir_screen = dF/dt (0)
+-	//(here [dir_world, dir_screen] are either [alongDirW, alongDir] or [orthoDirW, orthoDir])
+-
+-	//estimate the length of spot ellipse vectors (in pixels)
++	alongDir *= gl_FragCoord.w * 0.5;
++	orthoDir *= gl_FragCoord.w * 0.5;
++
++	// 4. Enforce mipmap upper bound on each axis separately (the elongated axis must not shrink the other one)
++	// and a minimum 0.75px AA floor on each axis
+ 	float lenX = length(alongDir * texSize);
+ 	float lenY = length(orthoDir * texSize);
+-	//make sure vectors are sufficiently sampled
+ 	float maxBlurAxisLength = computeMaxBlurAxisLength(texSize.y, softQuality);
+-	float oversize = max(lenX, lenY) / maxBlurAxisLength;
+-	if (oversize > 1) {
+-		alongDir /= oversize;
+-		orthoDir /= oversize;
++
++	float scaleAlong = min(1.0, maxBlurAxisLength / max(lenX, 1e-5));
++	float scaleOrtho = min(1.0, maxBlurAxisLength / max(lenY, 1e-5));
++	alongDir *= scaleAlong;
++	alongDirW *= scaleAlong;
++	lenX *= scaleAlong;
++	orthoDir *= scaleOrtho;
++	orthoDirW *= scaleOrtho;
++	lenY *= scaleOrtho;
++
++	const float MIN_AXIS_PX = 0.75;
++	if (lenX > 1e-5 && lenX < MIN_AXIS_PX) {
++		alongDir *= MIN_AXIS_PX / lenX;
++		lenX = MIN_AXIS_PX;
++	} else if (lenX <= 1e-5) {
++		alongDir = vec2(MIN_AXIS_PX, 0.0) * pixSize;
++		lenX = MIN_AXIS_PX;
++	}
++	if (lenY > 1e-5 && lenY < MIN_AXIS_PX) {
++		orthoDir *= MIN_AXIS_PX / lenY;
++		lenY = MIN_AXIS_PX;
++	} else if (lenY <= 1e-5) {
++		orthoDir = vec2(0.0, MIN_AXIS_PX) * pixSize;
++		lenY = MIN_AXIS_PX;
+ 	}
+ 
+-	//compute partial derivatives of eye -Z by screen X and Y (normalized)
+-	float Z00 = depthToZ(projectionMatrix, gl_FragCoord.z);
+-	vec2 dzdxy = vec2(dFdx(Z00), dFdy(Z00));
+-	//rescale to derivatives by texture coordinates (not pixels)
+-	dzdxy *= texSize;
+-	//compute Z derivatives on a theoretical wall visible under 45-degree angle
++	// View-space Z deltas of the tangent vectors (for silhouette-safe analytic plane depth check)
++	float alongViewZ = (mv3 * alongDirW).z;
++	float orthoViewZ = (mv3 * orthoDirW).z;
++
++	float Z00 = -P_v.z;
+ 	vec2 tanFovHalf = vec2(1.0 / projectionMatrix[0][0], 1.0 / projectionMatrix[1][1]);
+ 	vec2 canonDerivs = 2.0 * Z00 * tanFovHalf;
++	float depthTolFloor = 0.5 + SSABSS_DEPTH_TOL_PER_RADIUS * blurRadiusWorld;
++
++	// 5. Number of samples: the footprint is an ellipse, sample density is one per avgSampleDist^2 pixels
++	int numSamples = softQuality;
++#if SSABSS_ADAPTIVE_SAMPLES
++	float avgSampleDist = computeMaxBlurAxisLength(texSize.y, 1.0);
++	int neededSamples = int(ceil(lenX * lenY / (avgSampleDist * avgSampleDist)));
++	numSamples = min(softQuality, max(SSABSS_MIN_SAMPLES, neededSamples));
++#endif
++
++	float rotAngle = 0.0;
++#if SSABSS_ROTATE_SAMPLES
++	rotAngle = ign * 6.2831853;
++#endif
++#if !SSABSS_VOGEL
++	float cRot = cos(rotAngle);
++	float sRot = sin(rotAngle);
++#endif
+ 
+-	for( int i = 0; i < softQuality; i++ ) {
+-		vec2 delta = u_softShadowsSamples[i].x * alongDir + u_softShadowsSamples[i].y * orthoDir;
+-		vec2 sampleTexCoord = baseTexCoord + delta;
++#if SSABSS_TWO_PENUMBRAS && SSABSS_VOGEL
++	// Vogel disk is ordered by radius: the first samples cover the inner disk. Area ratio = narrowRatio^2
++	int numNarrow = numSamples;
++	if (narrowRatio < 0.999)
++		numNarrow = clamp(int(ceil(float(numSamples) * narrowRatio * narrowRatio)), min(SSABSS_MIN_NARROW_SAMPLES, numSamples), numSamples);
++	float stencilNarrow = stencil;
++	float sumWeightNarrow = 1.0;
++#endif
+ 
+-		// ignore samples with drastically different Z/depth
+-		// otherwise we get obvious "halo effect" around objects
+-		float Zdiff = depthToZ(projectionMatrix, texture(depthTexture, sampleTexCoord).r) - Z00;
+-		float tangentZdiff = dot(dzdxy, delta);
++	for (int i = 0; i < numSamples; i++) {
++#if SSABSS_VOGEL
++		float sampleRadius = sqrt((float(i) + 0.5) / float(numSamples));
++		float sampleAngle = float(i) * 2.39996323 + rotAngle;
++		vec2 s = sampleRadius * vec2(cos(sampleAngle), sin(sampleAngle));
++#else
++		vec2 s = u_softShadowsSamples[i];
++		s = vec2(cRot * s.x - sRot * s.y, sRot * s.x + cRot * s.y);
++#endif
++		vec2 delta = s.x * alongDir + s.y * orthoDir;
++		vec2 sampleTexCoord = clamp(baseTexCoord + delta, uvMin, uvMax);
++
++		// Analytic tangent-plane depth change (avoids dFdx/dFdy spikes at silhouette edges)
++		float Zdiff = depthToZ(projectionMatrix, textureLod(depthTexture, sampleTexCoord, 0.0).r) - Z00;
++		float tangentZdiff = -(s.x * alongViewZ + s.y * orthoViewZ);
+ 		float deg45diff = dot(canonDerivs, abs(delta));
+-		float ZdiffTol = abs(tangentZdiff) * 0.5 + deg45diff * 0.2;
+-		float weight = float(abs(Zdiff - tangentZdiff) <= ZdiffTol);
++		float ZdiffTol = max(abs(tangentZdiff) * 0.4 + deg45diff * 0.18, depthTolFloor);
++
++		float err = max(abs(Zdiff - tangentZdiff) - ZdiffTol * 0.5, 0.0);
++		float q = err / ZdiffTol;
++		float weight = exp(-q * q);
++#if SSABSS_TAP_REACH
++		if (u_penumbraMode != 0) {
++			// penumbra of the tap pixel itself: does it reach the center pixel?
++			float tapK = texelFetch(u_penumbraTexture, ivec2(sampleTexCoord * texSize), 0).r;
++			float reach = length(s) * k_contact;
++			weight *= clamp((tapK - reach) * SSABSS_TAP_REACH_SHARPNESS + 1.0, 0.0, 1.0);
++		}
++#endif
+ 
+-		stencil += fetchStencilShadowTexture(stencilTexture, sampleTexCoord) * weight;
++		float st = fetchStencilShadowTexture(stencilTexture, sampleTexCoord) * weight;
++		stencil += st;
+ 		sumWeight += weight;
++#if SSABSS_TWO_PENUMBRAS && SSABSS_VOGEL
++		if (i < numNarrow) {
++			stencilNarrow += st;
++			sumWeightNarrow += weight;
++		}
++#endif
+ 	}
+ 
+-	return stencil / sumWeight;
++	float result = stencil / sumWeight;
++#if SSABSS_TWO_PENUMBRAS && SSABSS_VOGEL
++	// darker of the two penumbras
++	result = min(result, stencilNarrow / sumWeightNarrow);
++#endif
++	// the stencil is a union of all casters, so this limits light leaking into any caster's shadow from blurring
++	if (centerStencil < 0.5)
++		result = min(result, SSABSS_SHADOWED_MAX_LIT);
++	else
++		result = max(result, SSABSS_LIT_MIN_LIT);
++	return result;
+ }
+diff --git a/glprogs/tdm_shadowstencilsoft_ssabss.glsl b/glprogs/tdm_shadowstencilsoft_ssabss.glsl
+new file mode 100644
+index 0000000..6443491
+--- /dev/null
++++ b/glprogs/tdm_shadowstencilsoft_ssabss.glsl
+@@ -0,0 +1,144 @@
++/*****************************************************************************
++The Dark Mod GPL Source Code
++
++This file is part of the The Dark Mod Source Code, originally based
++on the Doom 3 GPL Source Code as published in 2011.
++
++The Dark Mod Source Code is free software: you can redistribute it
++and/or modify it under the terms of the GNU General Public License as
++published by the Free Software Foundation, either version 3 of the License,
++or (at your option) any later version. For details, see LICENSE.TXT.
++
++Project: The Dark Mod (http://www.thedarkmod.com/)
++
++******************************************************************************/
++
++// Screen-space blocker search for contact hardening of soft stencil shadows (SSABSS).
++// Used both by the penumbra pre-pass (stencil_penumbra.frag.glsl) and by the interaction shader.
++
++#pragma tdm_include "tdm_utils.glsl"
++
++// penumbra when no blocker was found in the depth buffer (it may be off-screen or hidden), as fraction of the search distance:
++// the result must not depend much on what the camera sees, so use a moderate value instead of the widest penumbra
++#define SSABSS_NO_BLOCKER_DIST_FRAC 0.75
++// contact curve: >1 hardens shadows more close to the blocker (blur ~ pow(distance to blocker / search distance, power)), 1 = linear
++#define SSABSS_CONTACT_POWER 1.6
++// contact hardening zone: blockers farther than this from the receiver are not searched for (world units, ~1.3m)
++#define SSABSS_MAX_CONTACT_DIST 52.0
++// fraction of blocker search taps which must hit for the blocker to fully count (fades the footprint edge)
++#define SSABSS_HIT_FULL_FRAC 0.15
++
++float interleavedGradientNoise(vec2 pixelPos) {
++	vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
++	return fract(magic.z * fract(dot(pixelPos, magic.xy)));
++}
++
++vec3 viewPosFromUvDepth(mat4 projectionMatrix, vec2 uv, float depth) {
++	// depthToZ returns positive eye distance (-Z_view)
++	float zEye = depthToZ(projectionMatrix, depth);
++	vec2 ndc = uv * 2.0 - 1.0;
++	return vec3(
++		(ndc.x + projectionMatrix[2][0]) * zEye / projectionMatrix[0][0],
++		(ndc.y + projectionMatrix[2][1]) * zEye / projectionMatrix[1][1],
++		-zEye
++	);
++}
++
++// Symmetric screen-space cone blocker search for contact hardening
++// Returns (distance from the receiver to the closest blocker, distance to the farthest blocker found), or (-1, -1) if no blocker was found.
++// Only the surfaces visible in the depth buffer can be found, so "not found" does not mean "no occluder".
++vec3 estimateContactBlockerDist(
++	sampler2D depthTexture, mat4 projectionMatrix,
++	vec3 P_v, vec3 N_v, vec3 L_dir, float rawLightDist,
++	float lightRadius, float maxSearchDist, float noise, int steps,
++	vec2 uvMin, vec2 uvMax
++) {
++	vec3 up = abs(L_dir.z) < 0.99 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
++	vec3 w1 = normalize(cross(L_dir, up));
++	vec3 w2 = cross(L_dir, w1);
++
++	float minBlockerDist = 1e9;
++	float maxBlockerDist = 0.0;
++	float hits = 0.0;
++	// Angular spread lets both shadowed pixels and adjacent outer-penumbra pixels detect contact blockers
++	float coneTan = clamp(lightRadius / max(rawLightDist, 8.0), 0.04, 0.25);
++
++	for (int i = 0; i < steps; i++) {
++		float frac = (float(i) + noise) / float(steps);
++		float t = maxSearchDist * frac * sqrt(frac); // frac^1.5: denser near contact seam
++
++		float angle = 2.3999632 * float(i) + noise * 6.2831853;
++		float spread = t * coneTan * (0.25 + 0.75 * frac);
++		vec3 Q_v = P_v + t * L_dir + spread * (cos(angle) * w1 + sin(angle) * w2);
++
++		vec4 clip = projectionMatrix * vec4(Q_v, 1.0);
++		if (clip.w <= 0.0)
++			continue;
++		vec2 uv = (clip.xy / clip.w) * 0.5 + 0.5;
++		if (any(lessThan(uv, uvMin)) || any(greaterThan(uv, uvMax)))
++			continue;
++
++		float sceneDepth = textureLod(depthTexture, uv, 0.0).r;
++		vec3 B_v = viewPosFromUvDepth(projectionMatrix, uv, sceneDepth);
++
++		float dz = (-Q_v.z) - (-B_v.z); // > 0 means ray stepped behind visible scene surface
++		float bias = 0.012 * (-P_v.z) + 0.04 * t;
++		vec3 diff = B_v - P_v;
++		float dist3D = length(diff);
++
++		if (dz > bias && dist3D < maxSearchDist) {
++			// Require blocker to rise above the receiver's tangent plane (avoids curved self-hardening)
++			// and to lie on the light's side of the receiver (a surface which is merely closer to the camera is no blocker)
++			if (dot(N_v, diff) > 0.08 * dist3D && dot(L_dir, diff) > 0.5 * dist3D) {
++				minBlockerDist = min(minBlockerDist, dist3D);
++				maxBlockerDist = max(maxBlockerDist, dist3D);
++				hits += 1.0;
++			}
++		}
++	}
++
++	return minBlockerDist < 1e8 ? vec3(minBlockerDist, maxBlockerDist, hits / float(steps)) : vec3(-1.0, -1.0, 0.0);
++}
++
++// penumbra size factor (0..1, relative to the far field penumbra) for a blocker at the given distance from the receiver
++float ssabssContactFactor(float d_occ, float maxSearchDist, float rawLightDist) {
++	// PCSS contact ratio normalized against far-field fallback (smoothly blends to 1.0 at maxSearchDist)
++	float blockerRatio = (d_occ / max(maxSearchDist, 1e-3))
++		* (rawLightDist / max(rawLightDist - d_occ, 0.25 * rawLightDist));
++	float k = pow(clamp(blockerRatio, 0.0, 1.0), SSABSS_CONTACT_POWER);
++	return mix(k, 1.0, smoothstep(0.55 * maxSearchDist, maxSearchDist, d_occ));
++}
++
++// Returns penumbra size factors (x = for the farthest blocker found, y = for the nearest one)
++vec2 ssabssContactFactors(
++	sampler2D depthTexture, mat4 projectionMatrix,
++	vec3 P_v, vec3 N_v, vec3 L_dir, float rawLightDist,
++	float lightRadius, int softQuality, float noise,
++	vec2 uvMin, vec2 uvMax
++) {
++	float maxSearchDist = min(SSABSS_MAX_CONTACT_DIST, rawLightDist * 0.75);
++	int blockerSteps = clamp(softQuality / 3, 4, 8);
++
++	vec3 occ = estimateContactBlockerDist(
++		depthTexture, projectionMatrix,
++		P_v, N_v, L_dir, rawLightDist,
++		lightRadius, maxSearchDist, noise, blockerSteps,
++		uvMin, uvMax
++	);
++	float dNear = occ.x;
++	float dFar = occ.y;
++	if (occ.x < 0.0) {
++		// the occluder may be invisible for the camera (off-screen, hidden): don't make the penumbra depend on that too much
++		dNear = dFar = SSABSS_NO_BLOCKER_DIST_FRAC * maxSearchDist;
++	}
++	vec2 found = vec2(
++		ssabssContactFactor(dFar, maxSearchDist, rawLightDist),
++		ssabssContactFactor(dNear, maxSearchDist, rawLightDist)
++	);
++	// The edge of the search footprint is a straight line on screen: pixels just outside it see no blocker and just inside see it.
++	// Fade between "no blocker" and "blocker found" by the fraction of search taps which hit it, and never let the
++	// far (wide) penumbra shrink below what a partially seen blocker allows: partial hits mean the blocker is at the footprint edge.
++	float fb = ssabssContactFactor(SSABSS_NO_BLOCKER_DIST_FRAC * maxSearchDist, maxSearchDist, rawLightDist);
++	float w = occ.x < 0.0 ? 0.0 : smoothstep(0.0, SSABSS_HIT_FULL_FRAC, occ.z);
++	return mix(vec2(fb), found, w);
++}
+diff --git a/renderer/backend/RenderBackend.cpp b/renderer/backend/RenderBackend.cpp
+index 026e43f..ffb0069 100644
+--- a/renderer/backend/RenderBackend.cpp
++++ b/renderer/backend/RenderBackend.cpp
+@@ -228,6 +228,26 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
+ 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !viewDef->IsLightGem();
+ 	idScreenRect lightScissor = stencilShadowStage.ExpandScissorRectForSoftShadows( viewDef, vLight->scissorRect );
+ 
++	// alpha-tested casters (foliage, grates) have no shadow volumes: they are rendered into a small shadow map page,
++	// which is later multiplied into the light by the interaction shader (not used for volumetric lights: they force shadow maps)
++	// like for shadow maps: global casters first, noselfshadow casters are added after the local interactions
++	if ( vLight->alphaShadowPage.width > 0 ) {
++		ShadowMapStage::DrawMask alphaMask;
++		alphaMask.clear = true;
++		alphaMask.global = true;
++		alphaMask.local = false;
++		alphaMask.alpha = true;
++		shadowMapStage.DrawShadowMapSingleLight( viewDef, vLight, alphaMask );
++	}
++
++	// soft shadows: find blockers once per pixel, interactions use the result
++	interactionStage.penumbraImage = nullptr;
++	stencilShadowStage.ResetPenumbraBuffer();
++	if ( useShadowFbo && ( vLight->globalShadows || vLight->localShadows ) ) {
++		stencilShadowStage.FillPenumbraBuffer( viewDef, vLight, lightScissor );
++		interactionStage.penumbraImage = stencilShadowStage.GetPenumbraImage();
++	}
++
+ 	// clear the stencil buffer if needed
+ 	if ( vLight->globalShadows || vLight->localShadows ) {
+ 		backEnd.currentScissor = lightScissor;
+@@ -256,6 +276,15 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
+ 	}
+ 	interactionStage.DrawInteractions( viewDef, vLight, DSL_LOCAL, nullptr );
+ 
++	if ( vLight->alphaShadowPage.width > 0 && vLight->alphaLocalShadows ) {
++		ShadowMapStage::DrawMask alphaMask;
++		alphaMask.clear = false;
++		alphaMask.global = false;
++		alphaMask.local = true;
++		alphaMask.alpha = true;
++		shadowMapStage.DrawShadowMapSingleLight( viewDef, vLight, alphaMask );
++	}
++
+ 	if ( useShadowFbo ) {
+ 		frameBuffers->EnterShadowStencil();
+ 	}
+@@ -277,6 +306,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
+ 	}
+ 
+ 	interactionStage.DrawInteractions( viewDef, vLight, DSL_GLOBAL, &stencilShadowStage.stencilShadowMipmap );
++	interactionStage.penumbraImage = nullptr;
+ 
+ 	qglStencilFunc( GL_ALWAYS, 128, 255 );
+ 	interactionStage.DrawInteractions( viewDef, vLight, DSL_TRANSLUCENT, nullptr );
+diff --git a/renderer/backend/stages/InteractionStage.cpp b/renderer/backend/stages/InteractionStage.cpp
+index fef13bb..5442753 100644
+--- a/renderer/backend/stages/InteractionStage.cpp
++++ b/renderer/backend/stages/InteractionStage.cpp
+@@ -56,6 +56,9 @@ struct InteractionStage::Uniforms : GLSLUniformGroup {
+ 	DEFINE_UNIFORM( vec2, renderResolution )
+ 
+ 	DEFINE_UNIFORM( int, softShadowsQuality )
++	DEFINE_UNIFORM( sampler, penumbraTexture )
++	DEFINE_UNIFORM( int, penumbraMode )
++	DEFINE_UNIFORM( int, alphaSoftShadowsQuality )
+ 	DEFINE_UNIFORM( float, softShadowsRadius )
+ 	DEFINE_UNIFORM( vec4, shadowRect )
+ 	DEFINE_UNIFORM( sampler, stencilTexture )
+@@ -100,6 +103,7 @@ enum TextureUnits {
+ 	TU_SHADOW_STENCIL = 11,
+ 	TU_SHADOW_STENCIL_MIPMAPS = 12,
+ 	TU_PARALLAX = 13,
++	TU_SHADOW_PENUMBRA = 14,
+ };
+ 
+ void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &baseName ) {
+@@ -113,6 +117,7 @@ void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &
+ 	uniforms->ssaoTexture.Set( TU_SSAO );
+ 	uniforms->stencilTexture.Set( TU_SHADOW_STENCIL );
+ 	uniforms->stencilMipmapsTexture.Set( TU_SHADOW_STENCIL_MIPMAPS );
++	uniforms->penumbraTexture.Set( TU_SHADOW_PENUMBRA );
+ 	uniforms->depthTexture.Set( TU_SHADOW_DEPTH );
+ 	uniforms->shadowMap.Set( TU_SHADOW_MAP );
+ 	uniforms->normalTexture.Set( TU_NORMAL );
+@@ -238,6 +243,11 @@ void InteractionStage::DrawInteractions( const viewDef_t *viewDef, const viewLig
+ 	if ( r_softShadowsQuality.GetBool() && !viewDef->IsLightGem() || vLight->shadows == LS_MAPS )
+ 		BindShadowTexture( stencilShadowMipmaps );
+ 
++	if ( ( lightFlags & SFL_INTERACTION_ALPHA_SHADOW ) && vLight->shadowMapPage.width <= 0 ) {
++		GL_SelectTexture( TU_SHADOW_MAP );
++		globalImages->shadowAtlas->Bind();
++	}
++
+ 	if( vLight->lightShader->IsAmbientLight() && ambientOcclusion->ShouldEnableForCurrentView() ) {
+ 		ambientOcclusion->BindSSAOTexture( TU_SSAO );
+ 	}
+@@ -261,6 +271,14 @@ void InteractionStage::DrawInteractions( const viewDef_t *viewDef, const viewLig
+ 		uniforms->stencilMipmapsLevel.Set( -1, -1 );
+ 	}
+ 
++	// penumbra pre-pass buffer of soft stencil shadows
++	bool usePenumbra = penumbraImage && r_softShadowsQuality.GetBool() && !viewDef->IsLightGem() && vLight->shadowMapPage.width <= 0;
++	uniforms->penumbraMode.Set( usePenumbra ? 1 : 0 );
++	if ( usePenumbra ) {
++		GL_SelectTexture( TU_SHADOW_PENUMBRA );
++		penumbraImage->Bind();
++	}
++
+ 	const idMaterial *lightShader = vLight->lightShader;
+ 	for ( int lightStageNum = 0; lightStageNum < lightShader->GetNumStages(); lightStageNum++ ) {
+ 		const shaderStage_t	*lightStage = lightShader->GetStage( lightStageNum );
+@@ -340,7 +358,11 @@ void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool
+ 
+ 	if ( doShadows ) {
+ 		lightFlags |= SFL_INTERACTION_SHADOWS;
+-		const renderCrop_t &page = vLight->shadowMapPage;
++		const renderCrop_t &page = vLight->shadowMapPage.width > 0 ? vLight->shadowMapPage : vLight->alphaShadowPage;
++		// stencil light with alpha-tested casters: their shadow map is multiplied in
++		if ( vLight->shadowMapPage.width <= 0 && vLight->alphaShadowPage.width > 0 && !vLight->lightShader->IsAmbientLight() ) {
++			lightFlags |= SFL_INTERACTION_ALPHA_SHADOW;
++		}
+ 		// https://stackoverflow.com/questions/5879403/opengl-texture-coordinates-in-pixel-space
+ 		idVec4 v( page.x, page.y, 0, page.width-1 );
+ 		v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
+@@ -356,6 +378,8 @@ void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool
+ 	} else {
+ 		uniforms->softShadowsQuality.Set( 0 );
+ 	}
++	// the alpha shadow map does not depend on stencil texture: it is soft (with contact hardening) even if the light has no stencil shadows
++	uniforms->alphaSoftShadowsQuality.Set( ( ( lightFlags & SFL_INTERACTION_ALPHA_SHADOW ) && !viewDef->IsLightGem() ) ? r_softShadowsQuality.GetInteger() : 0 );
+ 	uniforms->softShadowsRadius.Set( r_softShadowsRadius.GetFloat() ); // for soft stencil and all shadow maps
+ 
+ 	PreparePoissonSamples();
+diff --git a/renderer/backend/stages/InteractionStage.h b/renderer/backend/stages/InteractionStage.h
+index 8baf435..6f19d04 100644
+--- a/renderer/backend/stages/InteractionStage.h
++++ b/renderer/backend/stages/InteractionStage.h
+@@ -36,6 +36,9 @@ public:
+ 
+ 	void DrawInteractions( const viewDef_t *viewDef, const viewLight_t *vLight, DrawSurfaceList list, const TiledCustomMipmapStage *stencilShadowMipmaps );
+ 
++	// soft stencil shadows: penumbra pre-pass result for the current light (null = not available)
++	idImage *penumbraImage = nullptr;
++
+ private:
+ 	struct Uniforms;
+ 
+diff --git a/renderer/backend/stages/ShadowMapStage.cpp b/renderer/backend/stages/ShadowMapStage.cpp
+index 2ed2092..b97b90c 100644
+--- a/renderer/backend/stages/ShadowMapStage.cpp
++++ b/renderer/backend/stages/ShadowMapStage.cpp
+@@ -74,6 +74,10 @@ bool ShadowMapStage::ShouldDrawLight( const viewLight_t *vLight, const DrawMask
+ 	if ( vLight->noShadows ) {
+ 		return false;
+ 	}
++	if ( mask.alpha ) {
++		return vLight->shadows == LS_STENCIL && vLight->alphaShadowPage.width > 0 &&
++			( mask.clear || mask.global && vLight->alphaShadows || mask.local && vLight->alphaLocalShadows );
++	}
+ 	if ( vLight->shadows != LS_MAPS) {
+ 		return false;
+ 	}
+@@ -87,6 +91,9 @@ bool ShadowMapStage::ShouldDrawLight( const viewLight_t *vLight, const DrawMask
+ }
+ 
+ void ShadowMapStage::DrawLight( const viewLight_t *vLight, const DrawMask &mask ) {
++	// thin alpha cards: front and back are the same depth, so cull-front would make them shadow themselves completely
++	GL_Cull( mask.alpha ? CT_TWO_SIDED : ( r_shadowMapCullFront ? CT_BACK_SIDED : CT_TWO_SIDED ) );
++
+ 	idVec4 lightOrigin;
+ 	lightOrigin.x = vLight->globalLightOrigin.x;
+ 	lightOrigin.y = vLight->globalLightOrigin.y;
+@@ -95,7 +102,7 @@ void ShadowMapStage::DrawLight( const viewLight_t *vLight, const DrawMask &mask
+ 	uniforms->lightOrigin.Set( lightOrigin );
+ 	uniforms->maxLightDistance.Set( vLight->maxLightDistance );
+ 
+-	const renderCrop_t &page = vLight->shadowMapPage;
++	const renderCrop_t &page = mask.alpha ? vLight->alphaShadowPage : vLight->shadowMapPage;
+ 	qglViewport( page.x, page.y, 6*page.width, page.width );
+ 	// note: scissor must be always applied for correctness, also it is not view-dependent
+ 	qglScissor( page.x, page.y, 6*page.width, page.width );
+@@ -104,10 +111,10 @@ void ShadowMapStage::DrawLight( const viewLight_t *vLight, const DrawMask &mask
+ 		qglClear( GL_DEPTH_BUFFER_BIT );
+ 
+ 	if ( mask.global )
+-		DrawLightInteractions( vLight->globalShadows );
++		DrawLightInteractions( mask.alpha ? vLight->alphaShadows : vLight->globalShadows );
+ 
+ 	if ( mask.local )
+-		DrawLightInteractions( vLight->localShadows );
++		DrawLightInteractions( mask.alpha ? vLight->alphaLocalShadows : vLight->localShadows );
+ }
+ 
+ void ShadowMapStage::End() {
+diff --git a/renderer/backend/stages/ShadowMapStage.h b/renderer/backend/stages/ShadowMapStage.h
+index e2abd30..9909c39 100644
+--- a/renderer/backend/stages/ShadowMapStage.h
++++ b/renderer/backend/stages/ShadowMapStage.h
+@@ -29,6 +29,7 @@ public:
+ 		bool clear = true;		// clear shadow map page first
+ 		bool global = true;		// draw global shadows
+ 		bool local = true;		// draw local shadows
++		bool alpha = false;		// stencil light: draw alpha-tested casters into the alpha page (instead of everything else)
+ 	};
+ 
+ 	bool DrawShadowMapSingleLight( const viewDef_t *viewDef, const viewLight_t *vLight, const DrawMask &mask );
+diff --git a/renderer/backend/stages/StencilShadowStage.cpp b/renderer/backend/stages/StencilShadowStage.cpp
+index 70385f2..94a2bc9 100644
+--- a/renderer/backend/stages/StencilShadowStage.cpp
++++ b/renderer/backend/stages/StencilShadowStage.cpp
+@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
+ #include "renderer/backend/GLSLProgram.h"
+ #include "renderer/backend/GLSLProgramManager.h"
+ #include "renderer/backend/GLSLUniforms.h"
++#include "renderer/resources/Image.h"
+ 
+ struct StencilShadowStage::Uniforms : GLSLUniformGroup {
+ 	UNIFORM_GROUP_DEF( Uniforms )
+@@ -39,6 +40,7 @@ void StencilShadowStage::Init() {
+ 
+ void StencilShadowStage::Shutdown() {
+ 	ShutdownMipmaps();
++	ShutdownPenumbra();
+ }
+ 
+ void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t *shadowSurfs ) {
+@@ -222,3 +224,125 @@ void StencilShadowStage::FillStencilShadowMipmaps( const viewDef_t *viewDef, con
+ 		FB_ApplyScissor();
+ 	}
+ }
++
++//=======================================================================================
++
++idCVar r_softShadowsPenumbraBuffer(
++	"r_softShadowsPenumbraBuffer", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
++	"Soft stencil shadows: find blockers once per pixel in a pre-pass and let blur taps check penumbra size of each other (overlapping casters)"
++);
++
++namespace {
++	struct PenumbraUniforms : GLSLUniformGroup {
++		UNIFORM_GROUP_DEF(PenumbraUniforms)
++
++		DEFINE_UNIFORM(sampler, depthTexture)
++		DEFINE_UNIFORM(mat4, projectionMatrix)
++		DEFINE_UNIFORM(vec3, lightPosView)
++		DEFINE_UNIFORM(float, softRadius)
++		DEFINE_UNIFORM(int, softQuality)
++	};
++}
++
++void StencilShadowStage::ShutdownPenumbra() {
++	if ( penumbraFbo ) {
++		penumbraFbo->Destroy();
++		penumbraFbo = nullptr;
++	}
++	if ( penumbraImage ) {
++		penumbraImage->PurgeImage();
++		penumbraImage = nullptr;
++	}
++	penumbraShader = nullptr;
++	penumbraWidth = penumbraHeight = -1;
++	penumbraFilled = false;
++}
++
++void StencilShadowStage::InitPenumbra( int width, int height ) {
++	ShutdownPenumbra();
++
++	penumbraImage = globalImages->ImageScratch( "Stencil Soft Penumbra Buffer" );
++	penumbraFbo = frameBuffers->CreateFromGenerator( "stencil_penumbra",
++		[this, width, height]( FrameBuffer *fbo ) {
++			// x = penumbra size factor for farthest blocker, y = for the nearest blocker
++			penumbraImage->GenerateAttachment( width, height, GL_RG8, GL_NEAREST, GL_CLAMP_TO_EDGE, 0 );
++			fbo->Init( width, height );
++			fbo->AddColorRenderTexture( 0, penumbraImage, 0 );
++		}
++	);
++	// make sure FBO generator is called now, so that the image data is allocated
++	penumbraFbo->Bind();
++	frameBuffers->currentRenderFbo->Bind();
++
++	penumbraShader = programManager->LoadFromFiles(
++		"stencil_penumbra",
++		"fullscreen_tri.vert.glsl",
++		"stages/stencil/stencil_penumbra.frag.glsl"
++	);
++	penumbraWidth = width;
++	penumbraHeight = height;
++}
++
++idImage *StencilShadowStage::GetPenumbraImage() const {
++	return penumbraFilled ? penumbraImage : nullptr;
++}
++
++void StencilShadowStage::FillPenumbraBuffer( const viewDef_t *viewDef, const viewLight_t *vLight, const idScreenRect &lightScissor ) {
++	penumbraFilled = false;
++	if ( viewDef->IsLightGem() || !r_softShadowsQuality.GetBool() || !r_softShadowsPenumbraBuffer.GetBool() )
++		return;
++	int width = frameBuffers->shadowStencilFbo->Width();
++	int height = frameBuffers->shadowStencilFbo->Height();
++	if ( width <= 0 || height <= 0 )
++		return;
++	TRACE_GL_SCOPE( "PenumbraBuffer" );
++
++	if ( !penumbraFbo || penumbraWidth != width || penumbraHeight != height )
++		InitPenumbra( width, height );
++	if ( !penumbraFbo || !penumbraShader )
++		return;
++
++	// scissor rectangle in pixels of the buffer (it is at render resolution, scissors are in VidSize)
++	int x = lightScissor.x1 * width  / glConfig.vidWidth ;
++	int y = lightScissor.y1 * height / glConfig.vidHeight;
++	int w = lightScissor.GetWidth()  * width  / glConfig.vidWidth  + 2;
++	int h = lightScissor.GetHeight() * height / glConfig.vidHeight + 2;
++	x = idMath::Imax( x, 0 );
++	y = idMath::Imax( y, 0 );
++	w = idMath::Imin( w, width - x );
++	h = idMath::Imin( h, height - y );
++	if ( w <= 0 || h <= 0 )
++		return;
++
++	GL_State( GLS_DEPTHFUNC_ALWAYS );
++	GL_Cull( CT_TWO_SIDED );
++
++	GL_SelectTexture( 0 );
++	globalImages->currentDepthImage->Bind();
++
++	penumbraFbo->BindDraw();
++	qglViewport( 0, 0, width, height );
++	qglEnable( GL_SCISSOR_TEST );
++	qglScissor( x, y, w, h );
++
++	penumbraShader->Activate();
++	PenumbraUniforms *pu = penumbraShader->GetUniformGroup<PenumbraUniforms>();
++	pu->depthTexture.Set( 0 );
++	pu->projectionMatrix.Set( viewDef->projectionMatrix );
++	idVec3 lightPosView;
++	R_LocalPointToGlobal( viewDef->worldSpace.modelViewMatrix, vLight->globalLightOrigin, lightPosView );
++	pu->lightPosView.Set( lightPosView );
++	pu->softRadius.Set( r_softShadowsRadius.GetFloat() );
++	pu->softQuality.Set( r_softShadowsQuality.GetInteger() );
++
++	RB_DrawFullScreenTri();
++
++	// restore state
++	GL_Cull( CT_FRONT_SIDED );
++	frameBuffers->currentRenderFbo->Bind();
++	FB_ApplyViewport();
++	FB_ApplyScissor();
++	GLSLProgram::Deactivate();
++
++	penumbraFilled = true;
++}
+diff --git a/renderer/backend/stages/StencilShadowStage.h b/renderer/backend/stages/StencilShadowStage.h
+index bd7096b..6456c11 100644
+--- a/renderer/backend/stages/StencilShadowStage.h
++++ b/renderer/backend/stages/StencilShadowStage.h
+@@ -17,6 +17,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
+ #include "renderer/tr_local.h"
+ #include "renderer/backend/stages/TiledCustomMipmapStage.h"
+ 
++class FrameBuffer;
++class GLSLProgram;
++class idImageScratch;
++
+ class StencilShadowStage {
+ public:
+ 	void Init();
+@@ -26,6 +30,14 @@ public:
+ 
+ 	void FillStencilShadowMipmaps( const viewDef_t *viewDef, const idScreenRect &lightScissor );
+ 
++	// Penumbra pre-pass for soft shadows: screen-space blocker search done once per pixel of light scissor
++	// (see stencil_penumbra.frag.glsl). Call it in main framebuffer, before drawing interactions of this light.
++	// Changes viewport/scissor/framebuffer binding, which are restored.
++	void FillPenumbraBuffer( const viewDef_t *viewDef, const viewLight_t *vLight, const idScreenRect &lightScissor );
++	// returns null if the buffer was not filled for the current light
++	idImage *GetPenumbraImage() const;
++	void ResetPenumbraBuffer() { penumbraFilled = false; }
++
+ 	// soft shadows use blurred stencil buffer, which might tap slightly outside scissor rect
+ 	// call this function for every light / shadow scissor before applying it
+ 	idScreenRect ExpandScissorRectForSoftShadows( const viewDef_t *viewDef, const idScreenRect &scissor ) const;
+@@ -35,10 +47,19 @@ private:
+ 
+ 	void DrawSurfs( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t **surfs, size_t count );
+ 	void ShutdownMipmaps();
++	void InitPenumbra( int width, int height );
++	void ShutdownPenumbra();
+ 
+ 	Uniforms *uniforms = nullptr;
+ 	GLSLProgram *stencilShadowShader = nullptr;
+ 
++	idImageScratch *penumbraImage = nullptr;
++	FrameBuffer *penumbraFbo = nullptr;
++	GLSLProgram *penumbraShader = nullptr;
++	int penumbraWidth = -1;
++	int penumbraHeight = -1;
++	bool penumbraFilled = false;
++
+ public:
+ 	TiledCustomMipmapStage stencilShadowMipmap;
+ };
+diff --git a/renderer/frontend/Interaction.cpp b/renderer/frontend/Interaction.cpp
+index e781e5c..6cbc19c 100644
+--- a/renderer/frontend/Interaction.cpp
++++ b/renderer/frontend/Interaction.cpp
+@@ -36,6 +36,8 @@ idCVar r_useInteractionTriCulling(
+ 	" -1 = disable all culling\n"
+ , -1, 1);
+ idCVarInt r_singleShadowEntity( "r_singleShadowEntity", "-1", CVAR_RENDERER, "suppress all but one shadowing entity" );
++idCVarBool r_stencilAlphaShadows( "r_stencilAlphaShadows", "1", CVAR_RENDERER | CVAR_ARCHIVE,
++	"Stencil shadows: perforated and forceShadows casters (foliage, grates) cast alpha-tested shadows from a small shadow map instead of solid shadow volumes. Needs map restart to apply." );
+ 
+ void idInteraction::PrepareLightSurf( linkLocation_t link, const srfTriangles_t *tri, const viewEntity_s *space,
+ 		const idMaterial *material, const idScreenRect &scissor, bool viewInsideShadow, bool blockSelfShadows ) {
+@@ -343,6 +345,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
+ 
+ 	// it is debatable if non-shadowing lights should light back faces. we aren't at the moment
+ 	includeBackFaces = r_lightAllBackFaces.GetBool() || light->shadows == LS_MAPS ||  // need the back faces for shadows
++										( light->shadows == LS_STENCIL && r_stencilAlphaShadows.GetBool() && ( shader->Coverage() == MC_PERFORATED || shader->TestMaterialFlag( MF_FORCESHADOWS ) ) ) ||
+ 										light->lightShader->LightEffectsBackSides() || 
+ 										shader->ReceivesLightingOnBackSides() || 
+ 										ent->parms.noSelfShadow || ent->parms.noShadow;
+@@ -1159,9 +1162,24 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
+ 		}
+ 
+ 		if ( genShadows ) {
+-			if ( lightDef->shadows == LS_STENCIL && tri->silEdges != NULL) {
++			bool precomputedStencil = ( lightDef->parms.prelightModel && model->IsStaticWorldModel() && r_useOptimizedShadows.GetBool() );
++			if ( lightDef->shadows == LS_STENCIL && !precomputedStencil && r_stencilAlphaShadows.GetBool()
++				// forceShadows surfaces are treated like perforated ones: alpha-tested if they have alpha stages, solid casters in the alpha page otherwise
++				&& ( shader->Coverage() == MC_PERFORATED || shader->TestMaterialFlag( MF_FORCESHADOWS ) )
++				&& !( !r_skipSuppress.GetBool() && entityDef->parms.suppressSurfaceInViewID )
++			) {
++				// foliage, grates: no solid shadow volume, shadow comes from alpha-tested shadow map
++				// (the volumetric lights are not here: they force shadow maps for the whole light)
++				if ( sint->lightTris && sint->lightTris != LIGHT_TRIS_DEFERRED ) {
++					sint->shadowMapTris = sint->lightTris;
++				} else {
++					sint->shadowMapTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
++				}
++				interactionGenerated = true;
++			}
++			else if ( lightDef->shadows == LS_STENCIL && tri->silEdges != NULL) {
+ 				// if the light has an optimized shadow volume, don't create shadows for any models that are part of the base areas
+-				bool precomputedShadows = ( lightDef->parms.prelightModel && model->IsStaticWorldModel() && r_useOptimizedShadows.GetBool() );
++				bool precomputedShadows = precomputedStencil;
+ 				if ( !precomputedShadows ) {
+ 					// this is the only place during gameplay (outside the utilities) that R_CreateShadowVolume() is called
+ 					sint->shadowVolumeTris = R_CreateShadowVolume( entityDef, tri, lightDef, shadowGen, sint->cullInfo );
+@@ -1370,7 +1388,7 @@ void idInteraction::LinkPreparedSurfaces() {
+ 		}
+ 
+ 		// stgatilov: memorize for debug tools that this interaction generated backend surfaces in this view
+-		if (i == SHADOW_LOCAL || i == SHADOW_GLOBAL) {
++		if (i == SHADOW_LOCAL || i == SHADOW_GLOBAL || i == SHADOW_ALPHA || i == SHADOW_ALPHA_LOCAL) {
+ 			viewCountGenShadowSurfs = tr.viewCount;
+ 		} else {
+ 			viewCountGenLightSurfs = tr.viewCount;
+@@ -1383,6 +1401,8 @@ void idInteraction::LinkPreparedSurfaces() {
+ 		case INTERACTION_GLOBAL: link = &lightDef->viewLight->globalInteractions; break;
+ 		case SHADOW_LOCAL: link = &lightDef->viewLight->localShadows; break;
+ 		case SHADOW_GLOBAL: link = &lightDef->viewLight->globalShadows; break;
++		case SHADOW_ALPHA_LOCAL: link = &lightDef->viewLight->alphaLocalShadows; break;
++		case SHADOW_ALPHA: link = &lightDef->viewLight->alphaShadows; break;
+ 		}
+ 
+ 		drawSurf_t *surf = surfsToLink[i];
+@@ -1644,7 +1664,13 @@ void idInteraction::AddActiveInteraction( void ) {
+ 			R_GlobalShaderOverride( &shader );
+ 			// note: material is needed for shadow maps to handle perforated surfaces
+ 
+-			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
++			if ( lightDef->shadows == LS_STENCIL ) {
++				// alpha-tested casters of stencil light
++				PrepareLightSurf(
++					sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ? SHADOW_ALPHA_LOCAL : SHADOW_ALPHA, shadowTris,
++					vEntity, shader, shadowScissor, false, false
++				);
++			} else if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
+ 				PrepareLightSurf(
+ 					SHADOW_LOCAL, shadowTris,
+ 					vEntity, shader, shadowScissor, false, false
+diff --git a/renderer/frontend/Interaction.h b/renderer/frontend/Interaction.h
+index 0a36102..492e11b 100644
+--- a/renderer/frontend/Interaction.h
++++ b/renderer/frontend/Interaction.h
+@@ -176,6 +176,8 @@ private:
+ 		INTERACTION_GLOBAL,
+ 		SHADOW_LOCAL,
+ 		SHADOW_GLOBAL,
++		SHADOW_ALPHA_LOCAL,	// same, but must not shadow the surfaces of noselfshadow materials
++		SHADOW_ALPHA,	// alpha-tested casters of stencil-shadowed light (rendered into shadow map page)
+ 		MAX_LOCATIONS
+ 	};
+ 	drawSurf_s *			surfsToLink[MAX_LOCATIONS] = { nullptr };
+diff --git a/renderer/frontend/tr_light.cpp b/renderer/frontend/tr_light.cpp
+index cb37731..60fefbb 100644
+--- a/renderer/frontend/tr_light.cpp
++++ b/renderer/frontend/tr_light.cpp
+@@ -26,6 +26,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
+ idCVar r_maxShadowMapLight( "r_maxShadowMapLight", "1000", CVAR_ARCHIVE | CVAR_RENDERER, "lights bigger than this will be force-sent to stencil" );
+ idCVar r_useParallelAddModels( "r_useParallelAddModels", "2", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "parallelize R_AddModelSurfaces in frontend using jobs", 0, 2 );
+ idCVar r_parallelAddModelsChunk( "r_parallelAddModelsChunk", "0.1", CVAR_RENDERER | CVAR_FLOAT, "typical duration in milliseconds for a chunk of R_AddModelSurfaces jobs" );
++idCVar r_stencilAlphaShadowsBoost( "r_stencilAlphaShadowsBoost", "1", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
++	"stencil lights: alpha shadow page gets 2^N times the linear resolution wanted by distance (capped by r_shadowMapSize)", 0, 3 );
+ idCVarBool r_useClipPlaneCulling( "r_useClipPlaneCulling", "1", CVAR_RENDERER, "cull surfaces behind mirrors" );
+ 
+ /*
+@@ -1778,6 +1780,8 @@ void R_RemoveUnecessaryViewLights( void ) {
+ 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) {
+ 			vLight->localShadows = NULL;
+ 			vLight->globalShadows = NULL;
++			vLight->alphaShadows = NULL;
++			vLight->alphaLocalShadows = NULL;
+ 		}
+ 		else
+ 		{
+@@ -1810,6 +1814,7 @@ void R_RemoveUnecessaryViewLights( void ) {
+ 			for ( drawSurf_t *surf = vLight->globalShadows ; surf ; surf = surf->nextOnLight ) {
+ 				surf->scissorRect.IntersectWithZ( surfRect );
+ 			}
++			// note: alpha shadow maps are not view-dependent, their scissors are only used to size the page
+ 
+ 			for ( const drawSurf_t *surf = vLight->translucentInteractions ; surf ; surf = surf->nextOnLight ) {
+ 				surfRect.UnionWithZ( surf->scissorRect );
+@@ -1847,6 +1852,7 @@ void R_AssignShadowMapAtlasPages( void ) {
+ 		int ratio;				// resolution ratio
+ 		float distance;			// light origin - view origin distance
+ 		viewLight_t *vLight;
++		bool alphaOnly;			// stencil-shadowed light, page is used for alpha-tested casters only
+ 	};
+ 	idList<Candidate> shadowMappers;
+ 
+@@ -1883,7 +1889,31 @@ void R_AssignShadowMapAtlasPages( void ) {
+ 
+ 			float distance = ( vLight->globalLightOrigin - tr.viewDef->renderView.vieworg ).Length();
+ 
+-			shadowMappers.Append( { ratio, distance, vLight } );
++			shadowMappers.Append( { ratio, distance, vLight, false } );
++		}
++		else if ( vLight->shadows == LS_STENCIL && ( vLight->alphaShadows || vLight->alphaLocalShadows ) ) {
++			// stencil light with alpha-tested casters (foliage, grates): small shadow map for them only
++			idScreenRect shadowsScissor;
++			shadowsScissor.ClearWithZ();
++			for ( drawSurf_t *surf = vLight->alphaShadows; surf; surf = surf->nextOnLight )
++				shadowsScissor.UnionWithZ( surf->scissorRect );
++			for ( drawSurf_t *surf = vLight->alphaLocalShadows; surf; surf = surf->nextOnLight )
++				shadowsScissor.UnionWithZ( surf->scissorRect );
++			shadowsScissor.IntersectWithZ( vLight->scissorRect );
++
++			float stretch = 1e-10f;
++			if ( !shadowsScissor.IsEmpty() || shadowsScissor.zmin <= shadowsScissor.zmax ) {
++				float minViewDistance = tr.viewDef->projectionRenderMatrix.DepthToZ( shadowsScissor.zmin );
++				stretch = vLight->maxLightDistance / minViewDistance;
++			}
++			float score = idMath::Fmin( stretch, 1.0f );
++			int ratio = (int) idMath::Ceil( TILE_RATIO * score );
++			ratio = 1 << ( idMath::ILog2( ratio - 1 ) + 1 );
++			// thin holes (grates, foliage) need more resolution than solid shadows
++			ratio = idMath::Imin( ratio << r_stencilAlphaShadowsBoost.GetInteger(), TILE_RATIO );
++
++			float distance = ( vLight->globalLightOrigin - tr.viewDef->renderView.vieworg ).Length();
++			shadowMappers.Append( { ratio, distance, vLight, true } );
+ 		}
+ 	}
+ 
+@@ -1963,6 +1993,10 @@ void R_AssignShadowMapAtlasPages( void ) {
+ 
+ 	idList<renderCrop_t> pages = frameBuffers->CreateShadowMapPages( ratios, TILE_RATIO );
+ 
+-	for ( int i = 0; i < pages.Num(); i++ )
+-		shadowMappers[i].vLight->shadowMapPage = pages[i];
++	for ( int i = 0; i < pages.Num(); i++ ) {
++		if ( shadowMappers[i].alphaOnly )
++			shadowMappers[i].vLight->alphaShadowPage = pages[i];
++		else
++			shadowMappers[i].vLight->shadowMapPage = pages[i];
++	}
+ }
+diff --git a/renderer/tr_local.h b/renderer/tr_local.h
+index 01d5061..c9b6584 100644
+--- a/renderer/tr_local.h
++++ b/renderer/tr_local.h
+@@ -414,6 +414,7 @@ typedef struct viewLight_s {
+ 	// allowing us to skip drawing the projected caps of shadows if we can't see the face
+ 	int						viewSeesShadowPlaneBits;
+ 	renderCrop_t			shadowMapPage;
++	renderCrop_t			alphaShadowPage;			// stencil lights: page with shadow map of alpha-tested casters only
+ 	float					maxLightDistance;			// maximum distance from light origin to light volume points
+ 
+ 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
+@@ -437,6 +438,8 @@ typedef struct viewLight_s {
+ 	/*const */struct drawSurf_s	*globalShadows;				// shadow everything
+ 	/*const */struct drawSurf_s	*localInteractions;			// don't get local shadows
+ 	/*const */struct drawSurf_s	*localShadows;				// don't shadow local Surfaces
++	/*const */struct drawSurf_s	*alphaLocalShadows;			// same for noselfshadow casters: added to alpha page after local interactions
++	/*const */struct drawSurf_s	*alphaShadows;				// stencil lights: perforated casters, drawn into alpha shadow map
+ 	/*const */struct drawSurf_s	*globalInteractions;		// get shadows from everything
+ 	/*const */struct drawSurf_s	*translucentInteractions;	// get shadows from everything
+ 

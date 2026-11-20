@@ -29,6 +29,7 @@ public:
 		bool clear = true;		// clear shadow map page first
 		bool global = true;		// draw global shadows
 		bool local = true;		// draw local shadows
+		bool alpha = false;		// stencil light: draw alpha-tested casters into the alpha page (instead of everything else)
 	};
 
 	bool DrawShadowMapSingleLight( const viewDef_t *viewDef, const viewLight_t *vLight, const DrawMask &mask );

@@ -36,6 +36,9 @@ public:
 
 	void DrawInteractions( const viewDef_t *viewDef, const viewLight_t *vLight, DrawSurfaceList list, const TiledCustomMipmapStage *stencilShadowMipmaps );
 
+	// soft stencil shadows: penumbra pre-pass result for the current light (null = not available)
+	idImage *penumbraImage = nullptr;
+
 private:
 	struct Uniforms;
 

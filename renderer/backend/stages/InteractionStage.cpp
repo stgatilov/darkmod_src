@@ -56,6 +56,9 @@ struct InteractionStage::Uniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec2, renderResolution )
 
 	DEFINE_UNIFORM( int, softShadowsQuality )
+	DEFINE_UNIFORM( sampler, penumbraTexture )
+	DEFINE_UNIFORM( int, penumbraMode )
+	DEFINE_UNIFORM( int, alphaSoftShadowsQuality )
 	DEFINE_UNIFORM( float, softShadowsRadius )
 	DEFINE_UNIFORM( vec4, shadowRect )
 	DEFINE_UNIFORM( sampler, stencilTexture )
@@ -100,6 +103,7 @@ enum TextureUnits {
 	TU_SHADOW_STENCIL = 11,
 	TU_SHADOW_STENCIL_MIPMAPS = 12,
 	TU_PARALLAX = 13,
+	TU_SHADOW_PENUMBRA = 14,
 };
 
 void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &baseName ) {
@@ -113,6 +117,7 @@ void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &
 	uniforms->ssaoTexture.Set( TU_SSAO );
 	uniforms->stencilTexture.Set( TU_SHADOW_STENCIL );
 	uniforms->stencilMipmapsTexture.Set( TU_SHADOW_STENCIL_MIPMAPS );
+	uniforms->penumbraTexture.Set( TU_SHADOW_PENUMBRA );
 	uniforms->depthTexture.Set( TU_SHADOW_DEPTH );
 	uniforms->shadowMap.Set( TU_SHADOW_MAP );
 	uniforms->normalTexture.Set( TU_NORMAL );
@@ -238,6 +243,11 @@ void InteractionStage::DrawInteractions( const viewDef_t *viewDef, const viewLig
 	if ( r_softShadowsQuality.GetBool() && !viewDef->IsLightGem() || vLight->shadows == LS_MAPS )
 		BindShadowTexture( stencilShadowMipmaps );
 
+	if ( ( lightFlags & SFL_INTERACTION_ALPHA_SHADOW ) && vLight->shadowMapPage.width <= 0 ) {
+		GL_SelectTexture( TU_SHADOW_MAP );
+		globalImages->shadowAtlas->Bind();
+	}
+
 	if( vLight->lightShader->IsAmbientLight() && ambientOcclusion->ShouldEnableForCurrentView() ) {
 		ambientOcclusion->BindSSAOTexture( TU_SSAO );
 	}
@@ -259,6 +269,14 @@ void InteractionStage::DrawInteractions( const viewDef_t *viewDef, const viewLig
 	}
 	else {
 		uniforms->stencilMipmapsLevel.Set( -1, -1 );
+	}
+
+	// penumbra pre-pass buffer of soft stencil shadows
+	bool usePenumbra = penumbraImage && r_softShadowsQuality.GetBool() && !viewDef->IsLightGem() && vLight->shadowMapPage.width <= 0;
+	uniforms->penumbraMode.Set( usePenumbra ? 1 : 0 );
+	if ( usePenumbra ) {
+		GL_SelectTexture( TU_SHADOW_PENUMBRA );
+		penumbraImage->Bind();
 	}
 
 	const idMaterial *lightShader = vLight->lightShader;
@@ -340,7 +358,11 @@ void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool
 
 	if ( doShadows ) {
 		lightFlags |= SFL_INTERACTION_SHADOWS;
-		const renderCrop_t &page = vLight->shadowMapPage;
+		const renderCrop_t &page = vLight->shadowMapPage.width > 0 ? vLight->shadowMapPage : vLight->alphaShadowPage;
+		// stencil light with alpha-tested casters: their shadow map is multiplied in
+		if ( vLight->shadowMapPage.width <= 0 && vLight->alphaShadowPage.width > 0 && !vLight->lightShader->IsAmbientLight() ) {
+			lightFlags |= SFL_INTERACTION_ALPHA_SHADOW;
+		}
 		// https://stackoverflow.com/questions/5879403/opengl-texture-coordinates-in-pixel-space
 		idVec4 v( page.x, page.y, 0, page.width-1 );
 		v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
@@ -356,6 +378,8 @@ void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool
 	} else {
 		uniforms->softShadowsQuality.Set( 0 );
 	}
+	// the alpha shadow map does not depend on stencil texture: it is soft (with contact hardening) even if the light has no stencil shadows
+	uniforms->alphaSoftShadowsQuality.Set( ( ( lightFlags & SFL_INTERACTION_ALPHA_SHADOW ) && !viewDef->IsLightGem() ) ? r_softShadowsQuality.GetInteger() : 0 );
 	uniforms->softShadowsRadius.Set( r_softShadowsRadius.GetFloat() ); // for soft stencil and all shadow maps
 
 	PreparePoissonSamples();

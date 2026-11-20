@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/GLSLProgram.h"
 #include "renderer/backend/GLSLProgramManager.h"
 #include "renderer/backend/GLSLUniforms.h"
+#include "renderer/resources/Image.h"
 
 struct StencilShadowStage::Uniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( Uniforms )
@@ -39,6 +40,7 @@ void StencilShadowStage::Init() {
 
 void StencilShadowStage::Shutdown() {
 	ShutdownMipmaps();
+	ShutdownPenumbra();
 }
 
 void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t *shadowSurfs ) {
@@ -221,4 +223,126 @@ void StencilShadowStage::FillStencilShadowMipmaps( const viewDef_t *viewDef, con
 		FB_ApplyViewport();
 		FB_ApplyScissor();
 	}
+}
+
+//=======================================================================================
+
+idCVar r_softShadowsPenumbraBuffer(
+	"r_softShadowsPenumbraBuffer", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
+	"Soft stencil shadows: find blockers once per pixel in a pre-pass and let blur taps check penumbra size of each other (overlapping casters)"
+);
+
+namespace {
+	struct PenumbraUniforms : GLSLUniformGroup {
+		UNIFORM_GROUP_DEF(PenumbraUniforms)
+
+		DEFINE_UNIFORM(sampler, depthTexture)
+		DEFINE_UNIFORM(mat4, projectionMatrix)
+		DEFINE_UNIFORM(vec3, lightPosView)
+		DEFINE_UNIFORM(float, softRadius)
+		DEFINE_UNIFORM(int, softQuality)
+	};
+}
+
+void StencilShadowStage::ShutdownPenumbra() {
+	if ( penumbraFbo ) {
+		penumbraFbo->Destroy();
+		penumbraFbo = nullptr;
+	}
+	if ( penumbraImage ) {
+		penumbraImage->PurgeImage();
+		penumbraImage = nullptr;
+	}
+	penumbraShader = nullptr;
+	penumbraWidth = penumbraHeight = -1;
+	penumbraFilled = false;
+}
+
+void StencilShadowStage::InitPenumbra( int width, int height ) {
+	ShutdownPenumbra();
+
+	penumbraImage = globalImages->ImageScratch( "Stencil Soft Penumbra Buffer" );
+	penumbraFbo = frameBuffers->CreateFromGenerator( "stencil_penumbra",
+		[this, width, height]( FrameBuffer *fbo ) {
+			// x = penumbra size factor for farthest blocker, y = for the nearest blocker
+			penumbraImage->GenerateAttachment( width, height, GL_RG8, GL_NEAREST, GL_CLAMP_TO_EDGE, 0 );
+			fbo->Init( width, height );
+			fbo->AddColorRenderTexture( 0, penumbraImage, 0 );
+		}
+	);
+	// make sure FBO generator is called now, so that the image data is allocated
+	penumbraFbo->Bind();
+	frameBuffers->currentRenderFbo->Bind();
+
+	penumbraShader = programManager->LoadFromFiles(
+		"stencil_penumbra",
+		"fullscreen_tri.vert.glsl",
+		"stages/stencil/stencil_penumbra.frag.glsl"
+	);
+	penumbraWidth = width;
+	penumbraHeight = height;
+}
+
+idImage *StencilShadowStage::GetPenumbraImage() const {
+	return penumbraFilled ? penumbraImage : nullptr;
+}
+
+void StencilShadowStage::FillPenumbraBuffer( const viewDef_t *viewDef, const viewLight_t *vLight, const idScreenRect &lightScissor ) {
+	penumbraFilled = false;
+	if ( viewDef->IsLightGem() || !r_softShadowsQuality.GetBool() || !r_softShadowsPenumbraBuffer.GetBool() )
+		return;
+	int width = frameBuffers->shadowStencilFbo->Width();
+	int height = frameBuffers->shadowStencilFbo->Height();
+	if ( width <= 0 || height <= 0 )
+		return;
+	TRACE_GL_SCOPE( "PenumbraBuffer" );
+
+	if ( !penumbraFbo || penumbraWidth != width || penumbraHeight != height )
+		InitPenumbra( width, height );
+	if ( !penumbraFbo || !penumbraShader )
+		return;
+
+	// scissor rectangle in pixels of the buffer (it is at render resolution, scissors are in VidSize)
+	int x = lightScissor.x1 * width  / glConfig.vidWidth ;
+	int y = lightScissor.y1 * height / glConfig.vidHeight;
+	int w = lightScissor.GetWidth()  * width  / glConfig.vidWidth  + 2;
+	int h = lightScissor.GetHeight() * height / glConfig.vidHeight + 2;
+	x = idMath::Imax( x, 0 );
+	y = idMath::Imax( y, 0 );
+	w = idMath::Imin( w, width - x );
+	h = idMath::Imin( h, height - y );
+	if ( w <= 0 || h <= 0 )
+		return;
+
+	GL_State( GLS_DEPTHFUNC_ALWAYS );
+	GL_Cull( CT_TWO_SIDED );
+
+	GL_SelectTexture( 0 );
+	globalImages->currentDepthImage->Bind();
+
+	penumbraFbo->BindDraw();
+	qglViewport( 0, 0, width, height );
+	qglEnable( GL_SCISSOR_TEST );
+	qglScissor( x, y, w, h );
+
+	penumbraShader->Activate();
+	PenumbraUniforms *pu = penumbraShader->GetUniformGroup<PenumbraUniforms>();
+	pu->depthTexture.Set( 0 );
+	pu->projectionMatrix.Set( viewDef->projectionMatrix );
+	idVec3 lightPosView;
+	R_LocalPointToGlobal( viewDef->worldSpace.modelViewMatrix, vLight->globalLightOrigin, lightPosView );
+	pu->lightPosView.Set( lightPosView );
+	pu->softRadius.Set( r_softShadowsRadius.GetFloat() );
+	pu->softQuality.Set( r_softShadowsQuality.GetInteger() );
+
+	RB_DrawFullScreenTri();
+
+	// restore state
+	GL_Cull( CT_FRONT_SIDED );
+	frameBuffers->currentRenderFbo->Bind();
+	FB_ApplyViewport();
+	FB_ApplyScissor();
+	GLSLProgram::Deactivate();
+
+	penumbraFilled = true;
 }
