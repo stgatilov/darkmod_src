@@ -228,6 +228,26 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !viewDef->IsLightGem();
 	idScreenRect lightScissor = stencilShadowStage.ExpandScissorRectForSoftShadows( viewDef, vLight->scissorRect );
 
+	// alpha-tested casters (foliage, grates) have no shadow volumes: they are rendered into a small shadow map page,
+	// which is later multiplied into the light by the interaction shader (not used for volumetric lights: they force shadow maps)
+	// like for shadow maps: global casters first, noselfshadow casters are added after the local interactions
+	if ( vLight->alphaShadowPage.width > 0 ) {
+		ShadowMapStage::DrawMask alphaMask;
+		alphaMask.clear = true;
+		alphaMask.global = true;
+		alphaMask.local = false;
+		alphaMask.alpha = true;
+		shadowMapStage.DrawShadowMapSingleLight( viewDef, vLight, alphaMask );
+	}
+
+	// soft shadows: find blockers once per pixel, interactions use the result
+	interactionStage.penumbraImage = nullptr;
+	stencilShadowStage.ResetPenumbraBuffer();
+	if ( useShadowFbo && ( vLight->globalShadows || vLight->localShadows ) ) {
+		stencilShadowStage.FillPenumbraBuffer( viewDef, vLight, lightScissor );
+		interactionStage.penumbraImage = stencilShadowStage.GetPenumbraImage();
+	}
+
 	// clear the stencil buffer if needed
 	if ( vLight->globalShadows || vLight->localShadows ) {
 		backEnd.currentScissor = lightScissor;
@@ -256,6 +276,15 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	}
 	interactionStage.DrawInteractions( viewDef, vLight, DSL_LOCAL, nullptr );
 
+	if ( vLight->alphaShadowPage.width > 0 && vLight->alphaLocalShadows ) {
+		ShadowMapStage::DrawMask alphaMask;
+		alphaMask.clear = false;
+		alphaMask.global = false;
+		alphaMask.local = true;
+		alphaMask.alpha = true;
+		shadowMapStage.DrawShadowMapSingleLight( viewDef, vLight, alphaMask );
+	}
+
 	if ( useShadowFbo ) {
 		frameBuffers->EnterShadowStencil();
 	}
@@ -277,6 +306,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	}
 
 	interactionStage.DrawInteractions( viewDef, vLight, DSL_GLOBAL, &stencilShadowStage.stencilShadowMipmap );
+	interactionStage.penumbraImage = nullptr;
 
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
 	interactionStage.DrawInteractions( viewDef, vLight, DSL_TRANSLUCENT, nullptr );

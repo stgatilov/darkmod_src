@@ -17,6 +17,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/tr_local.h"
 #include "renderer/backend/stages/TiledCustomMipmapStage.h"
 
+class FrameBuffer;
+class GLSLProgram;
+class idImageScratch;
+
 class StencilShadowStage {
 public:
 	void Init();
@@ -25,6 +29,14 @@ public:
 	void DrawStencilShadows( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t *shadowSurfs );
 
 	void FillStencilShadowMipmaps( const viewDef_t *viewDef, const idScreenRect &lightScissor );
+
+	// Penumbra pre-pass for soft shadows: screen-space blocker search done once per pixel of light scissor
+	// (see stencil_penumbra.frag.glsl). Call it in main framebuffer, before drawing interactions of this light.
+	// Changes viewport/scissor/framebuffer binding, which are restored.
+	void FillPenumbraBuffer( const viewDef_t *viewDef, const viewLight_t *vLight, const idScreenRect &lightScissor );
+	// returns null if the buffer was not filled for the current light
+	idImage *GetPenumbraImage() const;
+	void ResetPenumbraBuffer() { penumbraFilled = false; }
 
 	// soft shadows use blurred stencil buffer, which might tap slightly outside scissor rect
 	// call this function for every light / shadow scissor before applying it
@@ -35,9 +47,18 @@ private:
 
 	void DrawSurfs( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t **surfs, size_t count );
 	void ShutdownMipmaps();
+	void InitPenumbra( int width, int height );
+	void ShutdownPenumbra();
 
 	Uniforms *uniforms = nullptr;
 	GLSLProgram *stencilShadowShader = nullptr;
+
+	idImageScratch *penumbraImage = nullptr;
+	FrameBuffer *penumbraFbo = nullptr;
+	GLSLProgram *penumbraShader = nullptr;
+	int penumbraWidth = -1;
+	int penumbraHeight = -1;
+	bool penumbraFilled = false;
 
 public:
 	TiledCustomMipmapStage stencilShadowMipmap;

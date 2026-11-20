@@ -30,6 +30,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define SFL_INTERACTION_BUMPMAP_LIGHT_TOGGLING_FIX		0x020000
 #define SFL_INTERACTION_PARALLAX_OFFSET_EXTERNAL_SHADOWS 0x040000
 #define SFL_INTERACTION_SHADOW_MAP_CULL_FRONT			0x080000
+// stencil shadows: also multiply by shadow map which contains only alpha-tested casters (foliage, grates)
+#define SFL_INTERACTION_ALPHA_SHADOW					0x1000000
 
 bool checkFlag(int flags, int mask) {
 	return (flags & mask) != 0;

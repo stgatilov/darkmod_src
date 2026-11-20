@@ -98,7 +98,12 @@ float computeShadowMapCoefficient(
 
 	//note: choosing normal and how to cap angles is the hardest question for now
 	//this has large effect on near-tangent surfaces (mostly the curved ones)
+#ifdef SHADOWMAP_NO_FALL_ANGLE_LIMITER
+	//thin alpha-tested casters: the receiver can be the caster itself, angle must not zero the light
+	float fallAngleLimiter = 1.0;
+#else
 	float fallAngleLimiter = smoothstep(0.01, 0.05, lightFallAngle);
+#endif
 	//some very generic error estimation...
 	float errorMargin = 5.0 * maxAbsL / ( shadowMapResolution * max(lightFallAngle, 0.1) );
 	if (shadowMapCullFrontHack)

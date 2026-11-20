@@ -26,6 +26,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 idCVar r_maxShadowMapLight( "r_maxShadowMapLight", "1000", CVAR_ARCHIVE | CVAR_RENDERER, "lights bigger than this will be force-sent to stencil" );
 idCVar r_useParallelAddModels( "r_useParallelAddModels", "2", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "parallelize R_AddModelSurfaces in frontend using jobs", 0, 2 );
 idCVar r_parallelAddModelsChunk( "r_parallelAddModelsChunk", "0.1", CVAR_RENDERER | CVAR_FLOAT, "typical duration in milliseconds for a chunk of R_AddModelSurfaces jobs" );
+idCVar r_stencilAlphaShadowsBoost( "r_stencilAlphaShadowsBoost", "1", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
+	"stencil lights: alpha shadow page gets 2^N times the linear resolution wanted by distance (capped by r_shadowMapSize)", 0, 3 );
 idCVarBool r_useClipPlaneCulling( "r_useClipPlaneCulling", "1", CVAR_RENDERER, "cull surfaces behind mirrors" );
 
 /*
@@ -1778,6 +1780,8 @@ void R_RemoveUnecessaryViewLights( void ) {
 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) {
 			vLight->localShadows = NULL;
 			vLight->globalShadows = NULL;
+			vLight->alphaShadows = NULL;
+			vLight->alphaLocalShadows = NULL;
 		}
 		else
 		{
@@ -1810,6 +1814,7 @@ void R_RemoveUnecessaryViewLights( void ) {
 			for ( drawSurf_t *surf = vLight->globalShadows ; surf ; surf = surf->nextOnLight ) {
 				surf->scissorRect.IntersectWithZ( surfRect );
 			}
+			// note: alpha shadow maps are not view-dependent, their scissors are only used to size the page
 
 			for ( const drawSurf_t *surf = vLight->translucentInteractions ; surf ; surf = surf->nextOnLight ) {
 				surfRect.UnionWithZ( surf->scissorRect );
@@ -1847,6 +1852,7 @@ void R_AssignShadowMapAtlasPages( void ) {
 		int ratio;				// resolution ratio
 		float distance;			// light origin - view origin distance
 		viewLight_t *vLight;
+		bool alphaOnly;			// stencil-shadowed light, page is used for alpha-tested casters only
 	};
 	idList<Candidate> shadowMappers;
 
@@ -1883,7 +1889,31 @@ void R_AssignShadowMapAtlasPages( void ) {
 
 			float distance = ( vLight->globalLightOrigin - tr.viewDef->renderView.vieworg ).Length();
 
-			shadowMappers.Append( { ratio, distance, vLight } );
+			shadowMappers.Append( { ratio, distance, vLight, false } );
+		}
+		else if ( vLight->shadows == LS_STENCIL && ( vLight->alphaShadows || vLight->alphaLocalShadows ) ) {
+			// stencil light with alpha-tested casters (foliage, grates): small shadow map for them only
+			idScreenRect shadowsScissor;
+			shadowsScissor.ClearWithZ();
+			for ( drawSurf_t *surf = vLight->alphaShadows; surf; surf = surf->nextOnLight )
+				shadowsScissor.UnionWithZ( surf->scissorRect );
+			for ( drawSurf_t *surf = vLight->alphaLocalShadows; surf; surf = surf->nextOnLight )
+				shadowsScissor.UnionWithZ( surf->scissorRect );
+			shadowsScissor.IntersectWithZ( vLight->scissorRect );
+
+			float stretch = 1e-10f;
+			if ( !shadowsScissor.IsEmpty() || shadowsScissor.zmin <= shadowsScissor.zmax ) {
+				float minViewDistance = tr.viewDef->projectionRenderMatrix.DepthToZ( shadowsScissor.zmin );
+				stretch = vLight->maxLightDistance / minViewDistance;
+			}
+			float score = idMath::Fmin( stretch, 1.0f );
+			int ratio = (int) idMath::Ceil( TILE_RATIO * score );
+			ratio = 1 << ( idMath::ILog2( ratio - 1 ) + 1 );
+			// thin holes (grates, foliage) need more resolution than solid shadows
+			ratio = idMath::Imin( ratio << r_stencilAlphaShadowsBoost.GetInteger(), TILE_RATIO );
+
+			float distance = ( vLight->globalLightOrigin - tr.viewDef->renderView.vieworg ).Length();
+			shadowMappers.Append( { ratio, distance, vLight, true } );
 		}
 	}
 
@@ -1963,6 +1993,10 @@ void R_AssignShadowMapAtlasPages( void ) {
 
 	idList<renderCrop_t> pages = frameBuffers->CreateShadowMapPages( ratios, TILE_RATIO );
 
-	for ( int i = 0; i < pages.Num(); i++ )
-		shadowMappers[i].vLight->shadowMapPage = pages[i];
+	for ( int i = 0; i < pages.Num(); i++ ) {
+		if ( shadowMappers[i].alphaOnly )
+			shadowMappers[i].vLight->alphaShadowPage = pages[i];
+		else
+			shadowMappers[i].vLight->shadowMapPage = pages[i];
+	}
 }

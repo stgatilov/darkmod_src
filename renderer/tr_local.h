@@ -414,6 +414,7 @@ typedef struct viewLight_s {
 	// allowing us to skip drawing the projected caps of shadows if we can't see the face
 	int						viewSeesShadowPlaneBits;
 	renderCrop_t			shadowMapPage;
+	renderCrop_t			alphaShadowPage;			// stencil lights: page with shadow map of alpha-tested casters only
 	float					maxLightDistance;			// maximum distance from light origin to light volume points
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
@@ -437,6 +438,8 @@ typedef struct viewLight_s {
 	/*const */struct drawSurf_s	*globalShadows;				// shadow everything
 	/*const */struct drawSurf_s	*localInteractions;			// don't get local shadows
 	/*const */struct drawSurf_s	*localShadows;				// don't shadow local Surfaces
+	/*const */struct drawSurf_s	*alphaLocalShadows;			// same for noselfshadow casters: added to alpha page after local interactions
+	/*const */struct drawSurf_s	*alphaShadows;				// stencil lights: perforated casters, drawn into alpha shadow map
 	/*const */struct drawSurf_s	*globalInteractions;		// get shadows from everything
 	/*const */struct drawSurf_s	*translucentInteractions;	// get shadows from everything
 

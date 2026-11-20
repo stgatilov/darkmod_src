@@ -36,6 +36,8 @@ idCVar r_useInteractionTriCulling(
 	" -1 = disable all culling\n"
 , -1, 1);
 idCVarInt r_singleShadowEntity( "r_singleShadowEntity", "-1", CVAR_RENDERER, "suppress all but one shadowing entity" );
+idCVarBool r_stencilAlphaShadows( "r_stencilAlphaShadows", "1", CVAR_RENDERER | CVAR_ARCHIVE,
+	"Stencil shadows: perforated and forceShadows casters (foliage, grates) cast alpha-tested shadows from a small shadow map instead of solid shadow volumes. Needs map restart to apply." );
 
 void idInteraction::PrepareLightSurf( linkLocation_t link, const srfTriangles_t *tri, const viewEntity_s *space,
 		const idMaterial *material, const idScreenRect &scissor, bool viewInsideShadow, bool blockSelfShadows ) {
@@ -343,6 +345,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 
 	// it is debatable if non-shadowing lights should light back faces. we aren't at the moment
 	includeBackFaces = r_lightAllBackFaces.GetBool() || light->shadows == LS_MAPS ||  // need the back faces for shadows
+										( light->shadows == LS_STENCIL && r_stencilAlphaShadows.GetBool() && ( shader->Coverage() == MC_PERFORATED || shader->TestMaterialFlag( MF_FORCESHADOWS ) ) ) ||
 										light->lightShader->LightEffectsBackSides() || 
 										shader->ReceivesLightingOnBackSides() || 
 										ent->parms.noSelfShadow || ent->parms.noShadow;
@@ -1159,9 +1162,24 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		}
 
 		if ( genShadows ) {
-			if ( lightDef->shadows == LS_STENCIL && tri->silEdges != NULL) {
+			bool precomputedStencil = ( lightDef->parms.prelightModel && model->IsStaticWorldModel() && r_useOptimizedShadows.GetBool() );
+			if ( lightDef->shadows == LS_STENCIL && !precomputedStencil && r_stencilAlphaShadows.GetBool()
+				// forceShadows surfaces are treated like perforated ones: alpha-tested if they have alpha stages, solid casters in the alpha page otherwise
+				&& ( shader->Coverage() == MC_PERFORATED || shader->TestMaterialFlag( MF_FORCESHADOWS ) )
+				&& !( !r_skipSuppress.GetBool() && entityDef->parms.suppressSurfaceInViewID )
+			) {
+				// foliage, grates: no solid shadow volume, shadow comes from alpha-tested shadow map
+				// (the volumetric lights are not here: they force shadow maps for the whole light)
+				if ( sint->lightTris && sint->lightTris != LIGHT_TRIS_DEFERRED ) {
+					sint->shadowMapTris = sint->lightTris;
+				} else {
+					sint->shadowMapTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
+				}
+				interactionGenerated = true;
+			}
+			else if ( lightDef->shadows == LS_STENCIL && tri->silEdges != NULL) {
 				// if the light has an optimized shadow volume, don't create shadows for any models that are part of the base areas
-				bool precomputedShadows = ( lightDef->parms.prelightModel && model->IsStaticWorldModel() && r_useOptimizedShadows.GetBool() );
+				bool precomputedShadows = precomputedStencil;
 				if ( !precomputedShadows ) {
 					// this is the only place during gameplay (outside the utilities) that R_CreateShadowVolume() is called
 					sint->shadowVolumeTris = R_CreateShadowVolume( entityDef, tri, lightDef, shadowGen, sint->cullInfo );
@@ -1370,7 +1388,7 @@ void idInteraction::LinkPreparedSurfaces() {
 		}
 
 		// stgatilov: memorize for debug tools that this interaction generated backend surfaces in this view
-		if (i == SHADOW_LOCAL || i == SHADOW_GLOBAL) {
+		if (i == SHADOW_LOCAL || i == SHADOW_GLOBAL || i == SHADOW_ALPHA || i == SHADOW_ALPHA_LOCAL) {
 			viewCountGenShadowSurfs = tr.viewCount;
 		} else {
 			viewCountGenLightSurfs = tr.viewCount;
@@ -1383,6 +1401,8 @@ void idInteraction::LinkPreparedSurfaces() {
 		case INTERACTION_GLOBAL: link = &lightDef->viewLight->globalInteractions; break;
 		case SHADOW_LOCAL: link = &lightDef->viewLight->localShadows; break;
 		case SHADOW_GLOBAL: link = &lightDef->viewLight->globalShadows; break;
+		case SHADOW_ALPHA_LOCAL: link = &lightDef->viewLight->alphaLocalShadows; break;
+		case SHADOW_ALPHA: link = &lightDef->viewLight->alphaShadows; break;
 		}
 
 		drawSurf_t *surf = surfsToLink[i];
@@ -1644,7 +1664,13 @@ void idInteraction::AddActiveInteraction( void ) {
 			R_GlobalShaderOverride( &shader );
 			// note: material is needed for shadow maps to handle perforated surfaces
 
-			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
+			if ( lightDef->shadows == LS_STENCIL ) {
+				// alpha-tested casters of stencil light
+				PrepareLightSurf(
+					sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ? SHADOW_ALPHA_LOCAL : SHADOW_ALPHA, shadowTris,
+					vEntity, shader, shadowScissor, false, false
+				);
+			} else if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
 				PrepareLightSurf(
 					SHADOW_LOCAL, shadowTris,
 					vEntity, shader, shadowScissor, false, false

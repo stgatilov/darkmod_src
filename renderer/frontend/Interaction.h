@@ -176,6 +176,8 @@ private:
 		INTERACTION_GLOBAL,
 		SHADOW_LOCAL,
 		SHADOW_GLOBAL,
+		SHADOW_ALPHA_LOCAL,	// same, but must not shadow the surfaces of noselfshadow materials
+		SHADOW_ALPHA,	// alpha-tested casters of stencil-shadowed light (rendered into shadow map page)
 		MAX_LOCATIONS
 	};
 	drawSurf_s *			surfsToLink[MAX_LOCATIONS] = { nullptr };

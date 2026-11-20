@@ -74,6 +74,10 @@ bool ShadowMapStage::ShouldDrawLight( const viewLight_t *vLight, const DrawMask 
 	if ( vLight->noShadows ) {
 		return false;
 	}
+	if ( mask.alpha ) {
+		return vLight->shadows == LS_STENCIL && vLight->alphaShadowPage.width > 0 &&
+			( mask.clear || mask.global && vLight->alphaShadows || mask.local && vLight->alphaLocalShadows );
+	}
 	if ( vLight->shadows != LS_MAPS) {
 		return false;
 	}
@@ -87,6 +91,9 @@ bool ShadowMapStage::ShouldDrawLight( const viewLight_t *vLight, const DrawMask 
 }
 
 void ShadowMapStage::DrawLight( const viewLight_t *vLight, const DrawMask &mask ) {
+	// thin alpha cards: front and back are the same depth, so cull-front would make them shadow themselves completely
+	GL_Cull( mask.alpha ? CT_TWO_SIDED : ( r_shadowMapCullFront ? CT_BACK_SIDED : CT_TWO_SIDED ) );
+
 	idVec4 lightOrigin;
 	lightOrigin.x = vLight->globalLightOrigin.x;
 	lightOrigin.y = vLight->globalLightOrigin.y;
@@ -95,7 +102,7 @@ void ShadowMapStage::DrawLight( const viewLight_t *vLight, const DrawMask &mask 
 	uniforms->lightOrigin.Set( lightOrigin );
 	uniforms->maxLightDistance.Set( vLight->maxLightDistance );
 
-	const renderCrop_t &page = vLight->shadowMapPage;
+	const renderCrop_t &page = mask.alpha ? vLight->alphaShadowPage : vLight->shadowMapPage;
 	qglViewport( page.x, page.y, 6*page.width, page.width );
 	// note: scissor must be always applied for correctness, also it is not view-dependent
 	qglScissor( page.x, page.y, 6*page.width, page.width );
@@ -104,10 +111,10 @@ void ShadowMapStage::DrawLight( const viewLight_t *vLight, const DrawMask &mask 
 		qglClear( GL_DEPTH_BUFFER_BIT );
 
 	if ( mask.global )
-		DrawLightInteractions( vLight->globalShadows );
+		DrawLightInteractions( mask.alpha ? vLight->alphaShadows : vLight->globalShadows );
 
 	if ( mask.local )
-		DrawLightInteractions( vLight->localShadows );
+		DrawLightInteractions( mask.alpha ? vLight->alphaLocalShadows : vLight->localShadows );
 }
 
 void ShadowMapStage::End() {

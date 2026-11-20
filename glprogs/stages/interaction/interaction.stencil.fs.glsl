@@ -14,12 +14,24 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 330 core
 #extension GL_ARB_texture_query_lod: enable
+#extension GL_ARB_texture_gather: enable
+
+#define STGATILOV_USEGATHER 1
 
 out vec4 FragColor;
 
 #pragma tdm_include "tdm_utils.glsl"
 #pragma tdm_include "stages/interaction/interaction.common.fs.glsl"
 #pragma tdm_include "tdm_shadowstencilsoft.glsl"
+#define TDM_allow_ARB_texture_gather STGATILOV_USEGATHER
+#define SHADOWMAP_NO_FALL_ANGLE_LIMITER 1
+#pragma tdm_include "tdm_shadowmaps.glsl"
+
+uniform vec4 u_shadowRect;
+uniform sampler2D u_shadowMap;
+uniform int u_alphaSoftShadowsQuality;
+
+in vec3 var_LightDirWorld;
 
 uniform usampler2D u_stencilTexture;
 uniform sampler2D u_depthTexture;
@@ -44,6 +56,24 @@ void main() {
 			u_softShadowsQuality, u_softShadowsRadius,
 			u_stencilMipmapsTexture, u_stencilMipmapsLevel, u_stencilMipmapsScissor
 		);
+	}
+	// alpha-tested casters (foliage, grates) are not in stencil: they are in a small shadow map
+	// (skipped if the pixel is already unlit: facing away, or in the stencil shadow)
+	if (checkFlag(u_flags, SFL_INTERACTION_SHADOWS) && checkFlag(u_flags, SFL_INTERACTION_ALPHA_SHADOW) && any(greaterThan(FragColor.rgb, vec3(0.0)))) {
+		vec3 worldNormal = mat3(u_modelMatrix) * var_TangentBitangentNormalMatrix[2];
+		if (props.localN.z < 0.0)	// #5862: reverse-sided material with Z < 0 normalmap
+			worldNormal = -worldNormal;
+		// thin two-sided casters (grates) are lit from both sides: the normal must face the light,
+		// otherwise the shadow map code treats the back side as unlit (fallAngleLimiter = 0)
+		if (dot(worldNormal, var_LightDirWorld) < 0.0)
+			worldNormal = -worldNormal;
+		float alphaCoeff = computeShadowMapCoefficient(
+			-var_LightDirWorld, worldNormal,
+			u_shadowMap, u_shadowRect,
+			u_alphaSoftShadowsQuality, u_softShadowsRadius,	// PCSS (contact hardening) of the shadow map code, independent of stencil softness
+			false	// alpha page is rendered two-sided, no cull-front hack
+		);
+		FragColor.rgb *= alphaCoeff;
 	}
 	FragColor.a = 1.0;
 }
