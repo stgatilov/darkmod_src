@@ -38,6 +38,7 @@ public:
 	void				GetTransformInfo(idVec3& origin, idMat3& mat );
 
 	void				SetTransformInfo(const idVec3 &origin, const idMat3 &mat);
+	void				SetColorMultiplier(float multiplier);
 	void				DrawMaterial(float x, float y, float w, float h, const idMaterial *mat, const idVec4 &color, float scalex = 1.0, float scaley = 1.0);
 	void				DrawRect(float x, float y, float width, float height, float size, const idVec4 &color);
 	void				DrawFilledRect(float x, float y, float width, float height, const idVec4 &color);
@@ -145,6 +146,7 @@ private:
 	void				PaintChar(float x,float y,float width,float height,float scale,float	s,float	t,float	s2,float t2,const idMaterial *hShader);
 	void				SetFontByScale( float scale );
 	void				Clear( void );
+	void				SetColor(const idVec4 &color);
 
 	const idMaterial	*cursorImages[CURSOR_COUNT];
 	const idMaterial	*whiteImage;
@@ -161,6 +163,7 @@ private:
 	//#modified-fva; END
 
 	float				vidHeight;
+	float				colorMultiplier;
 	float				vidWidth;
 
 	int					cursor;

@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 **/
 extern idCVar cv_player_spawnclass;
 extern idCVar cv_player_wait_until_ready;
+extern idCVar cv_tdm_gui_readable_brightness;
 
 extern idCVar cv_default_mission_info_file;
 

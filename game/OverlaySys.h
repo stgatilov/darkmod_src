@@ -35,6 +35,7 @@ enum
 	LAYER_MAIN_HUD = 1,
 	LAYER_INVENTORY = 2,
  	LAYER_INVGRID = 3,		// #4286
+	LAYER_READABLE = 10,	// Readable GUIs created by tdm_readables.script
 	LAYER_OBJECTIVES = 12,
 	LAYER_WAITUNTILREADY = 13,
 	LAYER_SUBTITLES = 20,	// stgatilov #2454

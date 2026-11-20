@@ -154,6 +154,20 @@ void idDeviceContext::Clear() {
 	useFont = NULL;
 	activeFont = NULL;
 	mbcs = false;
+	colorMultiplier = 1.0f;
+}
+
+// Apply a GUI-wide brightness multiplier while preserving transparency.
+void idDeviceContext::SetColorMultiplier(float multiplier) {
+	colorMultiplier = idMath::ClampFloat(0.0f, 2.0f, multiplier);
+}
+
+void idDeviceContext::SetColor(const idVec4 &color) {
+	idVec4 adjustedColor = color;
+	adjustedColor[0] *= colorMultiplier;
+	adjustedColor[1] *= colorMultiplier;
+	adjustedColor[2] *= colorMultiplier;
+	renderSystem->SetColor(adjustedColor);
 }
 
 idDeviceContext::idDeviceContext() {
@@ -381,7 +395,7 @@ void idDeviceContext::DrawStretchPic(float x, float y, float w, float h, float s
 
 void idDeviceContext::DrawMaterial(float x, float y, float w, float h, const idMaterial *mat, const idVec4 &color, float scalex, float scaley) {
 
-	renderSystem->SetColor(color);
+	SetColor(color);
 
 	float	s0, s1, t0, t1;
 // 
@@ -428,7 +442,7 @@ void idDeviceContext::DrawMaterial(float x, float y, float w, float h, const idM
 
 void idDeviceContext::DrawMaterialRotated(float x, float y, float w, float h, const idMaterial *mat, const idVec4 &color, float scalex, float scaley, float angle) {
 	
-	renderSystem->SetColor(color);
+	SetColor(color);
 
 	float	s0, s1, t0, t1;
 	// 
@@ -604,7 +618,7 @@ void idDeviceContext::DrawFilledRect( float x, float y, float w, float h, const 
 		return;
 	}
 
-	renderSystem->SetColor(color);
+	SetColor(color);
 	
 	if (ClippedCoords(&x, &y, &w, &h, NULL, NULL, NULL, NULL)) {
 		return;
@@ -622,7 +636,7 @@ void idDeviceContext::DrawRect( float x, float y, float w, float h, float size, 
 		return;
 	}
 
-	renderSystem->SetColor(color);
+	SetColor(color);
 	
 	if (ClippedCoords(&x, &y, &w, &h, NULL, NULL, NULL, NULL)) {
 		return;
@@ -642,7 +656,7 @@ void idDeviceContext::DrawMaterialRect( float x, float y, float w, float h, floa
 		return;
 	}
 
-	renderSystem->SetColor(color);
+	SetColor(color);
 	DrawMaterial( x, y, size, h, mat, color );
 	DrawMaterial( x + w - size, y, size, h, mat, color );
 	DrawMaterial( x, y, w, size, mat, color );
@@ -738,7 +752,7 @@ int idDeviceContext::DrawText(float x, float y, float scale, idVec4 color, const
 	count = 0;
 	if ( text && color.w != 0.0f ) {
 		const unsigned char	*s = (const unsigned char*)text;
-		renderSystem->SetColor(color);
+		SetColor(color);
 		memcpy(&newColor[0], &color[0], sizeof(idVec4));
         len = static_cast<int>(strlen(text));
 		if (limit > 0 && len > limit) {
@@ -770,11 +784,11 @@ int idDeviceContext::DrawText(float x, float y, float scale, idVec4 color, const
 					if ( cursor == count ) {
 						partialSkip *= 2.0f;
 					} else {
-						renderSystem->SetColor(newColor);
+						SetColor(newColor);
 					}
 					DrawEditCursor(x - partialSkip, y, scale);
 				}
-				renderSystem->SetColor(newColor);
+				SetColor(newColor);
 				s += 2;
 				count += 2;
 				continue;
@@ -1206,7 +1220,7 @@ int idDeviceContext::DrawText( const char *text, float textScale, int textAlign,
 
 	if (!calcOnly && !(text && *text)) {
 		if (cursor == 0) {
-			renderSystem->SetColor(color);
+			SetColor(color);
 			DrawEditCursor(rectDraw.x, lineSkip + rectDraw.y, textScale);
 		}
 		return idMath::FtoiRound( rectDraw.w / charSkip );

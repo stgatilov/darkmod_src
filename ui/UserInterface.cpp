@@ -446,7 +446,12 @@ void idUserInterfaceLocal::Redraw( int _time ) {
 
 		time = _time;
 		uiManagerLocal.dc.PushClipRect( uiManagerLocal.screenRect );
+		// COverlaySys supplies this state only for readable overlays.
+		// The multiplier is scoped to this GUI redraw and reset immediately
+		// afterwards so it cannot leak into other overlays.
+		uiManagerLocal.dc.SetColorMultiplier(GetStateFloat("ReadableBrightness", "1.0"));
 		desktop->Redraw( 0, 0 );
+		uiManagerLocal.dc.SetColorMultiplier(1.0f);
 		uiManagerLocal.dc.PopClipRect();
 	}
 }

@@ -117,6 +117,12 @@ void COverlaySys::drawOverlays( std::function<bool(int)> filter )
 
 		gameLocal.UpdateGUIScaling(gui);
 
+		// Readables are created on LAYER_READABLE by tdm_readables.script.
+		// Publish the current CVar value every frame so changes take effect
+		// immediately, without touching unrelated HUD or menu GUIs.
+		if (oNode->Owner()->m_layer == LAYER_READABLE)
+			gui->SetStateFloat("ReadableBrightness", cv_tdm_gui_readable_brightness.GetFloat());
+
 		int time = gameLocal.realClientTime;
 
 		// greebo: We have a special GUI that is updated before control is passed to this method 
